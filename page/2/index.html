@@ -165,7 +165,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-count">28</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -211,6 +211,438 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/ctf/ctf1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="vkkkv's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | vkkkv's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/ctf/ctf1/" class="post-title-link" itemprop="url">ctfnoob01-换行符</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-02-05 16:05:41" itemprop="dateCreated datePublished" datetime="2024-02-05T16:05:41+08:00">2024-02-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-08-02 17:14:00" itemprop="dateModified" datetime="2024-08-02T17:14:00+08:00">2024-08-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>565</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>2 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1
+id="跨平台换行符差异导致的密码破解失败">跨平台换行符差异导致的密码破解失败</h1>
+<p>在进行密码破解任务时，我遇到了一个典型但容易被忽视的问题：不同操作系统间的换行符差异。在这篇博客中，我将分享我的经验和解决方案，希望能帮助那些可能面临同样挑战的人。</p>
+<h2 id="背景">背景</h2>
+<p>在 <code>Windows</code>
+系统上生成了一个用于密码破解的字典文件，文件中的换行符遵循
+<code>Windows</code> 的标准，即 <code>CRLF</code>
+(<code>\r\n</code>)。然而，我的破解工具运行在 <code>WSL</code>
+环境中，该环境以及大多数 <code>Linux</code> 工具期望的换行符是
+<code>LF</code> (<code>\n</code>)。</p>
+<p>我确定字典中有正确密码。当使用 <code>VSCode</code> 的
+<code>WSL</code>
+终端运行如下<code>fcrackzip</code>命令时，破解尝试失败了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fcrackzip -D -p ./vspro/passwords.txt -u flag.zip</span><br></pre></td></tr></table></figure>
+<p>通过<code>file</code>命令检查字典文件，确认了问题所在：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  code file ./vspro/passwords.txt</span><br><span class="line">./vspro/passwords.txt: ASCII text, with CRLF line terminators</span><br></pre></td></tr></table></figure>
+<p>这表明文件是用 <code>CRLF</code> 作为换行符的，而不是
+<code>WSL</code> 和 <code>Linux</code> 工具期望的 <code>LF</code></p>
+<h2 id="解决方案">解决方案</h2>
+<h3 id="if-conditions-permit"><code>If conditions permit</code></h3>
+<p>在 <code>linux</code> 环境中使用脚本生成字典。</p>
+<h3 id="else-使用指令转换换行符"><code>Else</code>
+使用指令转换换行符</h3>
+<p>为了解决这个问题，我需要将字典文件中的 <code>CRLF</code>
+换行符转换为<code>LF</code>。<code>Linux</code>和<code>WSL</code>提供了一个非常方便的工具<code>dos2unix</code>，它可以实现这种转换。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> apt update &amp;&amp; <span class="built_in">sudo</span> apt install dos2unix</span><br></pre></td></tr></table></figure>
+<p>安装完成后，使用<code>dos2unix</code>命令转换文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dos2unix ./vspro/passwords.txt</span><br></pre></td></tr></table></figure>
+<h3 id="验证转换">验证转换</h3>
+<p>转换完成后，再次使用<code>file</code>命令验证文件的换行符：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  code file ./vspro/passwords.txt</span><br><span class="line">./vspro/passwords.txt: ASCII text</span><br></pre></td></tr></table></figure>
+<p>这次，文件描述不再提到<code>CRLF</code>换行符，说明转换成功。</p>
+<h3 id="重新尝试破解">重新尝试破解</h3>
+<p>转换换行符后，我再次运行了<code>fcrackzip</code>命令，这次成功破解了ZIP文件的密码。</p>
+<h2 id="end">end</h2>
+<p>This experience highlights that, when working across different
+platforms, even minor details like line breaks can lead to significant
+obstacles. Despite their seeming insignificance, these differences can
+greatly impact how files are processed and texts are parsed. Thankfully,
+with the use of straightforward tools and commands, these issues can be
+easily overcome, allowing for a seamless workflow.</p>
+<p>I hope this blog post assists those facing similar challenges in
+cross-platform tasks, such as password cracking or any activity
+involving text file processing. Remember, when you come across unusual
+issues, it's worth starting with the basics, like the seemingly trivial
+matter of line breaks.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/technology/Design%20Patterns/Structural/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="vkkkv's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | vkkkv's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/technology/Design%20Patterns/Structural/" class="post-title-link" itemprop="url">Structural</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-02-01 18:09:22" itemprop="dateCreated datePublished" datetime="2024-02-01T18:09:22+08:00">2024-02-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-08-06 01:54:48" itemprop="dateModified" datetime="2024-08-06T01:54:48+08:00">2024-08-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Design-Patterns/" itemprop="url" rel="index"><span itemprop="name">Design Patterns</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>576</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>2 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="结构型模式">结构型模式</h1>
+<ul>
+<li>组合类和对象以形成更大的结构</li>
+<li>简化结构中的关系，使系统更易于理解和扩展。</li>
+<li>减少系统中不同部分之间的依赖关系，提高系统的灵活性和可维护性。</li>
+</ul>
+<p>结构型模式主要包括以下几种：</p>
+<ol type="1">
+<li><strong>适配器模式（Adapter）</strong>：允许将一个类的接口转换成客户端期望的另一个接口，使原本接口不兼容的类可以一起工作。</li>
+<li><strong>桥接模式（Bridge）</strong>：将抽象部分与实现部分分离，使它们可以独立变化，通过组合的方式建立两者之间的联系，而不是继承。</li>
+<li><strong>组合模式（Composite）</strong>：允许将对象组合成树形结构以表示“部分-整体”的层次结构。使得用户对单个对象和组合对象的使用具有一致性。</li>
+<li><strong>装饰器模式（Decorator）</strong>：动态地给一个对象添加一些额外的职责，就增加功能来说，装饰器模式相比生成子类更为灵活。</li>
+<li><strong>外观模式（Facade）</strong>：提供了一个统一的接口，用来访问子系统中的一群接口。外观定义了一个高层接口，让子系统更容易使用。</li>
+<li><strong>享元模式（Flyweight）</strong>：运用共享技术有效地支持大量细粒度的对象，以减少创建对象的数量，降低程序内存的占用，提高效率。</li>
+<li><strong>代理模式（Proxy）</strong>：为其他对象提供一种代理以控制对这个对象的访问，可以在客户端和目标对象之间起到中介的作用，并可以添加一些功能。</li>
+</ol>
+<p>这些模式在不同的应用场景中有着广泛的应用，比如在系统需要使用现有的类但其接口不符合系统的需要时，可以使用适配器模式来进行接口适配；当系统需要对一系列的对象进行操作而不想关心这些对象是简单的还是复杂的组合时，可以使用组合模式来统一对待。</p>
+<p>通过运用结构型模式，开发者可以更容易地设计出结构清晰、关系简单、高效灵活的系统架构。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/technology/Design%20Patterns/Creational/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="vkkkv's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | vkkkv's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/technology/Design%20Patterns/Creational/" class="post-title-link" itemprop="url">创建型模式</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-02-01 17:38:54" itemprop="dateCreated datePublished" datetime="2024-02-01T17:38:54+08:00">2024-02-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2024-08-02 13:44:57" itemprop="dateModified" datetime="2024-08-02T13:44:57+08:00">2024-08-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Design-Patterns/" itemprop="url" rel="index"><span itemprop="name">Design Patterns</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>7 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="创建型模式-creational-patterns">创建型模式
+<code>Creational</code> <code>Patterns</code></h1>
+<ul>
+<li>创建型模式关注如何创建对象，将对象的实例化和声明相分离。</li>
+<li>关注于对象的创建过程，目的是将对象的实例化与客户端的使用分离。</li>
+<li>通过这种方式，系统中的具体类的实例化不会使代码变得僵硬，增加了系统的灵活性和可维护性。</li>
+<li>更有效地封装和抽象化对象的创建过程。</li>
+</ul>
+<p>创建型模式包括：</p>
+<ul>
+<li><strong>单例模式（Singleton）</strong>：确保一个类只有一个实例，并提供一个全局访问点。</li>
+<li><strong>工厂方法模式（Factory
+Method）</strong>：定义一个创建对象的接口，让子类决定实例化哪一个类。</li>
+<li><strong>抽象工厂模式（Abstract
+Factory）</strong>：提供一个接口，用于创建相关或依赖对象的家族，而不需要指定具体类。</li>
+<li><strong>建造者模式（Builder）</strong>：使用多个简单的对象一步一步构建成一个复杂的对象。</li>
+<li><strong>原型模式（Prototype）</strong>：通过复制现有的实例来创建新的实例，而不是通过新建实例。</li>
+</ul>
+<h2 id="单例模式">单例模式</h2>
+<p>保证一个类只有一个实例， 并提供一个访问该实例的全局节点。</p>
+<figure class="highlight java"><figcaption><span>懒汉式双重校验锁（DCL，即 double-checked locking）</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Singleton</span> &#123;  </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> Singleton singleton;  </span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">Singleton</span> <span class="params">()</span>&#123;&#125;  </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Singleton <span class="title function_">getSingleton</span><span class="params">()</span> &#123;  </span><br><span class="line">    <span class="keyword">if</span> (singleton == <span class="literal">null</span>) &#123;  </span><br><span class="line">        <span class="keyword">synchronized</span> (Singleton.class) &#123;  </span><br><span class="line">            <span class="keyword">if</span> (singleton == <span class="literal">null</span>) &#123;  </span><br><span class="line">                singleton = <span class="keyword">new</span> <span class="title class_">Singleton</span>();  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">return</span> singleton;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>volatile</code>: 这是 Java 语言的一个关键字，用于指示
+JVM（Java
+虚拟机），这个变量可能会被多个线程同时访问和修改，但是它不会被线程缓存（每次访问变量时都要从主内存中读取），并且每次修改都会立即写入主内存。这个关键字的主要作用是确保变量的可见性和防止指令重排序优化，这对于多线程环境下安全创建单例至关重要。</li>
+</ul>
+<h2 id="工厂方法模式">工厂方法模式</h2>
+<ul>
+<li>在父类中提供一个创建对象的方法， 允许子类决定实例化对象的类型。</li>
+<li>如果无法预知对象确切类别及其依赖关系时， 可使用工厂方法。</li>
+<li>如果你希望用户能扩展你软件库或框架的内部组件， 可使用工厂方法。</li>
+<li>如果你希望复用现有对象来节省系统资源， 而不是每次都重新创建对象，
+可使用工厂方法。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Shape</span> &#123;</span><br><span class="line">   <span class="keyword">void</span> <span class="title function_">draw</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">////////////////////////////////</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Rectangle</span> <span class="keyword">implements</span> <span class="title class_">Shape</span> &#123;</span><br><span class="line">   <span class="meta">@Override</span></span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">draw</span><span class="params">()</span> &#123;</span><br><span class="line">      System.out.println();</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//////////////</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ShapeFactory</span> &#123;</span><br><span class="line">    </span><br><span class="line">   <span class="comment">//使用 getShape 方法获取形状类型的对象</span></span><br><span class="line">   <span class="keyword">public</span> Shape <span class="title function_">getShape</span><span class="params">(String shapeType)</span>&#123;</span><br><span class="line">      <span class="keyword">if</span>(shapeType == <span class="literal">null</span>)&#123;</span><br><span class="line">         <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">      &#125;        </span><br><span class="line">      <span class="keyword">if</span>(shapeType.equalsIgnoreCase(<span class="string">&quot;CIRCLE&quot;</span>))&#123;</span><br><span class="line">         <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Circle</span>();</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> ...</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="抽象工厂模式">抽象工厂模式</h2>
+<ul>
+<li>创建一系列相关的对象</li>
+<li>无需指定其具体类。</li>
+<li>其他工厂的工厂。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//定义抽象工厂</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">GUIFactory</span> &#123;</span><br><span class="line">    Button <span class="title function_">createButton</span><span class="params">()</span>;</span><br><span class="line">    Checkbox <span class="title function_">createCheckbox</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 接着，定义 Button 和 Checkbox 接口：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Button</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">paint</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Checkbox</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">paint</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 然后，实现具体的工厂类 WinFactory 和 MacFactory：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WinFactory</span> <span class="keyword">implements</span> <span class="title class_">GUIFactory</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Button <span class="title function_">createButton</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">WinButton</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Checkbox <span class="title function_">createCheckbox</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">WinCheckbox</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MacFactory</span> <span class="keyword">implements</span> <span class="title class_">GUIFactory</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Button <span class="title function_">createButton</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">MacButton</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Checkbox <span class="title function_">createCheckbox</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">MacCheckbox</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义具体产品类 WinButton, WinCheckbox, MacButton, 和 MacCheckbox：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WinButton</span> <span class="keyword">implements</span> <span class="title class_">Button</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">paint</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Rendering a button in Windows style.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MacButton</span> <span class="keyword">implements</span> <span class="title class_">Button</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">paint</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Rendering a button in macOS style.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WinCheckbox</span> <span class="keyword">implements</span> <span class="title class_">Checkbox</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">paint</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Rendering a checkbox in Windows style.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MacCheckbox</span> <span class="keyword">implements</span> <span class="title class_">Checkbox</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">paint</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Rendering a checkbox in macOS style.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 最后，实现客户端代码 Application 和 ApplicationConfigurator：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Application</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> GUIFactory factory;</span><br><span class="line">    <span class="keyword">private</span> Button button;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Application</span><span class="params">(GUIFactory factory)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.factory = factory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createUI</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.button = factory.createButton();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">paint</span><span class="params">()</span> &#123;</span><br><span class="line">        button.paint();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ApplicationConfigurator</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        GUIFactory factory;</span><br><span class="line">        <span class="type">String</span> <span class="variable">OS</span> <span class="operator">=</span> System.getProperty(<span class="string">&quot;os.name&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (OS.contains(<span class="string">&quot;Windows&quot;</span>)) &#123;</span><br><span class="line">            factory = <span class="keyword">new</span> <span class="title class_">WinFactory</span>();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (OS.contains(<span class="string">&quot;Mac&quot;</span>)) &#123;</span><br><span class="line">            factory = <span class="keyword">new</span> <span class="title class_">MacFactory</span>();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;Error! Unknown operating system.&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="type">Application</span> <span class="variable">app</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Application</span>(factory);</span><br><span class="line">        app.createUI();</span><br><span class="line">        app.paint();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段 Java
+代码完整实现了抽象工厂模式，包括抽象工厂接口、具体工厂类、抽象产品接口、具体产品类以及客户端代码。客户端代码仅依赖于抽象类型（GUIFactory、Button
+和
+Checkbox），使得你可以在不修改客户端代码的情况下引入新的工厂或产品变体。</p>
+<h2 id="建造者模式">建造者模式</h2>
+<ul>
+<li>AKA生成器模式</li>
+<li>分步骤创建复杂对象</li>
+<li>使用相同的创建代码生成不同类型和形式的对象。</li>
+<li>链式编程</li>
+<li>只有当产品较为复杂且需要详细配置时，使用生成器模式才有意义。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Car</span> &#123;</span><br><span class="line">    <span class="comment">// 假设这里有一些属性和方法来表示汽车的各种特性</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Manual</span> &#123;</span><br><span class="line">    <span class="comment">// 假设这里有一些属性和方法来表示手册的各种特性</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 接下来是 `Builder` 接口的定义，包括创建产品对象不同部件的方法：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Builder</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">reset</span><span class="params">()</span>;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">setSeats</span><span class="params">(<span class="type">int</span> number)</span>;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">setEngine</span><span class="params">(String engine)</span>;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">setTripComputer</span><span class="params">(<span class="type">boolean</span> present)</span>;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">setGPS</span><span class="params">(<span class="type">boolean</span> present)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 然后，我们实现具体的生成器类 `CarBuilder` 和 `CarManualBuilder`：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CarBuilder</span> <span class="keyword">implements</span> <span class="title class_">Builder</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Car car;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">CarBuilder</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.reset();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">reset</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.car = <span class="keyword">new</span> <span class="title class_">Car</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setSeats</span><span class="params">(<span class="type">int</span> number)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现设置座位数的逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setEngine</span><span class="params">(String engine)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现设置引擎的逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setTripComputer</span><span class="params">(<span class="type">boolean</span> present)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现设置行车电脑的逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setGPS</span><span class="params">(<span class="type">boolean</span> present)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现设置GPS的逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Car <span class="title function_">getProduct</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Car</span> <span class="variable">product</span> <span class="operator">=</span> <span class="built_in">this</span>.car;</span><br><span class="line">        <span class="built_in">this</span>.reset();</span><br><span class="line">        <span class="keyword">return</span> product;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CarManualBuilder</span> <span class="keyword">implements</span> <span class="title class_">Builder</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Manual manual;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">CarManualBuilder</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.reset();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">reset</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.manual = <span class="keyword">new</span> <span class="title class_">Manual</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setSeats</span><span class="params">(<span class="type">int</span> number)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现添加关于座椅的文档逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setEngine</span><span class="params">(String engine)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现添加关于引擎的介绍逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setTripComputer</span><span class="params">(<span class="type">boolean</span> present)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现添加关于行车电脑的介绍逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setGPS</span><span class="params">(<span class="type">boolean</span> present)</span> &#123;</span><br><span class="line">        <span class="comment">// 实现添加关于GPS的介绍逻辑</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Manual <span class="title function_">getProduct</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Manual</span> <span class="variable">product</span> <span class="operator">=</span> <span class="built_in">this</span>.manual;</span><br><span class="line">        <span class="built_in">this</span>.reset();</span><br><span class="line">        <span class="keyword">return</span> product;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 接着，实现 `Director` 类，它负责定义构建过程的不同步骤：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Director</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">constructSportsCar</span><span class="params">(Builder builder)</span> &#123;</span><br><span class="line">        builder.reset();</span><br><span class="line">        builder.setSeats(<span class="number">2</span>);</span><br><span class="line">        builder.setEngine(<span class="string">&quot;SportEngine&quot;</span>);</span><br><span class="line">        builder.setTripComputer(<span class="literal">true</span>);</span><br><span class="line">        builder.setGPS(<span class="literal">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这里可以添加更多的方法来构建不同类型的汽车</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 最后是客户端代码，它演示了如何使用这些类来构建产品：</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Application</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">Director</span> <span class="variable">director</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Director</span>();</span><br><span class="line"></span><br><span class="line">        <span class="type">CarBuilder</span> <span class="variable">carBuilder</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CarBuilder</span>();</span><br><span class="line">        director.constructSportsCar(carBuilder);</span><br><span class="line">        <span class="type">Car</span> <span class="variable">car</span> <span class="operator">=</span> carBuilder.getProduct();</span><br><span class="line"></span><br><span class="line">        <span class="type">CarManualBuilder</span> <span class="variable">manualBuilder</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CarManualBuilder</span>();</span><br><span class="line">        director.constructSportsCar(manualBuilder);</span><br><span class="line">        <span class="type">Manual</span> <span class="variable">manual</span> <span class="operator">=</span> manualBuilder.getProduct();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 在这里，car 和 manual 是根据相同的构建过程创建的，</span></span><br><span class="line">        <span class="comment">// 但它们是完全不同的产品。</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段 Java
+代码展示了如何实现生成器模式，其中包括创建复杂对象的过程，使得最终产品的构建与其表示分离，允许相同的构建过程创建不同的表示。</p>
+<h2 id="原型模式">原型模式</h2>
+<ul>
+<li><p>复制已有对象</p></li>
+<li><p>当直接创建对象的代价比较大时，则采用这种模式。</p></li>
+<li><p>Java 中，原型模式通常通过实现 <code>Cloneable</code> 接口并重写
+<code>Object</code> 类的 <code>clone()</code> 方法来实现。</p></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.Map;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 抽象类实现 Cloneable 接口</span></span><br><span class="line"><span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">Shape</span> <span class="keyword">implements</span> <span class="title class_">Cloneable</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> String id;</span><br><span class="line">    <span class="keyword">protected</span> String type;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title function_">draw</span><span class="params">()</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getType</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> type;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getId</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setId</span><span class="params">(String id)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.id = id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">clone</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">clone</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            clone = <span class="built_in">super</span>.clone();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (CloneNotSupportedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> clone;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 具体的形状类</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Rectangle</span> <span class="keyword">extends</span> <span class="title class_">Shape</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Rectangle</span><span class="params">()</span> &#123;</span><br><span class="line">        type = <span class="string">&quot;Rectangle&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">draw</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Inside Rectangle::draw() method.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Circle</span> <span class="keyword">extends</span> <span class="title class_">Shape</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Circle</span><span class="params">()</span> &#123;</span><br><span class="line">        type = <span class="string">&quot;Circle&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">draw</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Inside Circle::draw() method.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 缓存类</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ShapeCache</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Map&lt;String, Shape&gt; shapeMap = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Shape <span class="title function_">getShape</span><span class="params">(String shapeId)</span> &#123;</span><br><span class="line">        <span class="type">Shape</span> <span class="variable">cachedShape</span> <span class="operator">=</span> shapeMap.get(shapeId);</span><br><span class="line">        <span class="keyword">return</span> (Shape) cachedShape.clone();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">loadCache</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Circle</span> <span class="variable">circle</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Circle</span>();</span><br><span class="line">        circle.setId(<span class="string">&quot;1&quot;</span>);</span><br><span class="line">        shapeMap.put(circle.getId(), circle);</span><br><span class="line"></span><br><span class="line">        <span class="type">Rectangle</span> <span class="variable">rectangle</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Rectangle</span>();</span><br><span class="line">        rectangle.setId(<span class="string">&quot;2&quot;</span>);</span><br><span class="line">        shapeMap.put(rectangle.getId(), rectangle);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 客户端代码</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PrototypePatternDemo</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        ShapeCache.loadCache();</span><br><span class="line"></span><br><span class="line">        <span class="type">Shape</span> <span class="variable">clonedShape1</span> <span class="operator">=</span> ShapeCache.getShape(<span class="string">&quot;1&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;Shape : &quot;</span> + clonedShape1.getType());</span><br><span class="line"></span><br><span class="line">        <span class="type">Shape</span> <span class="variable">clonedShape2</span> <span class="operator">=</span> ShapeCache.getShape(<span class="string">&quot;2&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;Shape : &quot;</span> + clonedShape2.getType());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段代码展示了原型设计模式的核心：通过克隆现有对象来创建新对象，从而避免了通过
+new 关键字创建对象带来的成本。这里，<code>Shape</code> 抽象类实现了
+<code>Cloneable</code> 接口，允许其子类 <code>Rectangle</code> 和
+<code>Circle</code> 被克隆。<code>ShapeCache</code>
+类用于预存储和克隆形状对象，而客户端代码演示了如何从缓存中获取并使用这些克隆对象。</p>
+<h1 id="end">end</h1>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -361,7 +793,7 @@ title="UML类图关系" style="width:50.0%;height:50.0%" alt="image.png" />
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/technology/marp/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/technology/technology/marp/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -379,7 +811,7 @@ title="UML类图关系" style="width:50.0%;height:50.0%" alt="image.png" />
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/technology/marp/" class="post-title-link" itemprop="url">用Markdown制作PPT</a>
+          <a href="/technology/technology/marp/" class="post-title-link" itemprop="url">用Markdown制作PPT</a>
         </h2>
 
         <div class="post-meta-container">
@@ -501,7 +933,7 @@ documentation<i class="fa fa-external-link-alt"></i></span></p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/technology/markdownNote/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/technology/technology/markdownNote/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -519,7 +951,7 @@ documentation<i class="fa fa-external-link-alt"></i></span></p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/technology/markdownNote/" class="post-title-link" itemprop="url">markdown语法和部分主题扩展</a>
+          <a href="/technology/technology/markdownNote/" class="post-title-link" itemprop="url">markdown语法和部分主题扩展</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1158,545 +1590,6 @@ POM 中配置。</p></li>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/language/en/word5/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="vkkkv's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | vkkkv's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/language/en/word5/" class="post-title-link" itemprop="url">word4</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-05-03 13:21:37" itemprop="dateCreated datePublished" datetime="2022-05-03T13:21:37+08:00">2022-05-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2024-08-02 23:27:24" itemprop="dateModified" datetime="2024-08-02T23:27:24+08:00">2024-08-02</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/english/" itemprop="url" rel="index"><span itemprop="name">english</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>171</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="word5">word5</h1>
-<table>
-<thead>
-<tr>
-<th>shrug my shoulders</th>
-<th>耸耸肩</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>insight</td>
-<td>洞察力</td>
-</tr>
-<tr>
-<td>insight into sth</td>
-<td>了解</td>
-</tr>
-<tr>
-<td>vanity</td>
-<td>虚荣/自大</td>
-</tr>
-<tr>
-<td>sth. occurs to sb.</td>
-<td>某人想到某事</td>
-</tr>
-<tr>
-<td>bring up</td>
-<td>抚养</td>
-</tr>
-<tr>
-<td>definite</td>
-<td>明确的</td>
-</tr>
-<tr>
-<td>reflection</td>
-<td>想法</td>
-</tr>
-<tr>
-<td>wrinkled</td>
-<td>皱纹</td>
-</tr>
-<tr>
-<td>in accordance with</td>
-<td>一致</td>
-</tr>
-<tr>
-<td>benign</td>
-<td>善良/良性</td>
-</tr>
-<tr>
-<td>malignant</td>
-<td>恶性</td>
-</tr>
-<tr>
-<td>mal-nutrition</td>
-<td>营养不良</td>
-</tr>
-<tr>
-<td>mal-practice</td>
-<td>玩忽职守</td>
-</tr>
-<tr>
-<td>uncanny</td>
-<td>离奇的</td>
-</tr>
-<tr>
-<td>stroke</td>
-<td>抚摸</td>
-</tr>
-<tr>
-<td>stick to</td>
-<td>坚持</td>
-</tr>
-<tr>
-<td>-one 's word</td>
-<td>遵守诺言</td>
-</tr>
-<tr>
-<td>-the point</td>
-<td>紧扣重点</td>
-</tr>
-<tr>
-<td>pawn</td>
-<td>典当</td>
-</tr>
-<tr>
-<td>is credited to</td>
-<td>归功于</td>
-</tr>
-<tr>
-<td>homicide</td>
-<td>杀人</td>
-</tr>
-<tr>
-<td>herbicide</td>
-<td>除草剂</td>
-</tr>
-<tr>
-<td>pesticide</td>
-<td>杀虫剂</td>
-</tr>
-<tr>
-<td>glimmer</td>
-<td>少许/模糊</td>
-</tr>
-<tr>
-<td>down and out</td>
-<td>穷困潦倒</td>
-</tr>
-<tr>
-<td>insane</td>
-<td>疯的/荒唐的</td>
-</tr>
-<tr>
-<td>drive at</td>
-<td>意指/要说</td>
-</tr>
-<tr>
-<td>tin(锡) gods</td>
-<td>外强中干的人</td>
-</tr>
-<tr>
-<td>creek</td>
-<td>小溪</td>
-</tr>
-<tr>
-<td>be taken aback</td>
-<td>吃一惊</td>
-</tr>
-<tr>
-<td>turn up</td>
-<td>出现/提高</td>
-</tr>
-<tr>
-<td>turn down</td>
-<td>降低/拒绝</td>
-</tr>
-<tr>
-<td>funk</td>
-<td>害怕</td>
-</tr>
-</tbody>
-</table>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/score/secret-base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="vkkkv's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | vkkkv's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/score/secret-base/" class="post-title-link" itemprop="url">secret-base</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-04-27 00:40:58" itemprop="dateCreated datePublished" datetime="2022-04-27T00:40:58+08:00">2022-04-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2024-08-03 11:48:28" itemprop="dateModified" datetime="2024-08-03T11:48:28+08:00">2024-08-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/score/" itemprop="url" rel="index"><span itemprop="name">score</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>712</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>3 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="secret-base">secret base</h1>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6#5#5#5#5#5</p>
-<p>#5#4#4#4#4#4#4 #4#1#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#6#6</p>
-<p>#5#6#5#4#4 #5#6#5#4#4</p>
-<p>#4#4#4#4#4#4#4 #4#3#1</p>
-<p>#1#4#4#4#4#4#4#4 #4#4#3#1</p>
-<p>#1#4#4#4#4#4#4#4 #5#1#1 (#6)#1(#6)#1#1#2#2</p>
-<p>#4#4#4#4#4#4#4 #4#3#1</p>
-<p>#1#4#4#4#4#4#4#4 #4#4#3#1</p>
-<p>#1#4#4#4#4#4#4#4 #5#1#1 #1(#6)#1#2#2</p>
-<p>#2 #2#1#2#3#3#3 #3#3#3 #3#4#4#4 #1#1(#6)#1#2#2</p>
-<p>#2 #2#1#2#3#3#3 #3#3#2 #3#4#4#4</p>
-<p>#5#6#5#4#2 #5#6#5#4#2</p>
-<p>#5#6#5#4#1#1(#6)#1#2#2</p>
-<p>#6#5#4#2 #5#6#5#4#2#2#5#4</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6#5#5#5#5#5</p>
-<p>#5#4#4#4#4#4 #4#4#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#6#6</p>
-<p>#1 #4 #5 #5#6#6#6#6#6#5#5#5#5 #5#4#4 #4#4#4#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#6#6</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6#5#5#5#5#5</p>
-<p>#5#4#4#4#4#4 #4#4#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#6#6</p>
-<p>#1 #4 #5 #5#6#6#6#6#6#5#5#5#5 #5#4#4 #4#4#4#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 [#1] #6#6#6#5#4#5#6#6</p>
-<p>#5#6#5#4#4 #5#6#5#4#4</p>
-<p>#5#6#5#4#4 #5#6#5#4#4</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6#5#5#5#5#5</p>
-<p>#5#4#4#3#3#4 #4#4#3#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#5#6</p>
-<p>#5#6#5#4#3#4 #5#6#5#4#4</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6#5#5#5#5#5</p>
-<p>#5#4#4#4#4#4 #4#4#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#6#6</p>
-<p>#1 #4 #5 #5#6#6#6#6#6#5#5#5#5 #5#4#4 #4#4#4#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#6#6</p>
-<p>#5#6#5#4#4 #5#6#5#4#4</p>
-<p>#2 #2#1#2#3#3#3 #3#3#3 #3#4#4#4 #1#1(#6)#1#2#2</p>
-<p>#2 #2#1#2#3#3#3 #3#3#2 #3#4#4#4</p>
-<p>#5#6#5#4#2 #5#6#5#4#2</p>
-<p>#5#6#5#4#1#1(#6)#1#2#2</p>
-<p>#6#5#4#2 #5#6#5#4#2#2#5#4</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6#5#5#5#5#5</p>
-<p>#5#4#4#4#4#4 #4#4#1#1</p>
-<p>#1 #4 #5 #5#6#6#6#6#6 #6[#1] #6#6#6#5#4#5#6#6</p>
-<p>#5#6#5#4#4 #5#6#5#4#4</p>
-<p>#5#4#3#2#2#1 #2#2#3#3#4 #5#4#3#2#3#1</p>
-<p>#1#1(#6)#1#2#2 #2 #2#1#2#3#3#3 #3#3#2 #3#4#4#4</p>
-<p>#6#5#4#5#6#6 #6#5#6#2 #5#6#5#4#2#2#5#4</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/score/flower/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="vkkkv's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | vkkkv's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/score/flower/" class="post-title-link" itemprop="url">flower-dance</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-04-21 21:15:50" itemprop="dateCreated datePublished" datetime="2022-04-21T21:15:50+08:00">2022-04-21</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2024-08-03 12:19:08" itemprop="dateModified" datetime="2024-08-03T12:19:08+08:00">2024-08-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/score/" itemprop="url" rel="index"><span itemprop="name">score</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>697</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>3 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="flower">flower</h1>
-<p>#2#1#5#1 #2#1(#5)#1 #2#1#5#1 #2#1(#5)#1</p>
-<p>#2#1#5#1 #2#1(#5)#1 #2#1#5#1 #2#1(#5)#1</p>
-<p>#2#1#5#1 #2#1(#5)#1 #2#1#5#1 #2#1(#5)#1</p>
-<p>#2#1#5#1 #2#1#5#1 #5[#1#2]</p>
-<p>#2 (#57)#2#1 #4 #1 #6#5 5#5 [#2]</p>
-<p>#5 [#2 #1 #1#2#1]#6#4#5</p>
-<p>#2#2 (#57)#2#1 #4 #15#5#6 #27#1#6(7)#5(#6)#4</p>
-<p>#5[#2#1#2] #5[#2#1#2] #5[#2#1#2] #5[#2#1#2]</p>
-<p>#5[#2]#7[#2] #5[#2]#7[#2] #5[#2]#7[#2] [[5～]]</p>
-<p>7#67[#1]#6#5#4 #2#4#5#4#5#67#43#2#1</p>
-<p>#2#43#2#13 #2#1(7)#2 #1(7#6#55#5#6)</p>
-<p>(7#67)#1(#6#5#4) (#2#4#5#4#5#67#43#2#1)</p>
-<p>(#2#43) 3#2#1(7)(#6) #2#1#23#2#1(7#6#5)#2(5)#2(#5)</p>
-<p>#2 (#57)#2#1#4 #1 #6#5 5#5[#2]</p>
-<p>#5[#2 #1 #1#2#1]#6#4#5</p>
-<p>#2#2 (#57)#2#1#4 #15#5 #6 #27#1#6(7)#5(#6)#4</p>
-<p>#5[#2#1#2] #5[#2#1#2] #5[#2#1#2] #5[#2#1#2]</p>
-<p>#5[#2]#7[#2] #5[#2]#7[#2] #5[#2]#7[#2] #5#2</p>
-<p>#2 (#57)#2#1#4 #1 #6#5 5#5[#2] #5[#2 #1 #1#2#1]#6#4#5</p>
-<p>#2#2 (#57)#2#1#4 #15#5 #6 #27#1#6(7)#5(#6)#4</p>
-<p>#5[#2#1#2] #5[#2#1#2] #5[#2#1#2] #5[#2#1#2]</p>
-<p>#5[#2]#7[#2] #5[#2]#7[#2] #5[#2]#7[#2] #5#2</p>
-<p>7#67[#1]#6#5#4 #2#4#5#4#5#67#43#2#1</p>
-<p>#2#43#2#13 #2#1(7)#2 #1(7#6#55#5#6)</p>
-<p>(7#67)#1(#6#5#4) (#2#4#5#4#5#67#43#2#1)</p>
-<p>(#2#43) 3#2#1(7)(#6) #2#1#23#2#1(7#6#5)#2(5)#2(#5)</p>
-<p>【#5(#57)#2 #5(7)#2#5 #6#1#2#5 #6#17#6</p>
-<p>#5(7)7(7) #6(7)#4(7)#5(7)#4(7)#2(7)#4(7)</p>
-<p>#5(#57)#2 #5(7)#2#5 #6#1#2#5</p>
-<p>#6#17#6 #5(7)7(7) [#1]#1[#2]#2[#1] 7</p>
-<p>#5#5(#57)#2 #5(7)#2#5 #6#1#2#5 #6#17#6</p>
-<p>#5(7)7(7) #6(7)#4(7)#5(7)#4(7)#2(7)#4(7)</p>
-<p>#5(#57)#2 #5(7)#2#5 #6#1#2#5 #6#17#6 #5 *3</p>
-<p>#5(#57)#2 #5(7)#2#5 #6#1#2#5 #6#17#6</p>
-<p>#5(7)7(7) #6(7)#4(7)#5(7)#4(7)#2(7)#4(7)</p>
-<p>#5(#57)#2 #5(7)#2#5 #6#1#2#5 #6#17#6</p>
-<p>#5(7)7(7) [#1]#1[#2]#2[#2]#2[#2]#2[#4]#4</p>
-<p>[#5]#57[#2] [#5]7[#2#5] [#6#1#2#5 #6#17#6]</p>
-<p>[#5]7[7]7 [#6]7[#4]7[#5]7[#4]7[#2]7[#4]7</p>
-<p>[#5]#57[#2] [#5]7[#2#5] [#6#1#2#5 #6#17#6#5]】</p>
-<p>#1#27#6#5#65 7#67[#1]#6#5#4 #2#4#5#4#57#43#2</p>
-<p>#2#43#2#13 #2#1(7)#2 #1(7#6#55#5#6)</p>
-<p>(7#67)#1(#6#5#4) (#2#4#5#4#57#43#2)</p>
-<p>(#2#43#2#13) (#2#1(7)#2) (#1(7#6#5#5))</p>
-<p>7#67[#1]#6#5#4 #2#4#5#4#57#43#2</p>
-<p>#2#43#2#13 #2#1(7)#2 #1(7#6#55#6)</p>
-<p>(7#67)#1(#6#5#4) (#2#4#5#4#57#43#2)</p>
-<p>(#2#43#2#13) (#2#1(7)#2) (#1(7#6#5#5))</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
     <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
@@ -1738,13 +1631,13 @@ POM 中配置。</p></li>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">13k</span>
+    <span title="Word count total">14k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">47 mins.</span>
+    <span title="Reading time total">50 mins.</span>
   </span>
 </div>
 <div class="busuanzi-count">
