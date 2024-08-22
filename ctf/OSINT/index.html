@@ -687,13 +687,155 @@ document.addEventListener('DOMContentLoaded', () => {
   data-server="netease" 
   data-type="playlist" 
   data-fixed="true" 
-  data-autoplay="true" 
+  data-autoplay="false" 
   data-order="list" 
   data-volume="0.4" 
   data-theme="#cc543a" 
   data-preload="auto" >
   </div>
 <!--如果将本体放在body里面导致页面加载出现问题，请尝试放到body体后面-->
+
+
+<style>
+.cursor1, .cursor2 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+.cursor1 {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.cursor2 {
+    width: 10px;
+    height: 10px;
+    font-size: 10px;
+}
+</style>
+
+<script>
+if (document.getElementById && !document.layers) {
+    const dCol = '#98c379', fCol = '#61afef', sCol = '#e06c75', mCol = '#c678dd', hCol = '#56b6c2';
+    const del = 0.75, ref = 60;
+    const isIE = typeof window.innerWidth !== 'number';
+    const docEl = document.compatMode.includes("CSS") ? document.documentElement : document.body;
+    const days = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+    const months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+    const now = new Date();
+    const year = now.getFullYear();
+    const dateStr = `•${year}年•${months[now.getMonth()]}•${now.getDate()}日•${days[now.getDay()]}`;
+    const D = dateStr.split("");
+    const N = '3 4 5 6 7 8 9 10 11 12 1 2'.split(" ");
+    const H = '...'.split(""), M = '....'.split(""), S = '.....'.split("");
+    const siz = 40, eqf = 360 / N.length, eqd = 360 / D.length, han = siz / 5.5, ofy = -7, ofx = -3, ofst = 70;
+    let timer = null, visible = true, mouseY = 0, mouseX = 0;
+    const dy = Array(D.length + N.length + H.length + M.length + S.length + 1).fill(0);
+    const dx = Array(dy.length).fill(0), zy = Array(dy.length).fill(0), zx = Array(dy.length).fill(0);
+    const tmpd = [], tmpf = [], tmph = [], tmpm = [], tmps = [];
+    const align = D.map(d => (parseInt(d) || d == 0) ? 10 : 9);
+
+    D.forEach((d, i) => {
+        document.write(`<div id="_date${i}" class="cursor2" style="font-size:${align[i]}px;color:${dCol}">${d}</div>`);
+        tmpd[i] = document.getElementById(`_date${i}`).style;
+    });
+    N.forEach((n, i) => {
+        document.write(`<div id="_face${i}" class="cursor2" style="color:${fCol}">${n}</div>`);
+        tmpf[i] = document.getElementById(`_face${i}`).style;
+    });
+    H.forEach((h, i) => {
+        document.write(`<div id="_hours${i}" class="cursor1" style="color:${hCol}">${h}</div>`);
+        tmph[i] = document.getElementById(`_hours${i}`).style;
+    });
+    M.forEach((m, i) => {
+        document.write(`<div id="_minutes${i}" class="cursor1" style="color:${mCol}">${m}</div>`);
+        tmpm[i] = document.getElementById(`_minutes${i}`).style;
+    });
+    S.forEach((s, i) => {
+        document.write(`<div id="_seconds${i}" class="cursor1" style="color:${sCol}">${s}</div>`);
+        tmps[i] = document.getElementById(`_seconds${i}`).style;
+    });
+
+    function toggleVisibility() {
+        visible = !visible;
+        document.getElementById("control").value = visible ? "Clock Off" : "Clock On";
+        if (visible) delay();
+    }
+
+    function mouseMove(e) {
+        const scrollY = isIE ? docEl.scrollTop : window.pageYOffset;
+        e = e || window.event;
+        mouseY = e.pageY + ofst - scrollY;
+        mouseX = e.pageX + ofst;
+    }
+
+    document.onmousemove = mouseMove;
+
+    function getWindowDims() {
+        const winH = isIE ? docEl.clientHeight : window.innerHeight;
+        const winW = isIE ? docEl.clientWidth : window.innerWidth;
+        return { winH, winW };
+    }
+
+    function updatePositions() {
+        const { winH, winW } = getWindowDims();
+        const time = new Date();
+        const secs = time.getSeconds();
+        const sec = Math.PI * (secs - 15) / 30;
+        const mins = time.getMinutes();
+        const min = Math.PI * (mins - 15) / 30;
+        const hrs = time.getHours();
+        const hr = Math.PI * (hrs - 3) / 6 + Math.PI * mins / 360;
+
+        S.forEach((s, i) => {
+            tmps[i].top = `${dy[D.length + N.length + H.length + M.length + i] + ofy + (i * han) * Math.sin(sec)}px`;
+            tmps[i].left = `${dx[D.length + N.length + H.length + M.length + i] + ofx + (i * han) * Math.cos(sec)}px`;
+        });
+        M.forEach((m, i) => {
+            tmpm[i].top = `${dy[D.length + N.length + H.length + i] + ofy + (i * han) * Math.sin(min)}px`;
+            tmpm[i].left = `${dx[D.length + N.length + H.length + i] + ofx + (i * han) * Math.cos(min)}px`;
+        });
+        H.forEach((h, i) => {
+            tmph[i].top = `${dy[D.length + N.length + i] + ofy + (i * han) * Math.sin(hr)}px`;
+            tmph[i].left = `${dx[D.length + N.length + i] + ofx + (i * han) * Math.cos(hr)}px`;
+        });
+        N.forEach((n, i) => {
+            tmpf[i].top = `${dy[D.length + i] + siz * Math.sin(i * eqf * Math.PI / 180)}px`;
+            tmpf[i].left = `${dx[D.length + i] + siz * Math.cos(i * eqf * Math.PI / 180)}px`;
+        });
+        D.forEach((d, i) => {
+            tmpd[i].top = `${dy[i] + siz * 1.5 * Math.sin(-sec + i * eqd * Math.PI / 180)}px`;
+            tmpd[i].left = `${dx[i] + siz * 1.5 * Math.cos(-sec + i * eqd * Math.PI / 180)}px`;
+        });
+
+        if (!visible) clearTimeout(timer);
+    }
+
+    function delay() {
+        const { winH } = getWindowDims();
+        const scrollY = isIE ? docEl.scrollTop : window.pageYOffset;
+        zy[0] = Math.round(dy[0] += (mouseY - dy[0]) * del);
+        zx[0] = Math.round(dx[0] += (mouseX - dx[0]) * del);
+
+        for (let i = 1; i < dy.length; i++) {
+            zy[i] = Math.round(dy[i] += (zy[i - 1] - dy[i]) * del);
+            zx[i] = Math.round(dx[i] += (zx[i - 1] - dx[i]) * del);
+            if (dy[i - 1] >= winH - 80) dy[i - 1] = winH - 80;
+            if (dx[i - 1] >= getWindowDims().winW - 80) dx[i - 1] = getWindowDims().winW - 80;
+        }
+
+        timer = setTimeout(delay, ref);
+        updatePositions();
+    }
+
+    window.onload = delay;
+}
+</script>
 
 </body>
 </html>
