@@ -590,32 +590,21 @@ p.spoiler-hover-container {
 <script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"vkkkv","repo":"Gitalk-comments","client_id":"Ov23liHHcW9X9fNucHfM","client_secret":"f70b1cfa789bb3efe479be8ae523bc914932e8a0","admin_user":"vkkkv","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":null,"js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js","integrity":"sha256-MVK9MGD/XJaGyIghSVrONSnoXoGh3IFxLw0zfvzpxR4="},"path_md5":"609896c34867802e8da1e65aa9b5c37e"}</script>
 <script src="/js/third-party/comments/gitalk.js" defer></script>
 <style>
-  /**
-   * Mouse Stalker (Custom Cursor) - Arch Edition (Light Theme Patch)
-   */
   :root {
-      --my-brand-color: #ff6b6b;
+    --my-brand-color: #ff6b6b;
     --my-brand-rgb: 255, 107, 107;
-
-    /* Hover 状态 - 稍微变亮，接近白色或高亮红 */
     --my-hover-color: #ffcccc;
     --my-hover-rgb: 255, 204, 204;
-
     --cursor-size: 30px;
   }
 
-  /* 1. Global Cursor Hiding */
-  body,
-  a,
-  button,
-  input,
-  textarea,
-  .copy-btn {
-    cursor: none !important;
-  }
-
-  /* 2. The Stalker */
   @media (any-hover: hover) {
+    /* 1. Global Cursor Hiding */
+    body, a, button, input, textarea, .copy-btn {
+      cursor: none;
+    }
+
+    /* 2. The Stalker */
     #mouse_stalker {
       pointer-events: none;
       position: fixed;
@@ -623,27 +612,20 @@ p.spoiler-hover-container {
       left: 0;
       width: var(--cursor-size);
       height: var(--cursor-size);
-
       background: rgba(var(--my-brand-rgb), 0.85);
       border: 4px solid var(--my-brand-color);
-
       border-radius: 50%;
       z-index: 99999;
-
       opacity: 0;
-      transform: translate(-100px, -100px);
-
       will-change: transform;
-      transform-origin: center center;
-      transition:
+      transform: translate3d(-100px, -100px, 0);
+      mix-blend-mode: difference;
+      transition: 
         background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        border-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
         border-width 0.1s ease;
-
-        mix-blend-mode: difference;
     }
 
-    /* 中心准心 */
     #mouse_stalker::after {
       content: "";
       position: absolute;
@@ -655,7 +637,6 @@ p.spoiler-hover-container {
       background-color: var(--my-brand-color);
       border-radius: 50%;
       box-shadow: 0 0 8px rgba(255, 255, 255, 1);
-      z-index: 10;
     }
 
     /* 3. Hover State */
@@ -665,7 +646,7 @@ p.spoiler-hover-container {
       border-width: 8px;
     }
 
-    #mouse_stalker.stalker_cursor_pointer:before {
+    #mouse_stalker.stalker_cursor_pointer::before {
       content: "";
       position: absolute;
       top: 50%;
@@ -678,230 +659,165 @@ p.spoiler-hover-container {
       animation: stalker_appeal 2s ease-out infinite;
     }
 
-    @keyframes stalker_appeal {
-      0% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(2.5);
-      }
+    #mouse_stalker.is_clicked {
+      background: rgba(255, 0, 0, 0.4);
+      border-color: var(--my-brand-color);
+      border-width: 3px;
     }
   }
 
-  #mouse_stalker.is_clicked {
-    background: rgba(255, 0, 0, 0.4) !important;
-    border-color: var(--click-color) !important;
-    border-width: 3px !important;
+  @keyframes stalker_appeal {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
   }
 
   @media (any-hover: none) {
-    #mouse_stalker {
-      display: none;
-    }
+    #mouse_stalker { display: none; }
   }
 </style>
 
 <div id="mouse_stalker"></div>
 
 <script>
-  (function () {
-    const stalker = document.getElementById("mouse_stalker");
-    if (!window.matchMedia("(any-hover: hover)").matches || !stalker) return;
+(() => {
+  const stalker = document.getElementById('mouse_stalker');
+  if (!window.matchMedia('(any-hover: hover)').matches || !stalker) return;
 
-    const config = {
-      smooth: 0.5,
-      scaleSmooth: 0.15,
-      baseScale: 1,
-      hoverScale: 1.8,
-      clickScale: 0.7,
-      offset: 15,
-      stretchFactor: 0.04,
-      maxStretch: 0.2,
-      // Magnetic Force
-      // 0.1 = Weak pull, 0.8 = Strong snap
-      // 0.35 is the sweet spot for UI elements
-      stickiness: 0.6,
-    };
+  const CONFIG = {
+    smooth: 0.2, 
+    scaleSmooth: 0.15,
+    baseScale: 1,
+    hoverScale: 1.8,
+    offset: 15,
+    stretchFactor: 0.04,
+    maxStretch: 0.2,
+    stickiness: 0.6,
+    hoverSelectors: 'a, button, .toggle, #exturl, #post-title, .article-title, .nav-link, .copy-btn'
+  };
 
-    let mouse = { x: -100, y: -100 }; // The target position for the circle
-    let rawMouse = { x: -100, y: -100 }; // The ACTUAL mouse position
-    let circle = { x: -100, y: -100, scale: 1, angle: 0 };
-    let prevCircle = { x: -100, y: -100 };
+  let state = {
+    mouse: { x: -100, y: -100 },
+    circle: { x: -100, y: -100, scale: 1 },
+    prevCircle: { x: -100, y: -100 },
+    target: null, // Cached document-relative center {cx, cy}
+    isHovering: false,
+    isClicked: false,
+    isVisible: false
+  };
 
-    let targetRect = null;
+  const lerp = (a, b, n) => (1 - n) * a + n * b;
 
-    let activeTarget = null; // Currently hovered element (DOM Node)
-    let isHovering = false;
-    let isClicked = false;
-    let firstMove = true;
-
-    const hoverSelectors =
-      "a, button, .toggle, #exturl, #post-title, .article-title, .nav-link, .copy-btn";
-
-    const resetStalker = () => {
-      activeTarget = null;
-      isHovering = false;
-      stalker.classList.remove("stalker_cursor_pointer");
-      stalker.classList.remove("is_clicked");
-    };
-
-    window.addEventListener("click", (e) => {
-      const target = e.target.closest("a, button");
-      if (target) {
-        resetStalker();
-      }
-    });
-
-    document.addEventListener("pjax:send", resetStalker); // PJAX 开始时
-    document.addEventListener("pjax:complete", resetStalker); // PJAX 完成时
-    window.addEventListener("popstate", resetStalker); // 浏览器的后退/前进按钮
-
-    // Utility: Linear Interpolation
-    const lerp = (start, end, factor) => start + (end - start) * factor;
-
-    window.addEventListener(
-      "mousemove",
-      (e) => {
-        rawMouse.x = e.clientX;
-        rawMouse.y = e.clientY;
-
-        if (firstMove) {
-          circle.x = mouse.x;
-          circle.y = mouse.y;
-          prevCircle.x = mouse.x;
-          prevCircle.y = mouse.y;
-          stalker.style.opacity = 1;
-          firstMove = false;
-        }
-
-        // --- Magnetic Pull Effect Logic ---
-        if (!activeTarget) {
-          // Case 1: Free roaming - follow the mouse exactly
-          mouse.x = rawMouse.x;
-          mouse.y = rawMouse.y;
-        } else {
-          // Case 2: Magnetic Snapping
-          // Calculate center of the target element
-          const rect = activeTarget.getBoundingClientRect();
-
-          // Determine snap point (Center for most, Left for Audio players?)
-          const targetX =
-            activeTarget.tagName === "AUDIO"
-              ? rect.left + 20
-              : rect.left + rect.width / 2;
-          const targetY = rect.top + rect.height / 2;
-
-          // Apply Magnetic Interpolation
-          // Instead of going straight to the center, we blend the mouse pos and center
-          mouse.x = lerp(rawMouse.x, targetX, config.stickiness);
-          mouse.y = lerp(rawMouse.y, targetY, config.stickiness);
-        }
-      },
-      { passive: true },
-    );
-
-    // Click Detection (Tactile Feedback Input)
-    window.addEventListener("mousedown", () => {
-      isClicked = true;
-      stalker.classList.add("is_clicked");
-    });
-
-    window.addEventListener("mouseup", () => {
-      isClicked = false;
-      stalker.classList.remove("is_clicked");
-    });
-
-    window.addEventListener(
-      "mouseover",
-      (e) => {
-        const target = e.target.closest(hoverSelectors);
-        if (target) {
-          activeTarget = target; // Lock onto the target
-          targetRect = activeTarget.getBoundingClientRect();
-          isHovering = true;
-          stalker.classList.add("stalker_cursor_pointer");
-        }
-      },
-      { passive: true },
-    );
-
-    window.addEventListener(
-      "mouseout",
-      (e) => {
-        // Only release if we are leaving the currently active target
-        const target = e.target.closest(hoverSelectors);
-        if (target === activeTarget) {
-          activeTarget = null; // Release lock
-          targetRect = null; // 清空缓存
-          isHovering = false;
-          stalker.classList.remove("stalker_cursor_pointer");
-        }
-      },
-      { passive: true },
-    );
-
-    window.addEventListener(
-      "scroll",
-      () => {
-        if (activeTarget) {
-          targetRect = activeTarget.getBoundingClientRect();
-        }
-      },
-      { passive: true },
-    );
-
-    function animate() {
-      circle.x = lerp(circle.x, mouse.x, config.smooth);
-      circle.y = lerp(circle.y, mouse.y, config.smooth);
-
-      const dx = circle.x - prevCircle.x;
-      const dy = circle.y - prevCircle.y;
-      const speed = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx);
-
-      const stretch = Math.min(speed * config.stretchFactor, config.maxStretch);
-      const scaleX = 1 + stretch;
-      const scaleY = 1 - stretch;
-
-      const targetBaseScale = isHovering ? config.hoverScale : config.baseScale;
-      circle.scale = lerp(circle.scale, targetBaseScale, config.scaleSmooth);
-
-      stalker.style.transform = `
-      translate3d(${circle.x - config.offset}px, ${circle.y - config.offset}px, 0)
-      rotate(${angle}rad)
-      scale(${scaleX * circle.scale}, ${scaleY * circle.scale})
-    `;
-      prevCircle.x = circle.x;
-      prevCircle.y = circle.y;
-      requestAnimationFrame(animate);
+  const handleMouseMove = (e) => {
+    state.mouse.x = e.clientX;
+    state.mouse.y = e.clientY;
+    
+    if (!state.isVisible) {
+      state.circle.x = state.prevCircle.x = state.mouse.x;
+      state.circle.y = state.prevCircle.y = state.mouse.y;
+      stalker.style.opacity = 1;
+      state.isVisible = true;
     }
-    animate();
-  })();
+  };
+
+  const handleMouseOver = (e) => {
+    const el = e.target.closest(CONFIG.hoverSelectors);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      // Cache absolute document position to avoid getBoundingClientRect in loop/scroll
+      state.target = {
+        cx: r.left + r.width / 2 + window.scrollX,
+        cy: r.top + r.height / 2 + window.scrollY
+      };
+      state.isHovering = true;
+      stalker.classList.add('stalker_cursor_pointer');
+    }
+  };
+
+  const handleMouseOut = (e) => {
+    if (e.target.closest(CONFIG.hoverSelectors)) {
+      state.target = null;
+      state.isHovering = false;
+      stalker.classList.remove('stalker_cursor_pointer');
+    }
+  };
+
+  const resetStalker = () => {
+    state.target = null;
+    state.isHovering = false;
+    state.isClicked = false;
+    stalker.className = '';
+  };
+
+  window.addEventListener('mousemove', handleMouseMove, { passive: true });
+  window.addEventListener('mouseover', handleMouseOver, { passive: true });
+  window.addEventListener('mouseout', handleMouseOut, { passive: true });
+  window.addEventListener('mousedown', () => { state.isClicked = true; stalker.classList.add('is_clicked'); }, { passive: true });
+  window.addEventListener('mouseup', () => { state.isClicked = false; stalker.classList.remove('is_clicked'); }, { passive: true });
+  
+  ['pjax:send', 'pjax:complete', 'popstate'].forEach(ev => 
+    document.addEventListener(ev, resetStalker, { passive: true })
+  );
+
+  const tick = () => {
+    // Calculate target position with magnetic pull if hovering
+    const tx = state.target ? lerp(state.mouse.x, state.target.cx - window.scrollX, CONFIG.stickiness) : state.mouse.x;
+    const ty = state.target ? lerp(state.mouse.y, state.target.cy - window.scrollY, CONFIG.stickiness) : state.mouse.y;
+
+    state.circle.x = lerp(state.circle.x, tx, CONFIG.smooth);
+    state.circle.y = lerp(state.circle.y, ty, CONFIG.smooth);
+
+    const dx = state.circle.x - state.prevCircle.x;
+    const dy = state.circle.y - state.prevCircle.y;
+    const speed = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+
+    const stretch = Math.min(speed * CONFIG.stretchFactor, CONFIG.maxStretch);
+    const targetScale = state.isHovering ? CONFIG.hoverScale : CONFIG.baseScale;
+    state.circle.scale = lerp(state.circle.scale, targetScale, CONFIG.scaleSmooth);
+
+    stalker.style.transform = `translate3d(${state.circle.x - CONFIG.offset}px, ${state.circle.y - CONFIG.offset}px, 0) rotate(${angle}rad) scale(${(1 + stretch) * state.circle.scale}, ${(1 - stretch) * state.circle.scale})`;
+
+    state.prevCircle.x = state.circle.x;
+    state.prevCircle.y = state.circle.y;
+    
+    requestAnimationFrame(tick);
+  };
+
+  requestAnimationFrame(tick);
+})();
 </script>
 
-<!-- https://cdn.jsdelivr.net/npm/sakana-widget@2.7.1/lib/sakana.min.css -->
-<!-- https://cdn.jsdelivr.net/npm/sakana-widget@2.7.1/lib/sakana.min.js -->
-<!-- https://cdnjs.cloudflare.com/ajax/libs/sakana-widget/2.7.1/sakana.min.css -->
-<!-- https://cdnjs.cloudflare.com/ajax/libs/sakana-widget/2.7.1/sakana.min.js -->
+<div id="sakana-widget" style="position: fixed; bottom: 0; right: 20px; z-index: 999"></div>
 
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/sakana-widget@2.7.1/lib/sakana.min.css"
-/>
-<div id="sakana-widget" style="position: fixed; bottom: 0px; right: 20px"></div>
 <script>
-  function initSakanaWidget() {
-    new SakanaWidget().mount("#sakana-widget");
-  }
-</script>
-<script
-  async
-  onload="initSakanaWidget()"
-  src="https://cdn.jsdelivr.net/npm/sakana-widget@2.7.1/lib/sakana.min.js"
-></script>
-<div id="sakana-widget" style="position: fixed; bottom: 0px; left: 0px"></div>
+(() => {
+  const loadSakana = () => {
+    if (document.getElementById('sakana-script')) return;
 
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/sakana-widget@2.7.1/lib/sakana.min.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.id = 'sakana-script';
+    script.src = 'https://cdn.jsdelivr.net/npm/sakana-widget@2.7.1/lib/sakana.min.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.SakanaWidget) new SakanaWidget().mount("#sakana-widget");
+    };
+    document.body.appendChild(script);
+  };
+
+  // Lazy load strategy: wait for idle or timeout to avoid blocking FCP
+  if (document.readyState === 'complete') {
+    setTimeout(loadSakana, 2000);
+  } else {
+    window.addEventListener('load', () => {
+      'requestIdleCallback' in window ? requestIdleCallback(() => loadSakana()) : setTimeout(loadSakana, 1000);
+    });
+  }
+})();
+</script>
 </body>
 </html>
