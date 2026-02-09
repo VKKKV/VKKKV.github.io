@@ -742,10 +742,15 @@ SOCKS 或 HTTP 代理连接到网络。由于 <code>proxychains</code>
     let circle = { x: -100, y: -100, scale: 1, angle: 0 };
     let prevCircle = { x: -100, y: -100 };
 
+    let targetRect = null;
+
     let activeTarget = null; // Currently hovered element (DOM Node)
     let isHovering = false;
     let isClicked = false;
     let firstMove = true;
+
+    const hoverSelectors =
+      "a, button, .toggle, #exturl, #post-title, .article-title, .nav-link, .copy-btn";
 
     const resetStalker = () => {
       activeTarget = null;
@@ -768,42 +773,46 @@ SOCKS 或 HTTP 代理连接到网络。由于 <code>proxychains</code>
     // Utility: Linear Interpolation
     const lerp = (start, end, factor) => start + (end - start) * factor;
 
-    window.addEventListener("mousemove", (e) => {
-      rawMouse.x = e.clientX;
-      rawMouse.y = e.clientY;
+    window.addEventListener(
+      "mousemove",
+      (e) => {
+        rawMouse.x = e.clientX;
+        rawMouse.y = e.clientY;
 
-      if (firstMove) {
-        circle.x = mouse.x;
-        circle.y = mouse.y;
-        prevCircle.x = mouse.x;
-        prevCircle.y = mouse.y;
-        stalker.style.opacity = 1;
-        firstMove = false;
-      }
+        if (firstMove) {
+          circle.x = mouse.x;
+          circle.y = mouse.y;
+          prevCircle.x = mouse.x;
+          prevCircle.y = mouse.y;
+          stalker.style.opacity = 1;
+          firstMove = false;
+        }
 
-      // --- Magnetic Pull Effect Logic ---
-      if (!activeTarget) {
-        // Case 1: Free roaming - follow the mouse exactly
-        mouse.x = rawMouse.x;
-        mouse.y = rawMouse.y;
-      } else {
-        // Case 2: Magnetic Snapping
-        // Calculate center of the target element
-        const rect = activeTarget.getBoundingClientRect();
+        // --- Magnetic Pull Effect Logic ---
+        if (!activeTarget) {
+          // Case 1: Free roaming - follow the mouse exactly
+          mouse.x = rawMouse.x;
+          mouse.y = rawMouse.y;
+        } else {
+          // Case 2: Magnetic Snapping
+          // Calculate center of the target element
+          const rect = activeTarget.getBoundingClientRect();
 
-        // Determine snap point (Center for most, Left for Audio players?)
-        const targetX =
-          activeTarget.tagName === "AUDIO"
-            ? rect.left + 20
-            : rect.left + rect.width / 2;
-        const targetY = rect.top + rect.height / 2;
+          // Determine snap point (Center for most, Left for Audio players?)
+          const targetX =
+            activeTarget.tagName === "AUDIO"
+              ? rect.left + 20
+              : rect.left + rect.width / 2;
+          const targetY = rect.top + rect.height / 2;
 
-        // Apply Magnetic Interpolation
-        // Instead of going straight to the center, we blend the mouse pos and center
-        mouse.x = lerp(rawMouse.x, targetX, config.stickiness);
-        mouse.y = lerp(rawMouse.y, targetY, config.stickiness);
-      }
-    });
+          // Apply Magnetic Interpolation
+          // Instead of going straight to the center, we blend the mouse pos and center
+          mouse.x = lerp(rawMouse.x, targetX, config.stickiness);
+          mouse.y = lerp(rawMouse.y, targetY, config.stickiness);
+        }
+      },
+      { passive: true },
+    );
 
     // Click Detection (Tactile Feedback Input)
     window.addEventListener("mousedown", () => {
@@ -816,25 +825,44 @@ SOCKS 或 HTTP 代理连接到网络。由于 <code>proxychains</code>
       stalker.classList.remove("is_clicked");
     });
 
-    const hoverSelectors =
-      "a, button, .toggle, #exturl, #post-title, .article-title, .nav-link, .copy-btn";
+    window.addEventListener(
+      "mouseover",
+      (e) => {
+        const target = e.target.closest(hoverSelectors);
+        if (target) {
+          activeTarget = target; // Lock onto the target
+          targetRect = activeTarget.getBoundingClientRect();
+          isHovering = true;
+          stalker.classList.add("stalker_cursor_pointer");
+        }
+      },
+      { passive: true },
+    );
 
-    window.addEventListener("mouseover", (e) => {
-      const target = e.target.closest(hoverSelectors);
-      if (target) {
-        activeTarget = target; // Lock onto the target
-        stalker.classList.add("stalker_cursor_pointer");
-      }
-    });
+    window.addEventListener(
+      "mouseout",
+      (e) => {
+        // Only release if we are leaving the currently active target
+        const target = e.target.closest(hoverSelectors);
+        if (target === activeTarget) {
+          activeTarget = null; // Release lock
+          targetRect = null; // 清空缓存
+          isHovering = false;
+          stalker.classList.remove("stalker_cursor_pointer");
+        }
+      },
+      { passive: true },
+    );
 
-    window.addEventListener("mouseout", (e) => {
-      // Only release if we are leaving the currently active target
-      const target = e.target.closest(hoverSelectors);
-      if (target === activeTarget) {
-        activeTarget = null; // Release lock
-        stalker.classList.remove("stalker_cursor_pointer");
-      }
-    });
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (activeTarget) {
+          targetRect = activeTarget.getBoundingClientRect();
+        }
+      },
+      { passive: true },
+    );
 
     function animate() {
       circle.x = lerp(circle.x, mouse.x, config.smooth);
