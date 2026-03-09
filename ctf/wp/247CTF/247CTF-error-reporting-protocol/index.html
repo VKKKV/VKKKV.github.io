@@ -23,12 +23,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/gruvbox-light-medium","dark":"base16/gruvbox-dark-medium"},"prism":{"light":"prism-gruvbox-light","dark":"prism-gruvbox-dark"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":true,"color":"#fd960e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Identify the flag hidden within error messages of ICMP traffic captured in a PCAP file. VulnerabilityICMP packets (ping replies) can carry data in their payload. The flag is exfiltrated through ICMP e">
+    <meta name="description" content="Identify the flag hidden within error messages of ICMP traffic captured in a PCAP file. Vulnerability ICMP packets (ping replies) can carry data in their payload. The flag is exfiltrated through ICMP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="247CTF - Error Reporting Protocol">
 <meta property="og:url" content="https://vkkkv.github.io/ctf/wp/247CTF/247CTF-error-reporting-protocol/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Identify the flag hidden within error messages of ICMP traffic captured in a PCAP file. VulnerabilityICMP packets (ping replies) can carry data in their payload. The flag is exfiltrated through ICMP e">
+<meta property="og:description" content="Identify the flag hidden within error messages of ICMP traffic captured in a PCAP file. Vulnerability ICMP packets (ping replies) can carry data in their payload. The flag is exfiltrated through ICMP">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-02-26T14:40:39.000Z">
 <meta property="article:modified_time" content="2026-03-06T06:01:32.592Z">
@@ -220,7 +220,7 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Vulnerability"><span class="nav-number">1.</span> <span class="nav-text">Vulnerability</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#vulnerability"><span class="nav-number">1.</span> <span class="nav-text">Vulnerability</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -361,10 +361,14 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>Identify the flag hidden within error messages of ICMP traffic captured in a PCAP file.</p>
-<h2 id="Vulnerability"><a href="#Vulnerability" class="headerlink" title="Vulnerability"></a>Vulnerability</h2><p>ICMP packets (ping replies) can carry data in their payload. The flag is exfiltrated through ICMP echo replies. ICMP is often overlooked as a potential data exfiltration channel.</p>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> rdpcap</span><br><span class="line"><span class="keyword">from</span> scapy.layers.inet <span class="keyword">import</span> ICMP</span><br><span class="line"></span><br><span class="line">packets = rdpcap(<span class="string">&quot;error_reporting.pcap&quot;</span>)</span><br><span class="line">flag = <span class="string">b&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> p <span class="keyword">in</span> packets:</span><br><span class="line">    <span class="comment"># ICMP type 0 = Echo Reply (responses to ping requests)</span></span><br><span class="line">    <span class="keyword">if</span> p.haslayer(ICMP) <span class="keyword">and</span> p[ICMP].<span class="built_in">type</span> == <span class="number">0</span> <span class="keyword">and</span> p.haslayer(<span class="string">&quot;Raw&quot;</span>):</span><br><span class="line">        flag += p[<span class="string">&quot;Raw&quot;</span>].load</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;flag.jpg&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(flag)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[+] Extracted data saved to flag.jpg&quot;</span>)</span><br></pre></td></tr></table></figure>
-
+    <div class="post-body" itemprop="articleBody"><p>Identify the flag hidden within error messages of ICMP traffic
+captured in a PCAP file.</p>
+<h2 id="vulnerability">Vulnerability</h2>
+<p>ICMP packets (ping replies) can carry data in their payload. The flag
+is exfiltrated through ICMP echo replies. ICMP is often overlooked as a
+potential data exfiltration channel.</p>
+<h2 id="solution">Solution</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> rdpcap</span><br><span class="line"><span class="keyword">from</span> scapy.layers.inet <span class="keyword">import</span> ICMP</span><br><span class="line"></span><br><span class="line">packets = rdpcap(<span class="string">&quot;error_reporting.pcap&quot;</span>)</span><br><span class="line">flag = <span class="string">b&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> p <span class="keyword">in</span> packets:</span><br><span class="line">    <span class="comment"># ICMP type 0 = Echo Reply (responses to ping requests)</span></span><br><span class="line">    <span class="keyword">if</span> p.haslayer(ICMP) <span class="keyword">and</span> p[ICMP].<span class="built_in">type</span> == <span class="number">0</span> <span class="keyword">and</span> p.haslayer(<span class="string">&quot;Raw&quot;</span>):</span><br><span class="line">        flag += p[<span class="string">&quot;Raw&quot;</span>].load</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;flag.jpg&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(flag)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[+] Extracted data saved to flag.jpg&quot;</span>)</span><br></pre></td></tr></table></figure>
 <p>The extracted data is a JPG image containing the flag.</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{580e6d627470448064fa7bffd6284ddf}</span></span>
 
@@ -427,13 +431,13 @@ p.spoiler {
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/ctf/wp/247CTF/247CTF-hidden-painting/" rel="prev" title="247CTF - Hidden Painting">
-                  <i class="fa fa-angle-left"></i> 247CTF - Hidden Painting
+                <a href="/ctf/wp/247CTF/247CTF-sensitive-server-memory/" rel="prev" title="247CTF - Sensitive Server Memory">
+                  <i class="fa fa-angle-left"></i> 247CTF - Sensitive Server Memory
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/ctf/wp/247CTF/247CTF-an-impossible-number/" rel="next" title="247CTF - An Impossible Number">
-                  247CTF - An Impossible Number <i class="fa fa-angle-right"></i>
+                <a href="/ctf/wp/247CTF/247CTF-hidden-painting/" rel="next" title="247CTF - Hidden Painting">
+                  247CTF - Hidden Painting <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>

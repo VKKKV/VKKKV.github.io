@@ -220,7 +220,9 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Vulnerability-Analysis-Why-%E2%80%9CZeros%E2%80%9D"><span class="nav-number">1.</span> <span class="nav-text">Vulnerability Analysis: Why “Zeros”?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#The-WPA2-4-way-Handshake-PTK"><span class="nav-number">1.1.</span> <span class="nav-text">The WPA2 4-way Handshake &amp; PTK</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Decryption-Methods"><span class="nav-number">2.</span> <span class="nav-text">Decryption Methods</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Method-1-Wireshark-GUI"><span class="nav-number">2.1.</span> <span class="nav-text">Method 1: Wireshark GUI</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Method-2-Scapy-Script-CLI"><span class="nav-number">2.2.</span> <span class="nav-text">Method 2: Scapy Script (CLI)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flag"><span class="nav-number">3.</span> <span class="nav-text">Flag</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#vulnerability-analysis-why-zeros"><span class="nav-number">1.</span> <span class="nav-text">Vulnerability Analysis: Why
+“Zeros”?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#the-wpa2-4-way-handshake-ptk"><span class="nav-number">1.1.</span> <span class="nav-text">The WPA2 4-way Handshake &amp;
+PTK</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#decryption-methods"><span class="nav-number">2.</span> <span class="nav-text">Decryption Methods</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#method-1-wireshark-gui"><span class="nav-number">2.1.</span> <span class="nav-text">Method 1: Wireshark GUI</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#method-2-scapy-script-cli"><span class="nav-number">2.2.</span> <span class="nav-text">Method 2: Scapy Script (CLI)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flag"><span class="nav-number">3.</span> <span class="nav-text">Flag</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -361,34 +363,64 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>Our WiFi keeps disconnecting. We captured wireless traffic to try and figure out what’s happening, but it’s all temporal zeros to us! I think someone is trying to exploit a WiFi vulnerability.. Can you decrypt the traffic and gain access to the flag?</p>
-<p>The hint “temporal zeros” and the context of a WiFi vulnerability strongly suggest the <strong>KRACK (Key Reinstallation Attack)</strong>, specifically <strong>CVE-2017-13077</strong>.</p>
-<h2 id="Vulnerability-Analysis-Why-“Zeros”"><a href="#Vulnerability-Analysis-Why-“Zeros”" class="headerlink" title="Vulnerability Analysis: Why “Zeros”?"></a>Vulnerability Analysis: Why “Zeros”?</h2><p>In a standard WPA2 4-way handshake, the client and AP negotiate a <strong>PTK (Pairwise Transient Key)</strong>. KRACK works by intercepting and replaying Message 3 of the handshake, forcing the client to reinstall an already in-use key. This resets nonces (packet numbers) and replay counters.</p>
-<p>For certain versions of <code>wpa_supplicant</code> (notably 2.4 and 2.5), a critical implementation bug exists: when the key is reinstalled, the <strong>Temporal Key (TK)</strong> is not just reused, but <strong>cleared to all zeros</strong>.</p>
-<p>The captured <code>802.11 CCMP</code> packets are encrypted using a 16-byte key of <code>\x00</code> values.</p>
-<h3 id="The-WPA2-4-way-Handshake-PTK"><a href="#The-WPA2-4-way-Handshake-PTK" class="headerlink" title="The WPA2 4-way Handshake &amp; PTK"></a>The WPA2 4-way Handshake &amp; PTK</h3><ol>
-<li><strong>Message 1</strong>: AP sends a random number (<strong>ANonce</strong>) to the Client.</li>
-<li><strong>Message 2</strong>: Client generates its own random number (<strong>SNonce</strong>), derives the PTK using both Nonces, and sends SNonce to the AP.</li>
-<li><strong>Message 3</strong>: AP derives the same PTK, sends the Group Temporal Key (GTK), and instructs the Client to install the PTK.</li>
-<li><strong>Message 4</strong>: Client confirms installation with an ACK.</li>
+    <div class="post-body" itemprop="articleBody"><p>Our WiFi keeps disconnecting. We captured wireless traffic to try and
+figure out what’s happening, but it’s all temporal zeros to us! I think
+someone is trying to exploit a WiFi vulnerability.. Can you decrypt the
+traffic and gain access to the flag?</p>
+<p>The hint “temporal zeros” and the context of a WiFi vulnerability
+strongly suggest the <strong>KRACK (Key Reinstallation Attack)</strong>,
+specifically <strong>CVE-2017-13077</strong>.</p>
+<h2 id="vulnerability-analysis-why-zeros">Vulnerability Analysis: Why
+“Zeros”?</h2>
+<p>In a standard WPA2 4-way handshake, the client and AP negotiate a
+<strong>PTK (Pairwise Transient Key)</strong>. KRACK works by
+intercepting and replaying Message 3 of the handshake, forcing the
+client to reinstall an already in-use key. This resets nonces (packet
+numbers) and replay counters.</p>
+<p>For certain versions of <code>wpa_supplicant</code> (notably 2.4 and
+2.5), a critical implementation bug exists: when the key is reinstalled,
+the <strong>Temporal Key (TK)</strong> is not just reused, but
+<strong>cleared to all zeros</strong>.</p>
+<p>The captured <code>802.11 CCMP</code> packets are encrypted using a
+16-byte key of <code>\x00</code> values.</p>
+<h3 id="the-wpa2-4-way-handshake-ptk">The WPA2 4-way Handshake &amp;
+PTK</h3>
+<ol type="1">
+<li><strong>Message 1</strong>: AP sends a random number
+(<strong>ANonce</strong>) to the Client.</li>
+<li><strong>Message 2</strong>: Client generates its own random number
+(<strong>SNonce</strong>), derives the PTK using both Nonces, and sends
+SNonce to the AP.</li>
+<li><strong>Message 3</strong>: AP derives the same PTK, sends the Group
+Temporal Key (GTK), and instructs the Client to install the PTK.</li>
+<li><strong>Message 4</strong>: Client confirms installation with an
+ACK.</li>
 </ol>
-<p>The KRACK attack manipulates Message 3 to trigger the “all-zero” TK bug.</p>
-<h2 id="Decryption-Methods"><a href="#Decryption-Methods" class="headerlink" title="Decryption Methods"></a>Decryption Methods</h2><h3 id="Method-1-Wireshark-GUI"><a href="#Method-1-Wireshark-GUI" class="headerlink" title="Method 1: Wireshark GUI"></a>Method 1: Wireshark GUI</h3><p>If you prefer a visual approach, you can configure Wireshark to decrypt the traffic using the zeroed key:</p>
-<ol>
-<li>Open <strong>Preferences</strong> (<code>Ctrl + Shift + P</code>).</li>
+<p>The KRACK attack manipulates Message 3 to trigger the “all-zero” TK
+bug.</p>
+<h2 id="decryption-methods">Decryption Methods</h2>
+<h3 id="method-1-wireshark-gui">Method 1: Wireshark GUI</h3>
+<p>If you prefer a visual approach, you can configure Wireshark to
+decrypt the traffic using the zeroed key:</p>
+<ol type="1">
+<li>Open <strong>Preferences</strong>
+(<code>Ctrl + Shift + P</code>).</li>
 <li>Go to <strong>Protocols -&gt; IEEE 802.11</strong>.</li>
 <li>Check <strong>“Enable decryption”</strong>.</li>
 <li>Click <strong>“Edit…”</strong> next to Decryption keys.</li>
-<li>Add a new key:<ul>
+<li>Add a new key:
+<ul>
 <li><strong>Key type</strong>: <code>tk</code></li>
-<li><strong>Key</strong>: <code>00000000000000000000000000000000</code> (32 zeros)</li>
-</ul>
-</li>
+<li><strong>Key</strong>: <code>00000000000000000000000000000000</code>
+(32 zeros)</li>
+</ul></li>
 </ol>
-<h3 id="Method-2-Scapy-Script-CLI"><a href="#Method-2-Scapy-Script-CLI" class="headerlink" title="Method 2: Scapy Script (CLI)"></a>Method 2: Scapy Script (CLI)</h3><p>The following script manually reconstructs the CCM Nonce and decrypts the packets using the zeroed Temporal Key.</p>
+<h3 id="method-2-scapy-script-cli">Method 2: Scapy Script (CLI)</h3>
+<p>The following script manually reconstructs the CCM Nonce and decrypts
+the packets using the zeroed Temporal Key.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.backends <span class="keyword">import</span> default_backend</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives.ciphers <span class="keyword">import</span> Cipher, algorithms, modes</span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> rdpcap</span><br><span class="line"><span class="keyword">from</span> scapy.layers.dot11 <span class="keyword">import</span> Dot11, Dot11CCMP, Dot11QoS</span><br><span class="line"></span><br><span class="line">PCAP_FILE = <span class="string">&quot;/home/kita/Downloads/00ps.pcap&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack_temporal_zeros</span>(<span class="params">pcap_file</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Parsing <span class="subst">&#123;pcap_file&#125;</span>...&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        packets = rdpcap(pcap_file)</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[!] File error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># CVE-2017-13077 (KRACK): The bug forces the TK (Temporal Key) to all zeros.</span></span><br><span class="line">    tk_all_zeros = <span class="string">b&quot;\x00&quot;</span> * <span class="number">16</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> idx, pkt <span class="keyword">in</span> <span class="built_in">enumerate</span>(packets):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> pkt.haslayer(Dot11CCMP):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        ccmp = pkt[Dot11CCMP]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 1. Extract Packet Number (PN), 6 bytes</span></span><br><span class="line">        pn = <span class="built_in">bytes</span>([ccmp.PN5, ccmp.PN4, ccmp.PN3, ccmp.PN2, ccmp.PN1, ccmp.PN0])</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 2. Extract Transmitter Address (A2), 6 bytes</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            mac_a2 = binascii.unhexlify(pkt[Dot11].addr2.replace(<span class="string">&quot;:&quot;</span>, <span class="string">&quot;&quot;</span>))</span><br><span class="line">        <span class="keyword">except</span> AttributeError:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 3. Extract QoS Priority (TID)</span></span><br><span class="line">        priority = <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">        <span class="keyword">if</span> pkt.haslayer(Dot11QoS):</span><br><span class="line">            tid = pkt[Dot11QoS].TID &amp; <span class="number">0x0F</span></span><br><span class="line">            priority = <span class="built_in">bytes</span>([tid])</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 4. Construct 13-byte CCM Nonce</span></span><br><span class="line">        <span class="comment"># Nonce = Priority (1 byte) + MAC A2 (6 bytes) + PN (6 bytes)</span></span><br><span class="line">        nonce = priority + mac_a2 + pn</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 5. Assemble CTR Initial Vector (16 bytes)</span></span><br><span class="line">        <span class="comment"># Flags (0x01) + Nonce (13 bytes) + Counter (0x0001)</span></span><br><span class="line">        iv = <span class="string">b&quot;\x01&quot;</span> + nonce + <span class="string">b&quot;\x00\x01&quot;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 6. Decrypt using AES-CTR (Bypassing MIC check for speed/simplicity)</span></span><br><span class="line">        cipher = Cipher(</span><br><span class="line">            algorithms.AES(tk_all_zeros), modes.CTR(iv), backend=default_backend()</span><br><span class="line">        )</span><br><span class="line">        decryptor = cipher.decryptor()</span><br><span class="line"></span><br><span class="line">        raw_data = ccmp.data</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(raw_data) &lt;= <span class="number">8</span>:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        ciphertext = raw_data[:-<span class="number">8</span>] <span class="comment"># Last 8 bytes are the MIC</span></span><br><span class="line">        plaintext = decryptor.update(ciphertext) + decryptor.finalize()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            decoded_text = plaintext.decode(<span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;ignore&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&quot;247CTF&quot;</span> <span class="keyword">in</span> decoded_text.upper():</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Flag found in packet #<span class="subst">&#123;idx + <span class="number">1</span>&#125;</span>:&quot;</span>)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;    Plaintext: <span class="subst">&#123;decoded_text&#125;</span>\n&quot;</span>)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    crack_temporal_zeros(PCAP_FILE)</span><br></pre></td></tr></table></figure>
-
-<h2 id="Flag"><a href="#Flag" class="headerlink" title="Flag"></a>Flag</h2><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{5e19fbdfa7072d568a28dd47b0edd379}</span></span>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{5e19fbdfa7072d568a28dd47b0edd379}</span></span>
 
     </div>
 

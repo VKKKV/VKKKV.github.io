@@ -223,7 +223,7 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Network-Traffic"><span class="nav-number">1.</span> <span class="nav-text">Network Traffic</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Payload-Extraction"><span class="nav-number">2.</span> <span class="nav-text">Payload Extraction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Solution"><span class="nav-number">3.</span> <span class="nav-text">Solution</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flag"><span class="nav-number">4.</span> <span class="nav-text">Flag</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#network-traffic"><span class="nav-number">1.</span> <span class="nav-text">Network Traffic</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#payload-extraction"><span class="nav-number">2.</span> <span class="nav-text">Payload Extraction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#solution"><span class="nav-number">3.</span> <span class="nav-text">Solution</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flag"><span class="nav-number">4.</span> <span class="nav-text">Flag</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -364,26 +364,42 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>We have a honey pot running on one of our internal networks. We received an alert today that the machine was compromised, but we can’t figure out what the attacker did. Can you find the flag hidden in the attacker’s payload?</p>
-<p>我们在内部网络中运行了一个蜜罐。今天我们收到警报，显示该机器已被入侵，但我们无法确定攻击者做了什么。你能找到隐藏在攻击者有效载荷中的 flag 吗？</p>
-<h3 id="Network-Traffic"><a href="#Network-Traffic" class="headerlink" title="Network Traffic"></a>Network Traffic</h3><p>The provided logs show SMB (Server Message Block) traffic on port 445 (<code>microsoft_ds</code>). The sequence of <code>SMBNegotiate_Request</code> and <code>SMB2_Negotiate_Protocol_Request</code> suggests an attempt to exploit an SMB vulnerability.</p>
+    <div class="post-body" itemprop="articleBody"><p>We have a honey pot running on one of our internal networks. We
+received an alert today that the machine was compromised, but we can’t
+figure out what the attacker did. Can you find the flag hidden in the
+attacker’s payload?</p>
+<p>我们在内部网络中运行了一个蜜罐。今天我们收到警报，显示该机器已被入侵，但我们无法确定攻击者做了什么。你能找到隐藏在攻击者有效载荷中的
+flag 吗？</p>
+<h3 id="network-traffic">Network Traffic</h3>
+<p>The provided logs show SMB (Server Message Block) traffic on port 445
+(<code>microsoft_ds</code>). The sequence of
+<code>SMBNegotiate_Request</code> and
+<code>SMB2_Negotiate_Protocol_Request</code> suggests an attempt to
+exploit an SMB vulnerability.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0001 Ether / IP / TCP 192.168.10.168:microsoft_ds &gt; 10.0.5.15:42799 SA / Padding</span><br><span class="line">0003 Ether / IP / TCP 10.0.5.15:42799 &gt; 192.168.10.168:microsoft_ds PA / NBTSession / SMB_Header / SMBNegotiate_Request</span><br><span class="line">...</span><br><span class="line">0203 Ether / IP / TCP 10.0.5.15:43947 &gt; 192.168.10.168:microsoft_ds PA / NBTSession / SMB2_Header / SMB2_Negotiate_Protocol_Request / Raw</span><br></pre></td></tr></table></figure>
-
-<h3 id="Payload-Extraction"><a href="#Payload-Extraction" class="headerlink" title="Payload Extraction"></a>Payload Extraction</h3><p>Following the TCP stream and exporting the raw data with Wireshark, we get the following hex dump:</p>
+<h3 id="payload-extraction">Payload Extraction</h3>
+<p>Following the TCP stream and exporting the raw data with Wireshark,
+we get the following hex dump:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">❯ xxd a.raw</span><br><span class="line">...</span><br><span class="line">00000270: 0031 c941 e201 c3b9 8200 00c0 0f32 48bb  .1.A........2H..</span><br><span class="line">00000280: f80f d0ff ffff ffff 8953 0489 0348 8d05  .........S...H..</span><br><span class="line">00000290: 0a00 0000 4889 c248 c1ea 200f 30c3 0f01  ....H..H.. .0...</span><br><span class="line">000002a0: f865 4889 2425 1000 0000 6548 8b24 25a8  .eH.$%....eH.$%.</span><br><span class="line">...</span><br><span class="line">000007c0: 4d55 9dce ebc1 2620 2357 4052 6f23 7627  MU....&amp; <span class="comment">#W@Ro#v&#x27;</span></span><br><span class="line">000007d0: 2226 2277 7027 2122 232c 2075 2523 752d  <span class="string">&quot;&amp;&quot;</span>wp<span class="string">&#x27;!&quot;#, u%#u-</span></span><br><span class="line"><span class="string">...</span></span><br></pre></td></tr></table></figure>
-
-<p>The challenge name <strong>“Commutative Payload”</strong> hints at a commutative operation like XOR used for obfuscation.</p>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><ol>
-<li><strong>Extract Data</strong>: Save the raw payload from the Wireshark TCP stream.</li>
-<li><strong>CyberChef Analysis</strong>:<ul>
+<p>The challenge name <strong>“Commutative Payload”</strong> hints at a
+commutative operation like XOR used for obfuscation.</p>
+<h2 id="solution">Solution</h2>
+<ol type="1">
+<li><strong>Extract Data</strong>: Save the raw payload from the
+Wireshark TCP stream.</li>
+<li><strong>CyberChef Analysis</strong>:
+<ul>
 <li>Use the <strong>XOR Brute Force</strong> operation.</li>
 <li><strong>Sample length</strong>: 10000.</li>
-<li><strong>Crib</strong>: <code>247CTF</code> (knowing the flag format).</li>
-</ul>
-</li>
-<li><strong>Identification</strong>: When testing a key length of 2, the key <code>14 14</code> (effectively a 1-byte XOR with <code>0x14</code>) decrypts the payload to reveal the flag.</li>
+<li><strong>Crib</strong>: <code>247CTF</code> (knowing the flag
+format).</li>
+</ul></li>
+<li><strong>Identification</strong>: When testing a key length of 2, the
+key <code>14 14</code> (effectively a 1-byte XOR with <code>0x14</code>)
+decrypts the payload to reveal the flag.</li>
 </ol>
-<h2 id="Flag"><a href="#Flag" class="headerlink" title="Flag"></a>Flag</h2><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{7b3626cd356784a17a9e49447356f229}</span></span>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{7b3626cd356784a17a9e49447356f229}</span></span>
 
     </div>
 
