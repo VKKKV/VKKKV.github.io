@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">148</span>
+          <span class="site-state-item-count">149</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">95</span>
+        <span class="site-state-item-count">97</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,162 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-00ps-my-wifi-disconnected/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-00ps-my-wifi-disconnected/" class="post-title-link" itemprop="url">247CTF - 00ps, My Wifi Disconnected</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-28 19:22:56" itemprop="dateCreated datePublished" datetime="2026-02-28T19:22:56+08:00">2026-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-00ps-my-wifi-disconnected/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-00ps-my-wifi-disconnected/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>Our WiFi keeps disconnecting. We captured wireless traffic to try and
+figure out what’s happening, but it’s all temporal zeros to us! I think
+someone is trying to exploit a WiFi vulnerability.. Can you decrypt the
+traffic and gain access to the flag?</p>
+<p>The hint “temporal zeros” and the context of a WiFi vulnerability
+strongly suggest the <strong>KRACK (Key Reinstallation Attack)</strong>,
+specifically <strong>CVE-2017-13077</strong>.</p>
+<h2 id="vulnerability-analysis-why-zeros">Vulnerability Analysis: Why
+“Zeros”?</h2>
+<p>In a standard WPA2 4-way handshake, the client and AP negotiate a
+<strong>PTK (Pairwise Transient Key)</strong>. KRACK works by
+intercepting and replaying Message 3 of the handshake, forcing the
+client to reinstall an already in-use key. This resets nonces (packet
+numbers) and replay counters.</p>
+<p>For certain versions of <code>wpa_supplicant</code> (notably 2.4 and
+2.5), a critical implementation bug exists: when the key is reinstalled,
+the <strong>Temporal Key (TK)</strong> is not just reused, but
+<strong>cleared to all zeros</strong>.</p>
+<p>The captured <code>802.11 CCMP</code> packets are encrypted using a
+16-byte key of <code>\x00</code> values.</p>
+<h3 id="the-wpa2-4-way-handshake-ptk">The WPA2 4-way Handshake &amp;
+PTK</h3>
+<ol type="1">
+<li><strong>Message 1</strong>: AP sends a random number
+(<strong>ANonce</strong>) to the Client.</li>
+<li><strong>Message 2</strong>: Client generates its own random number
+(<strong>SNonce</strong>), derives the PTK using both Nonces, and sends
+SNonce to the AP.</li>
+<li><strong>Message 3</strong>: AP derives the same PTK, sends the Group
+Temporal Key (GTK), and instructs the Client to install the PTK.</li>
+<li><strong>Message 4</strong>: Client confirms installation with an
+ACK.</li>
+</ol>
+<p>The KRACK attack manipulates Message 3 to trigger the “all-zero” TK
+bug.</p>
+<h2 id="decryption-methods">Decryption Methods</h2>
+<h3 id="method-1-wireshark-gui">Method 1: Wireshark GUI</h3>
+<p>If you prefer a visual approach, you can configure Wireshark to
+decrypt the traffic using the zeroed key:</p>
+<ol type="1">
+<li>Open <strong>Preferences</strong>
+(<code>Ctrl + Shift + P</code>).</li>
+<li>Go to <strong>Protocols -&gt; IEEE 802.11</strong>.</li>
+<li>Check <strong>“Enable decryption”</strong>.</li>
+<li>Click <strong>“Edit…”</strong> next to Decryption keys.</li>
+<li>Add a new key:
+<ul>
+<li><strong>Key type</strong>: <code>tk</code></li>
+<li><strong>Key</strong>: <code>00000000000000000000000000000000</code>
+(32 zeros)</li>
+</ul></li>
+</ol>
+<h3 id="method-2-scapy-script-cli">Method 2: Scapy Script (CLI)</h3>
+<p>The following script manually reconstructs the CCM Nonce and decrypts
+the packets using the zeroed Temporal Key.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.backends <span class="keyword">import</span> default_backend</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives.ciphers <span class="keyword">import</span> Cipher, algorithms, modes</span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> rdpcap</span><br><span class="line"><span class="keyword">from</span> scapy.layers.dot11 <span class="keyword">import</span> Dot11, Dot11CCMP, Dot11QoS</span><br><span class="line"></span><br><span class="line">PCAP_FILE = <span class="string">&quot;/home/kita/Downloads/00ps.pcap&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack_temporal_zeros</span>(<span class="params">pcap_file</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Parsing <span class="subst">&#123;pcap_file&#125;</span>...&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        packets = rdpcap(pcap_file)</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[!] File error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># CVE-2017-13077 (KRACK): The bug forces the TK (Temporal Key) to all zeros.</span></span><br><span class="line">    tk_all_zeros = <span class="string">b&quot;\x00&quot;</span> * <span class="number">16</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> idx, pkt <span class="keyword">in</span> <span class="built_in">enumerate</span>(packets):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> pkt.haslayer(Dot11CCMP):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        ccmp = pkt[Dot11CCMP]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 1. Extract Packet Number (PN), 6 bytes</span></span><br><span class="line">        pn = <span class="built_in">bytes</span>([ccmp.PN5, ccmp.PN4, ccmp.PN3, ccmp.PN2, ccmp.PN1, ccmp.PN0])</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 2. Extract Transmitter Address (A2), 6 bytes</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            mac_a2 = binascii.unhexlify(pkt[Dot11].addr2.replace(<span class="string">&quot;:&quot;</span>, <span class="string">&quot;&quot;</span>))</span><br><span class="line">        <span class="keyword">except</span> AttributeError:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 3. Extract QoS Priority (TID)</span></span><br><span class="line">        priority = <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">        <span class="keyword">if</span> pkt.haslayer(Dot11QoS):</span><br><span class="line">            tid = pkt[Dot11QoS].TID &amp; <span class="number">0x0F</span></span><br><span class="line">            priority = <span class="built_in">bytes</span>([tid])</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 4. Construct 13-byte CCM Nonce</span></span><br><span class="line">        <span class="comment"># Nonce = Priority (1 byte) + MAC A2 (6 bytes) + PN (6 bytes)</span></span><br><span class="line">        nonce = priority + mac_a2 + pn</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 5. Assemble CTR Initial Vector (16 bytes)</span></span><br><span class="line">        <span class="comment"># Flags (0x01) + Nonce (13 bytes) + Counter (0x0001)</span></span><br><span class="line">        iv = <span class="string">b&quot;\x01&quot;</span> + nonce + <span class="string">b&quot;\x00\x01&quot;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 6. Decrypt using AES-CTR (Bypassing MIC check for speed/simplicity)</span></span><br><span class="line">        cipher = Cipher(</span><br><span class="line">            algorithms.AES(tk_all_zeros), modes.CTR(iv), backend=default_backend()</span><br><span class="line">        )</span><br><span class="line">        decryptor = cipher.decryptor()</span><br><span class="line"></span><br><span class="line">        raw_data = ccmp.data</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(raw_data) &lt;= <span class="number">8</span>:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        ciphertext = raw_data[:-<span class="number">8</span>] <span class="comment"># Last 8 bytes are the MIC</span></span><br><span class="line">        plaintext = decryptor.update(ciphertext) + decryptor.finalize()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            decoded_text = plaintext.decode(<span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;ignore&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&quot;247CTF&quot;</span> <span class="keyword">in</span> decoded_text.upper():</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Flag found in packet #<span class="subst">&#123;idx + <span class="number">1</span>&#125;</span>:&quot;</span>)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;    Plaintext: <span class="subst">&#123;decoded_text&#125;</span>\n&quot;</span>)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    crack_temporal_zeros(PCAP_FILE)</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{5e19fbdfa7072d568a28dd47b0edd379}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1416,124 +1572,6 @@ Python to plot them:</p>
 Visualizing data reveals hidden patterns that text alone cannot
 convey.</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{0c895fb57954df7f83756e1f7718e661}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-not-my-modulus/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-not-my-modulus/" class="post-title-link" itemprop="url">247CTF - Not My Modulus</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-02-26 22:40:39" itemprop="dateCreated datePublished" datetime="2026-02-26T22:40:39+08:00">2026-02-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-not-my-modulus/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-not-my-modulus/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Given many private keys, identify which one corresponds to a TLS
-connection captured in a PCAP file.</p>
-<h2 id="vulnerability">Vulnerability</h2>
-<p>The TLS certificate in the handshake reveals the public key
-(modulus). By comparing the public key’s modulus with all available
-private keys, the correct one can be identified.</p>
-<h2 id="solution">Solution</h2>
-<p><strong>Step 1: Extract the Certificate from PCAP</strong></p>
-<p>Analyze the PCAP file:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">tshark -r encrypted.pcap</span><br><span class="line">    1   0.000000   172.17.0.3 → 172.17.0.2   TCP 74 39618 → 8443 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM TSval=1540683717 TSecr=0 WS=128</span><br><span class="line">    2   0.000020   172.17.0.2 → 172.17.0.3   TCP 74 8443 → 39618 [SYN, ACK] Seq=0 Ack=1 Win=28960 Len=0 MSS=1460 SACK_PERM TSval=2839138450 TSecr=1540683717 WS=128</span><br><span class="line">    3   0.000053   172.17.0.3 → 172.17.0.2   TCP 66 39618 → 8443 [ACK] Seq=1 Ack=1 Win=29312 Len=0 TSval=1540683717 TSecr=2839138450</span><br><span class="line">    4   0.011354   172.17.0.3 → 172.17.0.2   TLSv1 186 Client Hello</span><br><span class="line">    5   0.011372   172.17.0.2 → 172.17.0.3   TCP 66 8443 → 39618 [ACK] Seq=1 Ack=121 Win=29056 Len=0 TSval=2839138461 TSecr=1540683728</span><br><span class="line">    6   0.011884   172.17.0.2 → 172.17.0.3   TLSv1.2 1046 Server Hello, Certificate, Server Hello Done</span><br><span class="line">    7   0.011928   172.17.0.3 → 172.17.0.2   TCP 66 39618 → 8443 [ACK] Seq=121 Ack=981 Win=31232 Len=0 TSval=1540683729 TSecr=2839138461</span><br><span class="line">    8   0.012436   172.17.0.3 → 172.17.0.2   TLSv1.2 384 Client Key Exchange, Change Cipher Spec, Encrypted Handshake Message</span><br><span class="line">    9   0.015465   172.17.0.2 → 172.17.0.3   TLSv1.2 117 Change Cipher Spec, Encrypted Handshake Message</span><br><span class="line">   10   0.015676   172.17.0.3 → 172.17.0.2   TLSv1.2 289 Application Data</span><br><span class="line">   11   0.016161   172.17.0.2 → 172.17.0.3   TLSv1.2 145 Application Data, Encrypted Alert</span><br><span class="line">   12   0.016381   172.17.0.3 → 172.17.0.2   TLSv1.2 97 Encrypted Alert</span><br><span class="line">   13   0.016847   172.17.0.2 → 172.17.0.3   TCP 66 8443 → 39618 [FIN, ACK] Seq=1111 Ack=693 Win=31104 Len=0 TSval=2839138466 TSecr=1540683733</span><br><span class="line">   14   0.017436   172.17.0.3 → 172.17.0.2   TCP 66 39618 → 8443 [FIN, ACK] Seq=693 Ack=1112 Win=31232 Len=0 TSval=1540683734 TSecr=2839138466</span><br><span class="line">   15   0.017446   172.17.0.2 → 172.17.0.3   TCP 66 8443 → 39618 [ACK] Seq=1112 Ack=694 Win=31104 Len=0 TSval=2839138467 TSecr=1540683734</span><br><span class="line"></span><br><span class="line">❯ <span class="built_in">sudo</span> python scrapy2.py</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https S</span><br><span class="line">Ether / IP / TCP 172.17.0.2:pcsync_https &gt; 172.17.0.3:39618 SA</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https A</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https PA / Raw</span><br><span class="line">Ether / IP / TCP 172.17.0.2:pcsync_https &gt; 172.17.0.3:39618 A</span><br><span class="line">Ether / IP / TCP 172.17.0.2:pcsync_https &gt; 172.17.0.3:39618 PA / Raw</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https A</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https PA / Raw</span><br><span class="line">Ether / IP / TCP 172.17.0.2:pcsync_https &gt; 172.17.0.3:39618 PA / Raw</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https PA / Raw</span><br><span class="line">Ether / IP / TCP 172.17.0.2:pcsync_https &gt; 172.17.0.3:39618 PA / Raw</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https PA / Raw</span><br><span class="line">Ether / IP / TCP 172.17.0.2:pcsync_https &gt; 172.17.0.3:39618 FA</span><br><span class="line">Ether / IP / TCP 172.17.0.3:39618 &gt; 172.17.0.2:pcsync_https FA</span><br><span class="line">Ether / IP / TCP 172.17.0.2:pcsync_https &gt; 172.17.0.3:39618 A</span><br><span class="line">None</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>In the TLSv1.2 handshake, the server sends its X.509 certificate
-containing the RSA public key. In RSA, the public and private keys share
-the same modulus (N).</p>
-<p><strong>Step 3: Match the Modulus Against Available Keys</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> glob</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> cryptography <span class="keyword">import</span> x509</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.backends <span class="keyword">import</span> default_backend</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives <span class="keyword">import</span> serialization</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives.asymmetric <span class="keyword">import</span> rsa</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives.asymmetric.rsa <span class="keyword">import</span> RSAPrivateKey, RSAPublicKey</span><br><span class="line"><span class="keyword">from</span> scapy <span class="keyword">import</span> dadict</span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> Raw, load_layer, rdpcap</span><br><span class="line"><span class="keyword">from</span> scapy.layers.inet <span class="keyword">import</span> IP, TCP</span><br><span class="line"><span class="keyword">from</span> scapy.layers.tls.<span class="built_in">all</span> <span class="keyword">import</span> TLS</span><br><span class="line"><span class="keyword">from</span> scapy.layers.tls.cert <span class="keyword">import</span> Cert</span><br><span class="line"><span class="keyword">from</span> scapy.layers.tls.handshake <span class="keyword">import</span> TLSCertificate</span><br><span class="line"></span><br><span class="line">PCAP_FILE = <span class="string">&quot;/home/kita/Downloads/encrypted.pcap&quot;</span></span><br><span class="line">KEYS = <span class="string">&quot;/home/kita/Downloads/keys/&quot;</span></span><br><span class="line"></span><br><span class="line">load_layer(<span class="string">&quot;tls&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">find_cert</span>(<span class="params">pcap_path</span>):</span><br><span class="line">    packets = rdpcap(pcap_path)</span><br><span class="line">    cert_list = []</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> pkt <span class="keyword">in</span> packets:</span><br><span class="line">        <span class="keyword">if</span> pkt.haslayer(Raw):</span><br><span class="line">            raw = pkt[Raw].load</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                tls_parsed = TLS(raw)</span><br><span class="line">                tls_cert_layer = tls_parsed.getlayer(TLSCertificate)</span><br><span class="line">                <span class="keyword">if</span> tls_cert_layer:</span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">&quot;[-] Found TLS Certificate.&quot;</span>)</span><br><span class="line">                    cert = tls_cert_layer.certs</span><br><span class="line">                    <span class="keyword">for</span> _, x509_wrapper <span class="keyword">in</span> cert:</span><br><span class="line">                        cert_list.append(x509_wrapper)</span><br><span class="line">                        <span class="built_in">print</span>(<span class="string">&quot;[-] Extracted a TLS Certificate.&quot;</span>)</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">&quot;[-] Found TLS packet.&quot;</span>)</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;[-] Error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">    <span class="keyword">return</span> cert_list</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">find_matching_private_key</span>(<span class="params">target_modulus: <span class="built_in">int</span>, keys_directory: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span> | <span class="literal">None</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Searching for matching private key in <span class="subst">&#123;keys_directory&#125;</span> ...&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> key_file <span class="keyword">in</span> glob(os.path.join(keys_directory, <span class="string">&quot;*&quot;</span>)):</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">with</span> <span class="built_in">open</span>(key_file, <span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">                private_key = serialization.load_pem_private_key(</span><br><span class="line">                    f.read(), password=<span class="literal">None</span>, backend=default_backend()</span><br><span class="line">                )</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 类型守卫</span></span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">isinstance</span>(private_key, rsa.RSAPrivateKey):</span><br><span class="line">                priv_modulus = private_key.private_numbers().public_numbers.n</span><br><span class="line">                <span class="keyword">if</span> priv_modulus == target_modulus:</span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">f&quot;[!] BINGO! Matching key found: <span class="subst">&#123;key_file&#125;</span>&quot;</span>)</span><br><span class="line">                    <span class="keyword">return</span> key_file</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span>  <span class="comment"># 静默忽略无法解析的非私钥文件</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[-] No matching key found.&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_modulus</span>(<span class="params">cert_list</span>):</span><br><span class="line">    <span class="keyword">for</span> cert_obj <span class="keyword">in</span> cert_list:</span><br><span class="line">        <span class="keyword">assert</span> <span class="built_in">isinstance</span>(cert_obj, Cert)</span><br><span class="line">        pubkey_bytes = cert_obj.pubKey.der</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            public_key = serialization.load_der_public_key(pubkey_bytes)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">isinstance</span>(public_key, rsa.RSAPublicKey):</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">&quot;[-] Not an RSA public key.&quot;</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">            <span class="comment"># 3. 提取 Modulus (N)</span></span><br><span class="line">            <span class="keyword">return</span> public_key.public_numbers().n</span><br><span class="line"></span><br><span class="line">        <span class="keyword">except</span> ValueError <span class="keyword">as</span> e:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;[-] Failed to parse public key: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    cert_list = find_cert(PCAP_FILE)</span><br><span class="line">    <span class="built_in">print</span>(cert_list)</span><br><span class="line">    modulus = get_modulus(cert_list)</span><br><span class="line">    <span class="built_in">print</span>(modulus)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> modulus:</span><br><span class="line">        key_path = find_matching_private_key(modulus, KEYS)</span><br><span class="line">        <span class="built_in">print</span>(key_path)</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[-] Found TLS packet.</span><br><span class="line">[-] Found TLS Certificate.</span><br><span class="line">[-] Extracted a TLS Certificate.</span><br><span class="line">[-] Found TLS packet.</span><br><span class="line">[-] Found TLS packet.</span><br><span class="line">[-] Found TLS packet.</span><br><span class="line">[-] Found TLS packet.</span><br><span class="line">[-] Found TLS packet.</span><br><span class="line">[[X.509 Cert. Subject:/C=US/O=247CTF/OU=net100/CN=127.0.0.1, Issuer:/C=US/O=247CTF/OU=net100/CN=127.0.0.1]]</span><br><span class="line">24375337507354185617683779511918376432395633773833258410072584644021662441320894249037929602005866714516839751200216248045601121213022308135749564</span><br><span class="line">91609032233051031378930201187873763500714123864260833067479968749121983638063505159497973513991377893076048230462912746389410409597739323192173371</span><br><span class="line">69352194568205311849666985699263435298267316799837036996611272681669761306553432625513191541491177379341952990725045599588244319236967795618294845</span><br><span class="line">60357990470602203287915925979746025998473724658331937707347236978200912995652850373393105186043638902549716830185403626256394732792288094019164336</span><br><span class="line">124309631409843886613660844833927</span><br><span class="line">[*] Searching <span class="keyword">for</span> matching private key <span class="keyword">in</span> /home/kita/Downloads/keys/ ...</span><br><span class="line">[!] BINGO! Matching key found: /home/kita/Downloads/keys/518dfdb269ef17a932a893a63630644c.key</span><br><span class="line">/home/kita/Downloads/keys/518dfdb269ef17a932a893a63630644c.key</span><br><span class="line"></span><br><span class="line">[Process exited 0]</span><br></pre></td></tr></table></figure>
-<p><strong>Step 4: Import Key into Wireshark</strong></p>
-<p>Open Wireshark → Preferences → RSA Keys → Import the matching key to
-decrypt the TLS traffic.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{3693df4d4c007662b7131e7b94c9e9c3}</span></span>
 
       
     </div>
