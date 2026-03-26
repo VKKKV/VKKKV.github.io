@@ -9214,4 +9214,132 @@ get 6 bytes :)</p>
         <tag>shellcode</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WTF is this Non-Printable Character?</title>
+    <url>/ctf/ctf-02/</url>
+    <content><![CDATA[<p>Ever copy-pasted a code snippet from a browser (Gemini) into Neovim,
+only to see a strange <code>+</code> or a highlighted
+<code>&lt;U+00A0&gt;</code>? Why does your Python script throw a
+<code>SyntaxError</code> on a line that looks perfectly fine?</p>
+<p>The answer lies in the “invisible” world of Unicode control
+characters. These characters were designed for typography, but they have
+become a nightmare for modern programmers.</p>
+<h2 id="the-most-common-culprit-nbsp-u00a0">1. The Most Common Culprit:
+NBSP (U+00A0)</h2>
+<p>U+00A0 (<strong>Non-Breaking Space</strong>) wasn’t invented to annoy
+programmers. In the world of <strong>Typography</strong>, it serves a
+very legitimate purpose.</p>
+<h3 id="core-origin-prevent-line-wrapping">Core Origin: Prevent Line
+Wrapping</h3>
+<p>In traditional word processing and browser rendering, a standard
+space (U+0020) is a “soft” break point. When a line is full, the system
+wraps the text at the space.</p>
+<p>However, some word pairs should <em>never</em> be separated. NBSP
+tells the rendering engine: “<strong>These two words are bound together.
+If you can’t fit them both, move the entire block to the next
+line.</strong>”</p>
+<h3 id="proper-use-cases">Proper Use Cases</h3>
+<ul>
+<li><strong>Values &amp; Units:</strong> <code>100 kg</code> or
+<code>500 MHz</code>. You don’t want <code>100</code> at the end of a
+line and <code>kg</code> at the start of the next.</li>
+<li><strong>Names &amp; Titles:</strong> <code>Mr. Anderson</code> or
+<code>Dr. Freeman</code>.</li>
+<li><strong>Language Specifics:</strong> In French typography,
+characters like <code>:</code> or <code>!</code> must be preceded by a
+space. To prevent the punctuation from being isolated on a new line,
+NBSP is used.</li>
+</ul>
+<h3 id="why-its-a-coding-nightmare">Why It’s a Coding Nightmare</h3>
+<p>Web developers and WYSIWYG editors (like Microsoft Word) often abuse
+<code>&amp;nbsp;</code> to force indentation or spacing. Because
+browsers “collapse” multiple standard spaces (U+0020) into one, people
+use NBSP to create “hard” whitespace.</p>
+<p>When you copy code from these sources, U+00A0 is carried over into
+your terminal. <strong>Python, Bash, and C are rigorous</strong>: they
+only recognize U+0020 as a valid syntax separator. Anything else is an
+“invalid character.”</p>
+<h2 id="visualizing-and-fixing-nbsp-in-neovim">2. Visualizing and Fixing
+NBSP in Neovim</h2>
+<p>If you use Neovim, you can expose these hidden characters by setting
+<code>listchars</code>.</p>
+<h3 id="configuration-init.lua">Configuration (init.lua)</h3>
+<figure class="highlight lua"><table><tr><td class="code"><pre><span class="line">vim.opt.list = <span class="literal">true</span> <span class="comment">-- Enable list mode to show invisible characters</span></span><br><span class="line"></span><br><span class="line">vim.opt.listchars = &#123;</span><br><span class="line">    nbsp = <span class="string">&#x27;☠&#x27;</span>,     <span class="comment">-- Highlight U+00A0 as a skull (or &#x27;✗&#x27;, &#x27;⍽&#x27;)</span></span><br><span class="line">    trail = <span class="string">&#x27;·&#x27;</span>,    <span class="comment">-- Show trailing spaces</span></span><br><span class="line">    tab = <span class="string">&#x27;▸ &#x27;</span>,     <span class="comment">-- Make Tabs visible</span></span><br><span class="line">    extends = <span class="string">&#x27;❯&#x27;</span>,  <span class="comment">-- Show wrap indicators</span></span><br><span class="line">    precedes = <span class="string">&#x27;❮&#x27;</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="the-quick-fix">The Quick Fix</h3>
+<p>To substitute all NBSP characters with normal spaces in the current
+buffer:</p>
+<figure class="highlight vim"><table><tr><td class="code"><pre><span class="line">:%s/\%u00a0/ /g</span><br></pre></td></tr></table></figure>
+<h2 id="the-hidden-menace-zero-width-characters-u200b---u200f">3. The
+Hidden Menace: Zero-Width Characters (U+200B - U+200F)</h2>
+<p>If NBSP is a nuisance, <strong>Zero-Width Characters</strong> are the
+“shadow realm” of Unicode. These characters are completely invisible in
+most GUI editors but occupy bytes in your file.</p>
+<h3 id="common-variants">Common Variants</h3>
+<ul>
+<li><strong><code>&lt;U+200B&gt;</code> Zero Width Space
+(ZWSP)</strong>: A “potential” break point for long URLs or languages
+without natural spaces (like Thai).</li>
+<li><strong><code>&lt;U+200C&gt;</code> Zero Width Non-Joiner
+(ZWNJ)</strong>: Prevents characters from forming a ligature (e.g.,
+stopping <code>f</code> and <code>i</code> from becoming
+<code>ﬁ</code>).</li>
+<li><strong><code>&lt;U+200D&gt;</code> Zero Width Joiner
+(ZWJ)</strong>: The “stitcher.” It combines multiple characters into
+one.
+<ul>
+<li><strong>Emoji Magic</strong>: A “Woman Astronaut” (👩‍🚀) is actually
+<code>Woman (👩)</code> + <code>ZWJ</code> +
+<code>Rocket (🚀)</code>.</li>
+<li><strong>Family</strong>: 👨‍👩‍👧‍👦 is a chain of 4 emojis connected by 3
+ZWJs.</li>
+</ul></li>
+<li><strong><code>&lt;U+200E&gt;</code> (LRM) &amp;
+<code>&lt;U+200F&gt;</code> (RLM)</strong>: Used to control
+Left-to-Right and Right-to-Left text direction in bi-directional (Bidi)
+text.</li>
+</ul>
+<h2 id="why-they-are-dangerous-the-invisible-threat">4. Why They Are
+Dangerous (The Invisible Threat)</h2>
+<ol type="1">
+<li><strong>Syntax Error Hell</strong>: You copy a Python script, and it
+fails with <code>SyntaxError: invalid character in identifier</code>.
+The error is “invisible” because the zero-width character is hidden
+inside a variable name.</li>
+<li><strong>Security (Homoglyph Attacks)</strong>: Attackers can create
+two identical-looking URLs. <code>github.com</code> and
+<code>github.com</code> (with a hidden <code>&lt;U+200B&gt;</code>) can
+lead you to a phishing site.</li>
+<li><strong>Invisible Fingerprinting</strong>: Some companies use
+combinations of zero-width characters to encode a “hidden watermark” or
+employee ID in sensitive documents. If you leak the text, they can
+extract the ID from the invisible characters.</li>
+</ol>
+<h2 id="the-neovim-purge-clean-your-code">5. The Neovim Purge: Clean
+Your Code</h2>
+<p>Neovim’s <code>listchars</code> will often render these as hex codes
+like <code>&lt;U+200B&gt;</code> if they aren’t explicitly handled,
+making them easy to spot.</p>
+<p>To wipe your file of all zero-width “garbage” from
+<code>U+200B</code> to <code>U+200F</code>:</p>
+<figure class="highlight vim"><table><tr><td class="code"><pre><span class="line">:%s/[\%u200B-\%u200F]//g</span><br></pre></td></tr></table></figure>
+<p><em>This regex matches the entire range of common zero-width control
+characters and deletes them instantly.</em></p>
+<h2 id="conclusion">Conclusion</h2>
+<p>In the UNIX philosophy, <strong>content and presentation are
+separate</strong>. Relying on invisible characters to control layout is
+“soulless.” As a power user, your code should be clean, visible, and
+free of typography-bloat.</p>
+<p>Keep your <code>listchars</code> on, and never trust a copy-paste
+from a browser blindly.</p>
+]]></content>
+      <categories>
+        <category>Tech</category>
+      </categories>
+      <tags>
+        <tag>Neovim</tag>
+        <tag>Unicode</tag>
+        <tag>Linux</tag>
+        <tag>Security</tag>
+      </tags>
+  </entry>
 </search>

@@ -236,18 +236,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">151</span>
+          <span class="site-state-item-count">152</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">98</span>
+        <span class="site-state-item-count">102</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,800 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-flag-errata/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-flag-errata/" class="post-title-link" itemprop="url">247CTF - Flag Errata</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-09 23:51:18" itemprop="dateCreated datePublished" datetime="2026-03-09T23:51:18+08:00">2026-03-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-10 01:00:11" itemprop="dateModified" datetime="2026-03-10T01:00:11+08:00">2026-03-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-flag-errata/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-flag-errata/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>We stored the flag within this binary, but made a few errors when
+trying to print it. Can you make use of these errors to recover the
+flag?</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file flag_errata.exe</span><br><span class="line">flag_errata.exe: PE32+ executable <span class="keyword">for</span> MS Windows 5.02 (console), x86-64 (stripped to external PDB), 9 sections</span><br></pre></td></tr></table></figure>
+<p>A PE64 binary (GCC 7.3 / MinGW-w64) with a monstrous 53KB
+<code>main</code> function. It prompts for a 40-character password,
+validates each character through error-code accumulation, then returns
+<code>-247</code> on any mismatch.</p>
+<p>The core pattern repeats 40 times:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sub_401560();                    <span class="comment">// intentionally failing WinAPI call</span></span><br><span class="line">LastError = GetLastError();      <span class="comment">// harvest the error code</span></span><br><span class="line">sub_40159B();</span><br><span class="line">v5 = GetLastError() + LastError; <span class="comment">// accumulate</span></span><br><span class="line">sub_4015D6();</span><br><span class="line">v6 = GetLastError() + v5;</span><br><span class="line"><span class="comment">// ... N calls total ...</span></span><br><span class="line"><span class="keyword">if</span> ( Buffer[i] != (<span class="type">int</span>)(accumulated) % <span class="number">126</span> )</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-247</span>;                 <span class="comment">// failure — 247CTF signature</span></span><br></pre></td></tr></table></figure>
+<p>The password is never stored anywhere. It’s implicitly encoded by the
+<em>count</em> and <em>sequence</em> of WinAPI calls whose error codes
+reconstruct each character.</p>
+<h2 id="the-error-code-cycle">The Error Code Cycle</h2>
+<p>13 functions form a fixed cycle, each designed to fail
+deterministically:</p>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 27%" />
+<col style="width: 7%" />
+<col style="width: 40%" />
+<col style="width: 19%" />
+<col style="width: 3%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Function</th>
+<th>Address</th>
+<th>API Call</th>
+<th>Expected Error</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>errgen_open_247ctf_dll_system32</code></td>
+<td><code>0x401560</code></td>
+<td><code>CreateFileA("C:\Windows\System32\247CTF.dll", ...)</code></td>
+<td><code>ERROR_FILE_NOT_FOUND</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>errgen_open_247ctf_dll_nested</code></td>
+<td><code>0x40159B</code></td>
+<td><code>CreateFileA("C:\247CTF\247CTF\247CTF.dll", ...)</code></td>
+<td><code>ERROR_PATH_NOT_FOUND</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>errgen_open_user32_dll_readwrite</code></td>
+<td><code>0x4015D6</code></td>
+<td><code>CreateFileA("user32.dll", GENERIC_RW, exclusive)</code></td>
+<td><code>ERROR_SHARING_VIOLATION</code></td>
+<td>32</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>errgen_getthreadtimes_null</code></td>
+<td><code>0x401611</code></td>
+<td><code>GetThreadTimes(0, 0, 0, 0, 0)</code></td>
+<td><code>ERROR_INVALID_HANDLE</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>errgen_findfiles_exhaust</code></td>
+<td><code>0x401634</code></td>
+<td><code>FindFirstFile("C:\*")</code> + loop
+<code>FindNextFile</code></td>
+<td><code>ERROR_NO_MORE_FILES</code></td>
+<td>18</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>errgen_virtualqueryex_null</code></td>
+<td><code>0x401674</code></td>
+<td><code>VirtualQueryEx(proc, NULL, NULL, 8)</code></td>
+<td><code>ERROR_BAD_LENGTH</code></td>
+<td>24</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>errgen_open_cmdexe_twice</code></td>
+<td><code>0x401697</code></td>
+<td><code>CreateFileA("cmd.exe")</code> x2 (exclusive)</td>
+<td><code>ERROR_SHARING_VIOLATION</code></td>
+<td>32</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>errgen_open_user32_invalid_create</code></td>
+<td><code>0x401704</code></td>
+<td><code>CreateFileA("user32.dll", ..., dwCreation=0)</code></td>
+<td><code>ERROR_INVALID_PARAMETER</code></td>
+<td>87</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>errgen_setconsoledisplaymode</code></td>
+<td><code>0x40173F</code></td>
+<td><code>SetConsoleDisplayMode(FULLSCREEN)</code></td>
+<td>Varies by OS</td>
+<td>~87</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>errgen_open_247ctf_colon</code></td>
+<td><code>0x401764</code></td>
+<td><code>CreateFileA("247CTF:", ...)</code></td>
+<td><code>ERROR_INVALID_NAME</code></td>
+<td>123</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>errgen_loadlibrary_fake_dll</code></td>
+<td><code>0x4017A2</code></td>
+<td><code>LoadLibraryA("C:\247CTF.DLL")</code></td>
+<td><code>ERROR_MOD_NOT_FOUND</code></td>
+<td>126</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>errgen_createmutex_twice</code></td>
+<td><code>0x4017B0</code></td>
+<td><code>CreateMutexA("247CTF")</code> x2</td>
+<td><code>ERROR_ALREADY_EXISTS</code></td>
+<td>183</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>errgen_createprocess_user32</code></td>
+<td><code>0x4017DF</code></td>
+<td><code>CreateProcessA("user32.dll" as exe)</code></td>
+<td><code>ERROR_BAD_EXE_FORMAT</code></td>
+<td>193</td>
+</tr>
+</tbody>
+</table>
+<p>Each character block calls <span
+class="math inline"><em>N</em></span> consecutive functions from this
+cycle, accumulates the error codes, then checks <code>sum % 126</code>
+against the input.</p>
+<h2 id="algebraic-solution">Algebraic Solution</h2>
+<p>The key insight: since the error codes cycle deterministically, we
+can bypass the Windows environment entirely and solve this as pure
+modular arithmetic.</p>
+<p>I use Arch BTW.</p>
+<p>Let:</p>
+<ul>
+<li><span class="math inline">$S = \sum_{k=0}^{12} e_k$</span>, the sum
+of one full cycle (all 13 error codes)</li>
+<li><span class="math inline">$P(r) = \sum_{k=0}^{r-1} e_k$</span>, the
+partial sum of the first <span class="math inline"><em>r</em></span>
+codes</li>
+</ul>
+<p>For character <span class="math inline"><em>i</em></span> with <span
+class="math inline"><em>n</em><sub><em>i</em></sub></span> total API
+calls:</p>
+<p><span class="math display">$$q_i = \left\lfloor \frac{n_i}{13}
+\right\rfloor, \qquad r_i = n_i \bmod 13$$</span></p>
+<p><span
+class="math display">password[<em>i</em>] ≡ <em>q</em><sub><em>i</em></sub> ⋅ <em>S</em> + <em>P</em>(<em>r</em><sub><em>i</em></sub>) (mod  126)</span></p>
+<p>The flag format <code>247CTF&#123;...&#125;</code> gives us 8 known characters
+for free. Three of them — blocks 2, 3, 6 — share the same remainder
+<span class="math inline"><em>r</em> = 9</span>: same position in the
+error-code cycle, different lap counts. Shared <span
+class="math inline"><em>P</em>(9)</span> cancels on subtraction.</p>
+<p>Blocks 2, 3, 6 correspond to <code>7</code> (ASCII <span
+class="math inline">55</span>, <span
+class="math inline"><em>q</em> = 16</span>), <code>C</code> (<span
+class="math inline">67</span>, <span
+class="math inline"><em>q</em> = 10</span>), <code>&#123;</code> (<span
+class="math inline">123</span>, <span
+class="math inline"><em>q</em> = 24</span>):</p>
+<p><span class="math display">$$\begin{aligned}
+16S + P(9) &amp;\equiv 55 \pmod{126}  &amp;&amp; \quad (1) \\
+10S + P(9) &amp;\equiv 67 \pmod{126}  &amp;&amp; \quad (2) \\
+24S + P(9) &amp;\equiv 123 \pmod{126} &amp;&amp; \quad (3)
+\end{aligned}$$</span></p>
+<p>Subtracting <span class="math inline">(2)</span> from <span
+class="math inline">(1)</span> eliminates <span
+class="math inline"><em>P</em>(9)</span>:</p>
+<p><span class="math display">$$\begin{aligned}
+(16 - 10)\,S &amp;\equiv 55 - 67 \pmod{126} \\
+6S &amp;\equiv -12 \equiv 114 \pmod{126}
+\end{aligned}$$</span></p>
+<p>Since <span class="math inline">gcd (6, 126) = 6</span> divides <span
+class="math inline">114</span>, we may divide the entire congruence by
+<span class="math inline">6</span> (reducing the modulus to <span
+class="math inline">126/6 = 21</span>):</p>
+<p><span
+class="math display"><em>S</em> ≡ 19 (mod  21)   ⇒   <em>S</em> ∈ {19, 40, 61, 82, 103, 124}</span></p>
+<p>Similarly, <span class="math inline">(3) − (1)</span> yields a second
+constraint:</p>
+<p><span class="math display">$$\begin{aligned}
+8S &amp;\equiv 68 \pmod{126} \\
+4S &amp;\equiv 34 \pmod{63} &amp;&amp; \quad (\text{dividing by }
+\gcd(2, 126) = 2)
+\end{aligned}$$</span></p>
+<p>To isolate <span class="math inline"><em>S</em></span>, multiply both
+sides by the modular inverse <span
+class="math inline">4<sup>−1</sup> ≡ 16 (mod  63)</span>, since <span
+class="math inline">4 × 16 = 64 ≡ 1</span>:</p>
+<p><span
+class="math display"><em>S</em> ≡ 16 × 34 = 544 ≡ 40 (mod  63)</span></p>
+<p>Intersecting via CRT: <span
+class="math inline">40 mod  21 = 19 ✓</span>, so both congruences
+agree.</p>
+<p><span class="math display">$$\boxed{\,S = 40\,}$$</span></p>
+<p>Back-substituting into <span class="math inline">(1)</span>:</p>
+<p><span class="math display">$$\begin{aligned}
+16 \times 40 + P(9) &amp;\equiv 55 \pmod{126} \\
+640 + P(9) &amp;\equiv 55 \pmod{126} \\
+10 + P(9) &amp;= 55 &amp;&amp; \quad (640 \bmod 126 = 10) \\
+P(9) &amp;= 45
+\end{aligned}$$</span></p>
+<p>Same process with the remaining known characters fills all partial
+sums:</p>
+<table>
+<thead>
+<tr>
+<th><span class="math inline"><em>P</em>(<em>r</em>)</span></th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math inline"><em>P</em>(3)</span></td>
+<td>10</td>
+<td><code>'2'</code> (ASCII 50)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(4)</span></td>
+<td>16</td>
+<td><span class="math inline"><em>e</em><sub>3</sub> = 6</span></td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(5)</span></td>
+<td>34</td>
+<td><span class="math inline"><em>e</em><sub>4</sub> = 18</span></td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(6)</span></td>
+<td>58</td>
+<td><code>'4'</code> (ASCII 52)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(7)</span></td>
+<td>90</td>
+<td><code>'T'</code> (ASCII 84)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(9)</span></td>
+<td>45</td>
+<td><code>'7'</code> (ASCII 55)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(10)</span></td>
+<td>42</td>
+<td><code>'F'</code> (ASCII 70)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(12)</span></td>
+<td>99</td>
+<td><span
+class="math inline"><em>e</em><sub>10</sub>, <em>e</em><sub>11</sub></span></td>
+</tr>
+</tbody>
+</table>
+<p>With <span class="math inline"><em>S</em></span> and all <span
+class="math inline"><em>P</em>(<em>r</em>)</span> determined, every
+character computes directly:</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>Calls</th>
+<th><span class="math inline"><em>q</em></span></th>
+<th><span class="math inline"><em>r</em></span></th>
+<th>Calculation</th>
+<th>Char</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td><span class="math inline">(40 + 10) mod  126</span></td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>191</td>
+<td>14</td>
+<td>9</td>
+<td><span class="math inline">(560 + 45) mod  126</span></td>
+<td><code>e</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td><span class="math inline">(320 + 34) mod  126</span></td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td><span class="math inline">(840 + 99) mod  126</span></td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>298</td>
+<td>22</td>
+<td>12</td>
+<td><span class="math inline">(880 + 99) mod  126</span></td>
+<td><code>a</code></td>
+</tr>
+<tr>
+<td>39</td>
+<td>35</td>
+<td>2</td>
+<td>9</td>
+<td><span class="math inline">(80 + 45) mod  126</span></td>
+<td><code>&#125;</code></td>
+</tr>
+</tbody>
+</table>
+<p>All 40 characters land in the valid charset — <code>247CTF&#123;</code>
+prefix, <code>[0-9a-f]</code> hex body, <code>&#125;</code> suffix —
+confirming the solution without ever running the binary.</p>
+<h3 id="character-by-character-breakdown">Character-by-Character
+Breakdown</h3>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>Calls</th>
+<th>q</th>
+<th>r</th>
+<th>Formula</th>
+<th>Char</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td>(1*40+10)%126=50</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>45</td>
+<td>3</td>
+<td>6</td>
+<td>(3*40+58)%126=52</td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>139</td>
+<td>10</td>
+<td>9</td>
+<td>(10*40+45)%126=67</td>
+<td><code>C</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>46</td>
+<td>3</td>
+<td>7</td>
+<td>(3*40+90)%126=84</td>
+<td><code>T</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>101</td>
+<td>7</td>
+<td>10</td>
+<td>(7*40+42)%126=70</td>
+<td><code>F</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>321</td>
+<td>24</td>
+<td>9</td>
+<td>(24*40+45)%126=123</td>
+<td><code>&#123;</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>191</td>
+<td>14</td>
+<td>9</td>
+<td>(14*40+45)%126=101</td>
+<td><code>e</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>280</td>
+<td>21</td>
+<td>7</td>
+<td>(21*40+90)%126=48</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>19</td>
+<td>1</td>
+<td>6</td>
+<td>(1*40+58)%126=98</td>
+<td><code>b</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>256</td>
+<td>19</td>
+<td>9</td>
+<td>(19*40+45)%126=49</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>241</td>
+<td>18</td>
+<td>7</td>
+<td>(18*40+90)%126=54</td>
+<td><code>6</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td>(21*40+99)%126=57</td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>17</td>
+<td>1</td>
+<td>4</td>
+<td>(1*40+16)%126=56</td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td>17</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>18</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>19</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>298</td>
+<td>22</td>
+<td>12</td>
+<td>(22*40+99)%126=97</td>
+<td><code>a</code></td>
+</tr>
+<tr>
+<td>21</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td>(21*40+99)%126=57</td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>280</td>
+<td>21</td>
+<td>7</td>
+<td>(21*40+90)%126=48</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>23</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>25</td>
+<td>12</td>
+<td>0</td>
+<td>12</td>
+<td>(0*40+99)%126=99</td>
+<td><code>c</code></td>
+</tr>
+<tr>
+<td>26</td>
+<td>38</td>
+<td>2</td>
+<td>12</td>
+<td>(2*40+99)%126=53</td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td>27</td>
+<td>12</td>
+<td>0</td>
+<td>12</td>
+<td>(0*40+99)%126=99</td>
+<td><code>c</code></td>
+</tr>
+<tr>
+<td>28</td>
+<td>191</td>
+<td>14</td>
+<td>9</td>
+<td>(14*40+45)%126=101</td>
+<td><code>e</code></td>
+</tr>
+<tr>
+<td>29</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>30</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td>(1*40+10)%126=50</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>31</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>32</td>
+<td>12</td>
+<td>0</td>
+<td>12</td>
+<td>(0*40+99)%126=99</td>
+<td><code>c</code></td>
+</tr>
+<tr>
+<td>33</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td>(1*40+10)%126=50</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>34</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>35</td>
+<td>45</td>
+<td>3</td>
+<td>6</td>
+<td>(3*40+58)%126=52</td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td>36</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>37</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td>(21*40+99)%126=57</td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>38</td>
+<td>17</td>
+<td>1</td>
+<td>4</td>
+<td>(1*40+16)%126=56</td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td>39</td>
+<td>35</td>
+<td>2</td>
+<td>9</td>
+<td>(2*40+45)%126=125</td>
+<td><code>&#125;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="anti-analysis">Anti-Analysis</h2>
+<ul>
+<li><strong>TLS Callbacks</strong>: Two callbacks
+(<code>0x401C50</code>, <code>0x401C20</code>) execute before
+<code>main</code> — a common anti-debug vector.</li>
+<li><strong>53KB of bloat</strong>: Up to 321 API calls per character,
+making manual static analysis impractical without scripting.</li>
+<li><strong>Environment sensitivity</strong>: Functions like
+<code>CreateProcessA</code> and <code>SetConsoleDisplayMode</code>
+return different error codes under a debugger, making dynamic analysis a
+trap. The algebraic approach sidesteps this entirely by reasoning at the
+mathematical level, independent of the Windows runtime.</li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{e0fb1f6d98d7da90d7c5cef27c2f4798}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1512,126 +2306,6 @@ decrypts the payload to reveal the flag.</li>
 </ol>
 <h2 id="flag">Flag</h2>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{7b3626cd356784a17a9e49447356f229}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-more-the-merrier/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-more-the-merrier/" class="post-title-link" itemprop="url">247CTF - The More The Merrier</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-more-the-merrier/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-more-the-merrier/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="the-more-the-merrier">The More The Merrier</h1>
-<p>One byte is great. But what if you need more? Can you find the flag
-hidden in this binary?</p>
-<h2 id="analysis">Analysis</h2>
-<p>The challenge provides a 64-bit ELF executable. Checking its
-details:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file the_more_the_merrier</span><br><span class="line">the_more_the_merrier: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=0f750d638337391328fa7432dd362189de908c1e, stripped</span><br></pre></td></tr></table></figure>
-<p>Upon inspecting the binary’s data section or its hex dump, we find
-the 247CTF flag hidden in the binary:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">00000000000006E0  01 00 02 00 00 00 00 00  32 00 00 00 34 00 00 00  ........2...4...</span><br><span class="line">00000000000006F0  37 00 00 00 43 00 00 00  54 00 00 00 46 00 00 00  7...C...T...F...</span><br><span class="line">0000000000000700  7B 00 00 00 36 00 00 00  64 00 00 00 66 00 00 00  &#123;...6...d...f...</span><br><span class="line">0000000000000710  32 00 00 00 31 00 00 00  35 00 00 00 65 00 00 00  2...1...5...e...</span><br><span class="line">0000000000000720  62 00 00 00 33 00 00 00  63 00 00 00 63 00 00 00  b...3...c...c...</span><br><span class="line">0000000000000730  37 00 00 00 33 00 00 00  34 00 00 00 30 00 00 00  7...3...4...0...</span><br><span class="line">0000000000000740  37 00 00 00 32 00 00 00  36 00 00 00 37 00 00 00  7...2...6...7...</span><br><span class="line">0000000000000750  30 00 00 00 33 00 00 00  31 00 00 00 61 00 00 00  0...3...1...a...</span><br><span class="line">0000000000000760  31 00 00 00 35 00 00 00  62 00 00 00 30 00 00 00  1...5...b...0...</span><br><span class="line">0000000000000770  61 00 00 00 62 00 00 00  33 00 00 00 36 00 00 00  a...b...3...6...</span><br><span class="line">0000000000000780  63 00 00 00 7D 00 00 00  00 00 00 00 4E 6F 74 68  c...&#125;.......Noth</span><br></pre></td></tr></table></figure>
-<h2 id="solution">Solution</h2>
-<p>Each character of the flag is stored as a 4-byte little-endian
-integer. For example: - <code>32 00 00 00</code> -&gt; <code>0x32</code>
--&gt; <code>'2'</code> - <code>34 00 00 00</code> -&gt;
-<code>0x34</code> -&gt; <code>'4'</code> - <code>37 00 00 00</code>
--&gt; <code>0x37</code> -&gt; <code>'7'</code> -
-<code>43 00 00 00</code> -&gt; <code>0x43</code> -&gt;
-<code>'C'</code></p>
-<p>We can extract the flag by reading the first byte of each 4-byte
-chunk.</p>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{6df215eb3cc73407267031a15b0ab36c}</span></span>
 
       
     </div>
