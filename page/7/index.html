@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">163</span>
+          <span class="site-state-item-count">164</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -274,6 +274,134 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-encrypted-password/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-the-encrypted-password/" class="post-title-link" itemprop="url">247CTF - The Encrypted Password</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-02 20:15:42" itemprop="dateCreated datePublished" datetime="2026-03-02T20:15:42+08:00">2026-03-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-the-encrypted-password/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-encrypted-password/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="the-encrypted-password">The encrypted password</h1>
+<p>Challenge prompt:</p>
+<blockquote>
+<p>You won’t find the admin’s secret password in this binary. We even
+encrypted it with a secure one-time-pad. Can you still recover the
+password?</p>
+</blockquote>
+<h2 id="quick-dynamic-check-with-ltrace">1. Quick dynamic check with
+<code>ltrace</code></h2>
+<p><code>ltrace</code> shows the binary compares our input against a
+transformed string.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ltrace ./encrypted_password</span><br><span class="line">...</span><br><span class="line">puts(<span class="string">&quot;Enter the secret password:&quot;</span>)</span><br><span class="line">fgets(<span class="string">&quot;arst\\n&quot;</span>, 33, stdin)</span><br><span class="line">strcmp(<span class="string">&quot;arst\\n&quot;</span>, <span class="string">&quot;141c85ccfb2ae19d8d8c224c4e403dce&quot;</span>...)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>This already hints that the expected secret is a printable 32-byte
+string.</p>
+<h2 id="or-debug-in-debugger-pwndbg">2. Or debug in debugger
+(<code>pwndbg</code>)</h2>
+<p>Set a breakpoint at the <code>strcmp</code> call
+(<code>0x555555400930</code>) and run the program.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; b *0x555555400930</span><br><span class="line">pwndbg&gt; r</span><br><span class="line">...</span><br><span class="line">► 0x555555400930    call   strcmp@plt</span><br><span class="line">    s1: 0x7fffffffdf00 ◂— 0x500000000a</span><br><span class="line">    s2: 0x7fffffffded0 ◂— <span class="string">&#x27;141c85ccfb2ae19d8d8c224c4e403dce&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>At compare time, <code>s2</code> contains the final password
+candidate.</p>
+<h2 id="or-reverse-logic-in-ida">3. Or reverse logic in IDA</h2>
+<p>Relevant decompiled logic:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">strcpy</span>(s, <span class="string">&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span>);</span><br><span class="line">*(_QWORD *)s2 = <span class="number">0x5A53010106040309L</span>L;</span><br><span class="line">v8  = <span class="number">0x5C585354500A5B00L</span>L;</span><br><span class="line">v9  = <span class="number">0x555157570108520DL</span>L;</span><br><span class="line">v10 = <span class="number">0x5707530453040752L</span>L;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>(s); ++i)</span><br><span class="line">  s2[i] ^= s[i];</span><br><span class="line"></span><br><span class="line">fgets(s1, <span class="number">33</span>, <span class="built_in">stdin</span>);</span><br><span class="line"><span class="keyword">if</span> (!<span class="built_in">strcmp</span>(s1, s2))</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;You found the flag!\\n247CTF&#123;%s&#125;\\n&quot;</span>, s2);</span><br></pre></td></tr></table></figure>
+<p>So the binary builds <code>s2</code>, XORs it with <code>s</code>,
+then compares it against input.</p>
+<p>Reconstruct the secret with Python</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> p64, xor</span><br><span class="line"></span><br><span class="line">chunks = [</span><br><span class="line">    <span class="number">0x5A53010106040309</span>,</span><br><span class="line">    <span class="number">0x5C585354500A5B00</span>,</span><br><span class="line">    <span class="number">0x555157570108520D</span>,</span><br><span class="line">    <span class="number">0x5707530453040752</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">s2_bytes = <span class="string">b&quot;&quot;</span>.join(p64(chunk) <span class="keyword">for</span> chunk <span class="keyword">in</span> chunks)</span><br><span class="line">key = <span class="string">b&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span></span><br><span class="line">password = xor(s2_bytes, key)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;247CTF&#123;&#123;<span class="subst">&#123;password.decode()&#125;</span>&#125;&#125;&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{141c85ccfb2ae19d8d8c224c4e403dce}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1508,129 +1636,6 @@ compute answers</li>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> pwn</span><br><span class="line"></span><br><span class="line">HOST = <span class="string">&quot;7a3875d00fa5d462.247ctf.com&quot;</span></span><br><span class="line">PORT = <span class="number">50337</span></span><br><span class="line"></span><br><span class="line">pwn.context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line">pwn.tube.newline = <span class="string">b&quot;\r\n&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve_challenge</span>():</span><br><span class="line">    conn = <span class="literal">None</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        conn = pwn.remote(HOST, PORT)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">500</span>):</span><br><span class="line">            conn.recvuntil(<span class="string">b&quot;answer to &quot;</span>)</span><br><span class="line">            question_line = conn.recvline().decode().strip()</span><br><span class="line">            expression = question_line.replace(<span class="string">&quot;?&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">            result = <span class="built_in">int</span>(<span class="built_in">eval</span>(expression))</span><br><span class="line">            conn.sendline(<span class="built_in">str</span>(result).encode())</span><br><span class="line">            pwn.log.info(<span class="string">f&quot;Progress: [<span class="subst">&#123;i + <span class="number">1</span>&#125;</span>/500] Solved: <span class="subst">&#123;expression&#125;</span> = <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        pwn.log.success(<span class="string">&quot;500 problems solved! Waiting for flag...&quot;</span>)</span><br><span class="line">        conn.interactive()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        pwn.log.error(<span class="string">f&quot;An error occurred: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        <span class="keyword">if</span> conn:</span><br><span class="line">            pwn.log.info(<span class="string">&quot;Connection closed.&quot;</span>)</span><br><span class="line">            conn.close()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve_challenge()</span><br></pre></td></tr></table></figure>
 <h2 id="execution-output">Execution Output</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">❯ python tcp_auto.py</span><br><span class="line">[+] Opening connection to 7a3875d00fa5d462.247ctf.com on port 50337: Done</span><br><span class="line">...</span><br><span class="line">[*] Progress: [499/500] Solved: 221 + 474 = 695</span><br><span class="line">[*] Progress: [500/500] Solved: 4 + 449 = 453</span><br><span class="line">[+] 500 problems solved! Waiting <span class="keyword">for</span> flag...</span><br><span class="line">[*] Switching to interactive mode</span><br><span class="line">247CTF&#123;flag_here&#125;</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-follow-the-sequence/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-follow-the-sequence/" class="post-title-link" itemprop="url">247CTF - Follow The Sequence</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-02-27 15:53:23" itemprop="dateCreated datePublished" datetime="2026-02-27T15:53:23+08:00">2026-02-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-follow-the-sequence/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-follow-the-sequence/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Multi-path TCP (MPTCP) challenge: data is spread across multiple
-subflows. Task is to combine the requests and recover the flag.</p>
-<h2 id="approach">Approach</h2>
-<ol type="1">
-<li><strong>Merge PCAP files</strong> - Combine three MPTCP flow
-captures</li>
-<li><strong>Extract TCP streams</strong> - Reconstruct the data from
-merged flows</li>
-<li><strong>Analyze extracted data</strong> - Look for embedded archives
-and artifacts</li>
-<li><strong>Extract and inspect</strong> - Check for flag in extracted
-files</li>
-</ol>
-<h2 id="solution-steps">Solution Steps</h2>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. Merge the three PCAP files</span></span><br><span class="line">mergecap -w merged_chall.pcap chall-i1.pcap chall-i2.pcap chall-i3.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. Extract TCP flows</span></span><br><span class="line">tcpflow -r merged_chall.pcap -o ./output_dir</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. Concatenate flow streams</span></span><br><span class="line"><span class="built_in">cat</span> a b c &gt; a</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. Extract embedded archive with binwalk</span></span><br><span class="line">binwalk -eM a</span><br></pre></td></tr></table></figure>
-<h2 id="key-findings">Key Findings</h2>
-<ul>
-<li>Identified ZIP archive at offset <code>0x78145B</code> containing 11
-files</li>
-<li>Extracted files include multiple JPEGs: <code>Flag.jpg</code>,
-<code>Here.jpg</code>, <code>Is.jpg</code>,
-<code>NOT_A_FLAG.jpg</code></li>
-<li>Flag is embedded in one of the extracted images</li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{850bb436f0eecad0205eebb6c9b7b6c6}</span></span>
 
       
     </div>
