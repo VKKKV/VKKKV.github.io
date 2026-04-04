@@ -11015,4 +11015,208 @@ in a Base32-encoded string. <figure class="highlight text"><table><tr><td class=
         <tag>writeup</tag>
       </tags>
   </entry>
+  <entry>
+    <title>kashiCTF 2026 - Conquer</title>
+    <url>/wp/kashiCTF2026/kashictf2026-conquer/</url>
+    <content><![CDATA[<blockquote>
+<p>I like to save my files as pdfs. Kashi kings hate 184.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The file is named <code>flag.pdf</code>, but standard PDF analysis
+tools fail to recognize it:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pdfid flag.pdf</span><br><span class="line"><span class="comment"># Output: Not a PDF document</span></span><br></pre></td></tr></table></figure>
+<p>Using the <code>file</code> command reveals its true identity:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">file flag.pdf</span><br><span class="line"><span class="comment"># Output: flag.pdf: Netpbm image data, size = 284 x 150, rawbits, pixmap</span></span><br></pre></td></tr></table></figure>
+<p>The challenge hint “Kashi kings hate 184” suggests that the height of
+the image (currently 150) has been tampered with and should likely be
+<strong>184</strong>.</p>
+<h3 id="extraction-decoding">Extraction &amp; Decoding</h3>
+<p>Netpbm (PPM) files use a plain-text header. We can repair the height
+by editing the file header. Opening the file in a hex editor or a text
+editor like <code>vim</code> (using <code>:set binary</code> or simply
+editing the ASCII header) reveals:</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">P6</span><br><span class="line">284 150</span><br><span class="line">255</span><br><span class="line">[Binary Data...]</span><br></pre></td></tr></table></figure>
+<p>Change the height value from <code>150</code> to
+<code>184</code>:</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">P6</span><br><span class="line">284 184</span><br><span class="line">255</span><br><span class="line">[Binary Data...]</span><br></pre></td></tr></table></figure>
+<p>After saving the change, the image can be opened with a standard
+image viewer to reveal the flag.</p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{iLOVEkashi}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>forensics</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kashiCTF 2026 - Ancient Mystery</title>
+    <url>/wp/kashiCTF2026/kashictf2026-ancient-mystery/</url>
+    <content><![CDATA[<blockquote>
+<p>A secret message has been passed down through generations since the
+time of the great Mahabharata war. Legend says that every 64 years, the
+keepers of this secret would encode the message once more to protect it
+from those who might seek to misuse its power. The message has traveled
+through 3136 years of history, from the ancient battlefields of
+Kurukshetra in 3136 BCE to the dawn of the Common Era.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides two main clues:</p>
+<ol type="1">
+<li><strong>Mathematical Clue</strong>: The message has existed for 3136
+years and was re-encoded every 64 years. <span
+class="math display">$$\frac{3136}{64} = 49$$</span> This suggests the
+message has been recursively encoded <strong>49</strong> times.</li>
+<li><strong>File Inspection</strong>: The provided file
+<code>secret_message.txt</code> is large (~59MB) and starts with the
+characters <code>Vm0wd2Qy...</code>, which is a classic signature for
+multiple layers of Base64 encoding.</li>
+</ol>
+<h3 id="extraction-decoding">Extraction &amp; Decoding</h3>
+<p>We can use a Python script to iteratively decode the file 49 times.
+Each layer of decoding reduces the file size until the final plaintext
+flag is revealed.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># Read the initial encoded data</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;secret_message.txt&#x27;</span>, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        data = f.read().strip()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Iteratively decode 49 times</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[*] Starting iterative Base64 decoding...&quot;</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">49</span>):</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            data = base64.b64decode(data).decode(<span class="string">&#x27;utf-8&#x27;</span>)</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;[-] Error at iteration <span class="subst">&#123;i+<span class="number">1</span>&#125;</span>: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] Final Decoded Message: <span class="subst">&#123;data&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{th3_s3cr3t_0f_mah4bh4r4t4_fr0m_3136_BCE}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>misc</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheWeb Happy Holidays! 🎁</title>
+    <url>/wp/HackTheWeb/HackTheWeb-challenge366-happyHolidays/</url>
+    <content><![CDATA[<blockquote>
+<p>Wait, you forgot to give me the Advent calendar!?!?! And what is that
+supposed to mean, I should have opened the doors up until today?? Ugh,
+okay, then I’ll start: Door 1</p>
+</blockquote>
+<h1 id="investigation">Investigation</h1>
+<p>The hint suggests that we need to visit the “doors” of the Advent
+calendar. The URL structure was identified as:</p>
+<figure class="highlight http"><table><tr><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">https://hack.arrrg.de/adventskalender/$$</span> <span class="meta">HTTP/1.1</span></span><br></pre></td></tr></table></figure>
+<p>Where <code>$$</code> represents the door number. To find the flag,
+we need to check all possible doors (1 to 30).</p>
+<h1 id="solution">Solution</h1>
+<p>Using <strong>Zaproxy</strong> (OWASP ZAP) or a similar fuzzer, we
+can automate the process:</p>
+<ol type="1">
+<li><strong>Intercept/Send Request</strong>: Create a base request to
+<code>https://hack.arrrg.de/adventskalender/1</code>.</li>
+<li><strong>Set Payload</strong>: In Zaproxy’s fuzzer, set the payload
+for the door number position.</li>
+<li><strong>Configure Generator</strong>: Use a
+<strong>Numberzz</strong> generator:
+<ul>
+<li><strong>From</strong>: 1</li>
+<li><strong>To</strong>: 30</li>
+<li><strong>Step</strong>: 1</li>
+</ul></li>
+<li><strong>Execute Fuzz</strong>: Start the fuzzer and monitor the
+responses.</li>
+<li><strong>Analyze Results</strong>: Look for a response that differs
+in content.</li>
+</ol>
+<p>After fuzzing, collecting the responses and looking for a secret
+message was revealed the hidden message.</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">THE ANSWER: FELIZNAVIDAD</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>hacktheweb</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kashiCTF 2026 - Easy Forensics</title>
+    <url>/wp/kashiCTF2026/kashictf2026-easy-forensics/</url>
+    <content><![CDATA[<p>A network analysis challenge where data was exfiltrated via DNS
+queries.</p>
+<h3 id="challenge-description">Challenge Description</h3>
+<blockquote>
+<p>A network capture was obtained from an internal monitoring system
+after suspicious activity was detected. The traffic appears mostly
+benign, but analysts believe data was covertly exfiltrated during normal
+communication.</p>
+</blockquote>
+<h3 id="initial-reconnaissance">Initial Reconnaissance</h3>
+<p>Checking the protocol distribution of the <code>capture.pcap</code>
+file using <code>tshark</code>:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tshark -r capture.pcap -q -z io,phs</span><br></pre></td></tr></table></figure>
+<p>The output confirms that <strong>100% of the traffic is DNS</strong>,
+indicating that DNS is being used as a tunnel for exfiltration.</p>
+<h3 id="dns-query-analysis">DNS Query Analysis</h3>
+<p>Extracting the DNS query names reveals two distinct patterns: 1.
+Repetitive queries for common domains like <code>kashi.com</code> and
+<code>amazon.com</code> (likely noise). 2. High-entropy subdomains under
+<code>.exfil.internal</code>.</p>
+<p>Extracting the subdomains:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tshark -r capture.pcap -T fields -e dns.qry.name | grep <span class="string">&quot;.exfil.internal&quot;</span></span><br><span class="line"><span class="comment"># Example output:</span></span><br><span class="line"><span class="comment"># NNQXG2DJINKE.exfil.internal</span></span><br><span class="line"><span class="comment"># M63ENZZV6ZLY.exfil.internal</span></span><br><span class="line"><span class="comment"># MZUWY5DSMF2G.exfil.internal</span></span><br><span class="line"><span class="comment"># S33OL5UXGX3T.exfil.internal</span></span><br><span class="line"><span class="comment"># NZSWC23ZPU.exfil.internal</span></span><br></pre></td></tr></table></figure>
+<h3 id="data-recovery">Data Recovery</h3>
+<p>The strings (e.g., <code>NNQXG...</code>) are characteristic of
+<strong>Base32 encoding</strong>. We can concatenate these strings and
+decode them to recover the secret payload:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="comment"># Concatenated subdomains</span></span><br><span class="line">encoded_payload = <span class="string">&quot;NNQXG2DJINKEM63ENZZV6ZLYMZUWY5DSMF2GS33OL5UXGX3TNZSWC23ZPU&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Base32 decoding (adding padding if necessary)</span></span><br><span class="line">decoded = base64.b32decode(encoded_payload + <span class="string">&quot;======&quot;</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded flag: <span class="subst">&#123;decoded&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{dns_exfiltration_is_sneaky}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kashiCTF 2026 - Mid Forensics</title>
+    <url>/wp/kashiCTF2026/kashictf2026-mid-forensics/</url>
+    <content><![CDATA[<p>A forensics challenge involving network traffic analysis and IP
+Time-to-Live (TTL) steganography.</p>
+<h3 id="challenge-description">Challenge Description</h3>
+<blockquote>
+<p>A packet capture was collected from an internal network segment
+during routine monitoring. No alerts were triggered at the time, and the
+traffic appears largely normal. Your task is to analyze the capture and
+determine whether any meaningful information can be recovered.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The provided file <code>ttl_stego.pcap</code> contains a series of
+ICMP Echo (ping) requests. While the payloads appear standard, the IP
+Time-to-Live (TTL) values fluctuate between <strong>64</strong> and
+<strong>65</strong>, suggesting binary data is encoded in these
+variations.</p>
+<p>Using <code>tshark</code> to inspect the TTL values:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tshark -r ttl_stego.pcap -c 10 -T fields -e ip.ttl</span><br><span class="line"><span class="comment"># Output: 64, 65, 65, 64, 65, 64, 65, 65, 64, 65...</span></span><br></pre></td></tr></table></figure>
+<h3 id="extraction-decoding">Extraction &amp; Decoding</h3>
+<p>The TTL values can be mapped to binary bits: - <strong>64</strong>
+<span class="math inline">→</span> <code>0</code> - <strong>65</strong>
+<span class="math inline">→</span> <code>1</code></p>
+<p>We can extract the full sequence of TTLs and decode them using a
+Python script:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract TTLs using: tshark -r ttl_stego.pcap -T fields -e ip.ttl &gt; ttls.txt</span></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;ttls.txt&#x27;</span>, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    ttls = [<span class="built_in">int</span>(line.strip()) <span class="keyword">for</span> line <span class="keyword">in</span> f <span class="keyword">if</span> line.strip()]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert TTLs to bits</span></span><br><span class="line">bits = <span class="string">&quot;&quot;</span>.join([<span class="string">&#x27;0&#x27;</span> <span class="keyword">if</span> t == <span class="number">64</span> <span class="keyword">else</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">for</span> t <span class="keyword">in</span> ttls])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert bits to characters (8 bits per byte)</span></span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>):</span><br><span class="line">    byte = bits[i:i+<span class="number">8</span>]</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(byte) == <span class="number">8</span>:</span><br><span class="line">        flag += <span class="built_in">chr</span>(<span class="built_in">int</span>(byte, <span class="number">2</span>))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded message: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{ttl_stego_is_evil}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+      </tags>
+  </entry>
 </search>
