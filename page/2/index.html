@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">175</span>
+          <span class="site-state-item-count">177</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">111</span>
+        <span class="site-state-item-count">112</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,245 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-easy-forensics/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/kashiCTF2026/kashictf2026-easy-forensics/" class="post-title-link" itemprop="url">kashiCTF 2026 - Easy Forensics</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-04 11:14:52 / Modified: 16:58:36" itemprop="dateCreated datePublished" datetime="2026-04-04T11:14:52+08:00">2026-04-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-easy-forensics/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-easy-forensics/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>A network analysis challenge where data was exfiltrated via DNS
+queries.</p>
+<h3 id="challenge-description">Challenge Description</h3>
+<blockquote>
+<p>A network capture was obtained from an internal monitoring system
+after suspicious activity was detected. The traffic appears mostly
+benign, but analysts believe data was covertly exfiltrated during normal
+communication.</p>
+</blockquote>
+<h3 id="initial-reconnaissance">Initial Reconnaissance</h3>
+<p>Checking the protocol distribution of the <code>capture.pcap</code>
+file using <code>tshark</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tshark -r capture.pcap -q -z io,phs</span><br></pre></td></tr></table></figure>
+<p>The output confirms that <strong>100% of the traffic is DNS</strong>,
+indicating that DNS is being used as a tunnel for exfiltration.</p>
+<h3 id="dns-query-analysis">DNS Query Analysis</h3>
+<p>Extracting the DNS query names reveals two distinct patterns: 1.
+Repetitive queries for common domains like <code>kashi.com</code> and
+<code>amazon.com</code> (likely noise). 2. High-entropy subdomains under
+<code>.exfil.internal</code>.</p>
+<p>Extracting the subdomains:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">tshark -r capture.pcap -T fields -e dns.qry.name | grep <span class="string">&quot;.exfil.internal&quot;</span></span><br><span class="line"><span class="comment"># Example output:</span></span><br><span class="line"><span class="comment"># NNQXG2DJINKE.exfil.internal</span></span><br><span class="line"><span class="comment"># M63ENZZV6ZLY.exfil.internal</span></span><br><span class="line"><span class="comment"># MZUWY5DSMF2G.exfil.internal</span></span><br><span class="line"><span class="comment"># S33OL5UXGX3T.exfil.internal</span></span><br><span class="line"><span class="comment"># NZSWC23ZPU.exfil.internal</span></span><br></pre></td></tr></table></figure>
+<h3 id="data-recovery">Data Recovery</h3>
+<p>The strings (e.g., <code>NNQXG...</code>) are characteristic of
+<strong>Base32 encoding</strong>. We can concatenate these strings and
+decode them to recover the secret payload:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="comment"># Concatenated subdomains</span></span><br><span class="line">encoded_payload = <span class="string">&quot;NNQXG2DJINKEM63ENZZV6ZLYMZUWY5DSMF2GS33OL5UXGX3TNZSWC23ZPU&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Base32 decoding (adding padding if necessary)</span></span><br><span class="line">decoded = base64.b32decode(encoded_payload + <span class="string">&quot;======&quot;</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded flag: <span class="subst">&#123;decoded&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{dns_exfiltration_is_sneaky}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-mid-forensics/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/kashiCTF2026/kashictf2026-mid-forensics/" class="post-title-link" itemprop="url">kashiCTF 2026 - Mid Forensics</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-04 11:14:52 / Modified: 12:11:09" itemprop="dateCreated datePublished" datetime="2026-04-04T11:14:52+08:00">2026-04-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-mid-forensics/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-mid-forensics/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>A forensics challenge involving network traffic analysis and IP
+Time-to-Live (TTL) steganography.</p>
+<h3 id="challenge-description">Challenge Description</h3>
+<blockquote>
+<p>A packet capture was collected from an internal network segment
+during routine monitoring. No alerts were triggered at the time, and the
+traffic appears largely normal. Your task is to analyze the capture and
+determine whether any meaningful information can be recovered.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The provided file <code>ttl_stego.pcap</code> contains a series of
+ICMP Echo (ping) requests. While the payloads appear standard, the IP
+Time-to-Live (TTL) values fluctuate between <strong>64</strong> and
+<strong>65</strong>, suggesting binary data is encoded in these
+variations.</p>
+<p>Using <code>tshark</code> to inspect the TTL values:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tshark -r ttl_stego.pcap -c 10 -T fields -e ip.ttl</span><br><span class="line"><span class="comment"># Output: 64, 65, 65, 64, 65, 64, 65, 65, 64, 65...</span></span><br></pre></td></tr></table></figure>
+<h3 id="extraction-decoding">Extraction &amp; Decoding</h3>
+<p>The TTL values can be mapped to binary bits: - <strong>64</strong>
+<span class="math inline">→</span> <code>0</code> - <strong>65</strong>
+<span class="math inline">→</span> <code>1</code></p>
+<p>We can extract the full sequence of TTLs and decode them using a
+Python script:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract TTLs using: tshark -r ttl_stego.pcap -T fields -e ip.ttl &gt; ttls.txt</span></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;ttls.txt&#x27;</span>, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    ttls = [<span class="built_in">int</span>(line.strip()) <span class="keyword">for</span> line <span class="keyword">in</span> f <span class="keyword">if</span> line.strip()]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert TTLs to bits</span></span><br><span class="line">bits = <span class="string">&quot;&quot;</span>.join([<span class="string">&#x27;0&#x27;</span> <span class="keyword">if</span> t == <span class="number">64</span> <span class="keyword">else</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">for</span> t <span class="keyword">in</span> ttls])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert bits to characters (8 bits per byte)</span></span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>):</span><br><span class="line">    byte = bits[i:i+<span class="number">8</span>]</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(byte) == <span class="number">8</span>:</span><br><span class="line">        flag += <span class="built_in">chr</span>(<span class="built_in">int</span>(byte, <span class="number">2</span>))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded message: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{ttl_stego_is_evil}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1742,286 +1981,6 @@ the Soviet Union during World War II.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">vigenere_decrypt</span>(<span class="params">ct, key, offset=<span class="number">0</span></span>):</span><br><span class="line">    res = <span class="string">&quot;&quot;</span></span><br><span class="line">    k_idx = offset</span><br><span class="line">    key = key.lower()</span><br><span class="line">    <span class="keyword">for</span> char <span class="keyword">in</span> ct:</span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;a&quot;</span> &lt;= char &lt;= <span class="string">&quot;z&quot;</span>:</span><br><span class="line">            shift = <span class="built_in">ord</span>(key[k_idx % <span class="built_in">len</span>(key)]) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>)</span><br><span class="line">            res += <span class="built_in">chr</span>((<span class="built_in">ord</span>(char) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>) - shift) % <span class="number">26</span> + <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>))</span><br><span class="line">            k_idx += <span class="number">1</span></span><br><span class="line">        <span class="keyword">elif</span> <span class="string">&quot;A&quot;</span> &lt;= char &lt;= <span class="string">&quot;Z&quot;</span>:</span><br><span class="line">            shift = <span class="built_in">ord</span>(key[k_idx % <span class="built_in">len</span>(key)]) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>)</span><br><span class="line">            res += <span class="built_in">chr</span>((<span class="built_in">ord</span>(char) - <span class="built_in">ord</span>(<span class="string">&quot;A&quot;</span>) - shift) % <span class="number">26</span> + <span class="built_in">ord</span>(<span class="string">&quot;A&quot;</span>))</span><br><span class="line">            k_idx += <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            res += char</span><br><span class="line">            <span class="comment"># k_idx is NOT incremented for non-alpha</span></span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">key = <span class="string">&quot;askanditshallbegivenyouseekandyeshallfind&quot;</span></span><br><span class="line"></span><br><span class="line">ct1 = <span class="string">&quot;twhsnz&#123;tngqmqdhqqygxrloyehuvxtwwvxklkiiudpxqcvqhbmkepledu&#125;&quot;</span></span><br><span class="line">ct2 = <span class="string">&quot;brassg&#123;lhrrfxzgxvrpzmierkrkdbkdyeibpredxbrflvvvotgvfisacb&#125;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># just loop and try offset</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;CT1:&quot;</span>, vigenere_decrypt(ct1, key, <span class="number">0</span>))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;CT2:&quot;</span>, vigenere_decrypt(ct2, key, <span class="number">38</span>))</span><br><span class="line"></span><br><span class="line">msg1 = <span class="string">&quot;&quot;&quot;zpzc xlcq aq lorr, dlh aas zyqg n paldee rn mate mpgsxm olrw tcfh set jkm m st.</span></span><br><span class="line"><span class="string">tpwq buh gwxeedt pzht esf jrib mf yg mgsr ks crqwailp.</span></span><br><span class="line"><span class="string">ejty whw qeahztd ieqzsi zpzc sgbx gyx ghruc me oiotso!</span></span><br><span class="line"><span class="string">vi adv gbha pwsl, t&#x27;wm qkmo cbs on gyv pievr qwlttyl tbfalsoa wwfgyrzh bx sqyrvevn.</span></span><br><span class="line"><span class="string">eeoo shuc cgb&#x27;rp ytb srldywrg</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">x.l. loe xzwmk &quot;qhmgyhcgr kkmr&quot; lq zwyy rztl. lru krohol psacs tu anmi cbs quf.</span></span><br><span class="line"><span class="string">- nsrn pdgvfjrzdx</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;\nMessage 1:&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(vigenere_decrypt(msg1, key, <span class="number">15</span>))</span><br></pre></td></tr></table></figure>
 <h2 id="flag">Flag</h2>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">texsaw{luojmfsgmkqltenaemdqlxgtyrfdlzxdmqmxysvdettsxpatcq}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/TexSAW2026/texsaw2026-lostmykey/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/TexSAW2026/texsaw2026-lostmykey/" class="post-title-link" itemprop="url">TexSAW CTF 2026 lostmykey</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-03-30 11:47:54 / Modified: 11:49:28" itemprop="dateCreated datePublished" datetime="2026-03-30T11:47:54+08:00">2026-03-30</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/TexSAW2026/texsaw2026-lostmykey/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/TexSAW2026/texsaw2026-lostmykey/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>I can’t find my original house key anywhere! Can you help me find it?
-Here’s a picture of my keys the nanny took before they were lost. It
-must be hidden somewhere!</p>
-</blockquote>
-<blockquote>
-<p><strong>Flag format:</strong> <code>texsaw&#123;flag_here&#125;</code></p>
-</blockquote>
-<h2 id="solution">Solution</h2>
-<h3 id="extracting-hidden-files">1. Extracting Hidden Files</h3>
-<p>Using <code>binwalk</code>, we can identify and extract any embedded
-files:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">❯ binwalk -e Temoc_keyring.png</span><br></pre></td></tr></table></figure>
-<p>After extraction, we have two similar images:</p>
-<ol type="1">
-<li><code>Temoc_keyring(orig).png</code></li>
-<li><code>where_are_my_keys.png</code></li>
-</ol>
-<p>Checking them with <code>pngcheck</code> confirms they are both
-valid, but their file sizes and compression ratios differ.</p>
-<h3 id="pixel-comparison">2. Pixel Comparison</h3>
-<p>At first glance, the two images appear identical. However, the
-difference in file size suggests that data might be hidden in the pixel
-values themselves. We can use a Python script with the
-<code>Pillow</code> library to compare them:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"></span><br><span class="line">img1 = Image.<span class="built_in">open</span>(<span class="string">&#x27;Temoc_keyring(orig).png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line">img2 = Image.<span class="built_in">open</span>(<span class="string">&#x27;where_are_my_keys.png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line"></span><br><span class="line">width, _ = img1.size</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check the first row for differences</span></span><br><span class="line">diff_indices = [x <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(width) <span class="keyword">if</span> img1.getpixel((x, <span class="number">0</span>)) != img2.getpixel((x, <span class="number">0</span>))]</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Differences found at X coordinates: <span class="subst">&#123;diff_indices&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-<p>Running this reveals exactly 131 differing pixels, all located within
-the very first row (<code>y = 0</code>).</p>
-<h3 id="decoding-the-steganography">4. Decoding the Steganography</h3>
-<p>The pattern of differing pixels suggests a binary encoding. We can
-treat each pixel in the first row as a bit:</p>
-<ul>
-<li><strong>Bit 1:</strong> If the pixels at <code>(x, 0)</code> are
-different.</li>
-<li><strong>Bit 0:</strong> If the pixels at <code>(x, 0)</code> are
-identical.</li>
-</ul>
-<p>We then group these bits into 8-bit bytes and convert them to ASCII
-characters to reveal the flag.</p>
-<p><strong>Extraction Script:</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"></span><br><span class="line">img1 = Image.<span class="built_in">open</span>(<span class="string">&#x27;Temoc_keyring(orig).png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line">img2 = Image.<span class="built_in">open</span>(<span class="string">&#x27;where_are_my_keys.png&#x27;</span>).convert(<span class="string">&quot;RGB&quot;</span>)</span><br><span class="line"></span><br><span class="line">bits = []</span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(img1.size[<span class="number">0</span>]):</span><br><span class="line">    <span class="keyword">if</span> img1.getpixel((x, <span class="number">0</span>)) != img2.getpixel((x, <span class="number">0</span>)):</span><br><span class="line">        bits.append(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        bits.append(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert bits to bytes and then to ASCII</span></span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>):</span><br><span class="line">    byte = bits[i:i+<span class="number">8</span>]</span><br><span class="line">    char_code = <span class="built_in">int</span>(<span class="string">&quot;&quot;</span>.join(<span class="built_in">map</span>(<span class="built_in">str</span>, byte)), <span class="number">2</span>)</span><br><span class="line">    <span class="keyword">if</span> char_code == <span class="number">0</span>: <span class="keyword">break</span></span><br><span class="line">    flag += <span class="built_in">chr</span>(char_code)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Flag: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">texsaw{you_found_me_at_key}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/" class="post-title-link" itemprop="url">TexSAW CTF 2026 Idiosyncratic French</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-29 21:00:00" itemprop="dateCreated datePublished" datetime="2026-03-29T21:00:00+08:00">2026-03-29</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-30 11:40:29" itemprop="dateModified" datetime="2026-03-30T11:40:29+08:00">2026-03-30</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/TexSAW2026/texsaw2026-idiosyncratic-frnch/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>This chall’s got a bit of history to it.</p>
-</blockquote>
-<blockquote>
-<p>First, crack this initial cryptogram. Now, apply OSINT tools to find
-who authors that original script.</p>
-</blockquote>
-<blockquote>
-<p><strong>Flag format:</strong> <code>txsaw&#123;first_last&#125;</code> (e.g.,
-<code>txsaw&#123;john_scalzi&#125;</code>)</p>
-</blockquote>
-<h2 id="solution">Solution</h2>
-<h3 id="cryptanalysis-substitution-cipher">1. Cryptanalysis:
-Substitution Cipher</h3>
-<p>The challenge begins with a large block of ciphertext:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Azza wfahv ztu. N rnvy, bndfah na zbfaztv vztak, n vztak ndfa uz n dcnqza zw n uzlvfa, icfuv nmztu...</span><br></pre></td></tr></table></figure>
-<p>Using frequency analysis or an automated tool like <span class="exturl" data-url="aHR0cHM6Ly9xdWlwcWl1cC5jb20v">quipqiup<i class="fa fa-external-link-alt"></i></span>, we can determine that this is
-a <strong>simple substitution cipher</strong>. The decoded plaintext
-is:</p>
-<blockquote>
-<p>Noon rings out. A wasp, making an ominous sound, a sound akin to a
-klaxon or a tocsin, flits about. Augustus, who has had a bad night, sits
-up blinking and purblind. Oh what was that word (is his thought) that
-ran through my brain all night, that idiotic word that, hard as I’d try
-to pun it down, was always just an inch or two out of my grasp…</p>
-</blockquote>
-<h3 id="osint-identifying-the-source">2. OSINT: Identifying the
-Source</h3>
-<p>The title of the challenge, <strong>“Idiosyncratic French”</strong>,
-and the nature of the decoded text provide vital clues.</p>
-<p>Searching for the decoded string—specifically unique phrases like
-<em>“A wasp, making an ominous sound, a sound akin to a klaxon or a
-tocsin”</em>—reveals that this is an excerpt from the novel <strong>“A
-Void”</strong>.</p>
-<h3 id="the-idiosyncrasy-lipograms">3. The “Idiosyncrasy”:
-Lipograms</h3>
-<p>What makes this text “idiosyncratic”? <strong>“A Void”</strong> is
-the English translation of the French novel <strong>“La
-Disparition”</strong>. The defining characteristic (idiosyncrasy) of
-both the original and the translation is that they are
-<strong>lipograms</strong>: they are written entirely without the letter
-<strong>“e”</strong>.</p>
-<h3 id="finding-the-author">4. Finding the Author</h3>
-<p>The author of the original French novel, <em>La Disparition</em>, is
-the famous French writer <strong>Georges Perec</strong>.</p>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">txsaw{georges_perec}</span></span>
 
       
     </div>
