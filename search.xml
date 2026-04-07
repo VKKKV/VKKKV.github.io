@@ -11423,4 +11423,56 @@ flag!</p>
         <tag>dos</tag>
       </tags>
   </entry>
+  <entry>
+    <title>kashiCTF 2026 - Burnt Ashes</title>
+    <url>/wp/kashiCTF2026/kashictf2026-burnt-ashes/</url>
+    <content><![CDATA[<blockquote>
+<p>An investigator recovered a Linux disk image from a manuscript ward
+workstation in Varanasi. The drive appears normal, but operators suspect
+hidden transfer records were concealed using layered steganography and
+encryption workflows.</p>
+</blockquote>
+<h3 id="initial-exploration">Initial Exploration</h3>
+<p>The provided disk image (<code>kashi_ritual_ledger.img</code>) is an
+ext4 filesystem.</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">❯ file kashi_ritual_ledger.img</span><br><span class="line">kashi_ritual_ledger.img: Linux rev 1.0 ext4 filesystem data, UUID=f83285e2-bb1a-4a34-bdec-b901cf985c4e, volume name <span class="string">&quot;KASHI_LEDGER&quot;</span> (extents) (64bit) (large files) (huge files)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Mount the image</span></span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">mkdir</span> -p /mnt/kashi_ledger</span><br><span class="line"><span class="built_in">sudo</span> mount -o loop,ro kashi_ritual_ledger.img /mnt/kashi_ledger</span><br><span class="line"></span><br><span class="line"><span class="comment"># Search for hidden files</span></span><br><span class="line">find /mnt/kashi_ledger -<span class="built_in">type</span> f -name <span class="string">&quot;.*&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Exploring the filesystem reveals several key files: -
+<code>challenge_runtime.json</code>: Metadata containing passphrases and
+AES parameters. - <code>/home/pandit_ved/</code>: User home directory
+with <code>Pictures/ward_scans</code>, <code>Notes</code>, and a hidden
+<code>.archive_payloads</code> folder. -
+<code>/deleted_mail_pool/</code>: Contains <code>.eml</code> files
+discussing “passphrase doctrine.”</p>
+<h3 id="metadata-analysis">Metadata Analysis</h3>
+<p>Reading <code>challenge_runtime.json</code> provided the following
+stages: - <strong>Stage 1 Steg Passphrase:</strong>
+<code>trishul-lantern-braid</code> - <strong>Stage 2 Steg
+Phrase:</strong> <code>ghat-manjari-copper-owl</code></p>
+<p>Notes in <code>home/pandit_ved/Notes/ritual_index_notes.md</code>
+hinted that the “hidden ledger capsule is in one scan that does not open
+with the standard (Stage 1) phrase.”</p>
+<h3 id="steganography-extraction">Steganography Extraction</h3>
+<p>There were four BMP scans in the <code>ward_scans</code> directory.
+Using <code>steghide</code> with the Stage 1 passphrase:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> f <span class="keyword">in</span> /mnt/kashi_ledger/home/pandit_ved/Pictures/ward_scans/*.bmp; <span class="keyword">do</span></span><br><span class="line">  steghide extract -sf <span class="string">&quot;<span class="variable">$f</span>&quot;</span> -p <span class="string">&quot;trishul-lantern-braid&quot;</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p>While most contained decoy files,
+<code>scan_midnight_index.bmp</code> failed, indicating it required the
+Stage 2 passphrase:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">steghide extract -sf scan_midnight_index.bmp -p <span class="string">&quot;ghat-manjari-copper-owl&quot;</span></span><br><span class="line"><span class="comment"># Output: wrote extracted data to &quot;stage2_ledger.enc&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="locating-the-flag">Locating the Flag</h3>
+<p>The extracted <code>stage2_ledger.enc</code> matched a file in the
+hidden <code>.archive_payloads</code> directory. A corresponding
+<code>.txt</code> file was also present:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> /mnt/kashi_ledger/home/pandit_ved/.archive_payloads/stage2_ledger.txt</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{ledger_ashes_remember_every_ritual}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+      </tags>
+  </entry>
 </search>
