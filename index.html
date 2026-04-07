@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">178</span>
+          <span class="site-state-item-count">180</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -274,6 +274,143 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/ritsec2026/ritsec2026-ocean-wildlife/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/ritsec2026/ritsec2026-ocean-wildlife/" class="post-title-link" itemprop="url">RITSEC CTF 2026 - Ocean Wildlife</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-07 11:25:07 / Modified: 11:42:49" itemprop="dateCreated datePublished" datetime="2026-04-07T11:25:07+08:00">2026-04-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/ritsec2026/ritsec2026-ocean-wildlife/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/ritsec2026/ritsec2026-ocean-wildlife/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>You have recieved a message in a bottle, saying something about the
+strange behavior of sea creatures. I wonder what that could be
+about?</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides a <code>rosbag2</code> recording consisting of
+a <code>metadata.yaml</code> file and a SQLite database
+<code>mystery_message_0.db3</code>. The metadata indicates that the
+recording contains messages for several topics, most notably
+<code>/draw_commands</code>.</p>
+<h3 id="database-inspection">Database Inspection</h3>
+<p>Opening the database with <code>sqlite3</code>, we find several
+tables, including <code>topics</code> and <code>messages</code>. The
+<code>topics</code> table reveals that the <code>/draw_commands</code>
+topic uses the <code>std_msgs/msg/String</code> type and contains
+JSON-formatted instructions.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> topics <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;/draw_commands&#x27;</span>;</span><br><span class="line"><span class="comment">-- topic_id 6, type std_msgs/msg/String</span></span><br></pre></td></tr></table></figure>
+<h3 id="data-extraction">Data Extraction</h3>
+<p>The messages in the <code>messages</code> table are stored in CDR
+(Common Data Representation) format. For
+<code>std_msgs/msg/String</code>, the actual string data starts after an
+8-byte header (4 bytes CDR header + 4 bytes string length).</p>
+<p>By extracting and parsing these strings, we find two types of
+commands:</p>
+<ul>
+<li><code>&#123;"cmd": "pen", "off": 0/1, ...&#125;</code>: Controls whether the
+turtle is drawing.</li>
+<li><code>&#123;"cmd": "teleport", "x": ..., "y": ..., "theta": ...&#125;</code>:
+Moves the turtle to specific coordinates.</li>
+</ul>
+<h3 id="visualization">Visualization</h3>
+<p>Using a Python script with <code>matplotlib</code>, we can
+reconstruct the path drawn by the turtle. By treating
+<code>teleport</code> as a movement and <code>pen</code> as the draw
+state, we can plot the lines.</p>
+<p>The coordinates reveal two distinct rows of characters:</p>
+<ul>
+<li><strong>Top Row (Y ≈ 6.0):</strong> Letters forming
+<code>RS&#123;f0ll0w_th3_</code></li>
+<li><strong>Bottom Row (Y ≈ 4.7):</strong> Letters forming
+<code>5ea_Turtles&#125;</code></li>
+</ul>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">RS{f0ll0w_th3_5ea_Turtles}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1385,117 +1522,6 @@ decoder<i class="fa fa-external-link-alt"></i></span>), we can extract the hidde
 <p>The decoded message reveals the flag.</p>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{1_like_poems_but_1_lik3_u_more&lt;3}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-sanity-1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/kashiCTF2026/kashictf2026-sanity-1/" class="post-title-link" itemprop="url">kashiCTF 2026 - Sanity 1</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-04 11:14:52 / Modified: 12:05:10" itemprop="dateCreated datePublished" datetime="2026-04-04T11:14:52+08:00">2026-04-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-sanity-1/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-sanity-1/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Its Time to be sane. I wish I could give the flag, but I can’t. Try
-searching this site. xd :&gt;</p>
-</blockquote>
-<h3 id="solution">Solution</h3>
-<p>The flag was split into two parts found in different locations on the
-platform:</p>
-<ol type="1">
-<li><p><strong>robots.txt</strong>: Navigating to
-<code>https://kashictf.iitbhucybersec.in/robots.txt</code> revealed the
-first part of the flag: <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">User-agent: *</span><br><span class="line">Disallow: /admin</span><br><span class="line">kashiCTF&#123;50_you_did</span><br></pre></td></tr></table></figure></p></li>
-<li><p><strong>Home Page Source</strong>: Inspecting the HTML source
-code of the main landing page
-<code>https://kashictf.iitbhucybersec.in/</code> revealed the second
-part hidden inside a comment: <figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--- _endup_ge77ing_the_flag_hehe&#125; ---&gt;</span></span><br></pre></td></tr></table></figure></p></li>
-</ol>
-<p>Combining both parts yields the full flag.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{50_you_did_endup_ge77ing_the_flag_hehe}</span></span>
 
       
     </div>
