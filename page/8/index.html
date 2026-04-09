@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">180</span>
+          <span class="site-state-item-count">181</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -274,6 +274,131 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-Angr-y-Binary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-Angr-y-Binary/" class="post-title-link" itemprop="url">247CTF - Angr-y Binary</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-08 16:59:31 / Modified: 17:12:30" itemprop="dateCreated datePublished" datetime="2026-03-08T16:59:31+08:00">2026-03-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-Angr-y-Binary/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-Angr-y-Binary/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Why waste time creating multiple functions, when you can just use
+one? Can you find the path to the flag in this angr-y binary?</p>
+</blockquote>
+<h2 id="challenge-overview">Challenge Overview</h2>
+<p>The challenge provides a 32-bit ELF executable. The goal is to find
+the correct input that leads to the flag.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file angr-y_binary</span><br><span class="line">angr-y_binary: ELF 32-bit LSB executable, Intel i386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=611e939f262f927b8515162283d36476df2d3244, not stripped</span><br></pre></td></tr></table></figure>
+<h2 id="analysis">Analysis</h2>
+<p>Using <code>radare2</code> to inspect the disassembly, we identify
+three key functions: <code>print_flag</code>, <code>no_flag</code>, and
+<code>maybe_flag</code>.</p>
+<h3 id="disassembly">Disassembly</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">     ;-- print_flag:</span><br><span class="line">     0x08048596      55             push ebp</span><br><span class="line">     0x08048597      89e5           mov ebp, esp</span><br><span class="line">     ...</span><br><span class="line">     0x080485db      e830feffff     call sym.imp.fgets          ;[3]</span><br><span class="line">     0x080485e0      83c410         add esp, 0x10</span><br><span class="line">     0x080485e3      83ec0c         sub esp, 0xc</span><br><span class="line">     0x080485e6      8d45b4         lea eax, [ebp - 0x4c]</span><br><span class="line">     0x080485e9      50             push eax</span><br><span class="line">     0x080485ea      e841feffff     call sym.imp.puts           ;[4]</span><br><span class="line">     ...</span><br><span class="line"></span><br><span class="line">     ;-- no_flag:</span><br><span class="line">     0x08048609      55             push ebp</span><br><span class="line">     0x0804860a      89e5           mov ebp, esp</span><br><span class="line">     0x0804860c      e8d0005e00     call sym.__x86.get_pc_thunk.ax ;[6]</span><br><span class="line">     0x08048611      05ef195e00     add eax, 0x5e19ef</span><br><span class="line">     0x08048616      c780300000..   mov dword [eax + 0x30], 0</span><br><span class="line">     0x08048620      90             nop</span><br><span class="line">     0x08048621      5d             pop ebp</span><br><span class="line">     0x08048622      c3             ret</span><br><span class="line"></span><br><span class="line">     ;-- maybe_flag:</span><br><span class="line">     0x08048623      55             push ebp</span><br><span class="line">     0x08048624      89e5           mov ebp, esp</span><br><span class="line">     0x08048626      53             push ebx</span><br><span class="line">     0x08048627      83ec04         sub esp, 4</span><br><span class="line">     0x0804862a      e8b2005e00     call sym.__x86.get_pc_thunk.ax ;[6]</span><br><span class="line">     0x0804862f      05d1195e00     add eax, 0x5e19d1</span><br><span class="line">     0x08048634      8b9030000000   mov edx, dword [eax + 0x30]</span><br><span class="line">     0x0804863a      85d2           test edx, edx</span><br><span class="line"> ┌─&lt; 0x0804863c      7407           je 0x8048645</span><br><span class="line"> │   0x0804863e      e853ffffff     call sym.print_flag         ;[7]</span><br><span class="line">┌──&lt; 0x08048643      eb14           jmp 0x8048659</span><br><span class="line">│└─&gt; 0x08048645      83ec0c         sub esp, 0xc</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>The logic suggests we need to reach <code>print_flag</code> while
+avoiding the paths that lead to <code>no_flag</code>.</p>
+<h2 id="solution">Solution</h2>
+<p>Since the binary’s path to the flag is complex, we use
+<code>angr</code> to perform symbolic execution and find the correct
+input.</p>
+<h3 id="solver-script">Solver Script</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> angr</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>(<span class="params">bin_path</span>):</span><br><span class="line">    project = angr.Project(bin_path)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Initialize the state at entry</span></span><br><span class="line">    initial_state = project.factory.entry_state(</span><br><span class="line">        add_options = &#123;</span><br><span class="line">            angr.options.SYMBOL_FILL_UNCONSTRAINED_MEMORY,</span><br><span class="line">            angr.options.SYMBOL_FILL_UNCONSTRAINED_REGISTERS</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    simulation = project.factory.simgr(initial_state)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Explore searching for the print_flag function and avoiding no_flag</span></span><br><span class="line">    <span class="comment"># print_flag: 0x08048596</span></span><br><span class="line">    <span class="comment"># no_flag: 0x8048609</span></span><br><span class="line">    simulation.explore(find=<span class="number">0x08048596</span>, avoid=<span class="number">0x8048609</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> simulation.found:</span><br><span class="line">        solution_state = simulation.found[<span class="number">0</span>]</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Found solution: <span class="subst">&#123;solution_state.posix.dumps(sys.stdin.fileno()).decode()&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">raise</span> Exception(<span class="string">&#x27;Could not find the solution&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve(<span class="string">&#x27;./angr-y_binary&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="execution">Execution</h3>
+<p>Running the script gives us the password:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ python solve.py</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
+<p>Connecting to the server with the found password:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">❯ nc 0c4c28058a1f7a2f.247ctf.com 50230</span><br><span class="line">Enter a valid password:</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{a3bbb9d2e648841d99e1cf4535a92945}</span></span>
+<h2 id="references">References</h2>
+<ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2pha2VzcHJpbmdlci9hbmdyX2N0Zi90cmVlL21hc3Rlci9zb2x1dGlvbnMvMDFfYW5ncl9hdm9pZA==">angr_ctf
+learn - jakespringer<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1525,133 +1650,8 @@ chunk.</p>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-secret-lock/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-secret-lock/" class="post-title-link" itemprop="url">247CTF - The Secret Lock</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-secret-lock/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-secret-lock/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Reverse the lock validation logic and recover the 40-character
-flag.</p>
-<h2 id="challenge">Challenge</h2>
-<p>The page verifies a candidate flag client-side with a long chain of
-arithmetic and bitwise constraints.</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">        checkFlag(flag) &#123;</span><br><span class="line">          let result = &quot;LOCKED&quot;;</span><br><span class="line">          this.dom.lock.classList.remove(&quot;verified&quot;);</span><br><span class="line">          if (</span><br><span class="line">            Object.keys(flag).length == 40 &amp;&amp;</span><br><span class="line">            (flag[37] - flag[37]) * flag[15] == 0 &amp;&amp;</span><br><span class="line">            (flag[3] + flag[31]) ^ (flag[29] + flag[8] == 234) &amp;&amp;</span><br><span class="line"></span><br><span class="line">// Constraint Satisfaction</span><br><span class="line"></span><br><span class="line">          ) &#123;</span><br><span class="line">            result = &quot;&quot;;</span><br><span class="line">            for (var idx in flag) &#123;</span><br><span class="line">              result += String.fromCharCode(flag[idx]);</span><br><span class="line">            &#125;</span><br><span class="line">            this.dom.lock.classList.add(&quot;verified&quot;);</span><br><span class="line">          &#125;</span><br><span class="line">          return result;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<h2 id="approach">Approach</h2>
-<ul>
-<li>Extract all <code>if (...)</code> constraints from the JavaScript
-checker.</li>
-<li>Model each <code>flag[i]</code> as an ASCII character in Z3
-(<code>32..126</code>).</li>
-<li>Convert JavaScript-style constraint expressions into valid Python/Z3
-expressions.</li>
-<li>Solve and rebuild the flag string from the model.</li>
-</ul>
-<h2 id="solver-script-z3">Solver Script (Z3)</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> z3 <span class="keyword">import</span> BitVec, Solver, sat</span><br><span class="line"></span><br><span class="line">raw_js = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">(flag[37] - flag[37]) * flag[15] == 0 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[3] + flag[31]) ^ (flag[29] + flag[8] == 234) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] - flag[12]) * flag[9] == -2332 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] - flag[27] + flag[13]) ^ (flag[6] == 114) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] - flag[15]) * flag[33] == 800 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] - flag[21]) * flag[26] == 98 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[29] + flag[0]) ^ (flag[8] + flag[38] == 248) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[21] * flag[18]) ^ (flag[7] - flag[15] == 2694) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] * flag[23]) ^ (flag[19] - flag[5] == -9813) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] + flag[30]) ^ (flag[37] + flag[6] == 72) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[23] - flag[22]) * flag[12] == 4950 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] * flag[28]) ^ (flag[20] - flag[11] == 5143) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[2] * flag[22]) ^ (flag[37] - flag[0] == 2759) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[26] - flag[12]) * flag[3] == -3350 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] * flag[0]) ^ (flag[23] - flag[21] == 2698) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[20] + flag[31]) ^ (flag[5] + flag[10] == 22) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[31] * flag[19]) ^ (flag[1] - flag[2] == -2655) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] - flag[14]) * flag[18] == 55 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[29] - flag[19] + flag[10]) ^ (flag[2] == 93) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] - flag[25] + flag[30]) ^ (flag[29] == 13) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] + flag[33]) ^ (flag[26] + flag[21] == 249) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[17] + flag[24]) ^ (flag[34] + flag[1] == 253) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] - flag[35] + flag[19]) ^ (flag[1] == 0) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[22] - flag[11] + flag[3]) ^ (flag[31] == 113) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[19] - flag[0]) * flag[13] == 108 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[19] - flag[17]) * flag[14] == -2475 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[31] - flag[35] + flag[16]) ^ (flag[19] == 84) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] * flag[27]) ^ (flag[35] - flag[17] == -5792) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] * flag[35]) ^ (flag[15] - flag[28] == -2845) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] - flag[19] + flag[31]) ^ (flag[5] == 112) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[20] - flag[6]) * flag[10] == -3933 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[39] - flag[33]) * flag[6] == 3075 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[22] + flag[1]) ^ (flag[39] + flag[14] == 211) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[37] * flag[24]) ^ (flag[12] - flag[39] == -5726) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[29] + flag[3]) ^ (flag[8] + flag[11] == 195) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[26] * flag[7]) ^ (flag[10] - flag[17] == -2375) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] - flag[12]) * flag[12] == -4653 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] * flag[5]) ^ (flag[12] - flag[25] == 3829) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] * flag[0]) ^ (flag[13] - flag[23] == -2829) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[17] + flag[12]) ^ (flag[8] + flag[14] == 170) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] + flag[23]) ^ (flag[11] + flag[1] == 245) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[22] + flag[5]) ^ (flag[21] + flag[24] == 19) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] - flag[8] + flag[21]) ^ (flag[30] == 85) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] - flag[31] + flag[28]) ^ (flag[29] == 0) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[30] * flag[35]) ^ (flag[27] - flag[29] == 5501) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[8] - flag[30] + flag[16]) ^ (flag[36] == 81) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] * flag[18]) ^ (flag[35] - flag[38] == -2971) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[27] - flag[14]) * flag[39] == 5875 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] - flag[33]) * flag[6] == -6027 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] * flag[1]) ^ (flag[20] - flag[10] == -2915) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] - flag[1]) * flag[3] == 0 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[36] - flag[20]) * flag[8] == 2640 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[23] - flag[11] + flag[17]) ^ (flag[33] == 246) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] - flag[38]) * flag[0] == -100 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[14]) * flag[31] == 2142 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[26] + flag[15]) ^ (flag[13] + flag[31] == 8) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[36] - flag[15]) * flag[17] == 5238 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[16] - flag[30]) * flag[33] == 0 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[2] - flag[20] + flag[13]) ^ (flag[6] == 76) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[10] - flag[14] + flag[31]) ^ (flag[13] == 3) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[0] * flag[10]) ^ (flag[14] - flag[31] == 2854) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[34] + flag[14]) ^ (flag[14] == 82) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[25]) * flag[1] == 2444 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] - flag[12]) * flag[25] == -2400 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] * flag[38]) ^ (flag[17] - flag[4] == 5429) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[21] - flag[21] + flag[26]) ^ (flag[23] == 84) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] - flag[4] + flag[18]) ^ (flag[35] == 47) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[21] + flag[1]) ^ (flag[33] == 0) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] - flag[25] + flag[22]) ^ (flag[0] == 8) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[25]) * flag[12] == 4653 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] * flag[15]) ^ (flag[10] - flag[8] == 2498) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[5] * flag[7]) ^ (flag[15] - flag[34] == -3429) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[8] * flag[3]) ^ (flag[23] - flag[22] == 3671) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[25] - flag[33]) * flag[11] == -2600 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[21] + flag[12]) ^ (flag[37] + flag[28] == 81) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[30] + flag[33]) ^ (flag[34] + flag[14] == 162) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[6] - flag[25]) * flag[8] == 4015 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] - flag[7] + flag[12]) ^ (flag[7] == 90) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] * flag[12]) ^ (flag[8] - flag[4] == -5466) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] * flag[7]) ^ (flag[32] - flag[27] == -2730) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] * flag[34]) ^ (flag[29] - flag[16] == 2804) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[25] * flag[22]) ^ (flag[28] - flag[39] == -2542) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[8] - flag[15]) * flag[6] == 861 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[20] + flag[18]) ^ (flag[25] + flag[36] == 245) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[5] - flag[28] + flag[14]) ^ (flag[39] == 97) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[30] * flag[11]) ^ (flag[16] - flag[11] == 5216) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] + flag[18]) ^ (flag[7] + flag[9] == 13) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] - flag[2]) * flag[30] == -200 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[12] + flag[37]) ^ (flag[9] + flag[4] == 78) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[10] - flag[37]) * flag[38] == -2408 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[5] * flag[19]) ^ (flag[20] - flag[21] == 3645) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[27] * flag[29]) ^ (flag[39] - flag[21] == 10354) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[15] * flag[32]) ^ (flag[7] - flag[22] == -2642) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] - flag[3] + flag[24]) ^ (flag[31] == 25) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] - flag[0]) * flag[30] == 400 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] - flag[15] + flag[36]) ^ (flag[28] == 12) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] + flag[21]) ^ (flag[12] + flag[37] == 163) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[36] - flag[33]) * flag[14] == 110 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[2] - flag[3]) * flag[3] == -804 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] - flag[27] + flag[22]) ^ (flag[4] == 80) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[10] + flag[9]) ^ (flag[17] + flag[2] == 246) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[25] * flag[4]) ^ (flag[27] - flag[23] == 4201) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] * flag[19]) ^ (flag[3] - flag[25] == 2877) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[37] - flag[14]) * flag[23] == 4545 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] + flag[13]) ^ (flag[31] + flag[32] == 7) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] - flag[25]) * flag[39] == 250 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[17] + flag[31]) ^ (flag[6] + flag[9] == 36) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[4] + flag[27]) ^ (flag[2] + flag[31] == 208) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[6] + flag[7]) ^ (flag[26] + flag[21] == 206) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[19] + flag[25]) ^ (flag[22] + flag[10] == 10) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] + flag[2]) ^ (flag[8] + flag[26] == 2) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[7] + flag[5]) ^ (flag[12] + flag[14] == 237) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] - flag[13]) * flag[38] == -112 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[0] - flag[19] + flag[16]) ^ (flag[0] == 80) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[31] + flag[36]) ^ (flag[3] + flag[2] == 227) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] - flag[3] + flag[26]) ^ (flag[4] == 113) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[3] * flag[6]) ^ (flag[16] - flag[27] == -8241) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] + flag[15]) ^ (flag[2] + flag[30] == 242) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] + flag[21]) ^ (flag[31] + flag[20] == 12) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] - flag[26] + flag[23]) ^ (flag[30] == 13)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line">s = Solver()</span><br><span class="line"></span><br><span class="line">flag = [BitVec(<span class="string">f&quot;flag[<span class="subst">&#123;i&#125;</span>]&quot;</span>, <span class="number">32</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">40</span>)]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">40</span>):</span><br><span class="line">    s.add(flag[i] &gt;= <span class="number">32</span>, flag[i] &lt;= <span class="number">126</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> line <span class="keyword">in</span> raw_js.strip().split(<span class="string">&quot;&amp;&amp;&quot;</span>):</span><br><span class="line">    line = line.strip()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> line:</span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Convert: A ^ (B == N)   -&gt;   (A ^ B) == N</span></span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;^&quot;</span> <span class="keyword">in</span> line:</span><br><span class="line">        line = re.sub(<span class="string">r&quot;(.*)\^\s*\((.*)\s*==\s*(-?\d+)\)&quot;</span>, <span class="string">r&quot;(\1 ^ (\2)) == \3&quot;</span>, line)</span><br><span class="line"></span><br><span class="line">    s.add(<span class="built_in">eval</span>(line))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> s.check() == sat:</span><br><span class="line">    m = s.model()</span><br><span class="line">    result = <span class="string">&quot;&quot;</span>.join([<span class="built_in">chr</span>(m[flag[i]].as_long()) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">40</span>)])</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Result: <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n[-] Unsatisfiable.&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="notes">Notes</h2>
-<ul>
-<li><code>^</code> in JavaScript is bitwise XOR (not exponent), so
-constraints must be modeled as XOR equations.</li>
-<li>32-bit <code>BitVec</code> variables are used to match JavaScript
-bitwise operation behavior.</li>
-</ul>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{17594c670da74613e921faed37d37fd8}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/7/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><span class="page-number current">8</span><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/9/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/7/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><span class="page-number current">8</span><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/">19</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/9/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
