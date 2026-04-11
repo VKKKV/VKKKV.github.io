@@ -11631,4 +11631,43 @@ results in the 34-byte block compared by the binary.</p>
         <tag>writeup</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Hack For A Change 2026 - Encrypted Audit Logs</title>
+    <url>/wp/hackforachange2026/hackforachange2026-encrypted-audit-logs/</url>
+    <content><![CDATA[<blockquote>
+<p>Decrypt tampered audit log entries to reconstruct evidence of
+unauthorized access.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides a secure audit log export from “ClinCore
+Health Systems”. Scanning through the logs, several
+<code>EncryptedToken</code> entries are visible, formatted as Base32
+strings.</p>
+<p>A critical clue is found in the logs: <figure class="highlight text"><table><tr><td class="code"><pre><span class="line">[2026-03-15 16:00:05] ENCRYPT: Cipher config: XOR mode=repeating key_len=4</span><br></pre></td></tr></table></figure></p>
+<p>This indicates that the tokens are encrypted using a repeating 4-byte
+XOR key.</p>
+<h3 id="solution">Solution</h3>
+<p>While most tokens in the log decode to fragmented text, the token on
+line 108
+(<code>YX2THEVPQ4LNRIMFCHIKFUCBRL2IGF6567KEFW7Q2AK5XIUEJXI7FUCE33VQ====</code>)
+decodes to raw binary data, suggesting it contains the flag.</p>
+<p>Since the flag format is <code>SDG&#123;...&#125;</code>, we can perform a
+known-plaintext attack to recover the 4-byte XOR key by XORing the first
+4 bytes of the ciphertext with <code>SDG&#123;</code>.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="comment"># The tampered token (line 108)</span></span><br><span class="line">ct = base64.b32decode(<span class="string">&quot;YX2THEVPQ4LNRIMFCHIKFUCBRL2IGF6567KEFW7Q2AK5XIUEJXI7FUCE33VQ====&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use &quot;SDG&#123;&quot; as known plaintext to derive the 4-byte XOR key</span></span><br><span class="line">known = <span class="string">b&quot;SDG&#123;&quot;</span></span><br><span class="line">key = <span class="built_in">bytes</span>([ct[i] ^ known[i] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>)])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Decrypt with repeating 4-byte key</span></span><br><span class="line">plaintext = <span class="built_in">bytes</span>([ct[i] ^ key[i % <span class="number">4</span>] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(ct))])</span><br><span class="line"><span class="built_in">print</span>(plaintext.decode())</span><br></pre></td></tr></table></figure>
+<p><strong>Key Recovery:</strong> - Ciphertext (hex):
+<code>c5f53392...</code> - Known Plaintext: <code>5344477b</code>
+(<code>SDG&#123;</code>) - Derived Key: <code>96b174e9</code></p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">SDG{96b174e94a5cb2c4ae62faa24598da07}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>crypto</tag>
+        <tag>writeup</tag>
+      </tags>
+  </entry>
 </search>
