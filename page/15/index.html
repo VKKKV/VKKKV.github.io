@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">186</span>
+          <span class="site-state-item-count">190</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -274,6 +274,517 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-30/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/Suninatas/suninatas-game-30/" class="post-title-link" itemprop="url">Suninatas Game 30</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-09 23:23:50" itemprop="dateCreated datePublished" datetime="2026-02-09T23:23:50+08:00">2026-02-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/Suninatas/suninatas-game-30/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/Suninatas/suninatas-game-30/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p><span class="exturl" data-url="aHR0cDovL3N1bmluYXRhcy5jb20vY2hhbGxlbmdlcw==">challenges<i class="fa fa-external-link-alt"></i></span></p>
+<h2 id="game-30">Game 30</h2>
+<p>Challenge summary:</p>
+<ul>
+<li><code>Q1</code>: IP address of General Kim’s PC</li>
+<li><code>Q2</code>: Secret document read by hacker</li>
+<li><code>Q3</code>: Content of that document (contains a key)</li>
+<li>Final: <code>lowercase(md5(Q1 + Q2 + Q3))</code></li>
+</ul>
+<p>Given artifact:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ file <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span></span><br><span class="line">MemoryDump(SuNiNaTaS): data</span><br></pre></td></tr></table></figure>
+<p>I used Volatility 3 throughout.</p>
+<h2 id="initial-triage">Initial triage</h2>
+<p>Identify OS profile and basic context:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/ctf/symbolTables windows.info</span><br><span class="line">...</span><br><span class="line">Is64Bit   False</span><br><span class="line">NTBuildLab 7601.18044.x86fre.win7sp1_gdr.13</span><br><span class="line">SystemTime 2016-05-24 09:47:40+00:00</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h2 id="q1-ip-address-of-general-kims-pc">Q1: IP address of General
+Kim’s PC</h2>
+<p>Check active/known network artifacts:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/ctf/symbolTables windows.netscan</span><br><span class="line">...</span><br><span class="line">0x3f270450 TCPv4 192.168.197.138 139   0.0.0.0         0   LISTENING   4 System</span><br><span class="line">0x3f270768 UDPv4 192.168.197.138 137   *               0               4 System</span><br><span class="line">0x3fdd5620 TCPv4 192.168.197.138 49248 113.29.189.142 80  ESTABLISHED  - -</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>Q1 answer:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.197.138</span><br></pre></td></tr></table></figure>
+<h2 id="q2-which-secret-document-was-read">Q2: Which secret document was
+read?</h2>
+<p>Find interesting user actions from process arguments:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/ctf/symbolTables windows.cmdline</span><br><span class="line">...</span><br><span class="line">3728 notepad.exe notepad C:\Users\training\Desktop\SecreetDocumen7.txt</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>Q2 answer:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SecreetDocumen7.txt</span><br></pre></td></tr></table></figure>
+<h2 id="q3-contentkey-inside-the-secret-document">Q3: Content/key inside
+the secret document</h2>
+<p>Locate and dump the file from memory:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/ctf/symbolTables windows.filescan | grep <span class="string">&#x27;SecreetDocumen7.txt&#x27;</span></span><br><span class="line">0x3df2ddd8 100.0\Users\training\Desktop\SecreetDocumen7.txt</span><br><span class="line"></span><br><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/ctf/symbolTables windows.dumpfiles --phy 0x3df2ddd8</span><br><span class="line">...</span><br><span class="line">file.0x3df2ddd8.0x85d7d150.DataSectionObject.SecreetDocumen7.txt.dat</span><br><span class="line"></span><br><span class="line">$ xxd file.0x3df2ddd8.0x85d7d150.DataSectionObject.SecreetDocumen7.txt.dat</span><br><span class="line">...</span><br><span class="line">00000050: 7920 6973 2022 3472 6d79 5f34 6972 666f  y is <span class="string">&quot;4rmy_4irfo</span></span><br><span class="line"><span class="string">00000060: 7263 655f 4e34 7679 2200 0000 0000 0000  rce_N4vy&quot;</span>.......</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>Q3 key:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">4rmy_4irforce_N4vy</span><br></pre></td></tr></table></figure>
+<h2 id="final-auth-key">Final Auth Key</h2>
+<p>Concatenate in order:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.197.138SecreetDocumen7.txt4rmy_4irforce_N4vy</span><br></pre></td></tr></table></figure>
+<p>Compute lowercase MD5:</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">c152e3fb5a6882563231b00f21a8ed5f</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-31/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/Suninatas/suninatas-game-31/" class="post-title-link" itemprop="url">Suninatas Game 31</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-09 23:23:50" itemprop="dateCreated datePublished" datetime="2026-02-09T23:23:50+08:00">2026-02-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/Suninatas/suninatas-game-31/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/Suninatas/suninatas-game-31/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p><span class="exturl" data-url="aHR0cDovL3N1bmluYXRhcy5jb20vY2hhbGxlbmdlcw==">challenges<i class="fa fa-external-link-alt"></i></span></p>
+<h2 id="game-31">Game 31</h2>
+<p>Challenge statement:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">* Info : This PDF file don&#x27;t attack your PC. Just using for study.</span><br><span class="line">Analyze this PDF and Find a Flag.</span><br><span class="line">Auth Key = lowercase(MD5(Flag))</span><br></pre></td></tr></table></figure>
+<h2 id="initial-pdf-triage">Initial PDF triage</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ pdfid Hello_SuNiNaTaS.pdf</span><br><span class="line">...</span><br><span class="line">/JS                    1</span><br><span class="line">/JavaScript            2</span><br><span class="line">/EmbeddedFile          0</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>pdfid</code> shows JavaScript indicators, but the interesting
+part is a nested object tree.</p>
+<h2 id="main-solve-path-works">Main solve path (works)</h2>
+<p>Search for JavaScript references and inspect container objects:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -s JavaScript Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 30 0</span><br><span class="line">  &lt;&lt;</span><br><span class="line">    /JavaScript 31 0 R</span><br><span class="line">    /EmbeddedFiles 38 0 R</span><br><span class="line">  &gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>Follow embedded-file references:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -o 38 Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 38 0</span><br><span class="line">Referencing: 40 0 R</span><br><span class="line"></span><br><span class="line">$ pdf-parser -o 39 -f -d nested.pdf Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 39 0</span><br><span class="line">Contains stream</span><br><span class="line">/Subtype /a</span><br><span class="line">/Filter /FlateDecode</span><br></pre></td></tr></table></figure>
+<p>Now analyze extracted <code>nested.pdf</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">$ pdfid nested.pdf</span><br><span class="line">...</span><br><span class="line">/Encrypt               1</span><br><span class="line">/JS                    1</span><br><span class="line">/JavaScript            1</span><br><span class="line">/OpenAction            1</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">$ qpdf --decrypt nested.pdf decrypted.pdf</span><br><span class="line"></span><br><span class="line">$ pdf-parser -s js decrypted.pdf</span><br><span class="line">obj 2 0</span><br><span class="line">  &lt;&lt;</span><br><span class="line">    /JS 4 0 R</span><br><span class="line">    /S /JavaScript</span><br><span class="line">  &gt;&gt;</span><br><span class="line"></span><br><span class="line">$ pdf-parser -o 4 -f -d dump decrypted.pdf</span><br><span class="line">$ <span class="built_in">cat</span> dump</span><br><span class="line"><span class="string">&quot;HERE IS FLAGS *********************&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Flag:</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">SunINatAsGOodWeLL!@#$</span></span>
+<h2 id="decoy-path-time-sink">Decoy path (time sink)</h2>
+<p>You can also extract object <code>37</code> as JavaScript
+payload:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -o 37 -d payload.js Hello_SuNiNaTaS.pdf</span><br><span class="line">$ node payload.js</span><br><span class="line">Decoded content:</span><br><span class="line">Vm0wd2QyVkZOVWRXV0doVVYwZG9W...</span><br></pre></td></tr></table></figure>
+<p>Repeated Base64 decoding eventually gives:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">I am sorry, This is not Key~!!</span><br></pre></td></tr></table></figure>
+<p>So object <code>37</code> is a distraction; the real flag is in the
+decrypted nested PDF JavaScript stream.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-32/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/Suninatas/suninatas-game-32/" class="post-title-link" itemprop="url">Suninatas Game 32</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-09 23:23:50" itemprop="dateCreated datePublished" datetime="2026-02-09T23:23:50+08:00">2026-02-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/Suninatas/suninatas-game-32/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/Suninatas/suninatas-game-32/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p><span class="exturl" data-url="aHR0cDovL3N1bmluYXRhcy5jb20vY2hhbGxlbmdlcw==">challenges<i class="fa fa-external-link-alt"></i></span></p>
+<h2 id="game-32">Game 32</h2>
+<p>Challenge summary:</p>
+<ul>
+<li>A USB image is malformed and not recognized by normal tools.</li>
+<li><code>Q1</code>: modified timestamp of the file containing the next
+terror plan (<code>UTC+9</code>)</li>
+<li><code>Q2</code>: next target place</li>
+<li>Final: <code>lowercase(md5(YYYY-MM-DD_HH:MM:SS_place))</code></li>
+</ul>
+<p>Given artifact:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ file <span class="string">&#x27;USB_Image(SuNiNaTaS)&#x27;</span></span><br><span class="line">USB_Image(SuNiNaTaS): DOS/MBR boot sector, ... FAT (32 bit) ...</span><br></pre></td></tr></table></figure>
+<h2 id="why-the-image-fails">1) Why the image fails</h2>
+<p>Sleuth Kit initially fails:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ fsstat -f fat32 USB_Image\(SuNiNaTaS\)</span><br><span class="line">Invalid magic value (Error: sector size (4352) is not a multiple of device size (512)</span><br><span class="line">Do you have a disk image instead of a partition image?)</span><br></pre></td></tr></table></figure>
+<p>Hex inspection shows FAT32 signatures (<code>RRaA</code>) shifted
+because bytes were inserted before the boot-sector end marker
+(<code>0x55aa</code>).</p>
+<h2 id="repair-the-fat32-boot-area">2) Repair the FAT32 boot area</h2>
+<p>I fixed the image in a hex editor (<code>imhex</code>) by aligning
+the boot sector so <code>0x55aa</code> is at offset
+<code>0x1fe-0x1ff</code>.</p>
+<p>After repair:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ fsstat -f fat32 USB_Image\(SuNiNaTaS\)</span><br><span class="line">FILE SYSTEM INFORMATION</span><br><span class="line">--------------------------------------------</span><br><span class="line">File System Type: FAT32</span><br><span class="line">OEM Name: MSDOS5.0</span><br><span class="line">Volume ID: 0xde96e00a</span><br><span class="line">Volume Label (Boot Sector): NO NAME</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h2 id="enumerate-files-and-find-the-plan-document">3) Enumerate files
+and find the plan document</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ fls -r -p USB_Image\(SuNiNaTaS\) | grep -v Orphan</span><br><span class="line">...</span><br><span class="line">r/r 11: 2^^^^~1.HWP</span><br><span class="line">r/r 15: Terrorism Report-2013-North  Korea.pdf</span><br><span class="line">r/r 19: Terrorism Report-2013-South Korea.pdf</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>The DOS short name <code>2^^^^~1.HWP</code> corresponds to
+<code>2차 테러 계획.hwp</code> (“2nd terror plan”).</p>
+<p>Extract and inspect metadata:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ icat USB_Image\(SuNiNaTaS\) 11 &gt; tero.hwp</span><br><span class="line"></span><br><span class="line">$ istat USB_Image\(SuNiNaTaS\) 11</span><br><span class="line">Directory Entry: 11</span><br><span class="line">Allocated</span><br><span class="line">Name: 2^^^^~1.HWP</span><br><span class="line"></span><br><span class="line">Directory Entry Times:</span><br><span class="line">Written:  2016-05-30 02:44:02 (CST)</span><br><span class="line">Accessed: 2016-05-30 00:00:00 (CST)</span><br><span class="line">Created:  2016-05-30 02:50:41 (CST)</span><br></pre></td></tr></table></figure>
+<p>Challenge asks for UTC+9 formatted as
+<code>YYYY-MM-DD_HH:MM:SS</code>, and the solved value used is:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2016-05-30_11:44:02</span><br></pre></td></tr></table></figure>
+<h2 id="read-document-content-for-location">4) Read document content for
+location</h2>
+<p>Open <code>tero.hwp</code> with an HWP-compatible viewer (e.g.,
+Hancom/ONLYOFFICE).</p>
+<p>Recovered content:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">2차 테러 계획</span><br><span class="line">일 자  2016-07-15</span><br><span class="line">시 간  09:00:00</span><br><span class="line">장 소  Rose Park</span><br></pre></td></tr></table></figure>
+<p>Q2 answer:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Rose Park</span><br></pre></td></tr></table></figure>
+<h2 id="final-auth-key">Final Auth Key</h2>
+<p>Input string:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2016-05-30_11:44:02_Rose Park</span><br></pre></td></tr></table></figure>
+<p>Result:</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">8ce84f2f0568e3c70665167d44e53c2a</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/ReversingKR/ReversingKR-Easy-Crack/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/ReversingKR/ReversingKR-Easy-Crack/" class="post-title-link" itemprop="url">ReversingKR - Easy Crack</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-02-09 18:28:40" itemprop="dateCreated datePublished" datetime="2026-02-09T18:28:40+08:00">2026-02-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/ReversingKR/ReversingKR-Easy-Crack/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/ReversingKR/ReversingKR-Easy-Crack/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="easy-crack">Easy Crack</h2>
+<p><span class="exturl" data-url="aHR0cDovL3JldmVyc2luZy5rci9jaGFsbGVuZ2UucGhw">Easy Crack<i class="fa fa-external-link-alt"></i></span></p>
+<p>ghidra btw</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">entry</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    ....</span><br><span class="line">  UVar4 = FUN_00401000(pHVar3);   Main function</span><br><span class="line">  <span class="title function_">FUN_004012f4</span><span class="params">(UVar4)</span>; Exit function</span><br><span class="line">  <span class="title function_">FUN_004013c9</span><span class="params">(local_18-&gt;ExceptionRecord-&gt;Except ionCode,local_18)</span>;</span><br><span class="line">  <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">undefined4 <span class="title function_">Main</span><span class="params">(HINSTANCE hInstance)</span></span><br><span class="line">&#123;</span><br><span class="line">  DialogBoxParamA(hInstance,(LPCSTR)<span class="number">0x65</span>,(HWND) <span class="number">0x0</span>,(DLGPROC)&amp;LAB_00401020,<span class="number">0</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __cdecl <span class="title function_">checkPassword</span><span class="params">(HWND param_1)</span></span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  byte bVar1;</span><br><span class="line">  byte *pbVar2;</span><br><span class="line">  <span class="type">int</span> iVar3;</span><br><span class="line">  <span class="type">char</span> *pcVar4;</span><br><span class="line">  <span class="type">bool</span> bVar5;</span><br><span class="line"></span><br><span class="line">  CHAR local_64;</span><br><span class="line">  <span class="type">char</span> local_63;</span><br><span class="line">  <span class="type">char</span> local_62;</span><br><span class="line">  <span class="type">char</span> acStack_61 [<span class="number">97</span>];</span><br><span class="line"></span><br><span class="line">  local_64 = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4 = &amp;local_63;</span><br><span class="line">  <span class="keyword">for</span> (iVar3 = <span class="number">0x18</span>; iVar3 != <span class="number">0</span>; iVar3 = iVar3 + <span class="number">-1</span>) &#123;</span><br><span class="line">    pcVar4[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">2</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">3</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4 = pcVar4 + <span class="number">4</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  pcVar4[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4[<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4[<span class="number">2</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  GetDlgItemTextA(param_1,<span class="number">1000</span>,&amp;local_64,<span class="number">100</span>);</span><br><span class="line">  <span class="keyword">if</span> (local_63 == <span class="string">&#x27;a&#x27;</span>) &#123;                            ;a</span><br><span class="line">    iVar3 = _strncmp(&amp;local_62,&amp;DAT_00406078,<span class="number">2</span>);    ;<span class="number">5</span>y</span><br><span class="line">    <span class="title function_">if</span> <span class="params">(iVar3 == <span class="number">0</span>)</span> &#123;</span><br><span class="line">      pcVar4 = s_AGR3versing_0040606a;</span><br><span class="line">      pbVar2 = (byte *)(acStack_61 + <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">do</span> &#123;</span><br><span class="line">        pcVar4 = (<span class="type">char</span> *)((byte *)pcVar4 + <span class="number">2</span>);      ;R3versing</span><br><span class="line">        bVar1 = *pbVar2;</span><br><span class="line">        bVar5 = bVar1 &lt; (byte)*pcVar4;</span><br><span class="line">        <span class="keyword">if</span> (bVar1 != *pcVar4) &#123;</span><br><span class="line">LAB_00401102:</span><br><span class="line">          iVar3 = (<span class="number">1</span> - (uint)bVar5) - (uint)(bVar5 != <span class="number">0</span>);</span><br><span class="line">          <span class="keyword">goto</span> LAB_00401107;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (bVar1 == <span class="number">0</span>) <span class="keyword">break</span>;</span><br><span class="line">        bVar1 = pbVar2[<span class="number">1</span>];</span><br><span class="line">        bVar5 = bVar1 &lt; ((byte *)pcVar4)[<span class="number">1</span>];</span><br><span class="line">        <span class="keyword">if</span> (bVar1 != ((byte *)pcVar4)[<span class="number">1</span>]) <span class="keyword">goto</span> LAB_004011 <span class="number">02</span>;</span><br><span class="line">        pbVar2 = pbVar2 + <span class="number">2</span>;</span><br><span class="line">      &#125; <span class="keyword">while</span> (bVar1 != <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">      iVar3 = <span class="number">0</span>;</span><br><span class="line">LAB_00401107:</span><br><span class="line">      <span class="keyword">if</span> ((iVar3 == <span class="number">0</span>) &amp;&amp; (local_64 == <span class="string">&#x27;E&#x27;</span>)) &#123;   ;E</span><br><span class="line">        <span class="title function_">MessageBoxA</span><span class="params">(param_1,s_Congratulation_!!_00 <span class="number">406044</span>,s_EasyCrackMe_00406058,<span class="number">0x40</span>)</span>;</span><br><span class="line">        EndDialog(param_1,<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  MessageBoxA(param_1,s_Incorrect_Password_004 <span class="number">06030</span>,s_EasyCrackMe_00406058,<span class="number">0x10</span>);</span><br><span class="line">  <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">Ea5yR3versing</span></span>
+<hr />
+<p>i luv ida qaq</p>
+<p>same code so easy in ida</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __cdecl <span class="title function_">sub_401080</span><span class="params">(HWND hDlg)</span></span><br><span class="line">&#123;</span><br><span class="line">  CHAR String[<span class="number">97</span>]; <span class="comment">// [esp+4h] [ebp-64h] BYREF</span></span><br><span class="line">  __int16 v3; <span class="comment">// [esp+65h] [ebp-3h]</span></span><br><span class="line">  <span class="type">char</span> v4; <span class="comment">// [esp+67h] [ebp-1h]</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">memset</span>(String, <span class="number">0</span>, <span class="keyword">sizeof</span>(String));</span><br><span class="line">  v3 = <span class="number">0</span>;</span><br><span class="line">  v4 = <span class="number">0</span>;</span><br><span class="line">  GetDlgItemTextA(hDlg, <span class="number">1000</span>, String, <span class="number">100</span>);</span><br><span class="line">  <span class="keyword">if</span> ( String[<span class="number">1</span>] != <span class="string">&#x27;a&#x27;</span> || <span class="built_in">strncmp</span>(&amp;String[<span class="number">2</span>], Str2, <span class="number">2u</span>) || <span class="built_in">strcmp</span>(&amp;String[<span class="number">4</span>], aR3versing) || String[<span class="number">0</span>] != <span class="number">69</span> )</span><br><span class="line">    <span class="keyword">return</span> MessageBoxA(hDlg, aIncorrectPassw, Caption, <span class="number">0x10u</span>);</span><br><span class="line">  MessageBoxA(hDlg, Text, Caption, <span class="number">0x40u</span>);</span><br><span class="line">  <span class="keyword">return</span> EndDialog(hDlg, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -943,430 +1454,6 @@ repo点星星。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/wp/HackMyVM/HackMyVM-Gift/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Pwned/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackMyVM/HackMyVM-Pwned/" class="post-title-link" itemprop="url">HackMyVM - Pwned</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-22 18:03:40" itemprop="dateCreated datePublished" datetime="2025-08-22T18:03:40+08:00">2025-08-22</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackMyVM/HackMyVM-Pwned/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackMyVM/HackMyVM-Pwned/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>FTP anonymous access, SSH key leak, and Docker escape.</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/wp/HackMyVM/HackMyVM-Pwned/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Suidy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackMyVM/HackMyVM-Suidy/" class="post-title-link" itemprop="url">HackMyVM - Suidy</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-22 18:03:40" itemprop="dateCreated datePublished" datetime="2025-08-22T18:03:40+08:00">2025-08-22</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackMyVM/HackMyVM-Suidy/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackMyVM/HackMyVM-Suidy/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Hidden directory discovery, SSH brute-force, and custom SUID binary exploitation.</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/wp/HackMyVM/HackMyVM-Suidy/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Hades/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackMyVM/HackMyVM-Hades/" class="post-title-link" itemprop="url">Hackmyvm Hades</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-22 17:59:05" itemprop="dateCreated datePublished" datetime="2025-08-22T17:59:05+08:00">2025-08-22</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackMyVM/HackMyVM-Hades/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackMyVM/HackMyVM-Hades/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>hades to irene</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/wp/HackMyVM/HackMyVM-Hades/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/OverTheWire/OverTheWire-Natas/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/OverTheWire/OverTheWire-Natas/" class="post-title-link" itemprop="url">OverTheWire - Natas</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-22 17:53:39" itemprop="dateCreated datePublished" datetime="2025-08-22T17:53:39+08:00">2025-08-22</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/OverTheWire/OverTheWire-Natas/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/OverTheWire/OverTheWire-Natas/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>natas 0 to 30</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/wp/OverTheWire/OverTheWire-Natas/">
                 Read more &raquo;
               </a>
             </div>
