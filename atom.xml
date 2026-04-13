@@ -13,7 +13,30 @@
     <![CDATA[Tech, Security & Personal Notes]]>
   </subtitle>
   <title>Hello Navi</title>
-  <updated>2026-04-13T03:58:36.977Z</updated>
+  <updated>2026-04-13T05:52:32.353Z</updated>
+  <entry>
+    <author>
+      <name>vkkkv</name>
+    </author>
+    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
+    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
+    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
+    <category term="forensics" scheme="https://vkkkv.github.io/tags/forensics/"/>
+    <category term="malware" scheme="https://vkkkv.github.io/tags/malware/"/>
+    <content>
+      <![CDATA[<blockquote><p>Hey! A man was caught with malware on his PC in Lego City. Luckily,we were able to get a packet capture of his device during the download.Help Lego City Police figure out the source of this maliciousdownload.</p><p>The flag for this challenge is in the format UMASS{[sha256sum]} ofthe malicious download.</p></blockquote><h3 id="initial-analysis">Initial Analysis</h3><p>The challenge provides a packet capture(<code>thedamage.pcapng</code>) containing traffic from a machine thatdownloaded malware. The goal is to identify the malicious file and itshash.</p><h3 id="solution">Solution</h3><p>Using <code>tshark</code>, we analyzed the HTTP traffic to see whatfiles were downloaded:</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tshark -r thedamage.pcapng -Y http -T fields -e http.host -e http.request.uri | <span class="built_in">sort</span> | <span class="built_in">uniq</span> -c | <span class="built_in">sort</span> -rn</span><br></pre></td></tr></table></figure><p>The output revealed several interesting files: -<code>/installer.py</code> - <code>/launcher</code> - Several images(<code>/fungame.jpg</code>, <code>/cooldog.jpeg</code>, etc.)</p><p>We extracted the objects from the HTTP sessions:</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tshark -r thedamage.pcapng --export-objects http,extracted_files -q</span><br></pre></td></tr></table></figure><p>The <code>launcher</code> file appeared suspicious, but its file typewas obscured and it didn’t match known malware signatures.</p><p>Examining <code>installer.py</code> revealed it was a dropper scriptthat decrypts <code>launcher</code>:</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> nacl.secret</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fix_error</span>():</span><br><span class="line">    seed = <span class="string">&quot;38093248092rsjrwedoaw3&quot;</span></span><br><span class="line">    key = hashlib.sha256(seed.encode()).digest()</span><br><span class="line">    <span class="comment"># XSalsa20 + Poly1305 MAC</span></span><br><span class="line">    box = nacl.secret.SecretBox(key)</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./launcher&quot;</span>, <span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        data = f.read()</span><br><span class="line">    decrypted = box.decrypt(data)</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./launcher&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(decrypted)</span><br></pre></td></tr></table></figure><p>The script uses <strong>PyNaCl (SecretBox)</strong> to decrypt<code>launcher</code> using the SHA256 hash of the seed<code>38093248092rsjrwedoaw3</code>.</p><h4 id="decryption-and-hashing">Decryption and Hashing</h4><p>After decrypting the file, we calculated its SHA256 hash. Thedecrypted file was identified as a<code>FreeBSD/i386 compact demand paged dynamically linked executable</code>.</p><ul><li><strong>Decrypted SHA256:</strong><code>e7a09064fc40dd4e5dd2e14aa8dad89b328ef1b1fdb3288e4ef04b0bd497ccae</code></li></ul><p>Checking this hash on VirusTotal confirms it is a known maliciousfile.</p><h3 id="flag">Flag</h3><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{e7a09064fc40dd4e5dd2e14aa8dad89b328ef1b1fdb3288e4ef04b0bd497ccae}</span></span>]]>
+    </content>
+    <id>https://vkkkv.github.io/wp/umass2026/umassctf2026-click-here-for-free-bricks/</id>
+    <link href="https://vkkkv.github.io/wp/umass2026/umassctf2026-click-here-for-free-bricks/"/>
+    <published>2026-04-13T04:03:34.000Z</published>
+    <summary>
+      <![CDATA[<blockquote>
+<p>Hey! A man was caught with malware on his PC in Lego City. Luckily,
+we were able to get a packet capture of his device]]>
+    </summary>
+    <title>UMass CTF 2026 - Click Here For Free Bricks</title>
+    <updated>2026-04-13T05:52:32.353Z</updated>
+  </entry>
   <entry>
     <author>
       <name>vkkkv</name>
@@ -431,25 +454,5 @@ Time-to-Live (TTL) steganography.</p>
     </summary>
     <title>kashiCTF 2026 - Mid Forensics</title>
     <updated>2026-04-04T04:11:09.507Z</updated>
-  </entry>
-  <entry>
-    <author>
-      <name>vkkkv</name>
-    </author>
-    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
-    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
-    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
-    <content>
-      <![CDATA[<p>Unless otherwise noted, all flags match the regular expressionRS{[?:]*} (letters, digits, !, ?, :, and _ are allowed).</p><blockquote><p>Welcome to RITSEC CTF</p></blockquote><h3 id="initial-analysis">Initial Analysis</h3><p>The “Welcome” challenge typically points to where the rules orinformation about the CTF can be found.</p><h3 id="solution">Solution</h3><p>The flag can be found at the end of the information page:https://ctfd.ritsec.club/info.</p><h3 id="flag">Flag</h3><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">RS{why_1s_th3_rum_g0n3?}</span></span>]]>
-    </content>
-    <id>https://vkkkv.github.io/wp/ritsec2026/ritsec2026-welcome-to-ritsec-ctf/</id>
-    <link href="https://vkkkv.github.io/wp/ritsec2026/ritsec2026-welcome-to-ritsec-ctf/"/>
-    <published>2026-04-04T03:14:52.000Z</published>
-    <summary>
-      <![CDATA[<p>Unless otherwise noted, all flags match the regular expression
-RS{[?:]*} (letters, digits, !, ?, :, and _ are]]>
-    </summary>
-    <title>RITSEC CTF 2026 - Welcome to RITSEC CTF</title>
-    <updated>2026-04-06T08:13:37.321Z</updated>
   </entry>
 </feed>
