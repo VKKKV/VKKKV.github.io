@@ -12461,4 +12461,149 @@ Article 1.</p>
         <tag>web</tag>
       </tags>
   </entry>
+  <entry>
+    <title>UMass CTF 2026 - Batcave Bitflips</title>
+    <url>/wp/umass2026/umassctf2026-batcave-bitflips/</url>
+    <content><![CDATA[<blockquote>
+<p>Batman’s new state-of-the-art AI agent has deleted all of the source
+code to the Batcave license verification program! There’s an old debug
+version lying around, but that thing has been hit by more cosmic rays
+than Superman!</p>
+<p>蝙蝠侠的新型先进人工智能代理删除了蝙蝠洞许可证验证程序的所有源代码！虽然还有一个旧的调试版本，但那东西被宇宙射线击中的次数比超人还多！</p>
+<p><strong>Hint 1</strong> BatAI estimates there are 3 bugs (BatAI
+估计有 3 个错误)</p>
+<p><strong>Hint 2</strong> Rotation rotation rotation! (旋转 旋转)</p>
+<p><strong>Hint 3</strong> Something about that SBOX seems off… (SBOX
+似乎有些不对劲…)</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The “Batcave Bitflips” challenge involves a binary that performs a
+custom hashing algorithm on a user-provided license key and compares the
+result to a hardcoded 32-byte hash. If the hashes match, the binary uses
+the key to “decrypt” the flag. However, as the name and hints suggest,
+the binary is riddled with three “bit-flip” bugs that corrupt its
+logic.</p>
+<h4 id="analysis-of-main">1. Analysis of <code>main</code></h4>
+<p>The <code>main</code> function (0x169f) follows a standard license
+check pattern: 1. Prompts for a 33-byte license key. 2. Calls
+<code>hash(input, buffer)</code> to generate a 256-bit (32-byte) digest.
+3. Calls <code>verify(buffer)</code>, which compares the digest to a
+global array named <code>EXPECTED</code> (at 0x4040). 4. If successful,
+calls <code>decrypt_flag(buffer)</code> and prints the <code>FLAG</code>
+global (at 0x4060).</p>
+<h4 id="identifying-the-3-bugs">2. Identifying the 3 Bugs</h4>
+<p><strong>Bug 1: The Decryption Logic
+(<code>decrypt_flag</code>)</strong> The <code>decrypt_flag</code>
+function (0x12a6) is intended to decrypt the flag using the successful
+hash. Standard encryption/decryption uses <code>XOR</code>, but the
+decompiled code shows: - <strong>Code:</strong>
+<code>FLAG[i] |= *(_BYTE *)(i % 32 + a1);</code> - <strong>Disassembly
+(0x12ec):</strong> <code>09 c1</code> (<code>OR ECX, EAX</code>) The
+bit-flip changed an <code>XOR</code> (<code>31 c1</code>) into an
+<code>OR</code> (<code>09 c1</code>).</p>
+<p><strong>Bug 2: The Rotation Logic (<code>rotate</code>)</strong> In a
+standard 8-bit rotation, the sum of the left and right shifts must be 8.
+- <strong>Decompilation:</strong>
+<code>*result = (*result &gt;&gt; 6) | (8 * *result);</code> -
+<strong>Analysis:</strong> <code>8 * *result</code> is equivalent to
+<code>*result &lt;&lt; 3</code>. A shift of 3 combined with a shift of 6
+is not a valid rotation. - <strong>The Flip:</strong> The SIB byte in
+the <code>lea</code> instruction at 0x1275 is <code>0xc5</code> (Scale
+8). If the bit-flip occurred here, changing <code>0xc5</code> to
+<code>0x85</code> (Scale 4), the instruction becomes
+<code>x &lt;&lt; 2</code>. Combined with <code>shr 6</code>, this forms
+a proper 2-bit rotation.</p>
+<p><strong>Bug 3: The SBOX Data (<code>SBOX</code>)</strong> The
+<code>substitute</code> function uses a global <code>SBOX</code> table
+(0x4080). Analysis reveals: - <strong>Duplicate:</strong> The value
+<code>0x43</code> appears at both index 24 and index 92. -
+<strong>Missing:</strong> The value <code>0x44</code> is entirely
+missing from the table. This single-bit difference (<code>0x43</code> vs
+<code>0x44</code>) in the data segment is the third bug.</p>
+<h3 id="solution">Solution</h3>
+<p>While we could patch the binary to fix the bugs and attempt to
+reverse the custom hash, there is a much faster path. The
+<code>main</code> function logic implies that if we provide the
+“correct” license key, the resulting hash will be equal to the
+<code>EXPECTED</code> bytes. Since the <code>decrypt_flag</code>
+function (if fixed) would simply XOR the <code>FLAG</code> bytes with
+the successful hash, we can perform this operation manually.</p>
+<p><strong>Target Hash (<code>EXPECTED</code> @ 0x4040):</strong>
+<code>3b 54 75 1a 24 06 af 05 77 80 47 c5 e4 83 d3 48 cb 87 30 de 1a 91 45 ab 15 c7 9b 22 04 02 2b ee</code></p>
+<p><strong>Encrypted Flag (<code>FLAG</code> @ 0x4060):</strong>
+<code>6e 19 34 49 77 7d f0 5a 07 b4 33 a6 8c e6 e6 17 fb e9 6f ae 2e e5 26 c3 70 e3 c4 7d 27 7f 2b 00</code></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">expected = [<span class="number">0x3b</span>, <span class="number">0x54</span>, <span class="number">0x75</span>, <span class="number">0x1a</span>, <span class="number">0x24</span>, <span class="number">0x06</span>, <span class="number">0xaf</span>, <span class="number">0x05</span>, <span class="number">0x77</span>, <span class="number">0x80</span>, <span class="number">0x47</span>, <span class="number">0xc5</span>, <span class="number">0xe4</span>, <span class="number">0x83</span>, <span class="number">0xd3</span>, <span class="number">0x48</span>, <span class="number">0xcb</span>, <span class="number">0x87</span>, <span class="number">0x30</span>, <span class="number">0xde</span>, <span class="number">0x1a</span>, <span class="number">0x91</span>, <span class="number">0x45</span>, <span class="number">0xab</span>, <span class="number">0x15</span>, <span class="number">0xc7</span>, <span class="number">0x9b</span>, <span class="number">0x22</span>, <span class="number">0x04</span>, <span class="number">0x02</span>, <span class="number">0x2b</span>, <span class="number">0xee</span>]</span><br><span class="line">flag_enc = [<span class="number">0x6e</span>, <span class="number">0x19</span>, <span class="number">0x34</span>, <span class="number">0x49</span>, <span class="number">0x77</span>, <span class="number">0x7d</span>, <span class="number">0xf0</span>, <span class="number">0x5a</span>, <span class="number">0x07</span>, <span class="number">0xb4</span>, <span class="number">0x33</span>, <span class="number">0xa6</span>, <span class="number">0x8c</span>, <span class="number">0xe6</span>, <span class="number">0xe6</span>, <span class="number">0x17</span>, <span class="number">0xfb</span>, <span class="number">0xe9</span>, <span class="number">0x6f</span>, <span class="number">0xae</span>, 2e e5, <span class="number">0x26</span>, <span class="number">0xc3</span>, <span class="number">0x70</span>, <span class="number">0xe3</span>, <span class="number">0xc4</span>, <span class="number">0x7d</span>, <span class="number">0x27</span>, <span class="number">0x7f</span>, <span class="number">0x2b</span>, <span class="number">0x00</span>]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(e ^ f) <span class="keyword">for</span> e, f <span class="keyword">in</span> <span class="built_in">zip</span>(expected, flag_enc)))</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{<strong>p4tche5_0n_p4tche$</strong>#}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>reverse</tag>
+        <tag>bitflip</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>UMass CTF 2026 - Brick by Brick</title>
+    <url>/wp/umass2026/umassctf2026-brick-by-brick2/</url>
+    <content><![CDATA[<blockquote>
+<p>我们从建筑大师工作室截获了一个信号。看起来有人在和一个定制的乐高控制器通信，但我们捕捉到的只有这些原始数据。你能拼凑出信息吗？</p>
+<p><strong>Hint 1</strong> This kind of communication is widely used,
+especially for older I/O devices and connectors.
+这种通信方式应用广泛，尤其适用于老式 I/O 设备和连接器。</p>
+<p><strong>Hint 2</strong> Every message starts with a falling edge.
+Have you tried PulseView? 每条信息都以下降沿开始。您试过 PulseView
+吗？</p>
+<p><strong>Hint 3</strong> UART, 8N1. You just need to figure out the
+baud rate. UART，8N1。你只需计算出波特率。</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>This challenge involves decoding a UART signal captured as raw logic
+levels in a CSV file. The provided <code>code.csv</code> contains two
+columns: <code>timestamp</code> and <code>logic_level</code>.</p>
+<ul>
+<li><strong>Initial Inspection:</strong> The logic level is mostly
+<code>1</code> (Idle high), which is characteristic of UART.</li>
+<li><strong>Pulse Width Analysis:</strong> By calculating the time
+between transitions, we find that the minimum pulse duration is
+approximately <code>2.996e-05</code> seconds.</li>
+<li><strong>Baud Rate Calculation:</strong> <span
+class="math display">$$\text{Baud Rate} = \frac{1}{\text{Bit Duration}}
+\approx \frac{1}{2.996 \times 10^{-5}} \approx 33377 \text{
+baud}$$</span> However, looking at the sample counts, the transitions
+align perfectly with the sample intervals, suggesting the data was
+sampled exactly at the bit rate (1 sample per bit).</li>
+</ul>
+<h3 id="solution">Solution</h3>
+<p>Based on <strong>Hint 3 (UART, 8N1)</strong>: - <strong>Start
+Bit:</strong> A falling edge (<code>1</code> to <code>0</code>). -
+<strong>Data Bits:</strong> 8 bits following the start bit (Least
+Significant Bit first). - <strong>Stop Bit:</strong> 1 bit of high level
+(<code>1</code>).</p>
+<p>By implementing a Python script to parse these transitions, we can
+extract the byte stream:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"></span><br><span class="line">df = pd.read_csv(<span class="string">&#x27;code.csv&#x27;</span>)</span><br><span class="line">levels = df[<span class="string">&#x27;logic_level&#x27;</span>].values</span><br><span class="line">i = <span class="number">0</span></span><br><span class="line">decoded = []</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> i &lt; <span class="built_in">len</span>(levels):</span><br><span class="line">    <span class="keyword">if</span> levels[i] == <span class="number">1</span>: <span class="comment"># Wait for start bit</span></span><br><span class="line">        i += <span class="number">1</span></span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> i + <span class="number">9</span> &gt;= <span class="built_in">len</span>(levels): <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 8 data bits (LSB first)</span></span><br><span class="line">    byte_val = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> bit_idx <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">8</span>):</span><br><span class="line">        <span class="keyword">if</span> levels[i + <span class="number">1</span> + bit_idx]:</span><br><span class="line">            byte_val |= (<span class="number">1</span> &lt;&lt; bit_idx)</span><br><span class="line">    decoded.append(byte_val)</span><br><span class="line">    i += <span class="number">10</span> <span class="comment"># Move past start + 8 data + 1 stop bit</span></span><br></pre></td></tr></table></figure>
+<p>The decoded output reveals a Linux kernel boot log. Searching through
+the log, a specific line stands out:
+<code>[ 0.037500] secretflag: 554d4153537b553452375f31355f3768335f623335372c5f72316768373f7d</code></p>
+<p>Converting this Hex string to ASCII:
+<code>55 4d 41 53 53 7b 55 34 52 37 5f 31 35 5f 37 68 33 5f 62 33 35 37 2c 5f 72 31 67 68 37 3f 7d</code>
+<span class="math inline">→</span>
+<code>UMASS&#123;U4R7_15_7h3_b357,_r1gh7?&#125;</code></p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{U4R7_15_7h3_b357,_r1gh7?}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>hardware</tag>
+        <tag>uart</tag>
+      </tags>
+  </entry>
 </search>

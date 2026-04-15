@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">196</span>
+          <span class="site-state-item-count">198</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-count">117</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,285 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-burnt-ashes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/kashiCTF2026/kashictf2026-burnt-ashes/" class="post-title-link" itemprop="url">kashiCTF 2026 - Burnt Ashes</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-06 17:51:04 / Modified: 17:51:05" itemprop="dateCreated datePublished" datetime="2026-04-06T17:51:04+08:00">2026-04-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-burnt-ashes/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-burnt-ashes/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>An investigator recovered a Linux disk image from a manuscript ward
+workstation in Varanasi. The drive appears normal, but operators suspect
+hidden transfer records were concealed using layered steganography and
+encryption workflows.</p>
+</blockquote>
+<h3 id="initial-exploration">Initial Exploration</h3>
+<p>The provided disk image (<code>kashi_ritual_ledger.img</code>) is an
+ext4 filesystem.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">❯ file kashi_ritual_ledger.img</span><br><span class="line">kashi_ritual_ledger.img: Linux rev 1.0 ext4 filesystem data, UUID=f83285e2-bb1a-4a34-bdec-b901cf985c4e, volume name <span class="string">&quot;KASHI_LEDGER&quot;</span> (extents) (64bit) (large files) (huge files)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Mount the image</span></span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">mkdir</span> -p /mnt/kashi_ledger</span><br><span class="line"><span class="built_in">sudo</span> mount -o loop,ro kashi_ritual_ledger.img /mnt/kashi_ledger</span><br><span class="line"></span><br><span class="line"><span class="comment"># Search for hidden files</span></span><br><span class="line">find /mnt/kashi_ledger -<span class="built_in">type</span> f -name <span class="string">&quot;.*&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Exploring the filesystem reveals several key files: -
+<code>challenge_runtime.json</code>: Metadata containing passphrases and
+AES parameters. - <code>/home/pandit_ved/</code>: User home directory
+with <code>Pictures/ward_scans</code>, <code>Notes</code>, and a hidden
+<code>.archive_payloads</code> folder. -
+<code>/deleted_mail_pool/</code>: Contains <code>.eml</code> files
+discussing “passphrase doctrine.”</p>
+<h3 id="metadata-analysis">Metadata Analysis</h3>
+<p>Reading <code>challenge_runtime.json</code> provided the following
+stages: - <strong>Stage 1 Steg Passphrase:</strong>
+<code>trishul-lantern-braid</code> - <strong>Stage 2 Steg
+Phrase:</strong> <code>ghat-manjari-copper-owl</code></p>
+<p>Notes in <code>home/pandit_ved/Notes/ritual_index_notes.md</code>
+hinted that the “hidden ledger capsule is in one scan that does not open
+with the standard (Stage 1) phrase.”</p>
+<h3 id="steganography-extraction">Steganography Extraction</h3>
+<p>There were four BMP scans in the <code>ward_scans</code> directory.
+Using <code>steghide</code> with the Stage 1 passphrase:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> f <span class="keyword">in</span> /mnt/kashi_ledger/home/pandit_ved/Pictures/ward_scans/*.bmp; <span class="keyword">do</span></span><br><span class="line">  steghide extract -sf <span class="string">&quot;<span class="variable">$f</span>&quot;</span> -p <span class="string">&quot;trishul-lantern-braid&quot;</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p>While most contained decoy files,
+<code>scan_midnight_index.bmp</code> failed, indicating it required the
+Stage 2 passphrase:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">steghide extract -sf scan_midnight_index.bmp -p <span class="string">&quot;ghat-manjari-copper-owl&quot;</span></span><br><span class="line"><span class="comment"># Output: wrote extracted data to &quot;stage2_ledger.enc&quot;</span></span><br></pre></td></tr></table></figure>
+<h3 id="locating-the-flag">Locating the Flag</h3>
+<p>The extracted <code>stage2_ledger.enc</code> matched a file in the
+hidden <code>.archive_payloads</code> directory. A corresponding
+<code>.txt</code> file was also present:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /mnt/kashi_ledger/home/pandit_ved/.archive_payloads/stage2_ledger.txt</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{ledger_ashes_remember_every_ritual}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-broadcast/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/kashiCTF2026/kashictf2026-broadcast/" class="post-title-link" itemprop="url">kashiCTF 2026 - Broadcast</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-06 17:46:03 / Modified: 17:50:16" itemprop="dateCreated datePublished" datetime="2026-04-06T17:46:03+08:00">2026-04-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-broadcast/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-broadcast/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>We sent the same announcement to three servers for redundancy. Each
+server has its own RSA key. Intercept all three — maybe you can piece
+something together.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides an <code>output.txt</code> containing an
+exponent <span class="math inline"><em>e</em> = 3</span>, three moduli
+(<span
+class="math inline"><em>n</em>1, <em>n</em>2, <em>n</em>3</span>), and
+three ciphertexts (<span
+class="math inline"><em>c</em>1, <em>c</em>2, <em>c</em>3</span>). By
+examining the data, we notice:</p>
+<ol type="1">
+<li><strong>Low Exponent:</strong> <span
+class="math inline"><em>e</em> = 3</span> is very small.</li>
+<li><strong>Identical Ciphertexts:</strong> <span
+class="math inline"><em>c</em>1 = <em>c</em>2 = <em>c</em>3</span>. This
+means the raw message <span class="math inline"><em>M</em></span> was
+not padded differently for each server.</li>
+<li><strong>Magnitude of <span
+class="math inline"><em>c</em></span>:</strong> The ciphertext <span
+class="math inline"><em>c</em></span> is significantly smaller than any
+of the moduli <span class="math inline"><em>n</em></span>.</li>
+</ol>
+<p>In RSA, the encryption process is <span
+class="math inline"><em>c</em> = <em>M</em><sup><em>e</em></sup> (mod  <em>n</em>)</span>.
+Usually, <span
+class="math inline"><em>M</em><sup><em>e</em></sup></span> is much
+larger than <span class="math inline"><em>n</em></span>. However, if
+<span
+class="math inline"><em>M</em><sup><em>e</em></sup> &lt; <em>n</em></span>,
+then the modulo operation has no effect, and <span
+class="math inline"><em>c</em> = <em>M</em><sup><em>e</em></sup></span>.</p>
+<h3 id="solution">Solution</h3>
+<p>Since <span
+class="math inline"><em>c</em> &lt; <em>n</em><sub><em>i</em></sub></span>
+and <span class="math inline"><em>e</em> = 3</span>, the message <span
+class="math inline"><em>M</em></span> can be recovered simply by
+calculating the integer cube root of <span
+class="math inline"><em>c</em></span>: <span class="math display">$$M =
+\sqrt[3]{c}$$</span></p>
+<h3 id="implementation">Implementation</h3>
+<p>Using Python and the <code>gmpy2</code> library, we can solve for
+<span class="math inline"><em>M</em></span>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> gmpy2</span><br><span class="line"><span class="keyword">from</span> binascii <span class="keyword">import</span> unhexlify</span><br><span class="line"></span><br><span class="line"><span class="comment"># Intercepted ciphertext</span></span><br><span class="line">c = <span class="number">475436441896018898725156479190091126537849994697426945980826369000641892902004477923335055269088235139492237640527487698088281484953901383579636883543216552932099156009006828723690550706326538736801225046068870773990108130474408522838234755277972911893744937243892927414355347438993698991261629557719442242861719577879055371620865465785392597257968132649494474946507819896785671106833645551504301840437212737125</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Calculate the cubic root</span></span><br><span class="line">m, exact = gmpy2.iroot(c, <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> exact:</span><br><span class="line">    <span class="comment"># Convert integer to hex, then to ASCII</span></span><br><span class="line">    flag = unhexlify(<span class="built_in">hex</span>(m)[<span class="number">2</span>:]).decode()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Flag: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p><em>Note: This challenge is a simplified version of Håstad’s
+Broadcast Attack. While Håstad’s attack typically uses the Chinese
+Remainder Theorem (CRT) to solve for <span
+class="math inline"><em>M</em><sup><em>e</em></sup></span> when <span
+class="math inline"><em>M</em><sup><em>e</em></sup> &gt; <em>n</em><sub><em>i</em></sub></span>,
+the small size of the message relative to the key size here allowed for
+a direct cubic root calculation.</em></p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{h4st4d_s4ys_sm4ll_3xp0n3nts_k1ll_RSA_br04dc4sts}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1168,245 +1447,6 @@ in a Base32-encoded string. <figure class="highlight text"><table><tr><td class=
 </ol>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{this_was_not_hard}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-easy-forensics/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/kashiCTF2026/kashictf2026-easy-forensics/" class="post-title-link" itemprop="url">kashiCTF 2026 - Easy Forensics</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-04 11:14:52 / Modified: 16:58:36" itemprop="dateCreated datePublished" datetime="2026-04-04T11:14:52+08:00">2026-04-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-easy-forensics/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-easy-forensics/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>A network analysis challenge where data was exfiltrated via DNS
-queries.</p>
-<h3 id="challenge-description">Challenge Description</h3>
-<blockquote>
-<p>A network capture was obtained from an internal monitoring system
-after suspicious activity was detected. The traffic appears mostly
-benign, but analysts believe data was covertly exfiltrated during normal
-communication.</p>
-</blockquote>
-<h3 id="initial-reconnaissance">Initial Reconnaissance</h3>
-<p>Checking the protocol distribution of the <code>capture.pcap</code>
-file using <code>tshark</code>:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tshark -r capture.pcap -q -z io,phs</span><br></pre></td></tr></table></figure>
-<p>The output confirms that <strong>100% of the traffic is DNS</strong>,
-indicating that DNS is being used as a tunnel for exfiltration.</p>
-<h3 id="dns-query-analysis">DNS Query Analysis</h3>
-<p>Extracting the DNS query names reveals two distinct patterns: 1.
-Repetitive queries for common domains like <code>kashi.com</code> and
-<code>amazon.com</code> (likely noise). 2. High-entropy subdomains under
-<code>.exfil.internal</code>.</p>
-<p>Extracting the subdomains:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">tshark -r capture.pcap -T fields -e dns.qry.name | grep <span class="string">&quot;.exfil.internal&quot;</span></span><br><span class="line"><span class="comment"># Example output:</span></span><br><span class="line"><span class="comment"># NNQXG2DJINKE.exfil.internal</span></span><br><span class="line"><span class="comment"># M63ENZZV6ZLY.exfil.internal</span></span><br><span class="line"><span class="comment"># MZUWY5DSMF2G.exfil.internal</span></span><br><span class="line"><span class="comment"># S33OL5UXGX3T.exfil.internal</span></span><br><span class="line"><span class="comment"># NZSWC23ZPU.exfil.internal</span></span><br></pre></td></tr></table></figure>
-<h3 id="data-recovery">Data Recovery</h3>
-<p>The strings (e.g., <code>NNQXG...</code>) are characteristic of
-<strong>Base32 encoding</strong>. We can concatenate these strings and
-decode them to recover the secret payload:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="comment"># Concatenated subdomains</span></span><br><span class="line">encoded_payload = <span class="string">&quot;NNQXG2DJINKEM63ENZZV6ZLYMZUWY5DSMF2GS33OL5UXGX3TNZSWC23ZPU&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Base32 decoding (adding padding if necessary)</span></span><br><span class="line">decoded = base64.b32decode(encoded_payload + <span class="string">&quot;======&quot;</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded flag: <span class="subst">&#123;decoded&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{dns_exfiltration_is_sneaky}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-mid-forensics/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/kashiCTF2026/kashictf2026-mid-forensics/" class="post-title-link" itemprop="url">kashiCTF 2026 - Mid Forensics</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-04 11:14:52 / Modified: 12:11:09" itemprop="dateCreated datePublished" datetime="2026-04-04T11:14:52+08:00">2026-04-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-mid-forensics/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-mid-forensics/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>A forensics challenge involving network traffic analysis and IP
-Time-to-Live (TTL) steganography.</p>
-<h3 id="challenge-description">Challenge Description</h3>
-<blockquote>
-<p>A packet capture was collected from an internal network segment
-during routine monitoring. No alerts were triggered at the time, and the
-traffic appears largely normal. Your task is to analyze the capture and
-determine whether any meaningful information can be recovered.</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The provided file <code>ttl_stego.pcap</code> contains a series of
-ICMP Echo (ping) requests. While the payloads appear standard, the IP
-Time-to-Live (TTL) values fluctuate between <strong>64</strong> and
-<strong>65</strong>, suggesting binary data is encoded in these
-variations.</p>
-<p>Using <code>tshark</code> to inspect the TTL values:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tshark -r ttl_stego.pcap -c 10 -T fields -e ip.ttl</span><br><span class="line"><span class="comment"># Output: 64, 65, 65, 64, 65, 64, 65, 65, 64, 65...</span></span><br></pre></td></tr></table></figure>
-<h3 id="extraction-decoding">Extraction &amp; Decoding</h3>
-<p>The TTL values can be mapped to binary bits: - <strong>64</strong>
-<span class="math inline">→</span> <code>0</code> - <strong>65</strong>
-<span class="math inline">→</span> <code>1</code></p>
-<p>We can extract the full sequence of TTLs and decode them using a
-Python script:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract TTLs using: tshark -r ttl_stego.pcap -T fields -e ip.ttl &gt; ttls.txt</span></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;ttls.txt&#x27;</span>, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    ttls = [<span class="built_in">int</span>(line.strip()) <span class="keyword">for</span> line <span class="keyword">in</span> f <span class="keyword">if</span> line.strip()]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert TTLs to bits</span></span><br><span class="line">bits = <span class="string">&quot;&quot;</span>.join([<span class="string">&#x27;0&#x27;</span> <span class="keyword">if</span> t == <span class="number">64</span> <span class="keyword">else</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">for</span> t <span class="keyword">in</span> ttls])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert bits to characters (8 bits per byte)</span></span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>):</span><br><span class="line">    byte = bits[i:i+<span class="number">8</span>]</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(byte) == <span class="number">8</span>:</span><br><span class="line">        flag += <span class="built_in">chr</span>(<span class="built_in">int</span>(byte, <span class="number">2</span>))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded message: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{ttl_stego_is_evil}</span></span>
 
       
     </div>

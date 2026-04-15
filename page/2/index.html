@@ -236,7 +236,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">196</span>
+          <span class="site-state-item-count">198</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -247,7 +247,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-count">117</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,6 +274,265 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-the-accursed-lego-bin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umass2026/umassctf2026-the-accursed-lego-bin/" class="post-title-link" itemprop="url">UMass CTF 2026 - The Accursed Lego Bin</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-13 14:02:43 / Modified: 14:02:45" itemprop="dateCreated datePublished" datetime="2026-04-13T14:02:43+08:00">2026-04-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umass2026/umassctf2026-the-accursed-lego-bin/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-the-accursed-lego-bin/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>I dropped my message into the bin of Legos. It’s all scrambled up
+now. Please help.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides a Python script <code>encoder.py</code> and
+its corresponding output <code>output.txt</code>. The goal is to recover
+a flag that has had its bits scrambled based on a seed derived from a
+hardcoded string.</p>
+<h4 id="seed-generation">Seed Generation</h4>
+<p>The script uses RSA to “encrypt” the string
+<code>"I_LOVE_RNG"</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">text = <span class="string">&quot;I_LOVE_RNG&quot;</span></span><br><span class="line">n, seed = RSA_enc(text)</span><br><span class="line"><span class="comment"># ...</span></span><br><span class="line">enc_seed = <span class="built_in">pow</span>(seed, e, n)</span><br></pre></td></tr></table></figure>
+<p>The <code>RSA_enc</code> function calculates
+<code>seed = pow(plain_num, e, n)</code>. In the <code>main</code>
+function, it then calculates <code>enc_seed = pow(seed, e, n)</code>.
+Since <span class="math inline"><em>e</em> = 7</span> is very small and
+the plaintext <code>"I_LOVE_RNG"</code> is short, the value <span
+class="math inline"><em>m</em><sup><em>e</em></sup></span> (where <span
+class="math inline"><em>m</em></span> is the integer representation of
+the text) is much smaller than the 4096-bit RSA modulus <span
+class="math inline"><em>n</em></span>. This means
+<code>pow(m, e, n)</code> is simply <span
+class="math inline"><em>m</em><sup><em>e</em></sup></span> without any
+modular reduction.</p>
+<h4 id="bit-shuffling">Bit Shuffling</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">flag_bits = get_flag_bits(flag)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">    random.seed(seed*(i+<span class="number">1</span>))</span><br><span class="line">    random.shuffle(flag_bits)</span><br></pre></td></tr></table></figure>
+<p>The flag is converted into a list of bits and shuffled 10 times using
+Python’s <code>random.shuffle</code>. Each shuffle is seeded with a
+value derived from the <code>seed</code> identified above.</p>
+<h3 id="solution">Solution</h3>
+<p>To recover the flag, we follow these steps:</p>
+<ol type="1">
+<li><strong>Recover the Seed:</strong> Calculate the integer value of
+<code>"I_LOVE_RNG"</code> and raise it to the 7th power to get the
+<code>seed</code>. We can verify this against <code>enc_seed</code> in
+the output file by checking if <code>seed**7 == enc_seed</code>.</li>
+<li><strong>Reverse the Shuffle:</strong> Since
+<code>random.shuffle</code> is deterministic when the seed is known, we
+can track how the positions change. Instead of shuffling the bits
+directly, we shuffle a list of indices
+<code>[0, 1, 2, ..., len(bits)-1]</code>.</li>
+<li><strong>Reconstruct the Flag:</strong> After 10 shuffles, the index
+list tells us where each original bit ended up. We map the bits from the
+encoded flag back to their original positions and convert the bit array
+back into a string.</li>
+</ol>
+<h4 id="solution-script">Solution Script</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_flag_bits</span>(<span class="params">flag_hex</span>):</span><br><span class="line">    flag_bytes = <span class="built_in">bytes</span>.fromhex(flag_hex)</span><br><span class="line">    bits = []</span><br><span class="line">    <span class="keyword">for</span> b <span class="keyword">in</span> flag_bytes:</span><br><span class="line">        bits.extend(<span class="built_in">list</span>(<span class="built_in">bin</span>(b)[<span class="number">2</span>:].zfill(<span class="number">8</span>)))</span><br><span class="line">    <span class="keyword">return</span> bits</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bit_arr_to_str</span>(<span class="params">bit_arr</span>):</span><br><span class="line">    byte_arr = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bit_arr), <span class="number">8</span>):</span><br><span class="line">        byte = bit_arr[i:i+<span class="number">8</span>]</span><br><span class="line">        char = <span class="built_in">int</span>(<span class="string">&#x27;&#x27;</span>.join(byte), <span class="number">2</span>)</span><br><span class="line">        byte_arr.append(char)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">bytes</span>(byte_arr)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Values from output.txt</span></span><br><span class="line">enc_flag_hex = <span class="string">&quot;a9fa3c5e51d4cea498554399848ad14aa0764e15a6a2110b6613f5dc87fa70f17fafbba7eb5a2a5179&quot;</span></span><br><span class="line">text = <span class="string">&quot;I_LOVE_RNG&quot;</span></span><br><span class="line">plain_num = <span class="built_in">int</span>.from_bytes(text.encode(), <span class="string">&quot;big&quot;</span>)</span><br><span class="line">seed = plain_num ** <span class="number">7</span></span><br><span class="line"></span><br><span class="line">flag_bits_enc = get_flag_bits(enc_flag_hex)</span><br><span class="line">num_bits = <span class="built_in">len</span>(flag_bits_enc)</span><br><span class="line">indices = <span class="built_in">list</span>(<span class="built_in">range</span>(num_bits))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Replay the shuffle on the indices</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">    random.seed(seed * (i + <span class="number">1</span>))</span><br><span class="line">    random.shuffle(indices)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Map scrambled bits back to original positions</span></span><br><span class="line">flag_bits_orig = [<span class="literal">None</span>] * num_bits</span><br><span class="line"><span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(num_bits):</span><br><span class="line">    flag_bits_orig[indices[j]] = flag_bits_enc[j]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(bit_arr_to_str(flag_bits_orig).decode())</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{tH4Nk5_f0R_uN5CR4m8L1nG_mY_M3554g3}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-funny-business/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umass2026/umassctf2026-funny-business/" class="post-title-link" itemprop="url">UMass CTF 2026 - Funny Business</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-13 14:00:38 / Modified: 14:01:32" itemprop="dateCreated datePublished" datetime="2026-04-13T14:00:38+08:00">2026-04-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umass2026/umassctf2026-funny-business/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-funny-business/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>My friend tells me there’s an office of a store that sells special
+bricks above a well-known shopping centre on this street. My friend
+tells me I’ll it will bring me joy, but I’m not sure that the bricks are
+from the famous company. Can you give me the contact email address of
+the store so I can learn more?</p>
+<p>Flag format: UMASS{email@example.com}</p>
+</blockquote>
+<p>Key clues: - “Special bricks” (possibly a LEGO alternative store) -
+“Above a well-known shopping centre” - “Bring me joy” (might be part of
+the store’s name)</p>
+<h3 id="solution">Solution</h3>
+<p>By researching shopping centers in Hong Kong known for hobbyist
+shops, we identified <strong>Ho King Commercial Centre
+(好景商业中心)</strong> and <strong>Ho King Shopping Centre
+(好景商场)</strong> as likely locations.</p>
+<p>Using tools like Google Gemini Deep Search to find shops selling
+“bricks” in these locations, we found a store associated with “Joy”
+(matching the “bring me joy” hint). The store in question is
+<strong>Joying Bricks</strong>.</p>
+<p>Searching for their contact information lead to the official email
+address.</p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{joyingwang@gmail.com}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1297,285 +1556,6 @@ flag!</p>
 <p>load mtcp floppy</p>
 <p>netcat to 192.168.13.37 port 1337 for the flag!</p>
 <figure class="highlight dos"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> mtcpcfg=ftp.cfg</span><br><span class="line"></span><br><span class="line"># need edit yourself</span><br><span class="line"><span class="function">A:\&gt;<span class="title">type</span> <span class="title">ftp.cfg</span></span></span><br><span class="line"><span class="function"><span class="title">PACKETINT</span> 0<span class="title">x60</span></span></span><br><span class="line"><span class="function"><span class="title">IPADDR</span> 192.168.13.100</span></span><br><span class="line"><span class="function"><span class="title">NETMASK</span> 255.255.255.0</span></span><br><span class="line"><span class="function"><span class="title">GATEWAY</span> 192.168.13.1</span></span><br><span class="line"><span class="function"><span class="title">NAMESERVER</span> 192.168.13.1</span></span><br><span class="line"><span class="function"><span class="title">MTU</span> 1500</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">A</span>:\&gt;<span class="title">set</span> <span class="title">mtcpcfg</span>=<span class="title">ftp.cfg</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">A</span>:\&gt;<span class="title">nc</span> -<span class="title">target</span> 192.168.13.37 1337</span></span><br><span class="line"><span class="function"><span class="title">mTCP</span> <span class="title">Netcat</span> <span class="title">by</span> <span class="title">M</span> <span class="title">Brutman</span> (<span class="title">mbbrutman</span>@<span class="title">gmail.com</span>) (<span class="title">C</span>)<span class="title">opyright</span> 2007-2025</span></span><br><span class="line"><span class="function">  <span class="title">Version</span>: <span class="title">Jan</span> 10 2025</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">Resolving</span> <span class="title">server</span> <span class="title">address</span> - <span class="title">press</span> <span class="title">Ctrl</span>-<span class="title">Break</span> <span class="title">to</span> <span class="title">abort</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">Server</span> <span class="title">resolved</span> <span class="title">to</span> 192.168.13.37 - <span class="title">connecting</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">Connected</span>!</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">pwn.college</span>&#123;<span class="title">sig</span>-<span class="title">JqvzdYNSstfBBdU6WAW8lln</span>.******************&#125;</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">Elapsed</span> <span class="title">time</span>: 0.00   <span class="title">Bytes</span> <span class="title">sent</span>: 0  <span class="title">Received</span>: 60</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">A</span>:\&gt;</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-burnt-ashes/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/kashiCTF2026/kashictf2026-burnt-ashes/" class="post-title-link" itemprop="url">kashiCTF 2026 - Burnt Ashes</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-06 17:51:04 / Modified: 17:51:05" itemprop="dateCreated datePublished" datetime="2026-04-06T17:51:04+08:00">2026-04-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-burnt-ashes/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-burnt-ashes/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>An investigator recovered a Linux disk image from a manuscript ward
-workstation in Varanasi. The drive appears normal, but operators suspect
-hidden transfer records were concealed using layered steganography and
-encryption workflows.</p>
-</blockquote>
-<h3 id="initial-exploration">Initial Exploration</h3>
-<p>The provided disk image (<code>kashi_ritual_ledger.img</code>) is an
-ext4 filesystem.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">❯ file kashi_ritual_ledger.img</span><br><span class="line">kashi_ritual_ledger.img: Linux rev 1.0 ext4 filesystem data, UUID=f83285e2-bb1a-4a34-bdec-b901cf985c4e, volume name <span class="string">&quot;KASHI_LEDGER&quot;</span> (extents) (64bit) (large files) (huge files)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Mount the image</span></span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">mkdir</span> -p /mnt/kashi_ledger</span><br><span class="line"><span class="built_in">sudo</span> mount -o loop,ro kashi_ritual_ledger.img /mnt/kashi_ledger</span><br><span class="line"></span><br><span class="line"><span class="comment"># Search for hidden files</span></span><br><span class="line">find /mnt/kashi_ledger -<span class="built_in">type</span> f -name <span class="string">&quot;.*&quot;</span></span><br></pre></td></tr></table></figure>
-<p>Exploring the filesystem reveals several key files: -
-<code>challenge_runtime.json</code>: Metadata containing passphrases and
-AES parameters. - <code>/home/pandit_ved/</code>: User home directory
-with <code>Pictures/ward_scans</code>, <code>Notes</code>, and a hidden
-<code>.archive_payloads</code> folder. -
-<code>/deleted_mail_pool/</code>: Contains <code>.eml</code> files
-discussing “passphrase doctrine.”</p>
-<h3 id="metadata-analysis">Metadata Analysis</h3>
-<p>Reading <code>challenge_runtime.json</code> provided the following
-stages: - <strong>Stage 1 Steg Passphrase:</strong>
-<code>trishul-lantern-braid</code> - <strong>Stage 2 Steg
-Phrase:</strong> <code>ghat-manjari-copper-owl</code></p>
-<p>Notes in <code>home/pandit_ved/Notes/ritual_index_notes.md</code>
-hinted that the “hidden ledger capsule is in one scan that does not open
-with the standard (Stage 1) phrase.”</p>
-<h3 id="steganography-extraction">Steganography Extraction</h3>
-<p>There were four BMP scans in the <code>ward_scans</code> directory.
-Using <code>steghide</code> with the Stage 1 passphrase:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> f <span class="keyword">in</span> /mnt/kashi_ledger/home/pandit_ved/Pictures/ward_scans/*.bmp; <span class="keyword">do</span></span><br><span class="line">  steghide extract -sf <span class="string">&quot;<span class="variable">$f</span>&quot;</span> -p <span class="string">&quot;trishul-lantern-braid&quot;</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>While most contained decoy files,
-<code>scan_midnight_index.bmp</code> failed, indicating it required the
-Stage 2 passphrase:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">steghide extract -sf scan_midnight_index.bmp -p <span class="string">&quot;ghat-manjari-copper-owl&quot;</span></span><br><span class="line"><span class="comment"># Output: wrote extracted data to &quot;stage2_ledger.enc&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="locating-the-flag">Locating the Flag</h3>
-<p>The extracted <code>stage2_ledger.enc</code> matched a file in the
-hidden <code>.archive_payloads</code> directory. A corresponding
-<code>.txt</code> file was also present:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /mnt/kashi_ledger/home/pandit_ved/.archive_payloads/stage2_ledger.txt</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{ledger_ashes_remember_every_ritual}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-broadcast/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/kashiCTF2026/kashictf2026-broadcast/" class="post-title-link" itemprop="url">kashiCTF 2026 - Broadcast</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-06 17:46:03 / Modified: 17:50:16" itemprop="dateCreated datePublished" datetime="2026-04-06T17:46:03+08:00">2026-04-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-broadcast/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-broadcast/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>We sent the same announcement to three servers for redundancy. Each
-server has its own RSA key. Intercept all three — maybe you can piece
-something together.</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge provides an <code>output.txt</code> containing an
-exponent <span class="math inline"><em>e</em> = 3</span>, three moduli
-(<span
-class="math inline"><em>n</em>1, <em>n</em>2, <em>n</em>3</span>), and
-three ciphertexts (<span
-class="math inline"><em>c</em>1, <em>c</em>2, <em>c</em>3</span>). By
-examining the data, we notice:</p>
-<ol type="1">
-<li><strong>Low Exponent:</strong> <span
-class="math inline"><em>e</em> = 3</span> is very small.</li>
-<li><strong>Identical Ciphertexts:</strong> <span
-class="math inline"><em>c</em>1 = <em>c</em>2 = <em>c</em>3</span>. This
-means the raw message <span class="math inline"><em>M</em></span> was
-not padded differently for each server.</li>
-<li><strong>Magnitude of <span
-class="math inline"><em>c</em></span>:</strong> The ciphertext <span
-class="math inline"><em>c</em></span> is significantly smaller than any
-of the moduli <span class="math inline"><em>n</em></span>.</li>
-</ol>
-<p>In RSA, the encryption process is <span
-class="math inline"><em>c</em> = <em>M</em><sup><em>e</em></sup> (mod  <em>n</em>)</span>.
-Usually, <span
-class="math inline"><em>M</em><sup><em>e</em></sup></span> is much
-larger than <span class="math inline"><em>n</em></span>. However, if
-<span
-class="math inline"><em>M</em><sup><em>e</em></sup> &lt; <em>n</em></span>,
-then the modulo operation has no effect, and <span
-class="math inline"><em>c</em> = <em>M</em><sup><em>e</em></sup></span>.</p>
-<h3 id="solution">Solution</h3>
-<p>Since <span
-class="math inline"><em>c</em> &lt; <em>n</em><sub><em>i</em></sub></span>
-and <span class="math inline"><em>e</em> = 3</span>, the message <span
-class="math inline"><em>M</em></span> can be recovered simply by
-calculating the integer cube root of <span
-class="math inline"><em>c</em></span>: <span class="math display">$$M =
-\sqrt[3]{c}$$</span></p>
-<h3 id="implementation">Implementation</h3>
-<p>Using Python and the <code>gmpy2</code> library, we can solve for
-<span class="math inline"><em>M</em></span>:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> gmpy2</span><br><span class="line"><span class="keyword">from</span> binascii <span class="keyword">import</span> unhexlify</span><br><span class="line"></span><br><span class="line"><span class="comment"># Intercepted ciphertext</span></span><br><span class="line">c = <span class="number">475436441896018898725156479190091126537849994697426945980826369000641892902004477923335055269088235139492237640527487698088281484953901383579636883543216552932099156009006828723690550706326538736801225046068870773990108130474408522838234755277972911893744937243892927414355347438993698991261629557719442242861719577879055371620865465785392597257968132649494474946507819896785671106833645551504301840437212737125</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Calculate the cubic root</span></span><br><span class="line">m, exact = gmpy2.iroot(c, <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> exact:</span><br><span class="line">    <span class="comment"># Convert integer to hex, then to ASCII</span></span><br><span class="line">    flag = unhexlify(<span class="built_in">hex</span>(m)[<span class="number">2</span>:]).decode()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Flag: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-<p><em>Note: This challenge is a simplified version of Håstad’s
-Broadcast Attack. While Håstad’s attack typically uses the Chinese
-Remainder Theorem (CRT) to solve for <span
-class="math inline"><em>M</em><sup><em>e</em></sup></span> when <span
-class="math inline"><em>M</em><sup><em>e</em></sup> &gt; <em>n</em><sub><em>i</em></sub></span>,
-the small size of the message relative to the key size here allowed for
-a direct cubic root calculation.</em></p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{h4st4d_s4ys_sm4ll_3xp0n3nts_k1ll_RSA_br04dc4sts}</span></span>
 
       
     </div>
