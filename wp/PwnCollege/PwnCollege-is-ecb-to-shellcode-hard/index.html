@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":true,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":true,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
     <meta name="description" content="同 easy 版本的 ECB oracle + shellcode 注入，但没有 stack dump，需要手动逆向 offset。 Analysis 1r2 -A -q -c &quot;pdf @ sym.challenge&quot; &#x2F;challenge&#x2F;vulnerable-overflow 关键溢出点： 123456; plaintext struct 起始于 s1 &#x3D; rbp - 0">
 <meta property="og:type" content="article">
@@ -260,140 +260,66 @@ p.spoiler {
   </div>
 <script>
 (function() {
-  var img = document.querySelector('.site-author-image');
-  if (!img) return;
+  const initAvatarHUD = () => {
+    const img = document.querySelector('.site-author-image');
+    if (!img || img.closest('.avatar-hud-frame')) return;
 
-  var frame = document.createElement('span');
-  frame.className = 'avatar-hud-frame';
-  img.parentNode.insertBefore(frame, img);
-  frame.appendChild(img);
+    const frame = document.createElement('div');
+    frame.className = 'avatar-hud-frame';
 
-  // Add crosshairs
-  ['h', 'v'].forEach(dir => {
-    var line = document.createElement('span');
-    line.className = 'crosshair-' + dir;
-    frame.appendChild(line);
-  });
+    img.replaceWith(frame);
+    frame.appendChild(img);
 
-  // Add corners
-  ['tl', 'tr', 'bl', 'br'].forEach(pos => {
-    var corner = document.createElement('span');
-    corner.className = 'corner corner-' + pos;
-    frame.appendChild(corner);
-  });
+    // 注入十字准星 (上下左右)
+    ['top', 'bottom', 'left', 'right'].forEach(dir => {
+      const line = document.createElement('div');
+      line.className = `hud-crosshair crosshair-${dir}`;
+      frame.appendChild(line);
+    });
+
+    // 注入外层红色虚线环
+    const outerRing = document.createElement('div');
+    outerRing.className = 'hud-outer-ring';
+    frame.appendChild(outerRing);
+    
+    // 注入内层深色装饰环
+    const innerRing = document.createElement('div');
+    innerRing.className = 'hud-inner-ring';
+    frame.appendChild(innerRing);
+  };
+
+  const initHeader = () => {
+    const brand = document.querySelector('.brand');
+    if (!brand || brand.querySelector('.cyber-underline')) return;
+
+    // 重构标题文字：拆分为两个 span 以便分别着色
+    const title = brand.querySelector('.site-title');
+    if (title) {
+      title.innerHTML = '<span class="text-white">Hello</span><span class="text-red">Navi</span>';
+    }
+
+    // 注入战术下划线 (Cyber Underline)
+    const underline = document.createElement('div');
+    underline.className = 'cyber-underline';
+    underline.innerHTML = `
+      <div class="line-red"></div>
+      <div class="line-dark"></div>
+      <div class="line-dashes">
+        <i></i><i></i><i></i><i></i><i></i>
+      </div>
+    `;
+    brand.appendChild(underline);
+  };
+
+  const initAll = () => {
+    initAvatarHUD();
+    initHeader();
+  };
+
+  initAll();
+  document.addEventListener('pjax:success', initAll);
 })();
 </script>
-
-<style>
-.sidebar-branding {
-  margin-top: 30px;
-  padding: 16px 0;
-  border-top: 1px solid rgba(255,62,62,.15);
-  text-align: left;
-  padding-left: 10px;
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.sidebar-branding .branding-logo {
-  width: 45px;
-  height: 45px;
-  /* Authentic Rhodes Island Logo (SVG) */
-  background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgNUw5MCA5MEgxMEw1MCA1eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmYzZTNlIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNTAgMjVMMTggODBIOEgyTDUwIDI1eiIgZmlsbD0iI2ZmM2UzZSIvPjxwYXRoIGQ9Ik01MCAzNUwzNSA3NUg2NUw1MCAzNXoiIGZpbGw9IiMwMDAiLz48L3N2Zz4=") no-repeat center;
-  background-size: contain;
-  opacity: 0.8;
-  margin-right: 15px;
-}
-
-.branding-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.branding-line {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 1px;
-  color: #444;
-  text-transform: uppercase;
-  line-height: 1.2;
-}
-
-.branding-main {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: #999;
-  font-weight: bold;
-  margin: 2px 0;
-}
-
-/* ECG Heartbeat Waveform Animation */
-.hud-ecg-waveform {
-  position: fixed;
-  bottom: 14px;
-  right: 88px;
-  width: 84px;
-  height: 20px;
-  pointer-events: none;
-  opacity: 0.82;
-}
-
-.hud-ecg-waveform svg {
-  width: 100%;
-  height: 100%;
-}
-
-.hud-ecg-waveform path {
-  stroke: #ff3e3e;
-  stroke-width: 1.3;
-  fill: none;
-  stroke-dasharray: 128;
-  stroke-dashoffset: 128;
-  stroke-linecap: square;
-  animation: ecg-draw 2.4s linear infinite;
-  opacity: 0.92;
-}
-
-@keyframes ecg-draw {
-  to { stroke-dashoffset: 0; }
-}
-
-.badge-normal {
-  position: fixed;
-  bottom: 34px;
-  right: 18px;
-  border: 1px solid rgba(255,62,62,.75);
-  color: #ff3e3e;
-  padding: 2px 8px 1px;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 8px;
-  font-weight: bold;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, rgba(255,62,62,0.13), rgba(255,62,62,0.035));
-  box-shadow: inset 0 0 0 1px rgba(255,62,62,.06);
-  z-index: 1000;
-}
-</style>
-
-<div class="sidebar-branding">
-  <div class="branding-logo"></div>
-  <div class="branding-content">
-    <div class="branding-line">POWERED BY</div>
-    <div class="branding-main">RIIM BILLITON</div>
-    <div class="branding-line">ARKNIGHTS / SYSTEM: CONNECTED</div>
-  </div>
-</div>
-
-<div class="hud-ecg-waveform" aria-hidden="true">
-  <svg viewBox="0 0 100 30">
-    <path d="M0,15 L14,15 L19,14 L24,8 L29,22 L35,12 L41,15 L55,15 L61,6 L69,24 L75,11 L81,15 L100,15" />
-  </svg>
-</div>
-
-<div class="badge-normal">NORMAL</div>
 
         </div>
       </div>
@@ -645,31 +571,129 @@ easy 版本相同)</li>
 
 <script>
 (function() {
-  function updateProjection() {
-    var titleEl = document.querySelector('.post-title') || document.querySelector('.site-title');
-    var projection = document.getElementById('bg-title-projection');
-    var postBody = document.querySelector('.post-body');
+  const projection = document.getElementById('bg-title-projection');
+  if (!projection) return;
 
-    if (titleEl && projection) {
-      projection.textContent = titleEl.textContent.trim().toUpperCase();
-      projection.style.display = 'block';
+  let activeAnchor = null;
+  let observer = null;
+  let rafId = null;
 
-      if (postBody) {
-        if (projection.parentElement !== postBody) {
-          postBody.insertBefore(projection, postBody.firstChild);
-        }
-      } else {
-        if (projection.parentElement !== document.body) {
-          document.body.appendChild(projection);
-        }
+  const parallaxFactor = 0.1; // 提升移动幅度
+  const lerpFactor = 0.3;    // 提升响应灵敏度
+  let currentY = 0;           // 渲染位置
+  let targetY = 0;            // 目标位置
+  let isUpdating = false;     // 正在执行内容更新锁
+
+  function updateText(text) {
+    const newText = text.trim().toUpperCase();
+    if (!newText || projection.textContent === newText || isUpdating) return;
+
+    isUpdating = true;
+    projection.style.opacity = 0;
+
+    // 等待淡出完成后再执行内容和位置变更
+    setTimeout(() => {
+      projection.textContent = newText;
+
+      // 【关键】在文字不可见时，同步坐标位置，防止新标题出现时的“大幅度滑动”
+      if (activeAnchor) {
+        const rect = activeAnchor.getBoundingClientRect();
+        const centerY = window.innerHeight * 0.3;
+        targetY = currentY = (rect.top - centerY) * parallaxFactor;
       }
-    }
+
+      projection.style.opacity = 1;
+      // 等待淡入完成后解锁
+      setTimeout(() => { isUpdating = false; }, 1200);
+    }, 1200);
   }
 
-  updateProjection();
-  document.addEventListener('pjax:success', updateProjection);
+  function tick() {
+    if (activeAnchor) {
+      const rect = activeAnchor.getBoundingClientRect();
+      const centerY = window.innerHeight * 0.3;
+      targetY = (rect.top - centerY) * parallaxFactor;
+    }
+
+    // 仅在非更新期间应用平滑缓动
+    if (!isUpdating) {
+      currentY += (targetY - currentY) * lerpFactor;
+    }
+
+    projection.style.transform = `translate3d(-50%, ${currentY}px, 0)`;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function start() {
+    // 清理旧观察者，防止 PJAX 重复绑定
+    if (observer) observer.disconnect();
+
+    const targets = document.querySelectorAll('.post-title, .post-body h2, .post-body h3');
+
+    observer = new IntersectionObserver((entries) => {
+      // 找到正在进入视野的标题
+      const visible = entries.filter(e => e.isIntersecting);
+      if (visible.length > 0) {
+        // 选取最上方的标题作为基准
+        const topOne = visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        activeAnchor = topOne.target;
+        updateText(topOne.target.textContent);
+      }
+    }, {
+      rootMargin: '-10% 0% -60% 0%',
+      threshold: 0
+    });
+
+    targets.forEach(t => observer.observe(t));
+
+    // 初始化或 PJAX 恢复
+    const initialTitle = document.querySelector('.post-title') || document.querySelector('.site-title');
+    if (initialTitle) {
+      if (!projection.textContent) {
+        projection.textContent = initialTitle.textContent.trim().toUpperCase();
+        projection.style.display = 'block';
+        projection.style.opacity = 1;
+        activeAnchor = initialTitle;
+        const rect = initialTitle.getBoundingClientRect();
+        currentY = targetY = (rect.top - window.innerHeight * 0.3) * parallaxFactor;
+      } else {
+        // PJAX 加载新页面，使用平滑切换
+        activeAnchor = initialTitle;
+        updateText(initialTitle.textContent);
+      }
+    }
+
+    // 确保只有一个动画循环在运行
+    if (!rafId) rafId = requestAnimationFrame(tick);
+  }
+
+  start();
+  document.addEventListener('pjax:success', start);
 })();
 </script>
+
+<style>
+.hud-title-projection {
+  position: fixed;
+  top: 30vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10vw;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.035);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: -2;
+  user-select: none;
+  font-family: 'Roboto Mono', monospace;
+  letter-spacing: -2px;
+  filter: blur(5px);
+  opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+</style>
 
 <!-- Background Geometric Graphics -->
 <div class="hud-bg-graphic-right"></div>
@@ -770,91 +794,6 @@ easy 版本相同)</li>
 <!-- ============================================================
      CUSTOM CURSOR STALKER
      ============================================================ -->
-
-<style>
-  :root {
-    --my-brand-color: #ff3e3e;
-    --my-brand-rgb: 255, 62, 62;
-    --my-hover-color: #ff6666;
-    --my-hover-rgb: 255, 102, 102;
-    --cursor-size: 30px;
-  }
-
-  @media (any-hover: hover) {
-    body, a, button, input, textarea, .copy-btn {
-      cursor: none;
-    }
-
-    #mouse_stalker {
-      pointer-events: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: var(--cursor-size);
-      height: var(--cursor-size);
-      background: rgba(var(--my-brand-rgb), 0.85);
-      border: 4px solid var(--my-brand-color);
-      border-radius: 50%;
-      z-index: 99999;
-      opacity: 0;
-      will-change: transform;
-      transform: translate3d(-100px, -100px, 0);
-      mix-blend-mode: difference;
-      transition:
-        background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        border-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        border-width 0.1s ease;
-    }
-
-    #mouse_stalker::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 4px;
-      height: 4px;
-      background-color: var(--my-brand-color);
-      border-radius: 50%;
-      box-shadow: 0 0 8px rgba(255, 255, 255, 1);
-    }
-
-    #mouse_stalker.stalker_cursor_pointer {
-      background: rgba(var(--my-hover-rgb), 0.4);
-      border-color: var(--my-hover-color);
-      border-width: 8px;
-    }
-
-    #mouse_stalker.stalker_cursor_pointer::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
-      height: 100%;
-      border: 8px solid var(--my-hover-color);
-      border-radius: 50%;
-      animation: stalker_appeal 2s ease-out infinite;
-    }
-
-    #mouse_stalker.is_clicked {
-      background: rgba(255, 0, 0, 0.4);
-      border-color: var(--my-brand-color);
-      border-width: 3px;
-    }
-  }
-
-  @keyframes stalker_appeal {
-    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
-  }
-
-  @media (any-hover: none) {
-    #mouse_stalker { display: none; }
-  }
-</style>
-
 <div id="mouse_stalker"></div>
 
 <script>
@@ -963,6 +902,207 @@ easy 版本相同)</li>
   requestAnimationFrame(tick);
 })();
 </script>
+
+<!-- ============================================================
+     BOTTOM-RIGHT HUD GROUP (Badge + ECG)
+     ============================================================ -->
+<div class="hud-status-group" aria-hidden="true">
+  <div class="badge-normal">
+    <span>NORMAL</span>
+  </div>
+
+  <div class="hud-ecg-waveform">
+    <svg viewBox="0 0 100 30">
+      <path d="M0,15 L15,15 L18,13 L21,17 L25,5 L30,25 L35,12 L40,15 L50,15 L55,8 L60,22 L65,15 L70,15 L73,12 L76,18 L80,15 L100,15" />
+    </svg>
+  </div>
+
+  <span class="grid-marker cross hud-group-cross"></span>
+</div>
+
+<style>
+/* HUD Group Layout */
+.hud-status-group {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 999;
+  pointer-events: none;
+}
+
+/* NORMAL Badge Styling */
+.badge-normal {
+  position: relative;
+  padding: 4px 14px;
+  background: rgba(255, 62, 62, 0.05);
+  border: 1px solid rgba(255, 62, 62, 0.3);
+  box-shadow: inset 0 0 8px rgba(255, 62, 62, 0.15), 0 0 4px rgba(255, 62, 62, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-normal::before,
+.badge-normal::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 4px;
+}
+
+.badge-normal::before {
+  left: -1px;
+  border-left: 2px solid rgba(255, 62, 62, 0.9);
+  box-shadow: -2px 0 4px rgba(255, 62, 62, 0.4);
+}
+.badge-normal::after {
+  right: -1px;
+  border-right: 2px solid rgba(255, 62, 62, 0.9);
+  box-shadow: 2px 0 4px rgba(255, 62, 62, 0.4);
+}
+
+.badge-normal span {
+  color: #ff3e3e;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1.2;
+  text-shadow: 0 0 3px rgba(255, 62, 62, 0.8), 0 0 8px rgba(255, 62, 62, 0.4);
+}
+
+/* ECG Waveform Styling */
+.hud-ecg-waveform {
+  width: 100px;
+  height: 30px;
+  opacity: 0.95;
+}
+
+.hud-ecg-waveform svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 3px rgba(255, 62, 62, 0.7));
+}
+
+.hud-ecg-waveform path {
+  stroke: #ff3e3e;
+  stroke-width: 1.5;
+  fill: none;
+  stroke-dasharray: 150;
+  stroke-dashoffset: 150;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: ecg-draw 2.8s linear infinite;
+}
+
+@keyframes ecg-draw {
+  0% { stroke-dashoffset: 150; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* Group Cross Marker */
+.hud-group-cross {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  width: 12px;
+  height: 12px;
+  opacity: 0.6;
+}
+</style>
+
+<!-- ============================================================
+     CUSTOM CURSOR STALKER
+     ============================================================ -->
+<style>
+  :root {
+    --my-brand-color: #cccccc;
+    --my-brand-rgb: 200, 200, 200;
+    --my-hover-color: #ffffff;
+    --my-hover-rgb: 255, 255, 255;
+    --cursor-size: 30px;
+  }
+
+  @media (any-hover: hover) {
+    body, a, button, input, textarea, .copy-btn {
+      cursor: none;
+    }
+
+    #mouse_stalker {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--cursor-size);
+      height: var(--cursor-size);
+      background: rgba(var(--my-brand-rgb), 0.85);
+      border: 4px solid var(--my-brand-color);
+      border-radius: 50%;
+      z-index: 99999;
+      opacity: 0;
+      will-change: transform;
+      transform: translate3d(-100px, -100px, 0);
+      mix-blend-mode: difference;
+      transition:
+        background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-width 0.1s ease;
+    }
+
+    #mouse_stalker::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 4px;
+      height: 4px;
+      background-color: var(--my-brand-color);
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 1);
+    }
+
+    #mouse_stalker.stalker_cursor_pointer {
+      background: rgba(var(--my-hover-rgb), 0.4);
+      border-color: var(--my-hover-color);
+      border-width: 8px;
+    }
+
+    #mouse_stalker.stalker_cursor_pointer::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      border: 8px solid var(--my-hover-color);
+      border-radius: 50%;
+      animation: stalker_appeal 2s ease-out infinite;
+    }
+
+    #mouse_stalker.is_clicked {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: var(--my-brand-color);
+      border-width: 3px;
+    }
+  }
+
+  @keyframes stalker_appeal {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+  }
+
+  @media (any-hover: none) {
+    #mouse_stalker { display: none; }
+  }
+</style>
 
 </body>
 </html>
