@@ -13801,7 +13801,7 @@ package provides it:</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> inspircd --configtest</span><br></pre></td></tr></table></figure>
 <p>If your package uses a different wrapper, check the service logs
 after restart:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl restart inspircd</span><br><span class="line"><span class="built_in">sudo</span> systemctl status inspircd</span><br><span class="line">journalctl -u inspircd -e</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl restart inspircd</span><br><span class="line">systemctl status inspircd</span><br><span class="line">systemctl stop inspircd</span><br><span class="line">journalctl -u inspircd -e</span><br></pre></td></tr></table></figure>
 <h2 id="connect">Connect</h2>
 <p>Plain IRC:</p>
 <figure class="highlight text"><table><tr><td class="code"><pre><span class="line">server: irc.example.com</span><br><span class="line">port: 6667</span><br><span class="line">TLS: off</span><br></pre></td></tr></table></figure>
@@ -13840,6 +13840,597 @@ support them.</li>
         <tag>self-hosting</tag>
         <tag>inspircd</tag>
         <tag>tls</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>AstrBot Service Setup</title>
+    <url>/linux/astrbot-vps-deploy/</url>
+    <content><![CDATA[<h1 id="astrbot-service-setup">AstrBot Service Setup</h1>
+<p>This note records a minimal AstrBot deployment on a VPS.</p>
+<p>Example values:</p>
+<ul>
+<li>service user: <code>astrbot</code></li>
+<li>working directory: <code>/opt/astrbot</code></li>
+<li>local port: <code>6185</code></li>
+<li>public domain: <code>bot.example.com</code></li>
+<li>bot token: <code>example-bot-token-please-change</code></li>
+<li>callback path: <code>/callback/astrbot</code></li>
+</ul>
+<p>Replace all example secrets before using the config.</p>
+<h2 id="install-uv">Install uv</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -LsSf https://astral.sh/uv/install.sh | sh</span><br><span class="line">uv --version</span><br></pre></td></tr></table></figure>
+<h2 id="install-astrbot">Install AstrBot</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">uv tool install astrbot</span><br><span class="line"><span class="built_in">command</span> -v astrbot</span><br><span class="line">astrbot --<span class="built_in">help</span></span><br></pre></td></tr></table></figure>
+<p>If <code>astrbot</code> is installed under the service user's home
+directory, use the absolute path in the systemd unit.</p>
+<h2 id="environment-file">Environment File</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -d -m 0750 -o astrbot -g astrbot /opt/astrbot</span><br><span class="line"><span class="built_in">sudo</span> vim /opt/astrbot/.env</span><br></pre></td></tr></table></figure>
+<p>Example <code>.env</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BOT_TOKEN=example-bot-token-please-change</span><br><span class="line">CALLBACK_URL=https://bot.example.com/callback/astrbot</span><br><span class="line">ADMIN_ID=10000001</span><br><span class="line">PORT=6185</span><br></pre></td></tr></table></figure>
+<h2 id="systemd-unit">systemd Unit</h2>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[Unit]</span></span><br><span class="line"><span class="attr">Description</span>=AstrBot Service</span><br><span class="line"><span class="attr">After</span>=network.target</span><br><span class="line"></span><br><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">Type</span>=simple</span><br><span class="line"><span class="attr">User</span>=astrbot</span><br><span class="line"><span class="attr">Group</span>=astrbot</span><br><span class="line"><span class="attr">WorkingDirectory</span>=/opt/astrbot</span><br><span class="line"><span class="attr">EnvironmentFile</span>=/opt/astrbot/.env</span><br><span class="line"><span class="attr">ExecStart</span>=/home/astrbot/.local/bin/astrbot</span><br><span class="line"><span class="attr">Restart</span>=always</span><br><span class="line"><span class="attr">RestartSec</span>=<span class="number">5</span></span><br><span class="line"></span><br><span class="line"><span class="section">[Install]</span></span><br><span class="line"><span class="attr">WantedBy</span>=multi-user.target</span><br></pre></td></tr></table></figure>
+<p>Enable it:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl daemon-reload</span><br><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now astrbot</span><br><span class="line"><span class="built_in">sudo</span> systemctl status astrbot</span><br></pre></td></tr></table></figure>
+<h2 id="reverse-proxy">Reverse Proxy</h2>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">bot.example.com &#123;</span><br><span class="line">    reverse_proxy 127.0.0.1:6185</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="logs">Logs</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">journalctl -u astrbot -e --no-pager</span><br><span class="line">journalctl -u astrbot -f</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>vps</tag>
+        <tag>bot</tag>
+        <tag>astrbot</tag>
+        <tag>systemd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Caddy Reverse Proxy Notes</title>
+    <url>/linux/caddy-reverse-proxy/</url>
+    <content><![CDATA[<h1 id="caddy-reverse-proxy-notes">Caddy Reverse Proxy Notes</h1>
+<p>This note records the Caddy setup I keep reusing for small VPS
+services.</p>
+<p>Caddy is good for this use case because the config is short and ACME
+certificate management is automatic. Most app services can stay on
+<code>127.0.0.1</code>, while Caddy is the only public HTTP/TLS
+entry.</p>
+<p>Example domains and ports:</p>
+<ul>
+<li><code>newapi.example.com:8445</code> -&gt;
+<code>127.0.0.1:3000</code></li>
+<li><code>ds2api.example.com:8446</code> -&gt;
+<code>127.0.0.1:6011</code></li>
+<li><code>pt.example.com:8443</code> -&gt;
+<code>127.0.0.1:18080</code></li>
+<li><code>bot.example.com:8444</code> -&gt;
+<code>127.0.0.1:6185</code></li>
+</ul>
+<h2 id="install-on-debian">Install On Debian</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> apt install -y debian-keyring debian-archive-keyring apt-transport-https curl</span><br><span class="line"></span><br><span class="line">curl -1sLf <span class="string">&#x27;https://dl.cloudsmith.io/public/caddy/stable/gpg.key&#x27;</span> \</span><br><span class="line">  | <span class="built_in">sudo</span> gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg</span><br><span class="line"></span><br><span class="line">curl -1sLf <span class="string">&#x27;https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt&#x27;</span> \</span><br><span class="line">  | <span class="built_in">sudo</span> <span class="built_in">tee</span> /etc/apt/sources.list.d/caddy-stable.list</span><br><span class="line"></span><br><span class="line"><span class="built_in">sudo</span> apt update</span><br><span class="line"><span class="built_in">sudo</span> apt install caddy</span><br></pre></td></tr></table></figure>
+<p>On Arch Linux:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> pacman -S caddy</span><br></pre></td></tr></table></figure>
+<h2 id="basic-caddyfile">Basic Caddyfile</h2>
+<p>Edit:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> vim /etc/caddy/Caddyfile</span><br></pre></td></tr></table></figure>
+<p>Example:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">newapi.example.com:8445 &#123;</span><br><span class="line">    reverse_proxy 127.0.0.1:3000</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">ds2api.example.com:8446 &#123;</span><br><span class="line">    reverse_proxy 127.0.0.1:6011</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">pt.example.com:8443 &#123;</span><br><span class="line">    reverse_proxy 127.0.0.1:18080</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">bot.example.com:8444 &#123;</span><br><span class="line">    reverse_proxy 127.0.0.1:6185</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Validate before reload:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> caddy validate --config /etc/caddy/Caddyfile</span><br><span class="line"><span class="built_in">sudo</span> systemctl reload caddy</span><br></pre></td></tr></table></figure>
+<p>If reload is not enough:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl restart caddy</span><br><span class="line"><span class="built_in">sudo</span> journalctl -u caddy -e --no-pager</span><br></pre></td></tr></table></figure>
+<h2 id="ports-and-acme">Ports And ACME</h2>
+<p>For normal automatic certificates, Caddy needs to complete ACME
+challenges. Keep these in mind:</p>
+<ul>
+<li><code>80</code> should be reachable for HTTP-01 challenges.</li>
+<li><code>443</code> should be reachable for normal HTTPS sites.</li>
+<li>If another service owns <code>443</code>, Caddy can still serve
+HTTPS on another port, but certificate issuance may need <code>80</code>
+or DNS challenge.</li>
+</ul>
+<p>Example firewall rules:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcp dport &#123; 80, 443, 8443, 8444, 8445, 8446 &#125; accept</span><br></pre></td></tr></table></figure>
+<h2 id="bind-apps-to-localhost">Bind Apps To Localhost</h2>
+<p>The app should usually listen on localhost:</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">127.0.0.1:3000</span><br><span class="line">127.0.0.1:6011</span><br><span class="line">127.0.0.1:18080</span><br><span class="line">127.0.0.1:6185</span><br></pre></td></tr></table></figure>
+<p>This prevents users from bypassing Caddy and hitting the raw app port
+directly.</p>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>Put one service block per tool. Do not mix service-specific config
+into a generic Caddy note.</li>
+<li>Caddyfile changes should be validated before reload.</li>
+<li>If the app rejects proxied requests because of host header
+validation, fix that in the app config deliberately instead of exposing
+the app port.</li>
+<li>Do not publish real internal domains or private ports if they reveal
+your infrastructure layout.</li>
+</ul>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>tls</tag>
+        <tag>vps</tag>
+        <tag>caddy</tag>
+        <tag>reverse-proxy</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>CLI Proxy API Setup</title>
+    <url>/linux/cli-proxy-api-setup/</url>
+    <content><![CDATA[<h1 id="cli-proxy-api-setup">CLI Proxy API Setup</h1>
+<p>This note records a CLI Proxy API setup.</p>
+<p>Example values:</p>
+<ul>
+<li>config directory: <code>/root/.cli-proxy-api</code></li>
+<li>install directory: <code>/root/cliproxyapi</code></li>
+<li>public domain: <code>cpa.example.com</code></li>
+<li>HTTPS port: <code>8317</code></li>
+<li>management URL:
+<code>https://cpa.example.com:8317/management.html</code></li>
+<li>API endpoint: <code>https://cpa.example.com:8317/v1</code></li>
+<li>API key: <code>sk-example-cpa-key-please-change</code></li>
+<li>remote management secret:
+<code>example_remote_management_secret_change_me</code></li>
+</ul>
+<p>All secrets above are fake.</p>
+<h2 id="sync-config">Sync Config</h2>
+<p>If you prepare config locally and sync it to the server:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rsync -avzP --exclude=<span class="string">&#x27;logs/*&#x27;</span> ~/.cli-proxy-api/ root@198.51.100.20:~/.cli-proxy-api/</span><br></pre></td></tr></table></figure>
+<p>Lock down the config directory:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 700 ~/.cli-proxy-api</span><br><span class="line"><span class="built_in">chmod</span> 600 ~/.cli-proxy-api/config/config.yaml</span><br><span class="line"><span class="built_in">chmod</span> 600 ~/.cli-proxy-api/*.json</span><br></pre></td></tr></table></figure>
+<h2 id="install">Install</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -fsSL https://raw.githubusercontent.com/brokechubb/cliproxyapi-installer/refs/heads/master/cliproxyapi-installer | bash</span><br></pre></td></tr></table></figure>
+<p>Then enter the install directory:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /root/cliproxyapi</span><br></pre></td></tr></table></figure>
+<h2 id="login-providers">Login Providers</h2>
+<p>Run only the login flows you need:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./cli-proxy-api --login           <span class="comment"># Gemini</span></span><br><span class="line">./cli-proxy-api --codex-login     <span class="comment"># OpenAI</span></span><br><span class="line">./cli-proxy-api --claude-login    <span class="comment"># Claude</span></span><br><span class="line">./cli-proxy-api --qwen-login      <span class="comment"># Qwen</span></span><br><span class="line">./cli-proxy-api --iflow-login     <span class="comment"># iFlow</span></span><br></pre></td></tr></table></figure>
+<p>These login artifacts are credentials. Keep the auth directory
+private.</p>
+<h2 id="config.yaml">config.yaml</h2>
+<p>Example config:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">host:</span> <span class="string">&quot;0.0.0.0&quot;</span></span><br><span class="line"><span class="attr">port:</span> <span class="number">8317</span></span><br><span class="line"></span><br><span class="line"><span class="attr">tls:</span></span><br><span class="line">  <span class="attr">enable:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">cert:</span> <span class="string">&quot;/root/.cli-proxy-api/config/certs/fullchain.pem&quot;</span></span><br><span class="line">  <span class="attr">key:</span> <span class="string">&quot;/root/.cli-proxy-api/config/certs/privkey.pem&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">remote-management:</span></span><br><span class="line">  <span class="attr">allow-remote:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">secret-key:</span> <span class="string">&quot;example_remote_management_secret_change_me&quot;</span></span><br><span class="line">  <span class="attr">disable-control-panel:</span> <span class="literal">false</span></span><br><span class="line">  <span class="attr">disable-auto-update-panel:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">panel-github-repository:</span> <span class="string">&quot;https://github.com/router-for-me/Cli-Proxy-API-Management-Center&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">auth-dir:</span> <span class="string">&quot;/root/.cli-proxy-api&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">api-keys:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">&quot;sk-example-cpa-key-please-change&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">debug:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">pprof:</span></span><br><span class="line">  <span class="attr">enable:</span> <span class="literal">false</span></span><br><span class="line">  <span class="attr">addr:</span> <span class="string">&quot;127.0.0.1:8316&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">commercial-mode:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">logging-to-file:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">logs-max-total-size-mb:</span> <span class="number">0</span></span><br><span class="line"><span class="attr">error-logs-max-files:</span> <span class="number">10</span></span><br><span class="line"><span class="attr">usage-statistics-enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">proxy-url:</span> <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="attr">force-model-prefix:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">passthrough-headers:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">request-retry:</span> <span class="number">3</span></span><br><span class="line"><span class="attr">max-retry-credentials:</span> <span class="number">2</span></span><br><span class="line"><span class="attr">max-retry-interval:</span> <span class="number">30</span></span><br><span class="line"><span class="attr">disable-cooling:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">auth-auto-refresh-workers:</span> <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="attr">routing:</span></span><br><span class="line">  <span class="attr">strategy:</span> <span class="string">&quot;round-robin&quot;</span></span><br><span class="line">  <span class="attr">session-affinity:</span> <span class="literal">false</span></span><br><span class="line">  <span class="attr">session-affinity-ttl:</span> <span class="string">&quot;1h&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">ws-auth:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">enable-gemini-cli-endpoint:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">nonstream-keepalive-interval:</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+<h2 id="service-management">Service Management</h2>
+<p>Console mode:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./cli-proxy-api</span><br></pre></td></tr></table></figure>
+<p>User systemd service:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl --user <span class="built_in">enable</span> cliproxyapi.service</span><br><span class="line">systemctl --user start cliproxyapi.service</span><br><span class="line">systemctl --user status cliproxyapi.service</span><br></pre></td></tr></table></figure>
+<p>Restart after config changes:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl --user restart cliproxyapi.service</span><br></pre></td></tr></table></figure>
+<h2 id="access">Access</h2>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">Management Center: https://cpa.example.com:8317/management.html</span><br><span class="line">API Endpoint:      https://cpa.example.com:8317/v1</span><br></pre></td></tr></table></figure>
+<p>Test:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl https://cpa.example.com:8317/v1/models \</span><br><span class="line">  -H <span class="string">&quot;Authorization: Bearer sk-example-cpa-key-please-change&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="notes">Notes</h2>
+<ul>
+<li><code>api-keys</code>, login files, and provider refresh tokens are
+secrets.</li>
+<li>If TLS is handled inside CLI Proxy API, renew and deploy certificate
+files consistently.</li>
+<li>If Caddy handles TLS instead, bind CLI Proxy API to localhost and
+disable internal TLS.</li>
+<li>Keep pprof on <code>127.0.0.1</code> only.</li>
+</ul>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>vps</tag>
+        <tag>systemd</tag>
+        <tag>cli-proxy-api</tag>
+        <tag>llm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>DS2API Docker Compose Setup</title>
+    <url>/linux/ds2api-docker-compose/</url>
+    <content><![CDATA[<h1 id="ds2api-docker-compose-setup">DS2API Docker Compose Setup</h1>
+<p>This note records a DS2API deployment with Docker Compose.</p>
+<p>Example values:</p>
+<ul>
+<li>public domain: <code>ds2api.example.com</code></li>
+<li>public HTTPS port: <code>8446</code></li>
+<li>app port inside container: <code>5001</code></li>
+<li>host port bound to localhost: <code>6011</code></li>
+<li>admin key: <code>example_ds2api_admin_key_change_me</code></li>
+<li>API key: <code>sk-example-ds2api-key-please-change</code></li>
+</ul>
+<p>All keys above are fake.</p>
+<h2 id="clone">Clone</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/CJackHwang/ds2api.git</span><br><span class="line"><span class="built_in">cd</span> ds2api</span><br><span class="line"><span class="built_in">cp</span> .env.example .<span class="built_in">env</span></span><br><span class="line"><span class="built_in">cp</span> config.example.json config.json</span><br></pre></td></tr></table></figure>
+<h2 id="environment">Environment</h2>
+<p>Edit <code>.env</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">PORT=5001</span><br><span class="line">DS2API_HOST_PORT=6011</span><br><span class="line">LOG_LEVEL=INFO</span><br><span class="line">DS2API_ADMIN_KEY=example_ds2api_admin_key_change_me</span><br><span class="line">DS2API_CONFIG_PATH=/app/config.json</span><br></pre></td></tr></table></figure>
+<p>The app listens on <code>PORT</code> inside the container.
+<code>DS2API_HOST_PORT</code> is the host-side port used by Docker
+Compose.</p>
+<p>Prefer binding the host port to localhost:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">&quot;127.0.0.1:6011:5001&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="config.json">config.json</h2>
+<p>Minimal example:</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;keys&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="string">&quot;sk-example-ds2api-key-please-change&quot;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;api_keys&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;key&quot;</span><span class="punctuation">:</span> <span class="string">&quot;sk-example-ds2api-key-please-change&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;main&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;remark&quot;</span><span class="punctuation">:</span> <span class="string">&quot;for OpenAI-compatible clients&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;accounts&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;main-account&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;email&quot;</span><span class="punctuation">:</span> <span class="string">&quot;deepseek-user@example.com&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;example-password-please-change&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;model_aliases&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;gpt-4o&quot;</span><span class="punctuation">:</span> <span class="string">&quot;deepseek-v4-flash&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;gpt-5&quot;</span><span class="punctuation">:</span> <span class="string">&quot;deepseek-v4-pro&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;runtime&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;account_max_inflight&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;account_max_queue&quot;</span><span class="punctuation">:</span> <span class="number">5</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;token_refresh_interval_hours&quot;</span><span class="punctuation">:</span> <span class="number">6</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>DeepSeek account passwords and refresh tokens are credentials. Treat
+<code>config.json</code> as a secret file.</p>
+<h2 id="start">Start</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker compose up -d</span><br><span class="line">docker compose logs -f</span><br></pre></td></tr></table></figure>
+<p>Check logs:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker logs --<span class="built_in">tail</span> 200 -f ds2api</span><br></pre></td></tr></table></figure>
+<h2 id="caddy-reverse-proxy">Caddy Reverse Proxy</h2>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ds2api.example.com:8446 &#123;</span><br><span class="line">    reverse_proxy 127.0.0.1:6011</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Reload:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> caddy validate --config /etc/caddy/Caddyfile</span><br><span class="line"><span class="built_in">sudo</span> systemctl reload caddy</span><br></pre></td></tr></table></figure>
+<p>Open the firewall port if needed:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> nft add rule inet filter input tcp dport 8446 accept</span><br></pre></td></tr></table></figure>
+<h2 id="test">Test</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl https://ds2api.example.com:8446/v1/models \</span><br><span class="line">  -H <span class="string">&quot;Authorization: Bearer sk-example-ds2api-key-please-change&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Chat completion:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl https://ds2api.example.com:8446/v1/chat/completions \</span><br><span class="line">  -H <span class="string">&quot;Authorization: Bearer sk-example-ds2api-key-please-change&quot;</span> \</span><br><span class="line">  -H <span class="string">&quot;Content-Type: application/json&quot;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&#123;</span></span><br><span class="line"><span class="string">    &quot;model&quot;: &quot;deepseek-v4-flash&quot;,</span></span><br><span class="line"><span class="string">    &quot;messages&quot;: [&#123;&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;ping&quot;&#125;],</span></span><br><span class="line"><span class="string">    &quot;stream&quot;: false</span></span><br><span class="line"><span class="string">  &#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>Change <code>DS2API_ADMIN_KEY</code>; do not leave a default admin
+password.</li>
+<li>Keep <code>config.json</code> private because it stores upstream
+account credentials.</li>
+<li>Bind the service to <code>127.0.0.1</code> and publish it through
+Caddy.</li>
+<li>Do not paste real <code>sk-...</code> keys into public docs.</li>
+</ul>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>docker</tag>
+        <tag>vps</tag>
+        <tag>llm</tag>
+        <tag>ds2api</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Cowrie Honeypot Setup</title>
+    <url>/linux/cowrie-honeypot-vps/</url>
+    <content><![CDATA[<h1 id="cowrie-honeypot-setup">Cowrie Honeypot Setup</h1>
+<p>Cowrie is an SSH/Telnet honeypot. It should be treated as
+hostile-facing software, not as a normal trusted application.</p>
+<p>This note records a minimal deployment using a dedicated user, Python
+venv, and systemd.</p>
+<p>Example values:</p>
+<ul>
+<li>honeypot user: <code>cowrie</code></li>
+<li>internal Cowrie SSH port: <code>2222</code></li>
+<li>public SSH trap port: <code>22</code> or <code>2222</code>,
+depending on firewall/NAT design</li>
+<li>fake hostname shown to attackers: <code>backup-server</code></li>
+</ul>
+<h2 id="install">Install</h2>
+<p>Create a dedicated user:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> adduser --disabled-password --gecos <span class="string">&quot;&quot;</span> cowrie</span><br><span class="line"><span class="built_in">sudo</span> -iu cowrie</span><br></pre></td></tr></table></figure>
+<p>Clone and install dependencies:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/cowrie/cowrie.git</span><br><span class="line"><span class="built_in">cd</span> cowrie</span><br><span class="line">python -m venv cowrie-env</span><br><span class="line"><span class="built_in">source</span> cowrie-env/bin/activate</span><br><span class="line">pip install --upgrade pip</span><br><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
+<h2 id="configure">Configure</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cp</span> etc/cowrie.cfg.dist etc/cowrie.cfg</span><br><span class="line">vim etc/cowrie.cfg</span><br></pre></td></tr></table></figure>
+<p>Minimal config:</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[honeypot]</span></span><br><span class="line"><span class="attr">hostname</span> = backup-server</span><br><span class="line"></span><br><span class="line"><span class="section">[ssh]</span></span><br><span class="line"><span class="attr">listen_endpoints</span> = tcp:<span class="number">2222</span>:interface=<span class="number">0.0</span>.<span class="number">0.0</span></span><br></pre></td></tr></table></figure>
+<p>Do not run Cowrie as root just to bind port <code>22</code>. Keep
+Cowrie on a high port and forward traffic if needed.</p>
+<h2 id="systemd-unit">systemd Unit</h2>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[Unit]</span></span><br><span class="line"><span class="attr">Description</span>=Cowrie SSH Honeypot</span><br><span class="line"><span class="attr">After</span>=network.target</span><br><span class="line"></span><br><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">User</span>=cowrie</span><br><span class="line"><span class="attr">Group</span>=cowrie</span><br><span class="line"><span class="attr">WorkingDirectory</span>=/home/cowrie/cowrie</span><br><span class="line"><span class="attr">ExecStart</span>=/home/cowrie/cowrie/cowrie-env/bin/python /home/cowrie/cowrie/src/cowrie/start.py --nodaemon</span><br><span class="line"><span class="attr">Restart</span>=always</span><br><span class="line"><span class="attr">RestartSec</span>=<span class="number">5</span></span><br><span class="line"></span><br><span class="line"><span class="section">[Install]</span></span><br><span class="line"><span class="attr">WantedBy</span>=multi-user.target</span><br></pre></td></tr></table></figure>
+<p>Enable it:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl daemon-reload</span><br><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now cowrie</span><br></pre></td></tr></table></figure>
+<h2 id="logs">Logs</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">journalctl -u cowrie -e --no-pager</span><br><span class="line"><span class="built_in">sudo</span> -iu cowrie <span class="built_in">tail</span> -f ~/cowrie/var/log/cowrie/cowrie.json</span><br></pre></td></tr></table></figure>
+<p>The JSON log is usually the most useful file for later analysis.</p>
+<h2 id="firewall-or-port-forwarding">Firewall Or Port Forwarding</h2>
+<p>If Cowrie listens on <code>2222</code>, a simple redirect can expose
+it as port <code>22</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">table ip nat &#123;</span><br><span class="line">    chain prerouting &#123;</span><br><span class="line">        type nat hook prerouting priority dstnat;</span><br><span class="line">        tcp dport 22 redirect to :2222</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Only do this if the real SSH service is moved somewhere else, such as
+<code>22222</code>.</p>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>Do not reuse real hostnames, banners, usernames, or internal
+paths.</li>
+<li>Logs can contain malicious payloads. Treat them as untrusted
+input.</li>
+<li>Keep the honeypot isolated from important credentials and
+services.</li>
+</ul>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>security</tag>
+        <tag>vps</tag>
+        <tag>honeypot</tag>
+        <tag>cowrie</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>New API Docker Compose Setup</title>
+    <url>/linux/newapi-docker-compose/</url>
+    <content><![CDATA[<h1 id="new-api-docker-compose-setup">New API Docker Compose Setup</h1>
+<p>This note records a minimal New API deployment with Docker
+Compose.</p>
+<p>Example values:</p>
+<ul>
+<li>public domain: <code>newapi.example.com</code></li>
+<li>public HTTPS port: <code>8445</code></li>
+<li>container app port: <code>3000</code></li>
+<li>repo: <code>https://github.com/QuantumNous/new-api.git</code></li>
+</ul>
+<p>The domain and port are examples. Replace them with your own
+values.</p>
+<h2 id="install-docker">Install Docker</h2>
+<p>If Docker is not installed yet:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -fsSL https://get.docker.com -o get-docker.sh</span><br><span class="line"><span class="built_in">sudo</span> sh get-docker.sh</span><br></pre></td></tr></table></figure>
+<p>Check it:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">docker compose version</span><br></pre></td></tr></table></figure>
+<h2 id="clone">Clone</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/QuantumNous/new-api.git</span><br><span class="line"><span class="built_in">cd</span> new-api</span><br></pre></td></tr></table></figure>
+<p>Review the compose file before starting it:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim docker-compose.yml</span><br></pre></td></tr></table></figure>
+<p>For a reverse-proxy setup, bind the app to localhost if the compose
+file allows it:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">&quot;127.0.0.1:3000:3000&quot;</span></span><br></pre></td></tr></table></figure>
+<p>If the upstream compose file also starts MySQL and Redis, keep their
+ports internal unless you have a reason to expose them.</p>
+<h2 id="start">Start</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker compose up -d</span><br></pre></td></tr></table></figure>
+<p>Check status:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker compose ps</span><br><span class="line">docker compose logs -f new-api</span><br><span class="line">docker compose logs --<span class="built_in">tail</span>=100 new-api</span><br></pre></td></tr></table></figure>
+<p>For first-time initialization, open the web page and follow the setup
+wizard:</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://newapi.example.com:8445</span><br></pre></td></tr></table></figure>
+<p>If you test without Caddy first, use:</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">http://198.51.100.20:3000</span><br></pre></td></tr></table></figure>
+<p><code>198.51.100.20</code> is a documentation IP address.</p>
+<h2 id="caddy-reverse-proxy">Caddy Reverse Proxy</h2>
+<p>Caddy config:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">newapi.example.com:8445 &#123;</span><br><span class="line">    reverse_proxy 127.0.0.1:3000</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Reload Caddy:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> caddy validate --config /etc/caddy/Caddyfile</span><br><span class="line"><span class="built_in">sudo</span> systemctl reload caddy</span><br></pre></td></tr></table></figure>
+<p>Open the firewall port if needed:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> nft add rule inet filter input tcp dport 8445 accept</span><br></pre></td></tr></table></figure>
+<h2 id="update">Update</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /opt/new-api</span><br><span class="line">git pull</span><br><span class="line">docker compose pull</span><br><span class="line">docker compose up -d</span><br><span class="line">docker image prune -f</span><br></pre></td></tr></table></figure>
+<p>If you modified tracked files directly and <code>git pull</code>
+complains, either move local changes into override files or clean the
+tree intentionally. Do not blindly <code>reset --hard</code> unless you
+know what you are throwing away.</p>
+<h2 id="logs">Logs</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># all services</span></span><br><span class="line">docker compose logs -f</span><br><span class="line"></span><br><span class="line"><span class="comment"># selected services</span></span><br><span class="line">docker compose logs -f new-api</span><br><span class="line">docker compose logs -f mysql</span><br><span class="line">docker compose logs -f redis</span><br><span class="line"></span><br><span class="line"><span class="comment"># foreground debug</span></span><br><span class="line">docker compose up new-api</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>docker</tag>
+        <tag>vps</tag>
+        <tag>llm</tag>
+        <tag>newapi</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>qBittorrent-nox Service Setup</title>
+    <url>/linux/qbittorrent-caddy-pt-vps/</url>
+    <content><![CDATA[<h1 id="qbittorrent-nox-service-setup">qBittorrent-nox Service
+Setup</h1>
+<p>This note records a <code>qbittorrent-nox</code> setup for a VPS.</p>
+<p>Example values:</p>
+<ul>
+<li>service user: <code>qbittorrent</code></li>
+<li>config home: <code>/var/lib/qbittorrent</code></li>
+<li>download directory: <code>/data/downloads</code></li>
+<li>Web UI port: <code>18080</code></li>
+<li>BT listen port: <code>45000</code></li>
+</ul>
+<p>Caddy reverse proxy is covered in the separate Caddy note. This
+article only covers qBittorrent itself.</p>
+<h2 id="install">Install</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> apt install qbittorrent-nox</span><br></pre></td></tr></table></figure>
+<p>On Arch Linux:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> pacman -S qbittorrent-nox</span><br></pre></td></tr></table></figure>
+<h2 id="do-not-run-it-as-root">Do Not Run It As Root</h2>
+<p>Running a network-facing P2P daemon as root is asking for pain. If
+qBittorrent ever has an RCE or a bad plugin/script interaction, root
+turns that bug into full machine compromise.</p>
+<p>Create a dedicated user:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> useradd -r -m -d /var/lib/qbittorrent -s /usr/sbin/nologin qbittorrent</span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">mkdir</span> -p /data/downloads</span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">chown</span> -R qbittorrent:qbittorrent /data/downloads</span><br></pre></td></tr></table></figure>
+<h2 id="systemd-unit">systemd Unit</h2>
+<p>Create <code>/etc/systemd/system/qbittorrent-nox.service</code>:</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[Unit]</span></span><br><span class="line"><span class="attr">Description</span>=qBittorrent-nox service</span><br><span class="line"><span class="attr">Documentation</span>=man:qbittorrent-nox(<span class="number">1</span>)</span><br><span class="line"><span class="attr">Wants</span>=network-<span class="literal">on</span>line.target</span><br><span class="line"><span class="attr">After</span>=network-<span class="literal">on</span>line.target nss-lookup.target</span><br><span class="line"></span><br><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">Type</span>=simple</span><br><span class="line"><span class="attr">User</span>=qbittorrent</span><br><span class="line"><span class="attr">Group</span>=qbittorrent</span><br><span class="line"><span class="attr">ExecStart</span>=/usr/bin/qbittorrent-nox --profile=/var/lib/qbittorrent --webui-port=<span class="number">18080</span></span><br><span class="line"><span class="attr">TimeoutStopSec</span>=<span class="number">1800</span></span><br><span class="line"><span class="attr">Restart</span>=<span class="literal">on</span>-failure</span><br><span class="line"></span><br><span class="line"><span class="attr">ProtectSystem</span>=full</span><br><span class="line"><span class="attr">ProtectHome</span>=<span class="literal">true</span></span><br><span class="line"><span class="attr">NoNewPrivileges</span>=<span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="section">[Install]</span></span><br><span class="line"><span class="attr">WantedBy</span>=multi-user.target</span><br></pre></td></tr></table></figure>
+<p>Enable it:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl daemon-reload</span><br><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now qbittorrent-nox</span><br><span class="line"><span class="built_in">sudo</span> systemctl status qbittorrent-nox</span><br></pre></td></tr></table></figure>
+<h2 id="web-ui-binding">Web UI Binding</h2>
+<p>Stop the service before editing the config, otherwise qBittorrent may
+overwrite your changes:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl stop qbittorrent-nox</span><br><span class="line"><span class="built_in">sudo</span> find /var/lib/qbittorrent -name <span class="string">&quot;qBittorrent.conf&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Edit the config file, usually under:</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf</span><br></pre></td></tr></table></figure>
+<p>Force the Web UI to localhost:</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><span class="line"><span class="section">[Preferences]</span></span><br><span class="line">WebUI\<span class="attr">Address</span>=<span class="number">127.0</span>.<span class="number">0.1</span></span><br><span class="line">WebUI\<span class="attr">Port</span>=<span class="number">18080</span></span><br><span class="line">WebUI\<span class="attr">HostHeaderValidation</span>=<span class="literal">false</span></span><br></pre></td></tr></table></figure>
+<p>Start it again:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl start qbittorrent-nox</span><br></pre></td></tr></table></figure>
+<p>On recent qBittorrent versions, the initial random password may
+appear in logs:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">journalctl -u qbittorrent-nox -e | grep -i password</span><br></pre></td></tr></table></figure>
+<p>Change it immediately after logging in.</p>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>vps</tag>
+        <tag>systemd</tag>
+        <tag>qbittorrent</tag>
+        <tag>pt</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SSL Certificate Renewal Notes</title>
+    <url>/linux/ssl-certificate-automation/</url>
+    <content><![CDATA[<h1 id="ssl-certificate-renewal-notes">SSL Certificate Renewal
+Notes</h1>
+<p>This note records a simple SSL certificate workflow with
+<code>certbot</code>: acquire, verify, renew, and deploy.</p>
+<p>The example domain is <code>api.example.com</code>. Replace it with
+your own domain.</p>
+<h2 id="acquire-a-certificate">Acquire A Certificate</h2>
+<p>For a standalone HTTP-01 challenge, port <code>80</code> must be
+reachable and not occupied by another process:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br></pre></td></tr></table></figure>
+<p>If Caddy or Nginx is already using port <code>80</code>, stop it
+temporarily:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl stop caddy</span><br><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br><span class="line"><span class="built_in">sudo</span> systemctl start caddy</span><br></pre></td></tr></table></figure>
+<h2 id="check-the-certificate">Check The Certificate</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certificates</span><br><span class="line"><span class="built_in">sudo</span> openssl x509 \</span><br><span class="line">  -<span class="keyword">in</span> /etc/letsencrypt/live/api.example.com/fullchain.pem \</span><br><span class="line">  -noout -dates</span><br></pre></td></tr></table></figure>
+<h2 id="enable-renewal">Enable Renewal</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now certbot.timer</span><br><span class="line">systemctl list-timers | grep certbot</span><br></pre></td></tr></table></figure>
+<p>Run a dry test:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot renew --dry-run</span><br></pre></td></tr></table></figure>
+<h2 id="deploy-hook">Deploy Hook</h2>
+<p>Some services cannot read directly from
+<code>/etc/letsencrypt/live/...</code>, or they need certificate files
+copied into a service-owned directory.</p>
+<p>Example hook for a service called <code>myapp</code>:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line"></span><br><span class="line">DOMAIN=<span class="string">&quot;api.example.com&quot;</span></span><br><span class="line">TARGET_DIR=<span class="string">&quot;/etc/myapp/cert&quot;</span></span><br><span class="line"></span><br><span class="line">install -d -m 0750 <span class="string">&quot;<span class="variable">$TARGET_DIR</span>&quot;</span></span><br><span class="line">install -m 0644 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/fullchain.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/fullchain.pem&quot;</span></span><br><span class="line">install -m 0600 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/privkey.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/privkey.pem&quot;</span></span><br><span class="line"></span><br><span class="line">systemctl reload myapp</span><br></pre></td></tr></table></figure>
+<p>Install it as a deploy hook:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -m 0755 deploy-myapp-cert.sh \</span><br><span class="line">  /etc/letsencrypt/renewal-hooks/deploy/myapp.sh</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>vps</tag>
+        <tag>systemd</tag>
+        <tag>ssl</tag>
+        <tag>certbot</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VPS nftables Firewall With Docker</title>
+    <url>/linux/vps-nftables-docker/</url>
+    <content><![CDATA[<h1 id="vps-nftables-firewall-with-docker">VPS nftables Firewall With
+Docker</h1>
+<p>This note records a small <code>nftables</code> firewall setup for a
+VPS that also runs Docker.</p>
+<p>The goal is not to write a clever universal ruleset. The goal is
+simpler: keep the host <code>input</code> path small, expose only the
+ports that should be public, and avoid fighting Docker's own NAT
+rules.</p>
+<p>The example uses documentation IP addresses:</p>
+<ul>
+<li><code>203.0.113.10</code> as the admin's trusted IP</li>
+<li><code>198.51.100.20</code> as the server IP</li>
+<li><code>22222</code> as the SSH port</li>
+</ul>
+<p>Replace them with your own values.</p>
+<h2 id="basic-rules">Basic Rules</h2>
+<p>Use the <code>inet</code> family so the same table can handle IPv4
+and IPv6:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/sbin/nft -f</span><br><span class="line"></span><br><span class="line">flush ruleset</span><br><span class="line"></span><br><span class="line">table inet filter &#123;</span><br><span class="line">    set trusted_ipv4 &#123;</span><br><span class="line">        type ipv4_addr</span><br><span class="line">        flags interval</span><br><span class="line">        elements = &#123;</span><br><span class="line">            203.0.113.10,</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chain input &#123;</span><br><span class="line">        type filter hook input priority filter; policy drop;</span><br><span class="line"></span><br><span class="line">        iif &quot;lo&quot; accept</span><br><span class="line">        ct state established,related accept</span><br><span class="line">        ct state invalid drop</span><br><span class="line"></span><br><span class="line">        ip protocol icmp accept</span><br><span class="line">        ip6 nexthdr icmpv6 accept</span><br><span class="line"></span><br><span class="line">        # SSH: only allow the trusted admin IP.</span><br><span class="line">        ip saddr @trusted_ipv4 tcp dport 22222 accept</span><br><span class="line"></span><br><span class="line">        # Public web entry.</span><br><span class="line">        tcp dport &#123; 80, 443 &#125; accept</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chain forward &#123;</span><br><span class="line">        type filter hook forward priority filter; policy accept;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chain output &#123;</span><br><span class="line">        type filter hook output priority filter; policy accept;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="docker-notes">Docker Notes</h2>
+<p>Docker manages its own forwarding and NAT rules. If you blindly flush
+everything and then set <code>forward</code> to <code>drop</code>,
+containers may lose network access or published ports may stop
+working.</p>
+<p>For a small VPS, I usually keep the boundary simple:</p>
+<ul>
+<li>protect the host through the <code>input</code> chain</li>
+<li>let Docker manage container NAT</li>
+<li>expose public services through Caddy on <code>80/443</code></li>
+<li>bind internal app ports to <code>127.0.0.1</code> when possible</li>
+</ul>
+<p>Example Docker port mapping:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">&quot;127.0.0.1:8080:8080&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Then let Caddy publish it over HTTPS.</p>
+<h2 id="apply-safely">Apply Safely</h2>
+<p>Validate before loading:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> nft -c -f /etc/nftables.conf</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>docker</tag>
+        <tag>vps</tag>
+        <tag>nftables</tag>
+        <tag>firewall</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Xray Reality / VLESS Setup</title>
+    <url>/linux/xray-reality-vless-deploy/</url>
+    <content><![CDATA[<h1 id="xray-reality-vless-setup">Xray Reality / VLESS Setup</h1>
+<p>This note records a minimal Xray Reality / VLESS setup.</p>
+<p>The example values are fake but shaped like real values, so the
+config is easier to read than a wall of placeholders.</p>
+<p>Example environment:</p>
+<ul>
+<li>server: <code>vpn.example.com</code></li>
+<li>listen port: <code>443</code></li>
+<li>client UUID: <code>11111111-2222-4333-8444-555555555555</code></li>
+<li>Reality private key:
+<code>example_private_key_do_not_use</code></li>
+<li>Reality public key: <code>example_public_key_do_not_use</code></li>
+<li>Reality short id: <code>a1b2c3d4e5f60708</code></li>
+<li>camouflage target: <code>www.microsoft.com:443</code></li>
+</ul>
+<p>Replace all of them.</p>
+<h2 id="service-commands">Service Commands</h2>
+<p>Check the service:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl status xray</span><br><span class="line"><span class="built_in">sudo</span> journalctl -u xray -e --no-pager</span><br></pre></td></tr></table></figure>
+<p>After editing the config, test it before restart:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> xray run -<span class="built_in">test</span> -config /usr/local/etc/xray/config.json</span><br><span class="line"><span class="built_in">sudo</span> systemctl restart xray</span><br></pre></td></tr></table></figure>
+<h2 id="generate-ids-and-keys">Generate IDs And Keys</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">xray uuid</span><br><span class="line">xray x25519</span><br><span class="line">openssl rand -hex 8</span><br></pre></td></tr></table></figure>
+<p>Keep the private key on the server. Put the public key in the client
+config.</p>
+<h2 id="server-config-example">Server Config Example</h2>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;inbounds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;listen&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0.0.0.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;port&quot;</span><span class="punctuation">:</span> <span class="number">443</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;protocol&quot;</span><span class="punctuation">:</span> <span class="string">&quot;vless&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;clients&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">          <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;11111111-2222-4333-8444-555555555555&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;flow&quot;</span><span class="punctuation">:</span> <span class="string">&quot;xtls-rprx-vision&quot;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;decryption&quot;</span><span class="punctuation">:</span> <span class="string">&quot;none&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;streamSettings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;network&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tcp&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;security&quot;</span><span class="punctuation">:</span> <span class="string">&quot;reality&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;realitySettings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;show&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;dest&quot;</span><span class="punctuation">:</span> <span class="string">&quot;www.microsoft.com:443&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;xver&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;serverNames&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;www.microsoft.com&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;privateKey&quot;</span><span class="punctuation">:</span> <span class="string">&quot;example_private_key_do_not_use&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;shortIds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;a1b2c3d4e5f60708&quot;</span><span class="punctuation">]</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;outbounds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span> <span class="attr">&quot;protocol&quot;</span><span class="punctuation">:</span> <span class="string">&quot;freedom&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<h2 id="firewall">Firewall</h2>
+<p>Only the public entry port needs to be open:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> nft add rule inet filter input tcp dport 443 accept</span><br></pre></td></tr></table></figure>
+<p>If SSH uses a custom port such as <code>22222</code>, keep that rule
+separate and preferably source-restricted.</p>
+<h2 id="client-side-fields">Client-Side Fields</h2>
+<p>A client profile usually needs:</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">address: vpn.example.com</span><br><span class="line">port: 443</span><br><span class="line">uuid: 11111111-2222-4333-8444-555555555555</span><br><span class="line">flow: xtls-rprx-vision</span><br><span class="line">security: reality</span><br><span class="line">sni: www.microsoft.com</span><br><span class="line">publicKey: example_public_key_do_not_use</span><br><span class="line">shortId: a1b2c3d4e5f60708</span><br></pre></td></tr></table></figure>
+<h2 id="notes">Notes</h2>
+<ul>
+<li><code>privateKey</code>, UUID, and short id are secrets. Do not
+publish real values.</li>
+<li>Time sync matters. If the client and server clocks are too far
+apart, debugging becomes confusing.</li>
+<li>Start with a direct connection first. Add extra reverse proxies only
+after the base config works.</li>
+</ul>
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+        <tag>vps</tag>
+        <tag>xray</tag>
+        <tag>vless</tag>
+        <tag>reality</tag>
       </tags>
   </entry>
 </search>
