@@ -858,145 +858,225 @@ in an animated cIMG! Good luck.</p>
 <!-- ============================================================
      CUSTOM CURSOR STALKER
      ============================================================ -->
-<div id="mouse_stalker"></div>
+<div id="cursor-container" aria-hidden="true">
+  <div id="cursor-outer"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-effect"></div>
+</div>
 
 <script>
   (() => {
-    const stalker = document.getElementById("mouse_stalker");
-    if (!window.matchMedia("(any-hover: hover)").matches || !stalker) return;
+    if (!window.matchMedia("(any-hover: hover)").matches) return;
 
     const CONFIG = {
-      smooth: 0.35,
-      scaleSmooth: 0.15,
-      baseScale: 1,
-      hoverScale: 1.8,
-      offset: 15,
-      stretchFactor: 0.04,
-      maxStretch: 0.2,
-      stickiness: 0.6,
-      hoverSelectors:
-        "a, button, .toggle, #exturl, #post-title, .article-title, .nav-link, .copy-btn, .badge-normal",
+      // 跟随平滑
+      smooth: 0.025,          // 每毫秒插值因子（× dt）
+      convergence: 0.1,        // 收敛阈值 (px)，低于此值停止 RAF
+      // 运动拉伸
+      stretchFactor: 0.04,     // 速度 → 拉伸系数
+      maxStretch: 0.2,         // 最大拉伸比例
+      // 吸附
+      stickiness: 0.6,         // hover 时向元素中心吸附（0=不吸, 1=完全贴元素）
+      // 外圈尺寸
+      outerSize: 36,           // 默认外圈直径 (px)
+      hoverOuterSize: 24,      // hover 时外圈直径 (px)
+      // 点击涟漪
+      rippleDuration: 500,     // 涟漪持续时间 (ms)
+      rippleTransition:
+        "transform .5s cubic-bezier(0.22, 0.61, 0.21, 1), opacity .5s cubic-bezier(0.22, 0.61, 0.21, 1)",
     };
 
-    let state = {
-      mouse: { x: -100, y: -100 },
-      circle: { x: -100, y: -100, scale: 1 },
-      prevCircle: { x: -100, y: -100 },
-      target: null,
-      isHovering: false,
-      isClicked: false,
-      isVisible: false,
-    };
+    class Cursor {
+      constructor() {
+        this.now = null;
+        this.first = true;
+        this.last = 0;
+        this.moveIng = false;
+        this.fadeIng = false;
+        this.nowX = 0;
+        this.nowY = 0;
+        this.prevX = 0;
+        this.prevY = 0;
+        this.target = null;
 
-    const lerp = (a, b, n) => (1 - n) * a + n * b;
+        this.attention = `a,input,button,textarea,
+      .navBtnIcon,
+      #post-content img,
+      .ex-header,
+      .gt-user-inner,
+      .wl-sort>li,
+      #valine .vicon,#valine .vat,
+      .lg-container img,.clickable,
+      .toggle,
+      #exturl,
+      #post-title,
+      .article-title,
+      .nav-link,
+      .copy-btn,
+      .badge-normal`;
 
-    const handleMouseMove = (e) => {
-      state.mouse.x = e.clientX;
-      state.mouse.y = e.clientY;
+        const node = document.getElementById("cursor-container");
+        if (!node) return;
 
-      if (!state.isVisible) {
-        state.circle.x = state.prevCircle.x = state.mouse.x;
-        state.circle.y = state.prevCircle.y = state.mouse.y;
-        stalker.style.opacity = 1;
-        state.isVisible = true;
+        this.outer = node.querySelector("#cursor-outer")?.style;
+        this.dot = node.querySelector("#cursor-dot")?.style;
+        this.effecter = node.querySelector("#cursor-effect")?.style;
+        if (!this.outer || !this.dot || !this.effecter) return;
+
+        this.outer.top = "-100%";
+        this.dot.top = "-100%";
+        this.effecter.transform = "translate(-50%, -50%) scale(0)";
+        this.effecter.opacity = "1";
+
+        window.addEventListener("mousemove", this.reset.bind(this), {
+          passive: true,
+        });
+        window.addEventListener("click", this.Aeffect.bind(this), {
+          passive: true,
+        });
+        this.pushHolder();
+
+        const observer = new MutationObserver(this.pushHolder.bind(this));
+        observer.observe(document, { childList: true, subtree: true });
       }
-    };
 
-    const handleMouseOver = (e) => {
-      const el = e.target.closest(CONFIG.hoverSelectors);
-      if (el) {
-        const r = el.getBoundingClientRect();
-        state.target = {
-          cx: r.left + r.width / 2 + window.scrollX,
-          cy: r.top + r.height / 2 + window.scrollY,
-        };
-        state.isHovering = true;
-        stalker.classList.add("stalker_cursor_pointer");
+      set(X = this.nowX, Y = this.nowY) {
+        this.outer.transform = `translate(calc(${X.toFixed(2)}px - 50%), calc(${Y.toFixed(2)}px - 50%))`;
       }
-    };
 
-    const handleMouseOut = (e) => {
-      if (e.target.closest(CONFIG.hoverSelectors)) {
-        state.target = null;
-        state.isHovering = false;
-        stalker.classList.remove("stalker_cursor_pointer");
+      move(timestamp) {
+        if (this.now !== null) {
+          const delX = this.now.x - this.nowX;
+          const delY = this.now.y - this.nowY;
+          this.nowX += delX * Math.min(CONFIG.smooth * (timestamp - this.last), 1);
+          this.nowY += delY * Math.min(CONFIG.smooth * (timestamp - this.last), 1);
+
+          // 运动拉伸：outer ring 沿运动方向变形
+          const dx = this.nowX - this.prevX;
+          const dy = this.nowY - this.prevY;
+          const speed = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx);
+          const stretch = Math.min(speed * CONFIG.stretchFactor, CONFIG.maxStretch);
+          this.outer.transform =
+            `translate(calc(${this.nowX.toFixed(2)}px - 50%), calc(${this.nowY.toFixed(2)}px - 50%))` +
+            ` rotate(${angle}rad) scale(${1 + stretch}, ${1 - stretch})`;
+
+          this.prevX = this.nowX;
+          this.prevY = this.nowY;
+          this.last = timestamp;
+
+          if (Math.abs(delX) > CONFIG.convergence || Math.abs(delY) > CONFIG.convergence) {
+            window.requestAnimationFrame(this.move.bind(this));
+          } else {
+            this.set(this.now.x, this.now.y);
+            this.moveIng = false;
+          }
+        }
       }
-    };
 
-    const resetStalker = () => {
-      state.target = null;
-      state.isHovering = false;
-      state.isClicked = false;
-      stalker.className = "";
-    };
+      reset(mouse) {
+        this.outer.top = "0";
+        this.outer.left = "0";
+        this.dot.top = "0";
+        this.dot.left = "0";
 
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    window.addEventListener("mouseover", handleMouseOver, { passive: true });
-    window.addEventListener("mouseout", handleMouseOut, { passive: true });
-    window.addEventListener(
-      "mousedown",
-      () => {
-        state.isClicked = true;
-        stalker.classList.add("is_clicked");
-      },
-      { passive: true },
-    );
-    window.addEventListener(
-      "mouseup",
-      () => {
-        state.isClicked = false;
-        stalker.classList.remove("is_clicked");
-      },
-      { passive: true },
-    );
+        if (!this.moveIng) {
+          this.moveIng = true;
+          window.requestAnimationFrame(this.move.bind(this));
+        }
 
-    ["pjax:send", "pjax:complete", "popstate"].forEach((ev) =>
-      document.addEventListener(ev, resetStalker, { passive: true }),
-    );
+        this.now = mouse;
 
-    const tick = () => {
-      const tx = state.target
-        ? lerp(
-            state.mouse.x,
-            state.target.cx - window.scrollX,
-            CONFIG.stickiness,
-          )
-        : state.mouse.x;
-      const ty = state.target
-        ? lerp(
-            state.mouse.y,
-            state.target.cy - window.scrollY,
-            CONFIG.stickiness,
-          )
-        : state.mouse.y;
+        // 吸附效果：hover 时 outer ring 被吸引到目标元素中心
+        if (this.target) {
+          const tx =
+            mouse.x + (this.target.cx - window.scrollX - mouse.x) * CONFIG.stickiness;
+          const ty =
+            mouse.y + (this.target.cy - window.scrollY - mouse.y) * CONFIG.stickiness;
+          this.now = { x: tx, y: ty };
+        }
 
-      state.circle.x = lerp(state.circle.x, tx, CONFIG.smooth);
-      state.circle.y = lerp(state.circle.y, ty, CONFIG.smooth);
+        // dot 始终贴真鼠标，不受吸附影响 → 强跟随
+        this.dot.transform = `translate(calc(${mouse.x.toFixed(2)}px - 50%), calc(${mouse.y.toFixed(2)}px - 50%))`;
 
-      const dx = state.circle.x - state.prevCircle.x;
-      const dy = state.circle.y - state.prevCircle.y;
-      const speed = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx);
+        if (this.first) {
+          this.first = false;
+          this.nowX = this.now.x;
+          this.nowY = this.now.y;
+          this.set();
+        }
+      }
 
-      const stretch = Math.min(speed * CONFIG.stretchFactor, CONFIG.maxStretch);
-      const targetScale = state.isHovering
-        ? CONFIG.hoverScale
-        : CONFIG.baseScale;
-      state.circle.scale = lerp(
-        state.circle.scale,
-        targetScale,
-        CONFIG.scaleSmooth,
-      );
+      Aeffect(mouse) {
+        if (this.fadeIng === false) {
+          this.fadeIng = true;
+          this.effecter.left = String(mouse.x) + "px";
+          this.effecter.top = String(mouse.y) + "px";
+          this.effecter.transition = CONFIG.rippleTransition;
+          this.effecter.transform = "translate(-50%, -50%) scale(1)";
+          this.effecter.opacity = "0";
 
-      stalker.style.transform = `translate3d(${state.circle.x - CONFIG.offset}px, ${state.circle.y - CONFIG.offset}px, 0) rotate(${angle}rad) scale(${(1 + stretch) * state.circle.scale}, ${(1 - stretch) * state.circle.scale})`;
+          setTimeout(() => {
+            this.fadeIng = false;
+            this.effecter.transition = "";
+            this.effecter.transform = "translate(-50%, -50%) scale(0)";
+            this.effecter.opacity = "1";
+          }, CONFIG.rippleDuration);
+        }
+      }
 
-      state.prevCircle.x = state.circle.x;
-      state.prevCircle.y = state.circle.y;
+      hold(e) {
+        const el = e.target.closest(this.attention);
+        if (el) {
+          const r = el.getBoundingClientRect();
+          this.target = {
+            cx: r.left + r.width / 2 + window.scrollX,
+            cy: r.top + r.height / 2 + window.scrollY,
+          };
+        }
+        this.outer.height = CONFIG.hoverOuterSize + "px";
+        this.outer.width = CONFIG.hoverOuterSize + "px";
+        this.outer.background = "var(--theme-cursor-bg)";
+      }
 
-      requestAnimationFrame(tick);
-    };
+      relax(e) {
+        const related = e.relatedTarget;
+        if (!related || !related.closest || !related.closest(this.attention)) {
+          this.target = null;
+        }
+        this.outer.height = CONFIG.outerSize + "px";
+        this.outer.width = CONFIG.outerSize + "px";
+        this.outer.background = "unset";
+      }
 
-    requestAnimationFrame(tick);
+      pushHolder() {
+        document.querySelectorAll(this.attention).forEach((item) => {
+          if (!item.dataset.cursorBound) {
+            item.addEventListener("mouseover", this.hold.bind(this), {
+              passive: true,
+            });
+            item.addEventListener("mouseout", this.relax.bind(this), {
+              passive: true,
+            });
+            item.dataset.cursorBound = "1";
+          }
+        });
+      }
+
+      // PJAX 导航时重置状态（避免 hover 状态残留）
+      resetState() {
+        this.relax();
+        this.now = null;
+        this.target = null;
+        this.first = true;
+        this.moveIng = false;
+        this.fadeIng = false;
+      }
+    }
+
+    const cursor = new Cursor();
+    document.addEventListener("pjax:send", () => cursor.resetState(), { passive: true });
+    document.addEventListener("popstate", () => cursor.resetState(), { passive: true });
   })();
 </script>
 
@@ -1147,11 +1227,18 @@ in an animated cIMG! Good luck.</p>
      ============================================================ -->
 <style>
   :root {
-    --my-brand-color: #cccccc;
-    --my-brand-rgb: 200, 200, 200;
-    --my-hover-color: #ffffff;
-    --my-hover-rgb: 255, 255, 255;
-    --cursor-size: 30px;
+    --theme-cursor: #cccccc;
+    --theme-cursor-bg: rgba(204, 204, 204, 0.3);
+    --cursor-outer-size: 36px;
+    --cursor-outer-border: 1px;
+    --cursor-outer-shadow: 0 0 12px rgba(204, 204, 204, 0.28);
+    --cursor-dot-size: 6px;
+    --cursor-dot-shadow: 0 0 10px rgba(255, 255, 255, 0.95);
+    --cursor-effect-size: 80px;
+    --cursor-effect-border: 2px;
+    --cursor-z-outer: 65538;
+    --cursor-z-dot: 65539;
+    --cursor-transition-speed: 0.3s;
   }
 
   @media (any-hover: hover) {
@@ -1160,84 +1247,70 @@ in an animated cIMG! Good luck.</p>
     button,
     input,
     textarea,
-    .copy-btn {
+    .copy-btn,
+    .toggle,
+    #exturl,
+    #post-title,
+    .article-title,
+    .nav-link,
+    .badge-normal,
+    #post-content img,
+    .clickable {
       cursor: none;
     }
 
-    #mouse_stalker {
+    #cursor-container {
       pointer-events: none;
+    }
+
+    #cursor-outer {
+      z-index: var(--cursor-z-outer);
       position: fixed;
-      top: 0;
-      left: 0;
-      width: var(--cursor-size);
-      height: var(--cursor-size);
-      background: rgba(var(--my-brand-rgb), 0.85);
-      border: 4px solid var(--my-brand-color);
+      transform: translate3d(-50%, -50%, 0);
+      height: var(--cursor-outer-size);
+      width: var(--cursor-outer-size);
+      border: var(--cursor-outer-border) solid var(--theme-cursor);
       border-radius: 50%;
-      z-index: 99999;
-      opacity: 0;
-      will-change: transform;
-      transform: translate3d(-100px, -100px, 0);
+      pointer-events: none;
+      transition-duration: var(--cursor-transition-speed);
+      transition-property: background-color, width, height;
+      top: -100%;
       mix-blend-mode: difference;
-      transition:
-        background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        border-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        border-width 0.1s ease;
+      box-shadow: var(--cursor-outer-shadow);
     }
 
-    #mouse_stalker::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 4px;
-      height: 4px;
-      background-color: var(--my-brand-color);
+    #cursor-dot {
+      position: fixed;
+      top: -100%;
+      left: 0;
+      z-index: var(--cursor-z-dot);
+      width: var(--cursor-dot-size);
+      height: var(--cursor-dot-size);
+      background: var(--theme-cursor);
       border-radius: 50%;
-      box-shadow: 0 0 8px rgba(255, 255, 255, 1);
+      pointer-events: none;
+      box-shadow: var(--cursor-dot-shadow);
+      transform: translate3d(-50%, -50%, 0);
+      will-change: transform;
     }
 
-    #mouse_stalker.stalker_cursor_pointer {
-      background: rgba(var(--my-hover-rgb), 0.4);
-      border-color: var(--my-hover-color);
-      border-width: 8px;
-    }
-
-    #mouse_stalker.stalker_cursor_pointer::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
-      height: 100%;
-      border: 8px solid var(--my-hover-color);
+    #cursor-effect {
+      z-index: var(--cursor-z-outer);
+      position: fixed;
+      transform: translate3d(-50%, -50%, 0) scale(0);
+      height: var(--cursor-effect-size);
+      width: var(--cursor-effect-size);
+      border: var(--cursor-effect-border) solid var(--theme-cursor);
       border-radius: 50%;
-      animation: stalker_appeal 2s ease-out infinite;
-    }
-
-    #mouse_stalker.is_clicked {
-      background: rgba(255, 255, 255, 0.4);
-      border-color: var(--my-brand-color);
-      border-width: 3px;
-    }
-  }
-
-  @keyframes stalker_appeal {
-    0% {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    100% {
       opacity: 0;
-      transform: translate(-50%, -50%) scale(2.5);
+      pointer-events: none;
+      mix-blend-mode: difference;
     }
   }
 
   @media (any-hover: none) {
-    #mouse_stalker {
-      display: none;
+    #cursor-container {
+      display: none !important;
     }
   }
 </style>
