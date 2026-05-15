@@ -565,8 +565,8 @@ p.spoiler {
       </div>
 
       <div class="post-title">
-          <a class="post-title-link" href="/wp/Suninatas/suninatas-game-16/" itemprop="url">
-            <span itemprop="name">Suninatas Game 16</span>
+          <a class="post-title-link" href="/wp/Suninatas/suninatas-game-15/" itemprop="url">
+            <span itemprop="name">Suninatas Game 15</span>
           </a>
       </div>
 
@@ -585,8 +585,8 @@ p.spoiler {
       </div>
 
       <div class="post-title">
-          <a class="post-title-link" href="/wp/Suninatas/suninatas-game-15/" itemprop="url">
-            <span itemprop="name">Suninatas Game 15</span>
+          <a class="post-title-link" href="/wp/Suninatas/suninatas-game-16/" itemprop="url">
+            <span itemprop="name">Suninatas Game 16</span>
           </a>
       </div>
 
@@ -926,40 +926,24 @@ p.spoiler {
 
 <script>
   (() => {
+    "use strict";
     if (!window.matchMedia("(any-hover: hover)").matches) return;
 
-    const CONFIG = {
-      // 跟随平滑
-      smooth: 0.025,          // 每毫秒插值因子（× dt）
-      convergence: 0.1,        // 收敛阈值 (px)，低于此值停止 RAF
-      // 运动拉伸
-      stretchFactor: 0.04,     // 速度 → 拉伸系数
-      maxStretch: 0.2,         // 最大拉伸比例
-      // 吸附
-      stickiness: 0.6,         // hover 时向元素中心吸附（0=不吸, 1=完全贴元素）
-      // 外圈尺寸
-      outerSize: 36,           // 默认外圈直径 (px)
-      hoverOuterSize: 24,      // hover 时外圈直径 (px)
-      // 点击涟漪
-      rippleDuration: 500,     // 涟漪持续时间 (ms)
+    /* ─── Config ─── */
+    const CFG = {
+      smooth: 0.025,
+      convergence: 0.1,
+      stretchFactor: 0.04,
+      maxStretch: 0.2,
+      stickiness: 0.6,
+      outerSize: 36,
+      hoverOuterSize: 24,
+      rippleDuration: 500,
       rippleTransition:
         "transform .5s cubic-bezier(0.22, 0.61, 0.21, 1), opacity .5s cubic-bezier(0.22, 0.61, 0.21, 1)",
     };
 
-    class Cursor {
-      constructor() {
-        this.now = null;
-        this.first = true;
-        this.last = 0;
-        this.moveIng = false;
-        this.fadeIng = false;
-        this.nowX = 0;
-        this.nowY = 0;
-        this.prevX = 0;
-        this.prevY = 0;
-        this.target = null;
-
-        this.attention = `a,input,button,textarea,
+    const SEL = `a,input,button,textarea,
       .navBtnIcon,
       #post-content img,
       .ex-header,
@@ -975,157 +959,184 @@ p.spoiler {
       .copy-btn,
       .badge-normal`;
 
+    /* ─── Cursor Class ─── */
+    class Cursor {
+      constructor() {
+        this.now = null;
+        this.first = true;
+        this.last = 0;
+        this.moveIng = false;
+        this.fadeIng = false;
+        this.nowX = 0;
+        this.nowY = 0;
+        this.prevX = 0;
+        this.prevY = 0;
+        this.target = null;
+        this._hoverDirty = false;   // flagged after hold/relax
+
+        // Persistent RAF callback — avoid allocating per frame
+        this._boundMove = this._move.bind(this);
+
         const node = document.getElementById("cursor-container");
         if (!node) return;
 
-        this.outer = node.querySelector("#cursor-outer")?.style;
-        this.dot = node.querySelector("#cursor-dot")?.style;
-        this.effecter = node.querySelector("#cursor-effect")?.style;
-        if (!this.outer || !this.dot || !this.effecter) return;
+        this.os = node.querySelector("#cursor-outer")?.style;
+        this.ds = node.querySelector("#cursor-dot")?.style;
+        this.es = node.querySelector("#cursor-effect")?.style;
+        if (!this.os || !this.ds || !this.es) return;
 
-        this.outer.top = "-100%";
-        this.dot.top = "-100%";
-        this.effecter.transform = "translate(-50%, -50%) scale(0)";
-        this.effecter.opacity = "1";
+        // Hide offscreen until first mousemove
+        this.os.top = "-100%";
+        this.ds.top = "-100%";
+        this.es.transform = "translate(-50%, -50%) scale(0)";
+        this.es.opacity = "1";
 
-        window.addEventListener("mousemove", this.reset.bind(this), {
-          passive: true,
-        });
-        window.addEventListener("click", this.Aeffect.bind(this), {
-          passive: true,
-        });
-        this.pushHolder();
-
-        const observer = new MutationObserver(this.pushHolder.bind(this));
-        observer.observe(document, { childList: true, subtree: true });
+        // Event delegation — NO MutationObserver
+        document.addEventListener("mousemove", this, { passive: true });
+        document.addEventListener("click", this, { passive: true });
+        document.addEventListener("mouseover", this, { passive: true });
+        document.addEventListener("mouseout", this, { passive: true });
+        document.addEventListener("pjax:send", this, { passive: true });
+        document.addEventListener("popstate", this, { passive: true });
       }
 
-      set(X = this.nowX, Y = this.nowY) {
-        this.outer.transform = `translate(calc(${X.toFixed(2)}px - 50%), calc(${Y.toFixed(2)}px - 50%))`;
-      }
-
-      move(timestamp) {
-        if (this.now !== null) {
-          const delX = this.now.x - this.nowX;
-          const delY = this.now.y - this.nowY;
-          this.nowX += delX * Math.min(CONFIG.smooth * (timestamp - this.last), 1);
-          this.nowY += delY * Math.min(CONFIG.smooth * (timestamp - this.last), 1);
-
-          // 运动拉伸：outer ring 沿运动方向变形
-          const dx = this.nowX - this.prevX;
-          const dy = this.nowY - this.prevY;
-          const speed = Math.sqrt(dx * dx + dy * dy);
-          const angle = Math.atan2(dy, dx);
-          const stretch = Math.min(speed * CONFIG.stretchFactor, CONFIG.maxStretch);
-          this.outer.transform =
-            `translate(calc(${this.nowX.toFixed(2)}px - 50%), calc(${this.nowY.toFixed(2)}px - 50%))` +
-            ` rotate(${angle}rad) scale(${1 + stretch}, ${1 - stretch})`;
-
-          this.prevX = this.nowX;
-          this.prevY = this.nowY;
-          this.last = timestamp;
-
-          if (Math.abs(delX) > CONFIG.convergence || Math.abs(delY) > CONFIG.convergence) {
-            window.requestAnimationFrame(this.move.bind(this));
-          } else {
-            this.set(this.now.x, this.now.y);
-            this.moveIng = false;
-          }
+      /* handleEvent — avoids per-listener bind() */
+      handleEvent(e) {
+        switch (e.type) {
+          case "mousemove": return this._reset(e);
+          case "click":     return this._ripple(e);
+          case "mouseover": return this._hold(e);
+          case "mouseout":  return this._relax(e);
+          case "pjax:send":
+          case "popstate":  return this._resetState();
         }
       }
 
-      reset(mouse) {
-        this.outer.top = "0";
-        this.outer.left = "0";
-        this.dot.top = "0";
-        this.dot.left = "0";
+      /* ── RAF tick ── */
+      _move(ts) {
+        if (this.now === null) return;
+
+        const dxT = this.now.x - this.nowX;
+        const dyT = this.now.y - this.nowY;
+        const dt = Math.min(CFG.smooth * (ts - this.last), 1);
+        this.nowX += dxT * dt;
+        this.nowY += dyT * dt;
+
+        // Stretch squash along velocity
+        const dvx = this.nowX - this.prevX;
+        const dvy = this.nowY - this.prevY;
+        const spd = Math.sqrt(dvx * dvx + dvy * dvy);
+        const str = Math.min(spd * CFG.stretchFactor, CFG.maxStretch);
+        const ang = Math.atan2(dvy, dvx);
+
+        // Batch hover-size changes into RAF (avoid layout thrash)
+        if (this._hoverDirty) {
+          this.os.height = this._hH;
+          this.os.width  = this._hW;
+          this.os.background = this._hBg;
+          this._hoverDirty = false;
+        }
+
+        this.os.transform =
+          `translate(calc(${this.nowX.toFixed(2)}px - 50%), calc(${this.nowY.toFixed(2)}px - 50%))` +
+          ` rotate(${ang}rad) scale(${1 + str}, ${1 - str})`;
+
+        this.prevX = this.nowX;
+        this.prevY = this.nowY;
+        this.last = ts;
+
+        if (Math.abs(dxT) > CFG.convergence || Math.abs(dyT) > CFG.convergence) {
+          requestAnimationFrame(this._boundMove);
+        } else {
+          this._snap();
+          this.moveIng = false;
+        }
+      }
+
+      _snap() {
+        if (!this.now) return;
+        this.os.transform =
+          `translate(calc(${this.now.x.toFixed(2)}px - 50%), calc(${this.now.y.toFixed(2)}px - 50%))`;
+      }
+
+      /* ── mousemove ── */
+      _reset(e) {
+        if (this.first) {
+          this.os.top = "0";
+          this.os.left = "0";
+          this.ds.top = "0";
+          this.ds.left = "0";
+          this.nowX = e.x;
+          this.nowY = e.y;
+          this.prevX = e.x;
+          this.prevY = e.y;
+          this._snap();
+          this.first = false;
+        }
 
         if (!this.moveIng) {
           this.moveIng = true;
-          window.requestAnimationFrame(this.move.bind(this));
+          requestAnimationFrame(this._boundMove);
         }
 
-        this.now = mouse;
-
-        // 吸附效果：hover 时 outer ring 被吸引到目标元素中心
+        // Stickiness — attract outer toward hovered element center
         if (this.target) {
-          const tx =
-            mouse.x + (this.target.cx - window.scrollX - mouse.x) * CONFIG.stickiness;
-          const ty =
-            mouse.y + (this.target.cy - window.scrollY - mouse.y) * CONFIG.stickiness;
-          this.now = { x: tx, y: ty };
-        }
-
-        // dot 始终贴真鼠标，不受吸附影响 → 强跟随
-        this.dot.transform = `translate(calc(${mouse.x.toFixed(2)}px - 50%), calc(${mouse.y.toFixed(2)}px - 50%))`;
-
-        if (this.first) {
-          this.first = false;
-          this.nowX = this.now.x;
-          this.nowY = this.now.y;
-          this.set();
-        }
-      }
-
-      Aeffect(mouse) {
-        if (this.fadeIng === false) {
-          this.fadeIng = true;
-          this.effecter.left = String(mouse.x) + "px";
-          this.effecter.top = String(mouse.y) + "px";
-          this.effecter.transition = CONFIG.rippleTransition;
-          this.effecter.transform = "translate(-50%, -50%) scale(1)";
-          this.effecter.opacity = "0";
-
-          setTimeout(() => {
-            this.fadeIng = false;
-            this.effecter.transition = "";
-            this.effecter.transform = "translate(-50%, -50%) scale(0)";
-            this.effecter.opacity = "1";
-          }, CONFIG.rippleDuration);
-        }
-      }
-
-      hold(e) {
-        const el = e.target.closest(this.attention);
-        if (el) {
-          const r = el.getBoundingClientRect();
-          this.target = {
-            cx: r.left + r.width / 2 + window.scrollX,
-            cy: r.top + r.height / 2 + window.scrollY,
+          this.now = {
+            x: e.x + (this.target.cx - window.scrollX - e.x) * CFG.stickiness,
+            y: e.y + (this.target.cy - window.scrollY - e.y) * CFG.stickiness,
           };
+        } else {
+          this.now = { x: e.x, y: e.y };
         }
-        this.outer.height = CONFIG.hoverOuterSize + "px";
-        this.outer.width = CONFIG.hoverOuterSize + "px";
-        this.outer.background = "var(--theme-cursor-bg)";
+
+        // Dot tracks real mouse always (no stickiness)
+        this.ds.transform = `translate(calc(${e.x.toFixed(2)}px - 50%), calc(${e.y.toFixed(2)}px - 50%))`;
       }
 
-      relax(e) {
-        const related = e.relatedTarget;
-        if (!related || !related.closest || !related.closest(this.attention)) {
-          this.target = null;
-        }
-        this.outer.height = CONFIG.outerSize + "px";
-        this.outer.width = CONFIG.outerSize + "px";
-        this.outer.background = "unset";
+      /* ── click ripple ── */
+      _ripple(e) {
+        if (this.fadeIng) return;
+        this.fadeIng = true;
+        this.es.left = e.x + "px";
+        this.es.top = e.y + "px";
+        this.es.transition = CFG.rippleTransition;
+        this.es.transform = "translate(-50%, -50%) scale(1)";
+        this.es.opacity = "0";
+        setTimeout(() => {
+          this.fadeIng = false;
+          this.es.transition = "";
+          this.es.transform = "translate(-50%, -50%) scale(0)";
+          this.es.opacity = "1";
+        }, CFG.rippleDuration);
       }
 
-      pushHolder() {
-        document.querySelectorAll(this.attention).forEach((item) => {
-          if (!item.dataset.cursorBound) {
-            item.addEventListener("mouseover", this.hold.bind(this), {
-              passive: true,
-            });
-            item.addEventListener("mouseout", this.relax.bind(this), {
-              passive: true,
-            });
-            item.dataset.cursorBound = "1";
-          }
-        });
+      /* ── hover — event delegation, no per-element binding ── */
+      _hold(e) {
+        const el = e.target.closest(SEL);
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        this.target = {
+          cx: r.left + r.width / 2 + window.scrollX,
+          cy: r.top + r.height / 2 + window.scrollY,
+        };
+        this._hoverDirty = true;
+        this._hH = CFG.hoverOuterSize + "px";
+        this._hW = CFG.hoverOuterSize + "px";
+        this._hBg = "var(--theme-cursor-bg)";
       }
 
-      // PJAX 导航时重置状态（避免 hover 状态残留）
-      resetState() {
-        this.relax();
+      _relax(e) {
+        const rel = e.relatedTarget;
+        if (rel && rel.closest && rel.closest(SEL)) return;
+        this.target = null;
+        this._hoverDirty = true;
+        this._hH = CFG.outerSize + "px";
+        this._hW = CFG.outerSize + "px";
+        this._hBg = "unset";
+      }
+
+      /* ── PJAX reset ── */
+      _resetState() {
         this.now = null;
         this.target = null;
         this.first = true;
@@ -1134,9 +1145,7 @@ p.spoiler {
       }
     }
 
-    const cursor = new Cursor();
-    document.addEventListener("pjax:send", () => cursor.resetState(), { passive: true });
-    document.addEventListener("popstate", () => cursor.resetState(), { passive: true });
+    new Cursor();
   })();
 </script>
 
@@ -1337,6 +1346,7 @@ p.spoiler {
       top: -100%;
       mix-blend-mode: difference;
       box-shadow: var(--cursor-outer-shadow);
+      will-change: transform;
     }
 
     #cursor-dot {
