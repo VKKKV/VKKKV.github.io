@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">215</span>
+          <span class="site-state-item-count">217</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,261 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/linux/ssl-certificate-automation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/linux/ssl-certificate-automation/" class="post-title-link" itemprop="url">SSL Certificate Renewal Notes</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-05-10 14:12:00 / Modified: 15:00:02" itemprop="dateCreated datePublished" datetime="2026-05-10T14:12:00+08:00">2026-05-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/linux/ssl-certificate-automation/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="linux/ssl-certificate-automation/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="ssl-certificate-renewal-notes">SSL Certificate Renewal
+Notes</h1>
+<p>This note records a simple SSL certificate workflow with
+<code>certbot</code>: acquire, verify, renew, and deploy.</p>
+<p>The example domain is <code>api.example.com</code>. Replace it with
+your own domain.</p>
+<h2 id="acquire-a-certificate">Acquire A Certificate</h2>
+<p>For a standalone HTTP-01 challenge, port <code>80</code> must be
+reachable and not occupied by another process:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br></pre></td></tr></table></figure>
+<p>If Caddy or Nginx is already using port <code>80</code>, stop it
+temporarily:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl stop caddy</span><br><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br><span class="line"><span class="built_in">sudo</span> systemctl start caddy</span><br></pre></td></tr></table></figure>
+<h2 id="check-the-certificate">Check The Certificate</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certificates</span><br><span class="line"><span class="built_in">sudo</span> openssl x509 \</span><br><span class="line">  -<span class="keyword">in</span> /etc/letsencrypt/live/api.example.com/fullchain.pem \</span><br><span class="line">  -noout -dates</span><br></pre></td></tr></table></figure>
+<h2 id="enable-renewal">Enable Renewal</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now certbot.timer</span><br><span class="line">systemctl list-timers | grep certbot</span><br></pre></td></tr></table></figure>
+<p>Run a dry test:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot renew --dry-run</span><br></pre></td></tr></table></figure>
+<h2 id="deploy-hook">Deploy Hook</h2>
+<p>Some services cannot read directly from
+<code>/etc/letsencrypt/live/...</code>, or they need certificate files
+copied into a service-owned directory.</p>
+<p>Example hook for a service called <code>myapp</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line"></span><br><span class="line">DOMAIN=<span class="string">&quot;api.example.com&quot;</span></span><br><span class="line">TARGET_DIR=<span class="string">&quot;/etc/myapp/cert&quot;</span></span><br><span class="line"></span><br><span class="line">install -d -m 0750 <span class="string">&quot;<span class="variable">$TARGET_DIR</span>&quot;</span></span><br><span class="line">install -m 0644 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/fullchain.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/fullchain.pem&quot;</span></span><br><span class="line">install -m 0600 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/privkey.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/privkey.pem&quot;</span></span><br><span class="line"></span><br><span class="line">systemctl reload myapp</span><br></pre></td></tr></table></figure>
+<p>Install it as a deploy hook:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -m 0755 deploy-myapp-cert.sh \</span><br><span class="line">  /etc/letsencrypt/renewal-hooks/deploy/myapp.sh</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/linux/xray-reality-vless-deploy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/linux/xray-reality-vless-deploy/" class="post-title-link" itemprop="url">Xray Reality / VLESS Setup</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-05-10 14:11:00 / Modified: 14:01:18" itemprop="dateCreated datePublished" datetime="2026-05-10T14:11:00+08:00">2026-05-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/linux/xray-reality-vless-deploy/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="linux/xray-reality-vless-deploy/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="xray-reality-vless-setup">Xray Reality / VLESS Setup</h1>
+<p>This note records a minimal Xray Reality / VLESS setup.</p>
+<p>The example values are fake but shaped like real values, so the
+config is easier to read than a wall of placeholders.</p>
+<p>Example environment:</p>
+<ul>
+<li>server: <code>vpn.example.com</code></li>
+<li>listen port: <code>443</code></li>
+<li>client UUID: <code>11111111-2222-4333-8444-555555555555</code></li>
+<li>Reality private key:
+<code>example_private_key_do_not_use</code></li>
+<li>Reality public key: <code>example_public_key_do_not_use</code></li>
+<li>Reality short id: <code>a1b2c3d4e5f60708</code></li>
+<li>camouflage target: <code>www.microsoft.com:443</code></li>
+</ul>
+<p>Replace all of them.</p>
+<h2 id="service-commands">Service Commands</h2>
+<p>Check the service:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl status xray</span><br><span class="line"><span class="built_in">sudo</span> journalctl -u xray -e --no-pager</span><br></pre></td></tr></table></figure>
+<p>After editing the config, test it before restart:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> xray run -<span class="built_in">test</span> -config /usr/local/etc/xray/config.json</span><br><span class="line"><span class="built_in">sudo</span> systemctl restart xray</span><br></pre></td></tr></table></figure>
+<h2 id="generate-ids-and-keys">Generate IDs And Keys</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">xray uuid</span><br><span class="line">xray x25519</span><br><span class="line">openssl rand -hex 8</span><br></pre></td></tr></table></figure>
+<p>Keep the private key on the server. Put the public key in the client
+config.</p>
+<h2 id="server-config-example">Server Config Example</h2>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;inbounds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;listen&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0.0.0.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;port&quot;</span><span class="punctuation">:</span> <span class="number">443</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;protocol&quot;</span><span class="punctuation">:</span> <span class="string">&quot;vless&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;clients&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">          <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;11111111-2222-4333-8444-555555555555&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;flow&quot;</span><span class="punctuation">:</span> <span class="string">&quot;xtls-rprx-vision&quot;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;decryption&quot;</span><span class="punctuation">:</span> <span class="string">&quot;none&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;streamSettings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;network&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tcp&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;security&quot;</span><span class="punctuation">:</span> <span class="string">&quot;reality&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;realitySettings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;show&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;dest&quot;</span><span class="punctuation">:</span> <span class="string">&quot;www.microsoft.com:443&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;xver&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;serverNames&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;www.microsoft.com&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;privateKey&quot;</span><span class="punctuation">:</span> <span class="string">&quot;example_private_key_do_not_use&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;shortIds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;a1b2c3d4e5f60708&quot;</span><span class="punctuation">]</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;outbounds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span> <span class="attr">&quot;protocol&quot;</span><span class="punctuation">:</span> <span class="string">&quot;freedom&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<h2 id="firewall">Firewall</h2>
+<p>Only the public entry port needs to be open:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> nft add rule inet filter input tcp dport 443 accept</span><br></pre></td></tr></table></figure>
+<p>If SSH uses a custom port such as <code>22222</code>, keep that rule
+separate and preferably source-restricted.</p>
+<h2 id="client-side-fields">Client-Side Fields</h2>
+<p>A client profile usually needs:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">address: vpn.example.com</span><br><span class="line">port: 443</span><br><span class="line">uuid: 11111111-2222-4333-8444-555555555555</span><br><span class="line">flow: xtls-rprx-vision</span><br><span class="line">security: reality</span><br><span class="line">sni: www.microsoft.com</span><br><span class="line">publicKey: example_public_key_do_not_use</span><br><span class="line">shortId: a1b2c3d4e5f60708</span><br></pre></td></tr></table></figure>
+<h2 id="notes">Notes</h2>
+<ul>
+<li><code>privateKey</code>, UUID, and short id are secrets. Do not
+publish real values.</li>
+<li>Time sync matters. If the client and server clocks are too far
+apart, debugging becomes confusing.</li>
+<li>Start with a direct connection first. Add extra reverse proxies only
+after the base config works.</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -2402,384 +2657,6 @@ the successful hash, we can perform this operation manually.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">expected = [<span class="number">0x3b</span>, <span class="number">0x54</span>, <span class="number">0x75</span>, <span class="number">0x1a</span>, <span class="number">0x24</span>, <span class="number">0x06</span>, <span class="number">0xaf</span>, <span class="number">0x05</span>, <span class="number">0x77</span>, <span class="number">0x80</span>, <span class="number">0x47</span>, <span class="number">0xc5</span>, <span class="number">0xe4</span>, <span class="number">0x83</span>, <span class="number">0xd3</span>, <span class="number">0x48</span>, <span class="number">0xcb</span>, <span class="number">0x87</span>, <span class="number">0x30</span>, <span class="number">0xde</span>, <span class="number">0x1a</span>, <span class="number">0x91</span>, <span class="number">0x45</span>, <span class="number">0xab</span>, <span class="number">0x15</span>, <span class="number">0xc7</span>, <span class="number">0x9b</span>, <span class="number">0x22</span>, <span class="number">0x04</span>, <span class="number">0x02</span>, <span class="number">0x2b</span>, <span class="number">0xee</span>]</span><br><span class="line">flag_enc = [<span class="number">0x6e</span>, <span class="number">0x19</span>, <span class="number">0x34</span>, <span class="number">0x49</span>, <span class="number">0x77</span>, <span class="number">0x7d</span>, <span class="number">0xf0</span>, <span class="number">0x5a</span>, <span class="number">0x07</span>, <span class="number">0xb4</span>, <span class="number">0x33</span>, <span class="number">0xa6</span>, <span class="number">0x8c</span>, <span class="number">0xe6</span>, <span class="number">0xe6</span>, <span class="number">0x17</span>, <span class="number">0xfb</span>, <span class="number">0xe9</span>, <span class="number">0x6f</span>, <span class="number">0xae</span>, 2e e5, <span class="number">0x26</span>, <span class="number">0xc3</span>, <span class="number">0x70</span>, <span class="number">0xe3</span>, <span class="number">0xc4</span>, <span class="number">0x7d</span>, <span class="number">0x27</span>, <span class="number">0x7f</span>, <span class="number">0x2b</span>, <span class="number">0x00</span>]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(e ^ f) <span class="keyword">for</span> e, f <span class="keyword">in</span> <span class="built_in">zip</span>(expected, flag_enc)))</span><br></pre></td></tr></table></figure>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{<strong>p4tche5_0n_p4tche$</strong>#}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-ninja-nerds/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-ninja-nerds/" class="post-title-link" itemprop="url">UMassCTF 2026 - Ninja-Nerds</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-14 16:25:08 / Modified: 16:25:10" itemprop="dateCreated datePublished" datetime="2026-04-14T16:25:08+08:00">2026-04-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-ninja-nerds/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-ninja-nerds/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>where are your little ninja-nerds?</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge provided a single image file:
-<code>challenge.png</code>. Initial investigation focused on gathering
-basic information about the file and its metadata.</p>
-<ul>
-<li><strong>File Type:</strong> Standard PNG image (640x360).</li>
-<li><strong>Metadata:</strong> <code>exiftool</code> showed no unusual
-comments or hidden fields.</li>
-<li><strong>Strings:</strong> Running <code>strings</code> did not
-reveal the flag in plain text, suggesting it was encoded or hidden
-within the pixel data.</li>
-<li><strong>Embedded Files:</strong> <code>binwalk</code> did not detect
-any appended files (like zips or other images).</li>
-</ul>
-<p>Given that the file appeared to be a clean PNG with no obvious
-trailing data or metadata tricks, I suspected <strong>LSB (Least
-Significant Bit) Steganography</strong>. This technique hides data by
-slightly modifying the last bit of color values (Red, Green, or Blue),
-which is invisible to the human eye.</p>
-<h3 id="solution">Solution</h3>
-<p>To extract the hidden data, we can either use automated tools or a
-custom script to parse the LSBs from each color plane.</p>
-<h4 id="automated-approach">1. Automated Approach</h4>
-<p>Using <code>zsteg</code>, we can quickly scan for common LSB
-patterns: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">zsteg -E <span class="string">&quot;b1,b,lsb,xy&quot;</span> challenge.png | strings | grep <span class="string">&quot;UMASS&#123;&quot;</span></span><br></pre></td></tr></table></figure></p>
-<h4 id="manual-extraction-script">2. Manual Extraction Script</h4>
-<p>Alternatively, using the <code>Pillow</code> library in Python allows
-for precise extraction from specific color channels.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> PIL.Image</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_lsb</span>(<span class="params">image_path</span>):</span><br><span class="line">    img = PIL.Image.<span class="built_in">open</span>(image_path)</span><br><span class="line">    pixels = img.load()</span><br><span class="line">    width, height = img.size</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Check Red (0), Green (1), and Blue (2) planes</span></span><br><span class="line">    <span class="keyword">for</span> plane <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">        lsb_data = <span class="built_in">bytearray</span>()</span><br><span class="line">        current_byte = <span class="number">0</span></span><br><span class="line">        bit_count = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(height):</span><br><span class="line">            <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(width):</span><br><span class="line">                pixel = pixels[x, y]</span><br><span class="line">                bit = pixel[plane] &amp; <span class="number">1</span> <span class="comment"># Extract LSB</span></span><br><span class="line">                current_byte = (current_byte &lt;&lt; <span class="number">1</span>) | bit</span><br><span class="line">                bit_count += <span class="number">1</span></span><br><span class="line">                <span class="keyword">if</span> bit_count == <span class="number">8</span>:</span><br><span class="line">                    lsb_data.append(current_byte)</span><br><span class="line">                    current_byte = <span class="number">0</span></span><br><span class="line">                    bit_count = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;UMASS&#123;&quot;</span> <span class="keyword">in</span> lsb_data:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Found flag in Plane <span class="subst">&#123;plane&#125;</span>!&quot;</span>)</span><br><span class="line">            <span class="comment"># Logic to print the found string...</span></span><br></pre></td></tr></table></figure>
-<p>Running the extraction against the color planes reveals that the flag
-is hidden in the <strong>Blue channel (Plane 2)</strong>.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{perfectly-hidden-ready-to-strike}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-smart-brick-v2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-smart-brick-v2/" class="post-title-link" itemprop="url">UMassCTF 2026 - Smart Brick v2</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-14 16:13:45 / Modified: 16:13:52" itemprop="dateCreated datePublished" datetime="2026-04-14T16:13:45+08:00">2026-04-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-smart-brick-v2/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-smart-brick-v2/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>I managed to get my hands on a design files from LEGO HQ. Apparently
-it is the design for the new Smart Brick v2. I want to analyze it but I
-don't have the hardware to do so. Can you help me figure out what it
-does??
-我设法从乐高总部拿到了一份设计文件。我想对它进行分析，但我没有分析所需的硬件。你能帮我弄明白它是做什么的吗？</p>
-<p><strong>Hint 1:</strong> I think I have seen that file format before
-on an popular open-source eCAD software but I can't remember which
-one... (我好像在一款流行的开源 eCAD
-软件上见过这种文件格式，但记不清是哪一款了) <strong>Hint 2:</strong>
-Hmmm... there seem to be 7 inputs, I wonder what encoding uses only 7
-bits? (嗯......似乎有 7 个输入，我想知道什么编码只使用 7 位？)
-<strong>Hint 3:</strong> I found a great python library to interact with
-this file programmatically: kiutils (我发现了一个很棒的 Python
-库，可以通过编程与该文件交互：kiutils)</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge provides a KiCad PCB design file
-(<code>smart-brick-v2.kicad_pcb</code>) and asks to analyze it to
-discover its function. Hints suggest that the board uses a 7-bit
-encoding (ASCII) and points toward the <code>kiutils</code> Python
-library for programmatic analysis.</p>
-<p>Opening the file or inspecting the raw text reveals it is a
-<strong>KiCad 9.0</strong> board file. Key features identified:</p>
-<ul>
-<li><strong>Inputs:</strong> 7 nets labeled <code>/IN0</code> through
-<code>/IN6</code>. This confirms the hint about 7-bit encoding
-(ASCII).</li>
-<li><strong>Outputs:</strong> 19 LEDs (<code>D1</code>–<code>D19</code>)
-driven by 19 MOSFETs (<code>Q1</code>–<code>Q19</code>).</li>
-<li><strong>Logic:</strong> A large array of <strong>74LS
-series</strong> discrete logic gates (AND, NAND, OR, NOR, XOR,
-NOT).</li>
-</ul>
-<p>The circuit is a combinational logic "decoder" where each LED
-represents a character in the flag. An LED will light up if the 7-bit
-input matches a specific character programmed into the logic gates for
-that stage.</p>
-<h3 id="solution">Solution</h3>
-<p>To solve this without physical hardware or a manual schematic trace,
-we can automate the logic extraction and simulation using Python.</p>
-<h4 id="technical-approach">1. Technical Approach</h4>
-<p><strong>Step 1: Parsing the PCB</strong> Using the
-<code>kiutils</code> library, we extract all footprints, their values
-(e.g., <code>74LS00</code>), and the nets connected to their pins.</p>
-<p><strong>Step 2: Mapping Logic Gates</strong> Each 74LS chip contains
-multiple gates. For example: - <code>74LS00</code>: Quad 2-input NAND. -
-<code>74LS08</code>: Quad 2-input AND. - <code>74LS86</code>: Quad
-2-input XOR. - <code>74LS21</code>: Dual 4-input AND.</p>
-<p>We build a dependency graph where each net's value is determined by
-the boolean operation of its input nets.</p>
-<p><strong>Step 3: Simulation</strong> Since there are only 128 possible
-values for a 7-bit input (ASCII 0–127), we can brute-force the inputs
-for each of the 19 output stages. For each character <code>c</code> from
-0 to 127, we propagate the values through the logic gate graph and check
-which MOSFET gates (<code>Q1</code>–<code>Q19</code>) are pulled
-HIGH.</p>
-<h4 id="execution">2. Execution</h4>
-<p>The simulation reveals that each LED corresponds to exactly one ASCII
-character:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">LED</th>
-<th style="text-align: left;">Hex</th>
-<th style="text-align: left;">Char</th>
-<th style="text-align: left;">LED</th>
-<th style="text-align: left;">Hex</th>
-<th style="text-align: left;">Char</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">D1</td>
-<td style="text-align: left;">0x55</td>
-<td style="text-align: left;"><strong>U</strong></td>
-<td style="text-align: left;">D11</td>
-<td style="text-align: left;">0x68</td>
-<td style="text-align: left;"><strong>h</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D2</td>
-<td style="text-align: left;">0x4D</td>
-<td style="text-align: left;"><strong>M</strong></td>
-<td style="text-align: left;">D12</td>
-<td style="text-align: left;">0x33</td>
-<td style="text-align: left;"><strong>3</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D3</td>
-<td style="text-align: left;">0x41</td>
-<td style="text-align: left;"><strong>A</strong></td>
-<td style="text-align: left;">D13</td>
-<td style="text-align: left;">0x5F</td>
-<td style="text-align: left;"><strong>_</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D4</td>
-<td style="text-align: left;">0x53</td>
-<td style="text-align: left;"><strong>S</strong></td>
-<td style="text-align: left;">D14</td>
-<td style="text-align: left;">0x47</td>
-<td style="text-align: left;"><strong>G</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D5</td>
-<td style="text-align: left;">0x53</td>
-<td style="text-align: left;"><strong>S</strong></td>
-<td style="text-align: left;">D15</td>
-<td style="text-align: left;">0x34</td>
-<td style="text-align: left;"><strong>4</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D6</td>
-<td style="text-align: left;">0x7B</td>
-<td style="text-align: left;"><strong>{</strong></td>
-<td style="text-align: left;">D16</td>
-<td style="text-align: left;">0x74</td>
-<td style="text-align: left;"><strong>t</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D7</td>
-<td style="text-align: left;">0x49</td>
-<td style="text-align: left;"><strong>I</strong></td>
-<td style="text-align: left;">D17</td>
-<td style="text-align: left;">0x33</td>
-<td style="text-align: left;"><strong>3</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D8</td>
-<td style="text-align: left;">0x6E</td>
-<td style="text-align: left;"><strong>n</strong></td>
-<td style="text-align: left;">D18</td>
-<td style="text-align: left;">0x73</td>
-<td style="text-align: left;"><strong>s</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D9</td>
-<td style="text-align: left;">0x5F</td>
-<td style="text-align: left;"><strong>_</strong></td>
-<td style="text-align: left;">D19</td>
-<td style="text-align: left;">0x7D</td>
-<td style="text-align: left;"><strong>}</strong></td>
-</tr>
-<tr>
-<td style="text-align: left;">D10</td>
-<td style="text-align: left;">0x54</td>
-<td style="text-align: left;"><strong>T</strong></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"></td>
-</tr>
-</tbody>
-</table>
-<h4 id="simulation-script">3. Simulation Script</h4>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> kiutils.board <span class="keyword">import</span> Board</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_logic</span>():</span><br><span class="line">    board = Board.from_file(<span class="string">&#x27;smart-brick-v2.kicad_pcb&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Map components by reference</span></span><br><span class="line">    components = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> fp <span class="keyword">in</span> board.footprints:</span><br><span class="line">        ref = fp.properties.get(<span class="string">&#x27;Reference&#x27;</span>, <span class="string">&#x27;&#x27;</span>)</span><br><span class="line">        val = fp.properties.get(<span class="string">&#x27;Value&#x27;</span>, <span class="string">&#x27;&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        pins = &#123;&#125;</span><br><span class="line">        <span class="keyword">for</span> pad <span class="keyword">in</span> fp.pads:</span><br><span class="line">            <span class="keyword">if</span> pad.net:</span><br><span class="line">                pins[pad.number] = pad.net.name</span><br><span class="line"></span><br><span class="line">        components[ref] = &#123;</span><br><span class="line">            <span class="string">&#x27;value&#x27;</span>: val,</span><br><span class="line">            <span class="string">&#x27;pins&#x27;</span>: pins</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Define gate logic</span></span><br><span class="line">    <span class="comment"># (inputs, output)</span></span><br><span class="line">    gate_defs = &#123;</span><br><span class="line">        <span class="string">&#x27;74LS00&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># NAND</span></span><br><span class="line">        <span class="string">&#x27;74LS02&#x27;</span>: [((<span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;3&#x27;</span>), <span class="string">&#x27;1&#x27;</span>), ((<span class="string">&#x27;5&#x27;</span>, <span class="string">&#x27;6&#x27;</span>), <span class="string">&#x27;4&#x27;</span>), ((<span class="string">&#x27;8&#x27;</span>, <span class="string">&#x27;9&#x27;</span>), <span class="string">&#x27;10&#x27;</span>), ((<span class="string">&#x27;11&#x27;</span>, <span class="string">&#x27;12&#x27;</span>), <span class="string">&#x27;13&#x27;</span>)], <span class="comment"># NOR</span></span><br><span class="line">        <span class="string">&#x27;74LS04&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>,), <span class="string">&#x27;2&#x27;</span>), ((<span class="string">&#x27;3&#x27;</span>,), <span class="string">&#x27;4&#x27;</span>), ((<span class="string">&#x27;5&#x27;</span>,), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>,), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;11&#x27;</span>,), <span class="string">&#x27;10&#x27;</span>), ((<span class="string">&#x27;13&#x27;</span>,), <span class="string">&#x27;12&#x27;</span>)], <span class="comment"># NOT</span></span><br><span class="line">        <span class="string">&#x27;74LS08&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># AND</span></span><br><span class="line">        <span class="string">&#x27;74LS20&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># NAND 4</span></span><br><span class="line">        <span class="string">&#x27;74LS21&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># AND 4</span></span><br><span class="line">        <span class="string">&#x27;74LS27&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;12&#x27;</span>), ((<span class="string">&#x27;3&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;11&#x27;</span>), <span class="string">&#x27;8&#x27;</span>)], <span class="comment"># NOR 3</span></span><br><span class="line">        <span class="string">&#x27;74LS32&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># OR</span></span><br><span class="line">        <span class="string">&#x27;74LS86&#x27;</span>: [((<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>), <span class="string">&#x27;3&#x27;</span>), ((<span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>), <span class="string">&#x27;6&#x27;</span>), ((<span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;10&#x27;</span>), <span class="string">&#x27;8&#x27;</span>), ((<span class="string">&#x27;12&#x27;</span>, <span class="string">&#x27;13&#x27;</span>), <span class="string">&#x27;11&#x27;</span>)], <span class="comment"># XOR</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Build the net dependency graph</span></span><br><span class="line">    net_logic = &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> ref, comp <span class="keyword">in</span> components.items():</span><br><span class="line">        val = comp[<span class="string">&#x27;value&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> val <span class="keyword">in</span> gate_defs:</span><br><span class="line">            <span class="keyword">for</span> inputs, output <span class="keyword">in</span> gate_defs[val]:</span><br><span class="line">                <span class="keyword">if</span> output <span class="keyword">in</span> comp[<span class="string">&#x27;pins&#x27;</span>]:</span><br><span class="line">                    out_net = comp[<span class="string">&#x27;pins&#x27;</span>][output]</span><br><span class="line">                    in_nets = [comp[<span class="string">&#x27;pins&#x27;</span>][i] <span class="keyword">for</span> i <span class="keyword">in</span> inputs <span class="keyword">if</span> i <span class="keyword">in</span> comp[<span class="string">&#x27;pins&#x27;</span>]]</span><br><span class="line">                    <span class="keyword">if</span> <span class="built_in">len</span>(in_nets) == <span class="built_in">len</span>(inputs):</span><br><span class="line">                        op = val[<span class="number">4</span>:] <span class="comment"># 00, 02, etc.</span></span><br><span class="line">                        net_logic[out_net] = (op, in_nets)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># MOSFET gates driving LEDs</span></span><br><span class="line">    led_nets = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>):</span><br><span class="line">        ref = <span class="string">f&#x27;Q<span class="subst">&#123;i&#125;</span>&#x27;</span></span><br><span class="line">        <span class="keyword">if</span> ref <span class="keyword">in</span> components:</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">in</span> components[ref][<span class="string">&#x27;pins&#x27;</span>]:</span><br><span class="line">                led_nets.append(components[ref][<span class="string">&#x27;pins&#x27;</span>][<span class="string">&#x27;1&#x27;</span>])</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Simulation function</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">simulate</span>(<span class="params">inputs_bits</span>):</span><br><span class="line">        vals = &#123;<span class="string">f&#x27;/IN<span class="subst">&#123;i&#125;</span>&#x27;</span>: inputs_bits[i] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>)&#125;</span><br><span class="line">        vals[<span class="string">&#x27;GND&#x27;</span>] = <span class="literal">False</span></span><br><span class="line">        vals[<span class="string">&#x27;+5V&#x27;</span>] = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">        memo = &#123;&#125;</span><br><span class="line">        <span class="keyword">def</span> <span class="title function_">get_val</span>(<span class="params">net</span>):</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">in</span> vals: <span class="keyword">return</span> vals[net]</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">in</span> memo: <span class="keyword">return</span> memo[net]</span><br><span class="line">            <span class="keyword">if</span> net <span class="keyword">not</span> <span class="keyword">in</span> net_logic: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">            op, ins = net_logic[net]</span><br><span class="line">            in_vals = [get_val(i) <span class="keyword">for</span> i <span class="keyword">in</span> ins]</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> op == <span class="string">&#x27;00&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> (in_vals[<span class="number">0</span>] <span class="keyword">and</span> in_vals[<span class="number">1</span>])</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;02&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> (in_vals[<span class="number">0</span>] <span class="keyword">or</span> in_vals[<span class="number">1</span>])</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;04&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> in_vals[<span class="number">0</span>]</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;08&#x27;</span>: <span class="keyword">return</span> in_vals[<span class="number">0</span>] <span class="keyword">and</span> in_vals[<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;20&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> <span class="built_in">all</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;21&#x27;</span>: <span class="keyword">return</span> <span class="built_in">all</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;27&#x27;</span>: <span class="keyword">return</span> <span class="keyword">not</span> <span class="built_in">any</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;32&#x27;</span>: <span class="keyword">return</span> <span class="built_in">any</span>(in_vals)</span><br><span class="line">            <span class="keyword">elif</span> op == <span class="string">&#x27;86&#x27;</span>: <span class="keyword">return</span> in_vals[<span class="number">0</span>] ^ in_vals[<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">else</span>: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">            memo[net] = res</span><br><span class="line">            <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> [get_val(ln) <span class="keyword">for</span> ln <span class="keyword">in</span> led_nets]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Brute force 7-bit ASCII</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">19</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;LED <span class="subst">&#123;i+<span class="number">1</span>&#125;</span>: &quot;</span>, end=<span class="string">&#x27;&#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> code <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">128</span>):</span><br><span class="line">            bits = [(code &gt;&gt; j) &amp; <span class="number">1</span> == <span class="number">1</span> <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>)]</span><br><span class="line">            outputs = simulate(bits)</span><br><span class="line">            <span class="keyword">if</span> outputs[i]:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;&#x27;<span class="subst">&#123;<span class="built_in">chr</span>(code)&#125;</span>&#x27; (0x<span class="subst">&#123;code:02x&#125;</span>)&quot;</span>, end=<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">        <span class="built_in">print</span>()</span><br><span class="line"></span><br><span class="line">get_logic()</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{In_Th3_G4t3s}</span></span>
 
       
     </div>
