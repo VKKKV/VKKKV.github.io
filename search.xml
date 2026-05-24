@@ -16018,4 +16018,241 @@ waiting for server-side state updates eventually produced:</p>
         <tag>adversarial</tag>
       </tags>
   </entry>
+  <entry>
+    <title>UMDCTF 2026 - Weave</title>
+    <url>/wp/umdctf2026/umdctf2026-weave/</url>
+    <content><![CDATA[<blockquote>
+<p>The weavers of the Gabidulin code have woven a disguise. But the
+shuttle leaves a trace, and the frays can only hide so much. Unravel the
+warp to find the secret.</p>
+</blockquote>
+<blockquote>
+<p>加比杜林码的织者们编织了一层伪装。但梭子留下了痕迹，毛边只能遮掩有限的信息。解开经线，找到秘密。</p>
+</blockquote>
+<p><strong>Challenge files:</strong> <code>challenge.sage</code>
+providing the public parameters <code>warp</code>, <code>bolt</code>,
+<code>shuttle</code>, <code>knot</code>, <code>pegs</code>,
+<code>N</code>, <code>K</code>, and an AES-GCM encrypted flag.</p>
+<h2 id="前置知识">前置知识</h2>
+<p>本题涉及<strong>秩度量码（Rank-Metric
+Codes）</strong>，属于编码论（Coding
+Theory）在秩度量下的分支。以下概念有助于理解：</p>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 68%" />
+</colgroup>
+<thead>
+<tr>
+<th>概念</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>有限域 GF(2^43)</td>
+<td>扩体，每个元素可看作 43-bit 向量</td>
+</tr>
+<tr>
+<td>Frobenius 自同构</td>
+<td>σ(x) = x²，Gabidulin 生成矩阵的构建基础</td>
+</tr>
+<tr>
+<td>秩距离 vs Hamming 距离</td>
+<td>前者看矩阵的秩，后者数不同符号个数</td>
+</tr>
+<tr>
+<td>Reed-Solomon 码</td>
+<td>消息→多项式求值→码字，Gabidulin 的类比基础</td>
+</tr>
+<tr>
+<td>Gabidulin 码</td>
+<td>RS 在秩度量下的对应：线性化多项式 + Moore 矩阵</td>
+</tr>
+<tr>
+<td>MRD 特性</td>
+<td>最小秩距离 d = N - K + 1，解码半径 t = ⌊(N-K)/2⌋</td>
+</tr>
+<tr>
+<td>积秩攻击</td>
+<td>rank(A·B) ≤ rank_F₂(A) × dim(span(B))</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gabidulin-codes-in-a-nutshell">Gabidulin Codes in a
+Nutshell</h2>
+<p>A Gabidulin code is a linear rank-metric code over an extension field
+<span class="math inline">\(\mathbb{F}_{q^m}\)</span>. Its generator
+matrix is a Vandermonde-like matrix (called a <strong>Moore
+matrix</strong>) built from linearly independent elements <span
+class="math inline">\(g_0, \dots, g_{N-1} \in
+\mathbb{F}_{q^m}\)</span>:</p>
+<p><span class="math display">\[
+G = \begin{pmatrix}
+g_0 &amp; g_1 &amp; \cdots &amp; g_{N-1} \\
+g_0^{[1]} &amp; g_1^{[1]} &amp; \cdots &amp; g_{N-1}^{[1]} \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+g_0^{[K-1]} &amp; g_1^{[K-1]} &amp; \cdots &amp; g_{N-1}^{[K-1]}
+\end{pmatrix}
+\]</span></p>
+<p>where <span class="math inline">\(x^{[i]} = x^{q^i}\)</span> is the
+<span class="math inline">\(i\)</span>-th Frobenius power. Gabidulin
+codes can uniquely decode up to <span
+class="math inline">\(\left\lfloor\frac{N-K}{2}\right\rfloor\)</span>
+rank errors, making them the rank-metric analogue of Reed-Solomon
+codes.</p>
+<p><strong>Key difference from RS:</strong> RS uses distinct evaluation
+points and counts symbol errors (Hamming distance). Gabidulin uses <span
+class="math inline">\(\mathbb{F}_q\)</span>-linearly independent
+evaluation points and measures error by rank — meaning an error vector
+like <span class="math inline">\((e, e, e, \dots, e)\)</span> has rank 1
+even if every symbol is wrong.</p>
+<h2 id="the-challenge-disguise">The Challenge Disguise</h2>
+<p>The challenge constructs a <strong>loom</strong> — the true Gabidulin
+generator matrix over <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span> with parameters <span
+class="math inline">\(N=40\)</span>, <span
+class="math inline">\(K=8\)</span>:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">loom = Matrix(Fqm, K, N, <span class="keyword">lambda</span> j, i: qpow(pegs[i], j))</span><br></pre></td></tr></table></figure>
+<p>Here <code>pegs</code> are <span class="math inline">\(N\)</span>
+linearly independent elements of <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span>. The codeword is
+<span class="math inline">\(s \cdot \mathsf{loom}\)</span> where <span
+class="math inline">\(s \in \mathbb{F}_{2^{43}}^K\)</span> is the secret
+message.</p>
+<p>The disguise is a similarity transform:</p>
+<p><span class="math display">\[
+\mathsf{warp} = \mathsf{knot} \cdot \mathsf{loom} \cdot
+\mathsf{shuttle}^{-1}
+\]</span></p>
+<p><span class="math display">\[
+\mathsf{bolt} = s \cdot \mathsf{warp} + \mathsf{frays}
+\]</span></p>
+<p>All matrices <span class="math inline">\(\mathsf{knot}\)</span>,
+<span class="math inline">\(\mathsf{shuttle}\)</span>, and the list of
+<code>pegs</code> are <strong>published</strong> to the player. At first
+glance this seems to completely mask the underlying Gabidulin structure
+— but the key insight is that when the attacker knows the masking
+matrices, the disguise is <strong>fully reversible</strong>.</p>
+<h2 id="the-key-insight-low-rank-structure-of-the-masking">The Key
+Insight: Low-Rank Structure of the Masking</h2>
+<p>The vulnerability comes from how <span
+class="math inline">\(\mathsf{shuttle}\)</span> is constructed. Its
+entries are drawn from the span of only <code>FIBER_D=3</code> linearly
+independent elements over <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span>. This means:</p>
+<p><span class="math display">\[
+\mathsf{shuttle} \in \mathsf{Span}\{\alpha_1, \alpha_2, \alpha_3\}^{N
+\times N}
+\]</span></p>
+<p>Consequently, multiplying an error vector by <span
+class="math inline">\(\mathsf{shuttle}^{-1}\)</span> is
+<strong>not</strong> well-defined over the integers — but multiplying
+<span class="math inline">\(\mathsf{bolt}\)</span> by <span
+class="math inline">\(\mathsf{shuttle}\)</span> is the right
+direction:</p>
+<p><span class="math display">\[
+\mathsf{bolt} \cdot \mathsf{shuttle} = s \cdot \mathsf{knot} \cdot
+\mathsf{loom} + \mathsf{frays} \cdot \mathsf{shuttle}
+\]</span></p>
+<p>Let <span class="math inline">\(s&#39; = s \cdot
+\mathsf{knot}\)</span> and <span class="math inline">\(\mathsf{error} =
+\mathsf{frays} \cdot \mathsf{shuttle}\)</span>.</p>
+<p>The error <span class="math inline">\(\mathsf{frays}\)</span> has
+rank at most <code>FRAYS=5</code> over <span
+class="math inline">\(\mathbb{F}_2\)</span> (not over <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span> — this is a much
+stronger constraint, because <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span> elements unfold to
+43-bit vectors over <span class="math inline">\(\mathbb{F}_2\)</span>).
+And because <span class="math inline">\(\mathsf{shuttle}\)</span>
+entries come from a 3-dimensional subspace, the product <span
+class="math inline">\(\mathsf{frays} \cdot \mathsf{shuttle}\)</span> has
+rank at most:</p>
+<p><span class="math display">\[
+\mathsf{rank}(\mathsf{frays} \cdot \mathsf{shuttle}) \le \mathsf{FRAYS}
+\cdot \mathsf{FIBER\_D} = 5 \times 3 = 15
+\]</span></p>
+<p><strong>Why this inequality holds:</strong> Write <span
+class="math inline">\(\mathsf{shuttle} = \sum_{t=1}^{3} b_t \cdot
+S^{(t)}\)</span> where <span class="math inline">\(b_t\)</span> are the
+subspace basis and <span class="math inline">\(S^{(t)}\)</span> have
+<span class="math inline">\(\mathbb{F}_2\)</span> entries. Then <span
+class="math inline">\(\mathsf{frays} \cdot \mathsf{shuttle} = \sum b_t
+\cdot (\mathsf{frays} \cdot S^{(t)})\)</span>, a sum of 3 matrices each
+with <span class="math inline">\(\mathbb{F}_2\)</span>-rank ≤ 5. The
+product rank is bounded by <span class="math inline">\(5 \times 3 =
+15\)</span>.</p>
+<p>The Gabidulin unique decoding radius for <span
+class="math inline">\(N=40, K=8\)</span> is:</p>
+<p><span class="math display">\[
+\left\lfloor\frac{40 - 8}{2}\right\rfloor = 16
+\]</span></p>
+<p>Since <span class="math inline">\(15 &lt; 16\)</span>, the error is
+<strong>within the unique decoding radius</strong>. We can recover <span
+class="math inline">\(s&#39;\)</span> uniquely.</p>
+<h2 id="solution">Solution</h2>
+<p>The solve script is straightforward:</p>
+<ol type="1">
+<li><p><strong>Remove the disguise:</strong> Compute <span
+class="math inline">\(\mathsf{received} = \mathsf{bolt} \cdot
+\mathsf{shuttle}\)</span> to obtain a true Gabidulin codeword plus
+low-rank error.</p></li>
+<li><p><strong>Build the original loom:</strong> Reconstruct <span
+class="math inline">\(\mathsf{loom}\)</span> from <code>pegs</code>
+using the same lambda.</p></li>
+<li><p><strong>Decode:</strong> Use a Gabidulin decoder (e.g., the
+Gao-style decoder or the standard rank-metric syndrome decoder) to
+recover <span class="math inline">\(s&#39;\)</span> from <span
+class="math inline">\(\mathsf{received}\)</span> given <span
+class="math inline">\(\mathsf{loom}\)</span>.</p></li>
+<li><p><strong>Recover the secret:</strong> Multiply by <span
+class="math inline">\(\mathsf{knot}^{-1}\)</span>: <span
+class="math display">\[s = s&#39; \cdot
+\mathsf{knot}^{-1}\]</span></p></li>
+<li><p><strong>Derive the AES key:</strong> Hash the secret's byte
+representation with SHA-256 and take the first 16 bytes:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">key = sha256(secret_bytes).digest()[:<span class="number">16</span>]</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>Decrypt the flag:</strong> Use AES-GCM with this key and
+the nonce/tag provided in the challenge output.</p></li>
+</ol>
+<h2 id="solve-script">Solve Script</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> sha256</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"></span><br><span class="line"><span class="comment"># Load public data (warp, bolt, shuttle, knot, pegs, N, K, enc_flag, nonce, tag)</span></span><br><span class="line"><span class="comment"># ... (data parsing omitted for brevity)</span></span><br><span class="line"></span><br><span class="line">F = GF(<span class="number">2</span>)</span><br><span class="line">Fqm = GF(<span class="number">2</span>^<span class="number">43</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: Reconstruct the loom</span></span><br><span class="line">loom = Matrix(Fqm, K, N, <span class="keyword">lambda</span> j, i: qpow(pegs[i], j))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: Remove shuttle disguise</span></span><br><span class="line">received = bolt * shuttle</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: Build the modified generator matrix for decoding</span></span><br><span class="line"><span class="comment"># We need to decode received = s&#x27; * loom + error where s&#x27; = secret * knot</span></span><br><span class="line"><span class="comment"># Gabidulin decode (using sage&#x27;s built-in decoder or custom implementation)</span></span><br><span class="line">C = codes.GabidulinCode(loom)</span><br><span class="line">decoder = C.decoder(<span class="string">&quot;GabidulinGao&quot;</span>)</span><br><span class="line">s_prime = decoder.decode_to_message(received)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 4: Recover original secret</span></span><br><span class="line">knot_inv = knot^(-<span class="number">1</span>)</span><br><span class="line">secret = s_prime * knot_inv</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 5: Derive key and decrypt</span></span><br><span class="line">key = sha256(secret.base_extend(F) <span class="keyword">if</span> <span class="built_in">hasattr</span>(secret, <span class="string">&#x27;base_extend&#x27;</span>) <span class="keyword">else</span> secret).digest()[:<span class="number">16</span>]</span><br><span class="line">cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)</span><br><span class="line">flag = cipher.decrypt_and_verify(enc_flag, tag)</span><br><span class="line"><span class="built_in">print</span>(flag.decode())</span><br></pre></td></tr></table></figure>
+<p>A complete standalone implementation of the Gabidulin Gao decoder can
+also be written from scratch using the standard algorithm — the core
+operation is solving a linearized polynomial interpolation problem using
+the <span class="math inline">\(q\)</span>-polynomial Euclidean
+algorithm.</p>
+<h2 id="why-this-works">Why This Works</h2>
+<p>The fundamental trick is the <strong>rank structure
+mismatch</strong>. The error <code>frays</code> is low-rank over <span
+class="math inline">\(\mathbb{F}_2\)</span>, and <code>shuttle</code> is
+low-rank over <span class="math inline">\(\mathbb{F}_{2^{43}}\)</span>
+(its entries live in a 3-dimensional subspace). The product amplifies
+the rank, but only multiplicatively — and the original Gabidulin code
+parameters were chosen so that this amplified rank still falls within
+the unique decoding radius:</p>
+<p><span class="math display">\[5 \times 3 = 15 &lt; 16 =
+\left\lfloor\frac{40-8}{2}\right\rfloor\]</span></p>
+<p>Moreover, because <strong>all masking matrices are
+published</strong>, there is no secret hiding the code. The disguise is
+a form of <em>key-committing encryption</em> without the key being
+secret — anyone can peel it off. The true security would require keeping
+at least one of <span class="math inline">\(\mathsf{knot}\)</span>,
+<span class="math inline">\(\mathsf{shuttle}\)</span>, or the
+<code>pegs</code> private.</p>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMDCTF{l01dr34u_l4mbda3_brick5_th3_w34v3_but_th3_trapd00r_unsp00ls_1t}</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>crypto</tag>
+        <tag>gabidulin</tag>
+        <tag>rank-metric</tag>
+      </tags>
+  </entry>
 </search>
