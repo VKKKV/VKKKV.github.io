@@ -13,7 +13,33 @@
     <![CDATA[Tech, Security & Personal Notes]]>
   </subtitle>
   <title>Hello Navi</title>
-  <updated>2026-06-04T08:45:10.196Z</updated>
+  <updated>2026-06-04T09:11:54.866Z</updated>
+  <entry>
+    <author>
+      <name>vkkkv</name>
+    </author>
+    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
+    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
+    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
+    <category term="image" scheme="https://vkkkv.github.io/tags/image/"/>
+    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
+    <category term="stegano" scheme="https://vkkkv.github.io/tags/stegano/"/>
+    <content>
+      <![CDATA[<h3 id="challenge">Challenge</h3><p>Stegano LSB 图像隐写。挑战页面提供一张<code>carrier.png</code>，其中包含 12 个大写字母的隐藏信息。每 session不同。</p><h3 id="solution">Solution</h3><p>隐藏信息不在传统的 data-hiding LSB 中（<code>zsteg</code>检测不到有效文本），而是通过 <strong>visual bit plane</strong>方式嵌入：将字母写入某个 bit plane，肉眼查看该 plane的图像即可读出。</p><p>遍历 8 个 bit plane × 3 个颜色通道后发现，字母出现在<strong>绿色通道的 bit 2</strong>（0-indexed）中：</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;carrier.png&#x27;</span>)</span><br><span class="line">w, h = img.size</span><br><span class="line">pixels = <span class="built_in">list</span>(img.getdata())</span><br><span class="line"></span><br><span class="line">out = Image.new(<span class="string">&#x27;L&#x27;</span>, (w, h))</span><br><span class="line">out_pixels = []</span><br><span class="line"><span class="keyword">for</span> pixel <span class="keyword">in</span> pixels:</span><br><span class="line">    <span class="comment"># 取绿色通道 (index 1) 的 bit 2</span></span><br><span class="line">    val = (pixel[<span class="number">1</span>] &gt;&gt; <span class="number">2</span>) &amp; <span class="number">1</span></span><br><span class="line">    out_pixels.append(<span class="number">255</span> <span class="keyword">if</span> val <span class="keyword">else</span> <span class="number">0</span>)</span><br><span class="line">out.putdata(out_pixels)</span><br><span class="line">out.save(<span class="string">&#x27;bit2_green.png&#x27;</span>)</span><br></pre></td></tr></table></figure><p>生成的 <code>bit2_green.png</code> 中，97% 以上像素为黑，仅 2-3%的白点构成 12 个斜体大写字母。肉眼直接可读。</p><p>也可以从工具集一键扫描所有 bit plane：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ uv run ~/ctf/tool/script/forensics/lsb_scan.py carrier.png</span><br></pre></td></tr></table></figure><p>输出每个 bit plane 的白色像素占比，sparse（&lt; 5%）的 plane就是隐藏文本所在。</p><p>同样可以通过其他 stegano 工具发现：</p><ul><li><strong>Stegsolve</strong>（Java）：Analyse → Bit Plane逐层查看，绿色通道 bit 2 即可看到字母</li><li><strong>Stegoveritas</strong>：<code>stegoveritas carrier.png</code>自动提取所有 bit plane，输出到 <code>results/</code> 目录</li></ul><p><strong>关键点</strong>：</p><ul><li>使用绿色通道的 <strong>bit 2</strong>（不是 bit 4），Steganabara对应 mask=4（即 2^2）</li><li>字母在 bit plane 图像中肉眼可见，白字黑底</li><li><code>zsteg</code> 不适用——这不是 data-hiding，而是 visual plane嵌入；<code>zsteg</code> 找的是 LSB 中编码的数据字节，而字母是直接画在bit plane 上的</li><li>答案 session-bound，每张 <code>carrier.png</code> 不同</li></ul>]]>
+    </content>
+    <id>https://vkkkv.github.io/wp/WeChall/wechall-lsb/</id>
+    <link href="https://vkkkv.github.io/wp/WeChall/wechall-lsb/"/>
+    <published>2026-06-04T09:11:53.000Z</published>
+    <summary>
+      <![CDATA[<h3 id="challenge">Challenge</h3>
+<p>Stegano LSB 图像隐写。挑战页面提供一张
+<code>carrier.png</code>，其中包含 12 个大写字母的隐藏信息。每 session
+不同。</p>
+<h3]]>
+    </summary>
+    <title>WeChall - LSB</title>
+    <updated>2026-06-04T09:11:54.866Z</updated>
+  </entry>
   <entry>
     <author>
       <name>vkkkv</name>
@@ -469,29 +495,5 @@ caesar is that it]]>
     </summary>
     <title>WeChall - WWW-Robots</title>
     <updated>2026-05-27T05:17:11.775Z</updated>
-  </entry>
-  <entry>
-    <author>
-      <name>vkkkv</name>
-    </author>
-    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
-    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
-    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
-    <category term="crypto" scheme="https://vkkkv.github.io/tags/crypto/"/>
-    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
-    <category term="caesar" scheme="https://vkkkv.github.io/tags/caesar/"/>
-    <content>
-      <![CDATA[<h3 id="challenge">Challenge</h3><p>A standard Caesar cipher with random shift per session. The plaintextis: "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG OF CAESAR AND YOURUNIQUE SOLUTION IS XXXXXXXX"</p><h3 id="solution">Solution</h3><p>Brute force all 26 shifts and look for "YOUR UNIQUE SOLUTION" in thedecoded text.</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">ciphertext = <span class="string">&quot;JXU GKYSA RHEMD VEN ZKCFI ELUH JXU BQPO TEW EV SQUIQH QDT OEKH KDYGKU IEBKJYED YI DFUWHHDUYVBF&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> shift <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">26</span>):</span><br><span class="line">    result = <span class="string">&#x27;&#x27;</span></span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> ciphertext:</span><br><span class="line">        <span class="keyword">if</span> c.isalpha():</span><br><span class="line">            base = <span class="built_in">ord</span>(<span class="string">&#x27;A&#x27;</span>)</span><br><span class="line">            result += <span class="built_in">chr</span>((<span class="built_in">ord</span>(c) - base - shift) % <span class="number">26</span> + base)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            result += c</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;YOUR UNIQUE SOLUTION IS&quot;</span> <span class="keyword">in</span> result:</span><br><span class="line">        solution = result.split(<span class="string">&quot;IS &quot;</span>)[-<span class="number">1</span>].split()[<span class="number">0</span>]</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Solution: <span class="subst">&#123;solution&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure><p>The last word after "IS" is the per-session solution.</p><p>You can also use CyberChef to decode the ciphertext:</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ROT13_Brute_Force(true,true,false,100,0,true,&#x27;&#x27;)</span><br><span class="line">input: JXU GKYSA RHEMD VEN ZKCFI ELUH JXU BQPO TEW EV SQUIQH QDT OEKH KDYGKU IEBKJYED YI DFUWHHDUYVBF</span><br></pre></td></tr></table></figure><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">NPEGRRNEIFLP</span></span>]]>
-    </content>
-    <id>https://vkkkv.github.io/wp/WeChall/wechall-caesar-1/</id>
-    <link href="https://vkkkv.github.io/wp/WeChall/wechall-caesar-1/"/>
-    <published>2026-05-26T06:30:00.000Z</published>
-    <summary>
-      <![CDATA[<h3 id="challenge">Challenge</h3>
-<p>A standard Caesar cipher with random shift per session. The plaintext
-is: "THE QUICK BROWN FOX JUMPS]]>
-    </summary>
-    <title>WeChall - Training - Crypto - Caesar I</title>
-    <updated>2026-05-27T05:23:10.069Z</updated>
   </entry>
 </feed>

@@ -18312,4 +18312,54 @@ hat"），深入到
         <tag>warchall</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - LSB</title>
+    <url>/wp/WeChall/wechall-lsb/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>Stegano LSB 图像隐写。挑战页面提供一张
+<code>carrier.png</code>，其中包含 12 个大写字母的隐藏信息。每 session
+不同。</p>
+<h3 id="solution">Solution</h3>
+<p>隐藏信息不在传统的 data-hiding LSB 中（<code>zsteg</code>
+检测不到有效文本），而是通过 <strong>visual bit plane</strong>
+方式嵌入：将字母写入某个 bit plane，肉眼查看该 plane
+的图像即可读出。</p>
+<p>遍历 8 个 bit plane × 3 个颜色通道后发现，字母出现在
+<strong>绿色通道的 bit 2</strong>（0-indexed）中：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;carrier.png&#x27;</span>)</span><br><span class="line">w, h = img.size</span><br><span class="line">pixels = <span class="built_in">list</span>(img.getdata())</span><br><span class="line"></span><br><span class="line">out = Image.new(<span class="string">&#x27;L&#x27;</span>, (w, h))</span><br><span class="line">out_pixels = []</span><br><span class="line"><span class="keyword">for</span> pixel <span class="keyword">in</span> pixels:</span><br><span class="line">    <span class="comment"># 取绿色通道 (index 1) 的 bit 2</span></span><br><span class="line">    val = (pixel[<span class="number">1</span>] &gt;&gt; <span class="number">2</span>) &amp; <span class="number">1</span></span><br><span class="line">    out_pixels.append(<span class="number">255</span> <span class="keyword">if</span> val <span class="keyword">else</span> <span class="number">0</span>)</span><br><span class="line">out.putdata(out_pixels)</span><br><span class="line">out.save(<span class="string">&#x27;bit2_green.png&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>生成的 <code>bit2_green.png</code> 中，97% 以上像素为黑，仅 2-3%
+的白点构成 12 个斜体大写字母。肉眼直接可读。</p>
+<p>也可以从工具集一键扫描所有 bit plane：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ uv run ~/ctf/tool/script/forensics/lsb_scan.py carrier.png</span><br></pre></td></tr></table></figure>
+<p>输出每个 bit plane 的白色像素占比，sparse（&lt; 5%）的 plane
+就是隐藏文本所在。</p>
+<p>同样可以通过其他 stegano 工具发现：</p>
+<ul>
+<li><strong>Stegsolve</strong>（Java）：Analyse → Bit Plane
+逐层查看，绿色通道 bit 2 即可看到字母</li>
+<li><strong>Stegoveritas</strong>：<code>stegoveritas carrier.png</code>
+自动提取所有 bit plane，输出到 <code>results/</code> 目录</li>
+</ul>
+<p><strong>关键点</strong>：</p>
+<ul>
+<li>使用绿色通道的 <strong>bit 2</strong>（不是 bit 4），Steganabara
+对应 mask=4（即 2^2）</li>
+<li>字母在 bit plane 图像中肉眼可见，白字黑底</li>
+<li><code>zsteg</code> 不适用——这不是 data-hiding，而是 visual plane
+嵌入；<code>zsteg</code> 找的是 LSB 中编码的数据字节，而字母是直接画在
+bit plane 上的</li>
+<li>答案 session-bound，每张 <code>carrier.png</code> 不同</li>
+</ul>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>image</tag>
+        <tag>wechall</tag>
+        <tag>stegano</tag>
+      </tags>
+  </entry>
 </search>
