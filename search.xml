@@ -18362,4 +18362,77 @@ bit plane 上的</li>
         <tag>stegano</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - hi</title>
+    <url>/wp/WeChall/wechall-hi/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>IRC 频道 #wechall，每分钟有一人加入并说
+"hi"，服务器将消息发送给频道中所有人（包括发送者）。经过
+<code>0xfffbadc0ded</code> 分钟后，总共发送了多少条 "hi"
+消息？无人离开频道。</p>
+<p>3 分钟的例子：</p>
+<ul>
+<li>第 1 分钟：第 1 人加入发 hi（1），服务器回发给 1 人（1）→ 2 条</li>
+<li>第 2 分钟：第 2 人加入发 hi（1），服务器回发给 2 人（2）→ 3 条</li>
+<li>第 3 分钟：第 3 人加入发 hi（1），服务器回发给 3 人（3）→ 4 条</li>
+<li>总计：2 + 3 + 4 = 9 条</li>
+</ul>
+<h3 id="solution">Solution</h3>
+<p>第 k 分钟发送 <code>k+1</code> 条消息（1 条来自加入者，k
+条来自服务器转发）。n 分钟的总和为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">total = 1 + 2 + ... + (n+1) = n(n+3)/2</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>n = <span class="number">0xfffbadc0ded</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>n</span><br><span class="line"><span class="number">17591026060781</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>total = n * (n + <span class="number">3</span>) // <span class="number">2</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>total</span><br><span class="line"><span class="number">154722098935564539692256152</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">154722098935564539692256152</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>math</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Stegano Attachment</title>
+    <url>/wp/WeChall/wechall-stegano-attachment/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>"You got mail and a nice attachment." — 有一张附件图片，其中隐藏了 12
+字母的 session-bound solution。</p>
+<h3 id="solution">Solution</h3>
+<p>挑战页面提供了 <code>attachment.php</code>，下载后是一个 JPEG
+图片（221x350）。</p>
+<p>JPEG 尾部附着一个 ZIP 文件，其中包含 <code>solution.txt</code>。JPEG
+和 ZIP 能共存于同一个文件是因为两者的解析方向不同：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">JPEG:     从头读    → FF D9 后停止（尾部垃圾被忽略）</span><br><span class="line">unzip:    从尾扫    → 找 EOCD 签名 PK\x05\x06 → 定位 ZIP 数据</span><br></pre></td></tr></table></figure>
+<p>JPEG 解码器遇到 End of Image marker <code>FF D9</code>
+就结束处理，后面的数据不影响图片显示。</p>
+<p>而 <code>unzip</code> 根本不依赖文件扩展名 —— ZIP 格式的 End of
+Central Directory (EOCD) 记录固定在文件的<strong>最后 22
+字节</strong>。<code>unzip</code> 打开文件后： 1. 从尾部往前搜索 EOCD
+签名 <code>PK\x05\x06</code> 2. 读取 EOCD 中的中央目录偏移量 3.
+跳到偏移量处，找到所有文件条目和压缩数据</p>
+<p>所以只要文件尾部附着一个结构完整的 ZIP，unzip
+就能识别，无论文件头是什么（JPEG、EXE、PDF 都一样）。man page
+也写了自解压 ZIP（<code>exe+ZIP</code>）"as with any other ZIP archive"
+—— 同一机制。</p>
+<p>用 <code>unzip -l</code> 确认 ZIP 内容：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ unzip -l attachment.jpg</span><br><span class="line">Archive:  attachment.jpg</span><br><span class="line">  Length      Date    Time    Name</span><br><span class="line">---------  ---------- -----   ----</span><br><span class="line">       12  2011-01-08 14:17   solution.txt</span><br><span class="line">---------                     -------</span><br><span class="line">       12                     1 file</span><br></pre></td></tr></table></figure>
+<p>直接解压：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ unzip attachment.jpg</span><br><span class="line">Archive:  attachment.jpg</span><br><span class="line"> extracting: solution.txt</span><br></pre></td></tr></table></figure>
+<p><code>solution.txt</code>
+内容即为答案（session-bound，每用户不同）。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>image</tag>
+        <tag>wechall</tag>
+        <tag>stegano</tag>
+      </tags>
+  </entry>
 </search>

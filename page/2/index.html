@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">253</span>
+          <span class="site-state-item-count">255</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,212 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-programming-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-programming-1/" class="post-title-link" itemprop="url">WeChall - Training - Programming 1</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-03 14:13:26 / Modified: 14:16:10" itemprop="dateCreated datePublished" datetime="2026-06-03T14:13:26+08:00">2026-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-programming-1/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-programming-1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>访问 <code>?action=request</code> 获取一个随机消息，在 1.337
+秒内将相同的消息提交回 <code>?answer=&lt;message&gt;</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">When you visit this link you receive a message.</span><br><span class="line">Submit the same message back to .../?answer=the_message</span><br><span class="line">Your timelimit is 1.337 seconds</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>手动打开两个页面来不及，需要用脚本在同一次 shell
+调用中完成——变量捕获后立即提交：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MSG=$(curl -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/challenge/training/programming1/index.php?action=request&#x27;</span>)</span><br><span class="line">curl -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&quot;https://www.wechall.net/challenge/training/programming1/index.php?answer=<span class="variable">$MSG</span>&quot;</span></span><br></pre></td></tr></table></figure>
+<p>消息每次都不同（如
+<code>CRg1xhGuz9</code>、<code>7G7sp7IJGZk</code>），且只有 1.337
+秒有效。需要登录态（WC cookie）才能请求。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess, sys</span><br><span class="line">url = <span class="string">&#x27;https://www.wechall.net/challenge/training/programming1/index.php&#x27;</span></span><br><span class="line">cookie = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line"></span><br><span class="line">msg = subprocess.run(</span><br><span class="line">    [<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-s&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url + <span class="string">&#x27;?action=request&#x27;</span>],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout.strip()</span><br><span class="line"></span><br><span class="line">result = subprocess.run(</span><br><span class="line">    [<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-s&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url + <span class="string">f&#x27;?answer=<span class="subst">&#123;msg&#125;</span>&#x27;</span>],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout</span><br><span class="line"><span class="built_in">print</span>(result)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">关键是用同一个 shell session
+连续执行请求和提交，中间不加人工操作。</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-encodings-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-encodings-1/" class="post-title-link" itemprop="url">WeChall - Encodings I</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-03 14:12:21 / Modified: 14:13:55" itemprop="dateCreated datePublished" datetime="2026-06-03T14:12:21+08:00">2026-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-encodings-1/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-encodings-1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>The page displays a long binary string — 7-bit ASCII encoded
+text:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">10101001101000110100111100110100</span><br><span class="line">00011101001100101111100011101000</span><br><span class="line">10000011010011110011010000001101</span><br><span class="line">11010110111000101101001111010001</span><br><span class="line">00000110010111011101100011110111</span><br><span class="line">11100100110010111001000100000110</span><br><span class="line">00011110011110001111010011101001</span><br><span class="line">01011100100000101100111011111110</span><br><span class="line">10111100100100000111000011000011</span><br><span class="line">11001111100111110111110111111100</span><br><span class="line">10110010001000001101001111001101</span><br><span class="line">00000110010111000011110011111100</span><br><span class="line">11110011111010011000011110010111</span><br><span class="line">0100110010111100100101110</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>每 7 位一组转十进制，再转 ASCII 字符：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bin_str = <span class="string">&quot;01010100 01101000 ...&quot;</span></span><br><span class="line">chars = [<span class="built_in">chr</span>(<span class="built_in">int</span>(b, <span class="number">2</span>)) <span class="keyword">for</span> b <span class="keyword">in</span> bin_str.split()]</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;&#x27;</span>.join(chars))</span><br><span class="line"><span class="comment"># This text is 7-bit encoded ascii. Your password is ***********.</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">easystarter</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1719,214 +1925,6 @@ steganography.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">4c 6f 6f 6b 20 77 68 61 74 20 74 68 65 20 68 65</span><br><span class="line">78 2d 65 64 69 74 20 72 65 76 65 61 6c 65 64 3a</span><br><span class="line">20 70 61 73 73 77 64 3a 73 74 65 67 61 6e 6f 49</span><br></pre></td></tr></table></figure></p>
 <p>Decoded: "Look what the hex-editor revealed: passwd:steganoI"</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">steganoI</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-ascii/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-ascii/" class="post-title-link" itemprop="url">WeChall - ASCII</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-05-26 16:23:22 / Modified: 16:23:23" itemprop="dateCreated datePublished" datetime="2026-05-26T16:23:22+08:00">2026-05-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-ascii/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-ascii/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>The page displays a string of ASCII numeric codes:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">84, 104, 101, 32, 115, 111, 108, 117, 116, 105, 111, 110, 32, 105, 115, 58, 32, 111, 114, 100, 97, 101, 110, 112, 114, 115, 115, 105, 112</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>将 ASCII 码数字转换为字符：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nums = [<span class="number">84</span>, <span class="number">104</span>, <span class="number">101</span>, <span class="number">32</span>, <span class="number">115</span>, <span class="number">111</span>, <span class="number">108</span>, <span class="number">117</span>, <span class="number">116</span>, <span class="number">105</span>, <span class="number">111</span>, <span class="number">110</span>, <span class="number">32</span>, <span class="number">105</span>, <span class="number">115</span>, <span class="number">58</span>, <span class="number">32</span>, <span class="number">111</span>, <span class="number">114</span>, <span class="number">100</span>, <span class="number">97</span>, <span class="number">101</span>, <span class="number">110</span>, <span class="number">112</span>, <span class="number">114</span>, <span class="number">115</span>, <span class="number">115</span>, <span class="number">105</span>, <span class="number">112</span>]</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(n) <span class="keyword">for</span> n <span class="keyword">in</span> nums))</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ordaenprssip</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-www-robots/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-www-robots/" class="post-title-link" itemprop="url">WeChall - WWW-Robots</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-05-26 16:18:38" itemprop="dateCreated datePublished" datetime="2026-05-26T16:18:38+08:00">2026-05-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-05-27 13:17:11" itemprop="dateModified" datetime="2026-05-27T13:17:11+08:00">2026-05-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-www-robots/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-www-robots/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Understanding the robots.txt file.</p>
-<h3 id="solution">Solution</h3>
-<p>访问目标网站的
-<code>/robots.txt</code>，查看禁止爬取的路径，<code>T0PS3CR3T</code>
-目录就是答案。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl https://www.wechall.net/robots.txt</span><br><span class="line">User-agent: *</span><br><span class="line">Disallow: /challenge/training/www/robots/T0PS3CR3T</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>然后访问
-<code>https://www.wechall.net/challenge/training/www/robots/T0PS3CR3T/</code>
-确认。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">T0PS3CR3T</span></span>
 
       
     </div>
