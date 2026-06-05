@@ -18541,4 +18541,37 @@ session 密码不同），上述消息只是示例。实际运行脚本会得到
         <tag>encoding</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Zebra</title>
+    <url>/wp/WeChall/wechall-zebra/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Help! A zebra escaped from its enclosure. But where is it now?</p>
+</blockquote>
+<p>一张 PNG
+图片（斑马），斑马身上的条纹实际上是一个一维条码（barcode），但条码的条纹"越狱"了——bars
+没有延伸到应有的边界。</p>
+<h3 id="solution">Solution</h3>
+<p>条码的黑色条纹只在斑马身上，没有延伸到上下边界（"escaped from its
+enclosure"），所以 <code>zbarimg</code> 等工具直接解码会失败。</p>
+<p>第一步，提取斑马条纹区域。用 Python
+垂直平均条纹区域，再按阈值二值化，模拟"补全"条纹的效果：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;zebra.png&#x27;</span>)</span><br><span class="line">arr = np.array(img)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 取条纹密集区域 (y=46~258)</span></span><br><span class="line">region = arr[<span class="number">46</span>:<span class="number">258</span>, :, :<span class="number">3</span>].mean(axis=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 每列判断：若超过 40% 像素是暗色，则该列算黑条</span></span><br><span class="line">col_dark = np.mean(region &lt; <span class="number">128</span>, axis=<span class="number">0</span>) &gt; <span class="number">0.4</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成条码图像</span></span><br><span class="line">barcode = np.ones((<span class="number">100</span>, <span class="built_in">len</span>(col_dark) + <span class="number">40</span>), dtype=np.uint8) * <span class="number">255</span></span><br><span class="line">barcode[:, <span class="number">20</span>:-<span class="number">20</span>] = (<span class="number">1</span> - col_dark.astype(np.uint8)) * <span class="number">255</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 放大以使解码器识别</span></span><br><span class="line">h, w = barcode.shape</span><br><span class="line">big = np.repeat(np.repeat(barcode, <span class="number">4</span>, axis=<span class="number">0</span>), <span class="number">2</span>, axis=<span class="number">1</span>)</span><br><span class="line">Image.fromarray(big).save(<span class="string">&#x27;zebra_fixed.png&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>然后用 <code>zbarimg</code> 解码：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ zbarimg -S*.<span class="built_in">enable</span> zebra_fixed.png</span><br><span class="line">QR-Code:The answer is saFFari</span><br></pre></td></tr></table></figure>
+<p>关键词就是 <code>saFFari</code>（斑马跑到 Safari 上了 🦓）。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">saFFari</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>stegano</tag>
+        <tag>encoding</tag>
+        <tag>barcode</tag>
+      </tags>
+  </entry>
 </search>
