@@ -18641,4 +18641,95 @@ NAT/VPN 后面没有公网 IP，就无法直接验证。</p>
         <tag>http</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - htmlspecialchars</title>
+    <url>/wp/WeChall/wechall-htmlspecialchars/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>)).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><strong>漏洞分析</strong>: <code>htmlspecialchars()</code>
+的默认模式是 <code>ENT_COMPAT</code>，只转义双引号 <code>"</code>（转为
+<code>&amp;quot;</code>），不转义单引号 <code>'</code>。而 href
+属性值恰好用单引号包裹，因此可以通过单引号逃逸出属性值，注入 XSS
+事件。</p>
+<p><strong>第一步 — 漏洞利用</strong>:</p>
+<p>在 input 中输入一个单引号闭合 href，然后注入事件处理属性:</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#x27; onmouseover=&#x27;alert(1)</span><br></pre></td></tr></table></figure>
+<p>生成的 HTML:</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&#x27;http://&#x27;</span> <span class="attr">onmouseover</span>=<span class="string">&#x27;alert(1)&#x27;</span>&gt;</span>Exploit Me<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>注意三个单引号的闭合逻辑： - <code>href='http://</code> 为 HTML
+模板的开头部分 - 第一个 <code>'</code> 闭合了 href 的起始单引号 -
+<code>onmouseover='alert(1)'</code> 被解析为新的 HTML 属性 - 最后的
+<code>'&gt;</code> 会落在属性值的单引号后面（不闭合也不影响渲染）</p>
+<p>悬停在链接上就会触发 <code>onmouseover</code>。在 WeChall
+自己的测试页面里，鼠标悬停就能看到 alert 弹窗。</p>
+<p><strong>第二步 — 修复</strong>:</p>
+<p>给 <code>htmlspecialchars()</code> 加上 <code>ENT_QUOTES</code>
+标志，使单引号也被转义：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>), ENT_QUOTES).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>加上 <code>ENT_QUOTES</code> 后，输入 <code>'</code> 会被转为
+<code>&amp;#039;</code>，无法再逃逸 href 属性。</p>
+<p><strong>提交方式</strong>: POST 到
+<code>htmlspecialchars.php</code>，字段名为 <code>solution</code>（不是
+<code>answer</code>），<code>cmd=Submit</code>。需要 CSRF token。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">echo
+<a href='http://.htmlspecialchars(Common::getPost(input), ENT_QUOTES).'>Exploit
+Me</a>;</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>xss</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>exploit</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - PHP 0815</title>
+    <url>/wp/WeChall/wechall-php-0815/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>一个有 SQL 注入漏洞的 PHP 脚本，<code>in_array()</code>
+白名单检查可被绕过。要求提供<strong>最短的修复</strong>（least effort
+fix）。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="variable">$whitelist</span> = <span class="keyword">array</span>(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="literal">false</span> === (<span class="variable">$show</span> = <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;show&#x27;</span>]) ? <span class="variable">$_GET</span>[<span class="string">&#x27;show&#x27;</span>] : <span class="literal">false</span>)) &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;MISSING PARAMETER; USE foo.bar?show=[1-3]&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">elseif</span> (<span class="title function_ invoke__">in_array</span>(<span class="variable">$show</span>, <span class="variable">$whitelist</span>))&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM `table` WHERE `id`=<span class="subst">$show</span>&quot;</span>;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&#x27;Query: &#x27;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="variable">$query</span>, ENT_QUOTES).<span class="string">&#x27;&lt;br/&gt;&#x27;</span>;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;SHOWING NUMBER &#x27;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="variable">$show</span>, ENT_QUOTES));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;HACKER NONONO&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><strong>漏洞分析</strong>: <code>in_array()</code> 默认使用 loose
+comparison（<code>==</code>）。白名单是整数 <code>1, 2, 3</code>，而输入
+<code>"1 union select 1"</code> 通过 <code>==</code>
+比较时会先转为整数：<code>"1 union select 1" == 1</code> → true。因此
+whitelist 检查被绕过，<code>$show</code> 仍然带着完整注入字符串进入 SQL
+查询。</p>
+<p><strong>最短修复</strong>:</p>
+<p>挑战要求「least
+effort」——在代码的某个逻辑位置增加最少字符来修复漏洞。</p>
+<p>有两种 2 字符的方案：</p>
+<ul>
+<li><code>1*</code> — 将 SQL 改为 <code>WHERE \</code>id`=1*<span
+class="math inline">\(show`，在 SQL 层面做乘法运算强制 `\)</span>show`
+转为数字</li>
+<li><code>-0</code> — 将 SQL 改为
+<code>WHERE \</code>id`=$show-0`，减法运算同样强制转为数字</li>
+</ul>
+<p>两种都只增加 2 个字符，比 <code>(int)$show</code>（4 字符）或
+<code>in_array($show, $whitelist, true)</code>（6 字符）更短。</p>
+<p>漏洞页面接受 <code>answer</code>
+字段提交，<code>cmd=Fix+It</code>，不需要 CSRF token。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">1*</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>exploit</tag>
+      </tags>
+  </entry>
 </search>
