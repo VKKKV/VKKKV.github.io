@@ -19393,4 +19393,140 @@ make his email program a little more secure.</p>
         <tag>hackthissite</tag>
       </tags>
   </entry>
+  <entry>
+    <title>HackThisSite - Basic Mission 6</title>
+    <url>/wp/HackThisSite/hackthissite-basic-06/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Network Security Sam has encrypted his password. The encryption
+system is publically available and can be accessed with this form.</p>
+<p>Sam
+把他的密码加密了。加密系统是公开的，可以通过页面上的表单访问。</p>
+</blockquote>
+<p>已知加密后的密码：<code>477djk?=</code></p>
+<p>页面提供了一个加密工具，可以输入任意字符串查看加密结果。</p>
+<h3 id="solution">Solution</h3>
+<p>这题需要逆向加密算法。先用加密工具测试几组已知明文，观察规律：</p>
+<p>输入 <code>aaaa</code>（4个相同的字符）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">aaaa → abcd</span><br></pre></td></tr></table></figure>
+<p>规律很明显：每个字符的 ASCII 值加上了它的位置索引（从0开始）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">a(0) + 0 = a</span><br><span class="line">a(1) + 1 = b</span><br><span class="line">a(2) + 2 = c</span><br><span class="line">a(3) + 3 = d</span><br></pre></td></tr></table></figure>
+<p>所以加密公式是：<code>encrypted[i] = chr(ord(plaintext[i]) + i)</code></p>
+<p>解密即为逆操作：<code>plaintext[i] = chr(ord(encrypted[i]) - i)</code></p>
+<p>Python 解密脚本：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">encrypted = <span class="string">&quot;477djk?=&quot;</span></span><br><span class="line">decrypted = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i, c <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted):</span><br><span class="line">    decrypted += <span class="built_in">chr</span>(<span class="built_in">ord</span>(c) - i)</span><br><span class="line"><span class="built_in">print</span>(decrypted)  <span class="comment"># 465aff96</span></span><br></pre></td></tr></table></figure>
+<p>验证：重新加密 <code>465aff96</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">4 + 0 = 4</span><br><span class="line">6 + 1 = 7</span><br><span class="line">5 + 2 = 7</span><br><span class="line">a + 3 = d</span><br><span class="line">f + 4 = j</span><br><span class="line">f + 5 = k</span><br><span class="line">9 + 6 = ?</span><br><span class="line">6 + 7 = =</span><br></pre></td></tr></table></figure>
+<p>结果：<code>477djk?=</code>，与已知密文完全匹配。</p>
+<p>自定义加密算法如果有公开的加密
+oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaintext attack
+推导出算法逻辑，进而解密任意密文。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">465aff96</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>crypto</tag>
+        <tag>hackthissite</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackThisSite - Basic Mission 7</title>
+    <url>/wp/HackThisSite/hackthissite-basic-07/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>This time Network Security Sam has saved the unencrypted level7
+password in an obscurely named file saved in this very directory. In
+other unrelated news, Sam has set up a script that returns the output
+from the UNIX cal command.</p>
+<p>Sam 把未加密的密码文件保存在当前目录下，文件名很隐蔽。另外，Sam
+还设置了一个脚本，可以返回 UNIX cal 命令的输出。</p>
+</blockquote>
+<p>页面有一个输入框，可以输入年份查看日历，调用的是后端的
+<code>cal.pl</code> Perl 脚本。</p>
+<h3 id="solution">Solution</h3>
+<p>关键线索： 1. 密码文件在当前目录（<code>/missions/basic/7/</code>）
+2. 页面调用 UNIX <code>cal</code> 命令 3. 可以通过这个表单执行命令</p>
+<p>在 UNIX 中，可以用 <code>&amp;&amp;</code>
+连接多个命令。<code>cal 2024 &amp;&amp; ls</code>
+会先输出日历，然后列出当前目录的文件。</p>
+<p>将 <code>2024 &amp;&amp; ls</code> 输入到表单中：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/7/&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;cal=2024 &amp;&amp; ls&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/7/cal.pl&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>在日历输出之后，会看到目录中的文件列表：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">index.php</span><br><span class="line">level7.php</span><br><span class="line">k1kh31b1n55h.php   ← 这就是密码文件</span><br></pre></td></tr></table></figure>
+<p>访问
+<code>https://www.hackthissite.org/missions/basic/7/k1kh31b1n55h.php</code>
+即可获取密码。</p>
+<p>核心知识点：Command Injection（命令注入）。当用户输入被直接拼接到
+shell 命令中时，攻击者可以用
+<code>&amp;&amp;</code>、<code>;</code>、<code>|</code> 等 shell
+操作符注入额外的命令。防御方法是使用参数化调用（如 Python 的
+<code>subprocess.run</code> 配
+<code>shell=False</code>），或严格过滤输入。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">00d7c5f8</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>hackthissite</tag>
+        <tag>command-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackThisSite - Basic Mission 8</title>
+    <url>/wp/HackThisSite/hackthissite-basic-08/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Sam remains confident that an obscured password file is still the
+best idea, but he screwed up with the calendar program. Sam has saved
+the unencrypted password file in
+/var/www/hackthissite.org/html/missions/basic/8/</p>
+<p>Sam 仍然认为把密码文件藏起来是个好办法。密码文件保存在
+/missions/basic/8/ 目录下。</p>
+<p>Sam 的女儿 Stephanie 刚学了
+PHP，她写了一个脚本来展示保存文件的能力。</p>
+</blockquote>
+<p>页面有一个"Enter your name"输入框，还有一个密码输入框。</p>
+<h3 id="solution">Solution</h3>
+<p>Stephanie 的脚本会保存用户输入的名字到一个 <code>.shtml</code>
+文件中。<code>.shtml</code> 是 Server-Side Includes (SSI)
+文件，服务器会解析其中的 SSI 指令。</p>
+<p>尝试输入 SSI <code>exec</code> 指令来执行 shell 命令：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="comment">&lt;!--#exec cmd=&quot;ls ../&quot; --&gt;</span></span><br></pre></td></tr></table></figure>
+<p>提交后，页面返回一个链接指向生成的 <code>.shtml</code> 文件（如
+<code>tmp/fyrvqqak.shtml</code>）。访问这个链接，服务器会解析 SSI
+指令并执行 <code>ls ../</code>，输出 <code>/missions/basic/8/</code>
+目录的内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">au12ha39vc.php    ← 密码文件</span><br><span class="line">index.php</span><br><span class="line">level8.php</span><br><span class="line">tmp/</span><br></pre></td></tr></table></figure>
+<p>然后访问
+<code>https://www.hackthissite.org/missions/basic/8/au12ha39vc.php</code>
+获取密码。</p>
+<p>注意：服务器限制了可执行的命令范围（只允许与查找密码文件相关的命令），但
+<code>ls</code> 是被允许的。</p>
+<p>核心知识点：SSI Injection（服务器端包含注入）。当用户输入被保存到
+<code>.shtml</code> 文件并由服务器解析时，SSI 指令中的 <code>exec</code>
+可以执行任意 shell
+命令。防御方法：不要将用户输入存储在会被服务器解析的文件中，或严格过滤
+SSI 特殊字符。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">4046427a</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>hackthissite</tag>
+        <tag>ssi</tag>
+      </tags>
+  </entry>
 </search>
