@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">276</span>
+          <span class="site-state-item-count">277</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,125 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/linux/ssl-certificate-automation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/linux/ssl-certificate-automation/" class="post-title-link" itemprop="url">SSL Certificate Renewal Notes</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-05-10 14:12:00 / Modified: 15:00:02" itemprop="dateCreated datePublished" datetime="2026-05-10T14:12:00+08:00">2026-05-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/linux/ssl-certificate-automation/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="linux/ssl-certificate-automation/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="ssl-certificate-renewal-notes">SSL Certificate Renewal
+Notes</h1>
+<p>This note records a simple SSL certificate workflow with
+<code>certbot</code>: acquire, verify, renew, and deploy.</p>
+<p>The example domain is <code>api.example.com</code>. Replace it with
+your own domain.</p>
+<h2 id="acquire-a-certificate">Acquire A Certificate</h2>
+<p>For a standalone HTTP-01 challenge, port <code>80</code> must be
+reachable and not occupied by another process:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br></pre></td></tr></table></figure>
+<p>If Caddy or Nginx is already using port <code>80</code>, stop it
+temporarily:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl stop caddy</span><br><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br><span class="line"><span class="built_in">sudo</span> systemctl start caddy</span><br></pre></td></tr></table></figure>
+<h2 id="check-the-certificate">Check The Certificate</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certificates</span><br><span class="line"><span class="built_in">sudo</span> openssl x509 \</span><br><span class="line">  -<span class="keyword">in</span> /etc/letsencrypt/live/api.example.com/fullchain.pem \</span><br><span class="line">  -noout -dates</span><br></pre></td></tr></table></figure>
+<h2 id="enable-renewal">Enable Renewal</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now certbot.timer</span><br><span class="line">systemctl list-timers | grep certbot</span><br></pre></td></tr></table></figure>
+<p>Run a dry test:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot renew --dry-run</span><br></pre></td></tr></table></figure>
+<h2 id="deploy-hook">Deploy Hook</h2>
+<p>Some services cannot read directly from
+<code>/etc/letsencrypt/live/...</code>, or they need certificate files
+copied into a service-owned directory.</p>
+<p>Example hook for a service called <code>myapp</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line"></span><br><span class="line">DOMAIN=<span class="string">&quot;api.example.com&quot;</span></span><br><span class="line">TARGET_DIR=<span class="string">&quot;/etc/myapp/cert&quot;</span></span><br><span class="line"></span><br><span class="line">install -d -m 0750 <span class="string">&quot;<span class="variable">$TARGET_DIR</span>&quot;</span></span><br><span class="line">install -m 0644 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/fullchain.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/fullchain.pem&quot;</span></span><br><span class="line">install -m 0600 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/privkey.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/privkey.pem&quot;</span></span><br><span class="line"></span><br><span class="line">systemctl reload myapp</span><br></pre></td></tr></table></figure>
+<p>Install it as a deploy hook:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -m 0755 deploy-myapp-cert.sh \</span><br><span class="line">  /etc/letsencrypt/renewal-hooks/deploy/myapp.sh</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -2835,260 +2954,6 @@ models, but simple directional gradient ascent on the margin works just
 as well when the step size is chosen carefully.</p>
 <h2 id="flag">Flag</h2>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMDCTF{a_little_gram_schmidt_never_hurt_anybody}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-flow/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umdctf2026/umdctf2026-flow/" class="post-title-link" itemprop="url">UMDCTF 2026 - flow</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-04-26 10:40:00" itemprop="dateCreated datePublished" datetime="2026-04-26T10:40:00+08:00">2026-04-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-05-24 12:30:32" itemprop="dateModified" datetime="2026-05-24T12:30:32+08:00">2026-05-24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umdctf2026/umdctf2026-flow/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umdctf2026/umdctf2026-flow/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <table>
-<thead>
-<tr>
-<th>Challenge Details</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Category</strong></td>
-<td>ML / Adversarial ML</td>
-</tr>
-<tr>
-<td><strong>Points</strong></td>
-<td>~300</td>
-</tr>
-<tr>
-<td><strong>Solves</strong></td>
-<td>~15</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p><em>Purify the stream... or corrupt it.</em></p>
-</blockquote>
-<p><strong>flow</strong> was a fascinating adversarial machine learning
-challenge. We were given a pre-trained CNN classifier, a RealNVP-style
-normalizing flow model, and a reference time-series window
-<code>x_ref</code> of shape <code>(5, 64)</code> — think of it as 5
-sensor channels with 64 timesteps each.</p>
-<h2 id="前置知识">前置知识</h2>
-<p>本题涉及<strong>归一化流（Normalizing
-Flows）</strong>作为<strong>净化防御（Purification
-Defense）</strong>的绕过，属于<strong>对抗性攻击</strong>的高级场景。以下概念有助于理解：</p>
-<table>
-<colgroup>
-<col style="width: 27%" />
-<col style="width: 72%" />
-</colgroup>
-<thead>
-<tr>
-<th>概念</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>归一化流净化器</td>
-<td>输入→流编码器→缩放潜变量→流解码器→分类器，用于移除对抗扰动</td>
-</tr>
-<tr>
-<td>C&amp;W 攻击</td>
-<td>将对抗样本构造转化为带约束优化，比 FGSM 更强</td>
-</tr>
-<tr>
-<td>可微分管道</td>
-<td>流 + 分类器端到端可微，攻击者可反向传播穿透净化</td>
-</tr>
-<tr>
-<td>潜空间优化</td>
-<td>在流的潜空间中优化扰动，分布更规则</td>
-</tr>
-<tr>
-<td>铰链损失（Hinge Loss）</td>
-<td>max(0, margin - value)，约束满足时损失为 0</td>
-</tr>
-<tr>
-<td>Softmax / Logits</td>
-<td>logits 是原始输出，Softmax 转概率。C&amp;W 损失直接使用 logits</td>
-</tr>
-</tbody>
-</table>
-<p>参考：C&amp;W 攻击 arXiv:1608.04644，流对抗鲁棒性
-arXiv:1911.08654。</p>
-<h2 id="understanding-the-purifier">Understanding the Purifier</h2>
-<p>Let's look at how purification worked:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">purify</span>(<span class="params">x, flow, n_steps=<span class="number">3</span>, alpha=<span class="number">0.55</span></span>):</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n_steps):</span><br><span class="line">        z, _ = flow.forward(x)</span><br><span class="line">        x = flow.inverse(alpha * z)</span><br><span class="line">    <span class="keyword">return</span> x</span><br></pre></td></tr></table></figure>
-<p>After 3 steps,
-<code>x_purified = flow.inverse(0.55^3 * z_submit)</code>. The
-classifier sees this shrunk latent version, while the flow likelihood
-check is performed on the <em>original submitted sample</em>.</p>
-<p>This mismatch is the key vulnerability. The defense checks likelihood
-<em>before</em> purification but classifies <em>after</em>, creating a
-differentiable pipeline that's ripe for gradient-based exploitation.</p>
-<h2 id="attack-strategy-optimize-in-latent-space">Attack Strategy:
-Optimize in Latent Space</h2>
-<p>The core insight is that we can backpropagate through the entire
-pipeline — flow encoder, latent manipulation, flow decoder, and
-classifier — to find an input that simultaneously satisfies all
-constraints.</p>
-<p>Here's the approach:</p>
-<ol type="1">
-<li>Encode the reference window into latent space:
-<code>z_ref = flow.encoder(x_ref)</code></li>
-<li>Optimize <code>z</code> with gradient descent to maximize class 1
-logits under the <em>purified</em> version, while penalizing:
-<ul>
-<li>L-infinity distance from <code>x_ref</code> in the <em>original</em>
-(submitted) space</li>
-<li>Log-probability below the threshold</li>
-</ul></li>
-<li>Decode the final <code>z</code> back to data space to get
-<code>sub</code></li>
-</ol>
-<p>The loss function looked like:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">attack_loss</span>(<span class="params">z, x_ref, flow, classifier, threshold, linf_max=<span class="number">0.05</span></span>):</span><br><span class="line">    <span class="comment"># Decode z back to data space (submitted sample)</span></span><br><span class="line">    sub = flow.decoder(z)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Purify and classify</span></span><br><span class="line">    z_noise, _ = flow.encoder(sub)</span><br><span class="line">    x_purified = flow.decoder((<span class="number">0.55</span>**<span class="number">3</span>) * z_noise)</span><br><span class="line">    logits = classifier(x_purified)</span><br><span class="line">    probs = softmax(logits)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Loss: minimize class 1 negative log-probability</span></span><br><span class="line">    cls_loss = -probs[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># L-infinity penalty (hinge-style)</span></span><br><span class="line">    linf_dist = torch.<span class="built_in">max</span>(torch.<span class="built_in">abs</span>(sub - x_ref))</span><br><span class="line">    linf_penalty = <span class="built_in">max</span>(<span class="number">0</span>, linf_dist - linf_max) * <span class="number">1000</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Log-prob penalty</span></span><br><span class="line">    logp = flow.log_prob(sub)</span><br><span class="line">    logp_penalty = <span class="built_in">max</span>(<span class="number">0</span>, threshold - logp) * <span class="number">100</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> cls_loss + linf_penalty + logp_penalty</span><br></pre></td></tr></table></figure>
-<p>Run this with Adam for ~3000 steps, and we converge to a solution
-that satisfies all constraints.</p>
-<h2 id="results">Results</h2>
-<p>Our final submission achieved:</p>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Value</th>
-<th>Target</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>L-infinity</td>
-<td><strong>0.049</strong></td>
-<td>&lt;= 0.05</td>
-</tr>
-<tr>
-<td>Log-probability</td>
-<td><strong>1062</strong></td>
-<td>&gt;= threshold</td>
-</tr>
-<tr>
-<td>P(class=1)</td>
-<td><strong>0.825</strong></td>
-<td>&gt;= 0.80</td>
-</tr>
-</tbody>
-</table>
-<p>A lovely nod to the seminal work on adversarial examples (<span class="exturl" data-url="aHR0cHM6Ly9hcnhpdi5vcmcvYWJzLzE0MTIuNjU3Mg==">Explaining and Harnessing
-Adversarial Examples<i class="fa fa-external-link-alt"></i></span>, Goodfellow et al.) — though the Carlini &amp;
-Wagner attack (C&amp;W) specifically inspires the optimization-based
-approach used here.</p>
-<h2 id="key-takeaways">Key Takeaways</h2>
-<ul>
-<li><strong>Never trust a mismatch between defense checks and
-classification inputs.</strong> If you check the submitted sample but
-classify a purified version, an adversary can exploit the gradient path
-through both.</li>
-<li><strong>Normalizing flows are differentiable end-to-end,</strong>
-making them a double-edged sword: they can purify, but they can also be
-used to <em>craft</em> adversarial inputs when the full pipeline is
-exposed.</li>
-<li><strong>Optimization-based attacks (à la C&amp;W)</strong> are more
-powerful than fast gradient methods when you have access to the full
-model. 3000 steps of Adam beats one step of FGSM every time.</li>
-</ul>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMDCTF{id_like_to_thank_athalye_carlini_and_wagner_for_their_research}</span></span>
 
       
     </div>

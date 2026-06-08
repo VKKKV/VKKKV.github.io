@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">276</span>
+          <span class="site-state-item-count">277</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,132 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-browser-boss-fight/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umass2026/umassctf2026-browser-boss-fight/" class="post-title-link" itemprop="url">UMass CTF 2026 - Browser Boss Fight</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-13 19:42:41 / Modified: 19:42:42" itemprop="dateCreated datePublished" datetime="2026-04-13T19:42:41+08:00">2026-04-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umass2026/umassctf2026-browser-boss-fight/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-browser-boss-fight/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>This familiar brick castle is hiding something... can you break in
+and defeat the Koopa King?</p>
+<p>这座熟悉的砖砌城堡隐藏着什么......您能闯进去打败库巴王吗？</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge presents a Bowser-themed web portal. A quick look at
+the page source reveals client-side JavaScript that sabotages any login
+attempt by replacing the input key with
+<code>WEAK_NON_KOOPA_KNOCK</code> on submission.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;key-form&#x27;</span>).<span class="property">onsubmit</span> = <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> knockOnDoor = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;key&#x27;</span>);</span><br><span class="line">    <span class="comment">// It replaces whatever they typed with &#x27;WEAK_NON_KOOPA_KNOCK&#x27;</span></span><br><span class="line">    knockOnDoor.<span class="property">value</span> = <span class="string">&quot;WEAK_NON_KOOPA_KNOCK&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>This implies we need to interact with the server directly, bypassing
+the browser's UI logic.</p>
+<h3 id="solution">Solution</h3>
+<ol type="1">
+<li><p><strong>Reconnaissance</strong>: Checking the HTTP response
+headers with <code>curl -v</code> reveals a hidden message from Kamek:
+<code>Server: BrOWSERS CASTLE (A note outside: "King Koopa, if you forget the key, check under_the_doormat! - Sincerely, your faithful servant, Kamek")</code></p>
+<p>The key appears to be <code>under_the_doormat</code>.</p></li>
+<li><p><strong>Authentication Bypass</strong>: The challenge title and
+theme suggest the server expects a specific identity. Using the
+User-Agent <code>Bowser</code> and the discovered key, we can attempt a
+login: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -v -c cookies.txt -L http://browser-boss-fight.web.ctf.umasscybersec.org:32770/password-attempt \</span><br><span class="line">     -A <span class="string">&quot;Bowser&quot;</span> \</span><br><span class="line">     -d <span class="string">&quot;key=under_the_doormat&quot;</span></span><br></pre></td></tr></table></figure> The <code>-c cookies.txt</code> flag saves the
+session cookie for subsequent requests.</p></li>
+<li><p><strong>Defeating the Boss (Cookie Manipulation)</strong>: Upon
+redirecting to <code>/bowsers_castle.html</code>, the page claims the
+"axe" has been removed to prevent defeat. Inspecting the cookies reveals
+a <code>hasAxe=false</code> value. To proceed, we must manually override
+this cookie to <code>true</code>: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -v -b cookies.txt -b <span class="string">&quot;hasAxe=true&quot;</span> \</span><br><span class="line">     -A <span class="string">&quot;Bowser&quot;</span> \</span><br><span class="line">     -L http://browser-boss-fight.web.ctf.umasscybersec.org:32770/bowsers_castle.html</span><br></pre></td></tr></table></figure></p></li>
+<li><p><strong>Victory</strong>: With the manipulated cookie, the server
+renders the victory page containing the flag.</p></li>
+</ol>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{br0k3n_1n_2_b0wz3r5_c4st13}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1501,117 +1627,6 @@ representation of the flag appeared:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">.....................................#.....................................................#........</span><br><span class="line">..................................####.....................................................####.....</span><br><span class="line">..................................#...........................................................#.....</span><br><span class="line">..................................#...#..#...#......#####......#####...#.######.######...##...#.....</span><br><span class="line">...#..#.#####.#####.#####.#####...#..##..#...#......#...#......#......##.....#......#...#.#...#.....</span><br><span class="line">...#..#.#.#.#.#...#.#.....#......##.#.#..##..#......#####......#.....#.#.....#......#..#..#...##....</span><br><span class="line">...#..#.#.#.#.#####.###...###...##....#..#.#.#......#...#......#..##...#....#......#..#######..##...</span><br><span class="line">...#..#.#...#.#...#...###...###..##...#..#.#.#......#...#......#..###..#...#......#.......#...##....</span><br><span class="line">...#..#.#...#.#...#.....#.....#...#...#..#..##......#...#......#....#..#...#......#.......#...#.....</span><br><span class="line">...####.#...#.#...#.#####.#####...#..###.#...#.####.#...#.####.######.###..#......#.......#...#.....</span><br><span class="line">..................................#...........................................................#.....</span><br><span class="line">..................................####.....................................................####.....</span><br><span class="line">.....................................#.....................................................#........</span><br></pre></td></tr></table></figure>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{1N_A_G1774}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-welcome/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-welcome/" class="post-title-link" itemprop="url">UMassCTF 2026 - Welcome</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 11:15:03 / Modified: 11:24:43" itemprop="dateCreated datePublished" datetime="2026-04-13T11:15:03+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-welcome/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-welcome/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Welcome to UMassCTF 2026! Join our Discord server using this link:
-https://discord.gg/E3rSU5UWwY</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge is a standard welcome task. We need to join the
-official Discord server and follow the instructions to find the
-flag.</p>
-<h3 id="solution">Solution</h3>
-<p>After joining the Discord server, the <code>Togekiss</code> bot in
-the <code>#welcome</code> channel provides instructions to obtain the
-participant role:</p>
-<blockquote>
-<p>"React to this message after reading the rules above to obtain the
-participant role"</p>
-</blockquote>
-<p><strong>点击那个 🔒 图标。</strong></p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{w3lc0m3_70_um455c7f2026}</span></span>
 
       
     </div>
