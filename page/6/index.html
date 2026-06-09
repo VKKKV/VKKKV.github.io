@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">291</span>
+          <span class="site-state-item-count">292</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,137 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-0817/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-php-0817/" class="post-title-link" itemprop="url">WeChall - PHP 0817</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-03 14:05:31 / Modified: 14:05:32" itemprop="dateCreated datePublished" datetime="2026-06-03T14:05:31+08:00">2026-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-php-0817/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-0817/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>I have written another include system for my dynamic webpages, but it
+seems to be vulnerable to LFI. 一个 PHP LFI 挑战，利用 PHP
+松散比较（type juggling）绕过 switch 限制。</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>源码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;which&#x27;</span>])) &#123;</span><br><span class="line">    <span class="variable">$which</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;which&#x27;</span>];</span><br><span class="line">    <span class="keyword">switch</span> (<span class="variable">$which</span>) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">require_once</span> <span class="variable">$which</span>.<span class="string">&#x27;.php&#x27;</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;Hacker NoNoNo!&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p><code>index.php?which=0</code> 加载 News，<code>which=1</code> 加载
+Forum，<code>which=2</code> 加载 Guestbook。</p>
+<p>目标是加载 <code>solution.php</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>PHP 的 <code>switch</code> 使用松散比较（<code>==</code> 而非
+<code>===</code>）。当字符串与整数比较时，PHP
+把字符串转成整数——<code>"solution"</code> 不以数字开头，转成
+<code>0</code>，因此 <code>"solution" == 0</code> 为
+<code>true</code>。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="string">&quot;solution&quot;</span> == <span class="number">0</span>);  <span class="comment">// bool(true)</span></span><br></pre></td></tr></table></figure>
+<p>传入 <code>which=solution</code>：</p>
+<ul>
+<li><code>$which</code> = <code>"solution"</code></li>
+<li><code>switch</code> 比较 <code>"solution" == 0</code> →
+<code>true</code>，命中 <code>case 0</code></li>
+<li><code>case 0</code> 无代码也无 <code>break</code> →
+<strong>fall-through</strong> 到 <code>case 1</code>，再 fall-through 到
+<code>case 2</code></li>
+<li><code>case 2:</code> 的 <code>require_once $which.'.php'</code>
+执行</li>
+</ul>
+<p>注意一点：<strong><code>$which</code> 的值不会被 switch 改变</strong>
+— 匹配到 case 0 之后，<code>$which</code> 仍然是
+<code>"solution"</code>，不是 <code>0</code>。fall-through
+只是让执行流落入 case 2 的代码块，而那块代码引用的是原始变量值。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$which</span> = <span class="string">&quot;solution&quot;</span>;</span><br><span class="line"><span class="keyword">switch</span> (<span class="variable">$which</span>) &#123;</span><br><span class="line"><span class="keyword">case</span> <span class="number">0</span>:   <span class="comment">// &quot;solution&quot; == 0 → match, 但 $which 还是 &quot;solution&quot;</span></span><br><span class="line"><span class="keyword">case</span> <span class="number">1</span>:   <span class="comment">// fall-through</span></span><br><span class="line"><span class="keyword">case</span> <span class="number">2</span>:   <span class="comment">// fall-through, require_once &quot;solution&quot;.php&quot; ← 用的是原始 $which</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>绕过了 switch 的 default 拦截，也无需 <code>.</code> <code>/</code>
+等特殊字符。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.wechall.net/challenge/php0817/index.php?which=solution</span><br></pre></td></tr></table></figure>
+<p>验证：页面显示 "Well done, too easy... Do you know why this is
+possible?"，<code>solution.php</code> 成功包含。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1791,153 +1922,6 @@ decoded text.</p>
 <p>You can also use CyberChef to decode the ciphertext:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ROT13_Brute_Force(true,true,false,100,0,true,&#x27;&#x27;)</span><br><span class="line">input: JXU GKYSA RHEMD VEN ZKCFI ELUH JXU BQPO TEW EV SQUIQH QDT OEKH KDYGKU IEBKJYED YI DFUWHHDUYVBF</span><br></pre></td></tr></table></figure>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">NPEGRRNEIFLP</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/trytodecrypt/trytodecrypt-hard/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/trytodecrypt/trytodecrypt-hard/" class="post-title-link" itemprop="url">trytodecrypt.com — hard (13-18)</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-05-25 17:43:33 / Modified: 17:43:34" itemprop="dateCreated datePublished" datetime="2026-05-25T17:43:33+08:00">2026-05-25</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/trytodecrypt/trytodecrypt-hard/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/trytodecrypt/trytodecrypt-hard/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p><span class="exturl" data-url="aHR0cHM6Ly93d3cudHJ5cHRvZGVjcnlwdC5jb20v">tryptodecrypt.com<i class="fa fa-external-link-alt"></i></span></p>
-<p>Hard 级别的密钥嵌入在密文结构本身。</p>
-<h3 id="text-13">Text 13</h3>
-<p><code>59656A6B6F9F656A67746767</code></p>
-<p>首字节 0x59 (89) 为全局 key。后续每字节减 key 得 charset 位置。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decode_text13</span>(<span class="params">ct</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;首字节为全局 key&quot;&quot;&quot;</span></span><br><span class="line">    key = <span class="built_in">int</span>(ct[:<span class="number">2</span>], <span class="number">16</span>)</span><br><span class="line">    data = [<span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">2</span>, <span class="built_in">len</span>(ct), <span class="number">2</span>)]</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(C[b - key] <span class="keyword">for</span> b <span class="keyword">in</span> data)</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">chim cheree</span></span>
-<h3 id="text-14">Text 14</h3>
-<p><code>6F5657A6606B7D9C7480649D7A6B757D9C70816B6CB4</code></p>
-<p>前 3 字节 [0x6F, 0x56, 0x57] 为旋转 key。后续每字节依次减去对应
-key。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decode_text14</span>(<span class="params">ct</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;前 3 字节为旋转 key&quot;&quot;&quot;</span></span><br><span class="line">    keys = [<span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">6</span>, <span class="number">2</span>)]</span><br><span class="line">    data = [<span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>, <span class="built_in">len</span>(ct), <span class="number">2</span>)]</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(C[data[i] - keys[i % <span class="number">3</span>]] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(data)))</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">Take the blue pill!</span></span>
-<h3 id="text-15">Text 15</h3>
-<p><code>574168755997984F7A7E76AD6954A662538F764F7A5C4F876544</code></p>
-<p>前 6 位 hex 是三个 2 位子密钥 (57, 41,
-68)。子密钥交替加密后续字符（密钥 1 加密第 4/7/10...个字符）。字符加密 =
-子密钥 + 字符专用偏移量。</p>
-<p>第一层：静态替换表</p>
-<p>每个字符硬编码一个唯一的偏移量，跟字符集索引无关：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">a→0x27  b→0x0b  c→0x41  d→0x45  e→0x0e ...</span><br><span class="line">A→0x1e  B→0x13</span><br><span class="line">空格→0x12  句号→0x03</span><br></pre></td></tr></table></figure>
-<p>这就是个查表替换，只不过替换结果不是另外一个字符，是一个数字。</p>
-<p>第二层：类维吉尼亚加密</p>
-<p>拿替换后的数字，加上循环密钥（57→41→68→57→…），得到最终密文：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">A  → 查表得 0x1e  → +密钥 0x57 → 0x75</span><br><span class="line">l  → 查表得 0x18  → +密钥 0x41 → 0x59</span><br><span class="line">i  → 查表得 0x2f  → +密钥 0x68 → 0x97</span><br><span class="line">c  → 查表得 0x41  → +密钥 0x57 → 0x98</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>加密工具虽然每请求随机化（Hard
-特性），但是同一个字符在同一个位置的加密结果每次都一样。所以：</p>
-<ol type="1">
-<li>加密 "aaaaaa" → 看密文的重复规律，发现每 3 个字节一个周期 → 密钥长度
-3</li>
-<li>加密 "aaaaaaaaaaaa" → 同一位置加密 "a" 多次 → 确认 "a" 的密文总是
-0x7e（当密钥=0x57时）</li>
-<li>加密 "ba"、"ca"、"da"… → 算出每个字符的偏移量</li>
-<li>密钥值本身：从密文前 6
-位直接读出来的（这就是为什么说密钥嵌在密文结构里）</li>
-</ol>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">CHAR_OFF = &#123;</span><br><span class="line">    <span class="string">&#x27;a&#x27;</span>: <span class="number">0x27</span>, <span class="string">&#x27;b&#x27;</span>: <span class="number">0x0b</span>, <span class="string">&#x27;c&#x27;</span>: <span class="number">0x41</span>, <span class="string">&#x27;d&#x27;</span>: <span class="number">0x45</span>, <span class="string">&#x27;e&#x27;</span>: <span class="number">0x0e</span>,</span><br><span class="line">    <span class="string">&#x27;f&#x27;</span>: <span class="number">0x10</span>, <span class="string">&#x27;g&#x27;</span>: <span class="number">0x11</span>, <span class="string">&#x27;h&#x27;</span>: <span class="number">0x05</span>, <span class="string">&#x27;i&#x27;</span>: <span class="number">0x2f</span>, <span class="string">&#x27;j&#x27;</span>: <span class="number">0x1c</span>,</span><br><span class="line">    <span class="string">&#x27;k&#x27;</span>: <span class="number">0x16</span>, <span class="string">&#x27;l&#x27;</span>: <span class="number">0x18</span>, <span class="string">&#x27;m&#x27;</span>: <span class="number">0x04</span>, <span class="string">&#x27;n&#x27;</span>: <span class="number">0x35</span>, <span class="string">&#x27;o&#x27;</span>: <span class="number">0x3e</span>,</span><br><span class="line">    <span class="string">&#x27;p&#x27;</span>: <span class="number">0x37</span>, <span class="string">&#x27;q&#x27;</span>: <span class="number">0x1d</span>, <span class="string">&#x27;r&#x27;</span>: <span class="number">0x1f</span>, <span class="string">&#x27;s&#x27;</span>: <span class="number">0x15</span>, <span class="string">&#x27;t&#x27;</span>: <span class="number">0x21</span>,</span><br><span class="line">    <span class="string">&#x27;u&#x27;</span>: <span class="number">0x1a</span>, <span class="string">&#x27;v&#x27;</span>: <span class="number">0x23</span>, <span class="string">&#x27;w&#x27;</span>: <span class="number">0x00</span>, <span class="string">&#x27;x&#x27;</span>: <span class="number">0x0c</span>, <span class="string">&#x27;y&#x27;</span>: <span class="number">0x3b</span>,</span><br><span class="line">    <span class="string">&#x27;z&#x27;</span>: <span class="number">0x30</span>, <span class="string">&#x27;.&#x27;</span>: <span class="number">0x03</span>, <span class="string">&#x27; &#x27;</span>: <span class="number">0x12</span>, <span class="string">&#x27;A&#x27;</span>: <span class="number">0x1e</span>, <span class="string">&#x27;B&#x27;</span>: <span class="number">0x13</span>,</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># 反转: 偏移 -&gt; char</span></span><br><span class="line">OFF_CHAR = &#123;v: k <span class="keyword">for</span> k, v <span class="keyword">in</span> CHAR_OFF.items()&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">decode_text15</span>(<span class="params">ct</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;前 6 hex 为 3 子密钥, data - key[i%3] 得偏移查表&quot;&quot;&quot;</span></span><br><span class="line">    keys = [<span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">6</span>, <span class="number">2</span>)]</span><br><span class="line">    data = [<span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>, <span class="built_in">len</span>(ct), <span class="number">2</span>)]</span><br><span class="line">    plain = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> i, d <span class="keyword">in</span> <span class="built_in">enumerate</span>(data):</span><br><span class="line">        off = d - keys[i % <span class="number">3</span>]</span><br><span class="line">        plain += OFF_CHAR.get(off, <span class="string">&quot;?&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> plain</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">Alice and Bob are here.</span></span>
-<h3 id="text-16">Text 16</h3>
-<p><code>32632E3149844B82115794BA78AD87C36DA01148707080C65459255C2C6487B02851</code></p>
-<p>每 4 位 hex 一组（2 位偏移 + 2 位编码字符）。编码字符 - 偏移 =
-字符集索引。</p>
-<p>编码：<code>0=00, 1=01, ..., 9=09, a=0A, ..., z=23, A=24, ..., Z=3D, space=46, fullstop=40</code>。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decode_text16</span>(<span class="params">ct</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;4-hex 一组 (2偏移 + 2编码)&quot;&quot;&quot;</span></span><br><span class="line">    pt = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(ct), <span class="number">4</span>):</span><br><span class="line">        off = <span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>)</span><br><span class="line">        enc = <span class="built_in">int</span>(ct[i+<span class="number">2</span>:i+<span class="number">4</span>], <span class="number">16</span>)</span><br><span class="line">        cp = enc - off</span><br><span class="line">        pt += C[cp] <span class="keyword">if</span> <span class="number">0</span> &lt;= cp &lt; <span class="built_in">len</span>(C) <span class="keyword">else</span> <span class="string">&quot;?&quot;</span></span><br><span class="line">    <span class="keyword">return</span> pt</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">N3XT CRYPT0 5TUFF</span></span>
-<h3 id="text-17">Text 17</h3>
-<p><code>5D2EAF346C9271B7489BBA3A52326752248C2255826771378D741E48205A</code></p>
-<p>密文前半为密钥，后半为编码数据。密钥 - 编码数据 = 字符集索引。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decode_text17</span>(<span class="params">ct, reverse=<span class="literal">False</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;前半 key 后半数据, key - 数据&quot;&quot;&quot;</span></span><br><span class="line">    half = <span class="built_in">len</span>(ct) // <span class="number">2</span></span><br><span class="line">    keys = [<span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, half, <span class="number">2</span>)]</span><br><span class="line">    data = [<span class="built_in">int</span>(ct[i:i+<span class="number">2</span>], <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(half, <span class="built_in">len</span>(ct), <span class="number">2</span>)]</span><br><span class="line">    pt = <span class="string">&quot;&quot;</span>.join(C[keys[i] - data[i]] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(data)))</span><br><span class="line">    <span class="keyword">return</span> pt[::-<span class="number">1</span>] <span class="keyword">if</span> reverse <span class="keyword">else</span> pt</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">bazinga he said</span></span>
-<h3 id="text-18">Text 18</h3>
-<p><code>35445FA0D18F47618981AE5D3A98A5138EAE2A303A5D688B6C4461703B902F308F5F125F7725</code></p>
-<p>与 Text 17 相同算法，但明文在加密前被反转了。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decode_text18</span>(<span class="params">ct</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;同 Text 17 但结果反转&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> decode_text17(ct, reverse=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">5TL1 9aKu p03z U2a5</span></span>
 
       
     </div>
