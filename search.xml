@@ -20138,4 +20138,113 @@ stderr。<code>charp</code> 会从 <code>popen()</code> 的 stdout
         <tag>warchall</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Are you serial</title>
+    <url>/wp/WeChall/wechall-are-you-serial/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>PHP 反序列化漏洞。页面显示多个源码文件，需要通过操控
+<code>serial_user</code> cookie 触发
+<code>SERIAL_Solution::__wakeup()</code> 调用
+<code>onChallengeSolved()</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>源码结构:</p>
+<ul>
+<li><code>code.php</code>: 读取 <code>serial_user</code> cookie，调用
+<code>unserialize()</code>，然后用结果调用
+<code>getUsername()</code>/<code>getPassword()</code>/<code>getUserlevel()</code></li>
+<li><code>SERIAL_Solution.php</code>: <code>__wakeup()</code> 方法调用
+<code>onChallengeSolved()</code></li>
+<li><code>SERIAL_User.php</code>: 包含 <code>username</code>,
+<code>password</code>, <code>userlevel</code> 属性</li>
+</ul>
+<p>核心漏洞: <code>unserialize()</code> 会实例化 cookie
+中指定的类。如果反序列化 <code>SERIAL_Solution</code>
+对象，<code>__wakeup()</code> 会自动触发。</p>
+<p>Payload (设置为 <code>serial_user</code> cookie):</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">O:16:&quot;SERIAL_Solution&quot;:0:&#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>使用 curl 提交:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -b <span class="string">&#x27;WC=&lt;session&gt;; serial_user=O%3A16%3A%22SERIAL_Solution%22%3A0%3A%7B%7D&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.wechall.net/en/challenge/are_you_serial/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>注意: <code>__wakeup()</code> 触发后，代码继续调用
+<code>getUsername()</code> 等方法可能导致 fatal error。如果 curl
+不生效，尝试通过浏览器 cookie 注入。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>deserialization</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackThisSite - Basic Mission 11</title>
+    <url>/wp/HackThisSite/hackthissite-basic-11/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Sam decided to make a music site. Unfortunately he does not
+understand Apache.</p>
+<p>Sam 决定做一个音乐网站，可惜他不懂 Apache 配置。</p>
+</blockquote>
+<p>页面上随机显示一句歌词，如
+<code>"Ghetto Gospel" is the best!</code>，每次刷新会变。没有密码输入框，没有明显的交互元素。</p>
+<h3 id="solution">Solution</h3>
+<p>这题考察的是 Apache 服务器配置知识，解题过程像一个探索任务。</p>
+<h4 id="step-1-识别歌曲线索">Step 1 — 识别歌曲线索</h4>
+<p>多次刷新页面，歌曲会变化，包括：</p>
+<ul>
+<li>"Ghetto Gospel" (2Pac ft. Elton John)</li>
+<li>"Georgia" (Elton John)</li>
+<li>等等</li>
+</ul>
+<p>搜索这些歌曲，全部是 <strong>Elton John</strong>
+的作品。这暗示了目录结构。</p>
+<h4 id="step-2-目录遍历">Step 2 — 目录遍历</h4>
+<p>尝试拼出 Elton 的名字：访问
+<code>/missions/basic/11/e/</code>，发现目录列表！继续往下走：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/missions/basic/11/e/</span><br><span class="line">/missions/basic/11/e/l/</span><br><span class="line">/missions/basic/11/e/l/t/</span><br><span class="line">/missions/basic/11/e/l/t/o/</span><br><span class="line">/missions/basic/11/e/l/t/o/n/    ← 最后一层，看起来是空的</span><br></pre></td></tr></table></figure>
+<h4 id="step-3-查看-.htaccess-文件">Step 3 — 查看 .htaccess 文件</h4>
+<p><code>/e/l/t/o/n/</code> 目录看起来是空的，但在 Apache
+中，<code>.htaccess</code> 文件可能被目录列表隐藏了。直接访问：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/.htaccess</span><br></pre></td></tr></table></figure>
+<p>内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IndexIgnore DaAnswer.* .htaccess</span><br><span class="line"></span><br><span class="line">&lt;Files .htaccess&gt;</span><br><span class="line">require all granted</span><br><span class="line">&lt;/Files&gt;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>IndexIgnore</code>：告诉 Apache 目录列表中不要显示
+<code>DaAnswer.*</code> 和 <code>.htaccess</code></li>
+<li><code>&lt;Files .htaccess&gt;</code>：允许所有人访问
+<code>.htaccess</code>（这是关键错误，应该禁止访问）</li>
+</ul>
+<h4 id="step-4-访问-daanswer">Step 4 — 访问 DaAnswer</h4>
+<p>既然 <code>.htaccess</code> 泄露了隐藏的文件名，直接访问：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/DaAnswer</span><br></pre></td></tr></table></figure>
+<p>页面显示动态文本，如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">The answer is available!</span><br><span class="line">Just look a little harder.</span><br></pre></td></tr></table></figure>
+<h4 id="step-5-提交答案">Step 5 — 提交答案</h4>
+<p>访问
+<code>/missions/basic/11/index.php</code>（注意不是入口页面），会出现密码输入框。表单字段名是
+<code>answer</code>，提交 <code>available</code> 即可过关。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;answer=available&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>核心知识点：</p>
+<ol type="1">
+<li>Apache 的 <code>IndexIgnore</code>
+只是不在目录列表中显示文件，文件本身仍然可以被直接访问</li>
+<li><code>.htaccess</code>
+文件应该禁止外部访问（<code>Require all denied</code>），否则会泄露目录配置信息</li>
+<li>路径遍历 + 配置文件泄露是经典的 Apache 安全问题</li>
+</ol>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>hackthissite</tag>
+        <tag>apache</tag>
+      </tags>
+  </entry>
 </search>
