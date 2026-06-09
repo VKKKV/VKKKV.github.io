@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">287</span>
+          <span class="site-state-item-count">288</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,120 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-my-admin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-php-my-admin/" class="post-title-link" itemprop="url">WeChall - PHP My Admin</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-09 16:59:49 / Modified: 17:00:44" itemprop="dateCreated datePublished" datetime="2026-06-09T16:59:49+08:00">2026-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-php-my-admin/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-my-admin/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>这是一道 Research 类挑战，目标是找到 WeChall 管理员使用的隐藏
+phpMyAdmin
+页面。题面没有表单，也不需要提交密码；找到正确入口后访问即可判定。</p>
+<p>页面底部藏了一行接近白色的提示文字（<code>color:#fefefe</code>，白底白字，查看
+HTML 源码可见）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">You don&#x27;t need a hint, do you?</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>题名 <code>PHP My Admin</code> 本身就是提示。<code>pma</code> 是
+phpMyAdmin 的常见缩写，所以直接尝试对应子域名：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://pma.wechall.net/</span><br></pre></td></tr></table></figure>
+<p>访问该子域名会触发挑战检查。公开未登录访问也能看到命中提示，但不会记录账号进度：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ curl -skL \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://pma.wechall.net/&#x27;</span></span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">1:76:Your answer is correct. To keep track of your progress you need to register.</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+<p>这里需要 <code>-k</code> /
+<code>--insecure</code>，因为站点返回的证书是
+<code>CN=www.wechall.net</code>，SAN 里只有
+<code>wc2.wechall.net</code>、<code>wechall.net</code>、<code>www.wechall.net</code>，不包含
+<code>pma.wechall.net</code>。浏览器访问时也会看到证书警告，继续访问即可。</p>
+<p>带登录态复现时把 <code>WC=...</code> 换成自己的 cookie：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -skL \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://pma.wechall.net/&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>如果账号状态更新成功，最终以 <code>/en/challs</code> 里
+<code>PHP My Admin</code> 的 <code>wc_chall_solved_1</code> 为准。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1508,124 +1622,6 @@ shell 命令中时，攻击者可以用
 <code>subprocess.run</code> 配
 <code>shell=False</code>），或严格过滤输入。</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">00d7c5f8</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-06/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-06/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 6</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-08 22:01:13 / Modified: 22:02:16" itemprop="dateCreated datePublished" datetime="2026-06-08T22:01:13+08:00">2026-06-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-06/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-06/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Network Security Sam has encrypted his password. The encryption
-system is publically available and can be accessed with this form.</p>
-<p>Sam
-把他的密码加密了。加密系统是公开的，可以通过页面上的表单访问。</p>
-</blockquote>
-<p>已知加密后的密码：<code>477djk?=</code></p>
-<p>页面提供了一个加密工具，可以输入任意字符串查看加密结果。</p>
-<h3 id="solution">Solution</h3>
-<p>这题需要逆向加密算法。先用加密工具测试几组已知明文，观察规律：</p>
-<p>输入 <code>aaaa</code>（4个相同的字符）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aaaa → abcd</span><br></pre></td></tr></table></figure>
-<p>规律很明显：每个字符的 ASCII 值加上了它的位置索引（从0开始）。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a(0) + 0 = a</span><br><span class="line">a(1) + 1 = b</span><br><span class="line">a(2) + 2 = c</span><br><span class="line">a(3) + 3 = d</span><br></pre></td></tr></table></figure>
-<p>所以加密公式是：<code>encrypted[i] = chr(ord(plaintext[i]) + i)</code></p>
-<p>解密即为逆操作：<code>plaintext[i] = chr(ord(encrypted[i]) - i)</code></p>
-<p>Python 解密脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">encrypted = <span class="string">&quot;477djk?=&quot;</span></span><br><span class="line">decrypted = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i, c <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted):</span><br><span class="line">    decrypted += <span class="built_in">chr</span>(<span class="built_in">ord</span>(c) - i)</span><br><span class="line"><span class="built_in">print</span>(decrypted)  <span class="comment"># 465aff96</span></span><br></pre></td></tr></table></figure>
-<p>验证：重新加密 <code>465aff96</code>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">4 + 0 = 4</span><br><span class="line">6 + 1 = 7</span><br><span class="line">5 + 2 = 7</span><br><span class="line">a + 3 = d</span><br><span class="line">f + 4 = j</span><br><span class="line">f + 5 = k</span><br><span class="line">9 + 6 = ?</span><br><span class="line">6 + 7 = =</span><br></pre></td></tr></table></figure>
-<p>结果：<code>477djk?=</code>，与已知密文完全匹配。</p>
-<p>自定义加密算法如果有公开的加密
-oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaintext attack
-推导出算法逻辑，进而解密任意密文。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">465aff96</span></span>
 
       
     </div>
