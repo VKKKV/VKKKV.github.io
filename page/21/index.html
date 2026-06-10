@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">310</span>
+          <span class="site-state-item-count">313</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,353 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-Angr-y-Binary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-Angr-y-Binary/" class="post-title-link" itemprop="url">247CTF - Angr-y Binary</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-03-08 16:59:31 / Modified: 17:12:30" itemprop="dateCreated datePublished" datetime="2026-03-08T16:59:31+08:00">2026-03-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/247CTF/247CTF-Angr-y-Binary/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-Angr-y-Binary/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Why waste time creating multiple functions, when you can just use
+one? Can you find the path to the flag in this angr-y binary?</p>
+</blockquote>
+<h2 id="challenge-overview">Challenge Overview</h2>
+<p>The challenge provides a 32-bit ELF executable. The goal is to find
+the correct input that leads to the flag.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file angr-y_binary</span><br><span class="line">angr-y_binary: ELF 32-bit LSB executable, Intel i386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=611e939f262f927b8515162283d36476df2d3244, not stripped</span><br></pre></td></tr></table></figure>
+<h2 id="analysis">Analysis</h2>
+<p>Using <code>radare2</code> to inspect the disassembly, we identify
+three key functions: <code>print_flag</code>, <code>no_flag</code>, and
+<code>maybe_flag</code>.</p>
+<h3 id="disassembly">Disassembly</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">     ;-- print_flag:</span><br><span class="line">     0x08048596      55             push ebp</span><br><span class="line">     0x08048597      89e5           mov ebp, esp</span><br><span class="line">     ...</span><br><span class="line">     0x080485db      e830feffff     call sym.imp.fgets          ;[3]</span><br><span class="line">     0x080485e0      83c410         add esp, 0x10</span><br><span class="line">     0x080485e3      83ec0c         sub esp, 0xc</span><br><span class="line">     0x080485e6      8d45b4         lea eax, [ebp - 0x4c]</span><br><span class="line">     0x080485e9      50             push eax</span><br><span class="line">     0x080485ea      e841feffff     call sym.imp.puts           ;[4]</span><br><span class="line">     ...</span><br><span class="line"></span><br><span class="line">     ;-- no_flag:</span><br><span class="line">     0x08048609      55             push ebp</span><br><span class="line">     0x0804860a      89e5           mov ebp, esp</span><br><span class="line">     0x0804860c      e8d0005e00     call sym.__x86.get_pc_thunk.ax ;[6]</span><br><span class="line">     0x08048611      05ef195e00     add eax, 0x5e19ef</span><br><span class="line">     0x08048616      c780300000..   mov dword [eax + 0x30], 0</span><br><span class="line">     0x08048620      90             nop</span><br><span class="line">     0x08048621      5d             pop ebp</span><br><span class="line">     0x08048622      c3             ret</span><br><span class="line"></span><br><span class="line">     ;-- maybe_flag:</span><br><span class="line">     0x08048623      55             push ebp</span><br><span class="line">     0x08048624      89e5           mov ebp, esp</span><br><span class="line">     0x08048626      53             push ebx</span><br><span class="line">     0x08048627      83ec04         sub esp, 4</span><br><span class="line">     0x0804862a      e8b2005e00     call sym.__x86.get_pc_thunk.ax ;[6]</span><br><span class="line">     0x0804862f      05d1195e00     add eax, 0x5e19d1</span><br><span class="line">     0x08048634      8b9030000000   mov edx, dword [eax + 0x30]</span><br><span class="line">     0x0804863a      85d2           test edx, edx</span><br><span class="line"> ┌─&lt; 0x0804863c      7407           je 0x8048645</span><br><span class="line"> │   0x0804863e      e853ffffff     call sym.print_flag         ;[7]</span><br><span class="line">┌──&lt; 0x08048643      eb14           jmp 0x8048659</span><br><span class="line">│└─&gt; 0x08048645      83ec0c         sub esp, 0xc</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>The logic suggests we need to reach <code>print_flag</code> while
+avoiding the paths that lead to <code>no_flag</code>.</p>
+<h2 id="solution">Solution</h2>
+<p>Since the binary's path to the flag is complex, we use
+<code>angr</code> to perform symbolic execution and find the correct
+input.</p>
+<h3 id="solver-script">Solver Script</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> angr</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>(<span class="params">bin_path</span>):</span><br><span class="line">    project = angr.Project(bin_path)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Initialize the state at entry</span></span><br><span class="line">    initial_state = project.factory.entry_state(</span><br><span class="line">        add_options = &#123;</span><br><span class="line">            angr.options.SYMBOL_FILL_UNCONSTRAINED_MEMORY,</span><br><span class="line">            angr.options.SYMBOL_FILL_UNCONSTRAINED_REGISTERS</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    simulation = project.factory.simgr(initial_state)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Explore searching for the print_flag function and avoiding no_flag</span></span><br><span class="line">    <span class="comment"># print_flag: 0x08048596</span></span><br><span class="line">    <span class="comment"># no_flag: 0x8048609</span></span><br><span class="line">    simulation.explore(find=<span class="number">0x08048596</span>, avoid=<span class="number">0x8048609</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> simulation.found:</span><br><span class="line">        solution_state = simulation.found[<span class="number">0</span>]</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Found solution: <span class="subst">&#123;solution_state.posix.dumps(sys.stdin.fileno()).decode()&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">raise</span> Exception(<span class="string">&#x27;Could not find the solution&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve(<span class="string">&#x27;./angr-y_binary&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="execution">Execution</h3>
+<p>Running the script gives us the password:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ python solve.py</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
+<p>Connecting to the server with the found password:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">❯ nc 0c4c28058a1f7a2f.247ctf.com 50230</span><br><span class="line">Enter a valid password:</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{a3bbb9d2e648841d99e1cf4535a92945}</span></span>
+<h2 id="references">References</h2>
+<ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2pha2VzcHJpbmdlci9hbmdyX2N0Zi90cmVlL21hc3Rlci9zb2x1dGlvbnMvMDFfYW5ncl9hdm9pZA==">angr_ctf
+learn - jakespringer<i class="fa fa-external-link-alt"></i></span></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-prime-factory/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-prime-factory/" class="post-title-link" itemprop="url">WeChall - Prime Factory</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-06 23:33:00" itemprop="dateCreated datePublished" datetime="2026-03-06T23:33:00+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-24 09:11:09" itemprop="dateModified" datetime="2026-05-24T09:11:09+08:00">2026-05-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-prime-factory/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-prime-factory/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Your task is to find the first two primes above 1,000,000 whose digit
+sum is also prime.
+你的任务是找到大于1,000,000的前两个质数，其各位数字之和也是质数。</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>Find the first two primes greater than 1,000,000 where the sum of
+their digits is also prime. Concatenate them as the answer.</p>
+<h3 id="solution">Solution</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">is_prime</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">return</span> n &gt; <span class="number">1</span> <span class="keyword">and</span> <span class="built_in">all</span>(n % i != <span class="number">0</span> <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">2</span>, <span class="built_in">int</span>(n**<span class="number">0.5</span>) + <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">p = <span class="number">1000000</span></span><br><span class="line">found = []</span><br><span class="line"><span class="keyword">while</span> <span class="built_in">len</span>(found) &lt; <span class="number">2</span>:</span><br><span class="line">    p += <span class="number">1</span></span><br><span class="line">    <span class="keyword">if</span> is_prime(p) <span class="keyword">and</span> is_prime(<span class="built_in">sum</span>(<span class="built_in">int</span>(d) <span class="keyword">for</span> d <span class="keyword">in</span> <span class="built_in">str</span>(p))):</span><br><span class="line">        found.append(p)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;found[<span class="number">0</span>]&#125;</span><span class="subst">&#123;found[<span class="number">1</span>]&#125;</span>&#x27;</span>)</span><br><span class="line"><span class="comment"># 10000331000037</span></span><br></pre></td></tr></table></figure>
+<p>The first two primes are 1000033 and 1000037. Their digit sums are
+1+0+0+0+0+3+3 = 7 (prime) and 1+0+0+0+0+3+7 = 11 (prime). Concatenated:
+10000331000037.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-url-encode/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-url-encode/" class="post-title-link" itemprop="url">WeChall - URL Encode</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-06 23:32:00" itemprop="dateCreated datePublished" datetime="2026-03-06T23:32:00+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-27 13:17:11" itemprop="dateModified" datetime="2026-05-27T13:17:11+08:00">2026-05-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-url-encode/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-url-encode/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Your task is to decode the following: 你的任务是解码以下内容:</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>Given a URL-encoded string:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">%59%69%70%70%65%68%21%20%59%6F%75%72%20%55%52%4C%20%69%73%20%63%68%61%6C%6C%65%6E%67%65%2F%74%72%61%69%6E%69%6E%67%2F%65%6E%63%6F%64%69%6E%67%73%2F%75%72%6C%2F%73%61%77%5F%6C%6F%74%69%6F%6E%2E%70%68%70%3F%70%3D%70%68%67%6F%66%63%72%62%6F%69%73%62%26%63%69%64%3D%35%32%23%70%61%73%73%77%6F%72%64%3D%66%69%62%72%65%5F%6F%70%74%69%63%73%20%56%65%72%79%20%77%65%6C%6C%20%64%6F%6E%65%21</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>Use URL decode (e.g., CyberChef). The decoded message is:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Yippeh! Your URL is challenge/training/encodings/url/saw_lotion.php?p=phgofcrboisb&amp;cid=52#password=fibre_optics Very well done!</span><br></pre></td></tr></table></figure>
+<p>Append to https://www.wechall.net/ to visit the success URL. The
+password is in the URL fragment: <code>fibre_optics</code>.</p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">fibre_optics</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1352,390 +1699,8 @@ cyclically.</p>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-encrypted-password/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-encrypted-password/" class="post-title-link" itemprop="url">247CTF - The Encrypted Password</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-02 20:15:42" itemprop="dateCreated datePublished" datetime="2026-03-02T20:15:42+08:00">2026-03-02</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-encrypted-password/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-encrypted-password/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="the-encrypted-password">The encrypted password</h1>
-<p>Challenge prompt:</p>
-<blockquote>
-<p>You won't find the admin's secret password in this binary. We even
-encrypted it with a secure one-time-pad. Can you still recover the
-password?</p>
-</blockquote>
-<h2 id="quick-dynamic-check-with-ltrace">1. Quick dynamic check with
-<code>ltrace</code></h2>
-<p><code>ltrace</code> shows the binary compares our input against a
-transformed string.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ltrace ./encrypted_password</span><br><span class="line">...</span><br><span class="line">puts(<span class="string">&quot;Enter the secret password:&quot;</span>)</span><br><span class="line">fgets(<span class="string">&quot;arst\\n&quot;</span>, 33, stdin)</span><br><span class="line">strcmp(<span class="string">&quot;arst\\n&quot;</span>, <span class="string">&quot;141c85ccfb2ae19d8d8c224c4e403dce&quot;</span>...)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>This already hints that the expected secret is a printable 32-byte
-string.</p>
-<h2 id="or-debug-in-debugger-pwndbg">2. Or debug in debugger
-(<code>pwndbg</code>)</h2>
-<p>Set a breakpoint at the <code>strcmp</code> call
-(<code>0x555555400930</code>) and run the program.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; b *0x555555400930</span><br><span class="line">pwndbg&gt; r</span><br><span class="line">...</span><br><span class="line">► 0x555555400930    call   strcmp@plt</span><br><span class="line">    s1: 0x7fffffffdf00 ◂— 0x500000000a</span><br><span class="line">    s2: 0x7fffffffded0 ◂— <span class="string">&#x27;141c85ccfb2ae19d8d8c224c4e403dce&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>At compare time, <code>s2</code> contains the final password
-candidate.</p>
-<h2 id="or-reverse-logic-in-ida">3. Or reverse logic in IDA</h2>
-<p>Relevant decompiled logic:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">strcpy</span>(s, <span class="string">&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span>);</span><br><span class="line">*(_QWORD *)s2 = <span class="number">0x5A53010106040309L</span>L;</span><br><span class="line">v8  = <span class="number">0x5C585354500A5B00L</span>L;</span><br><span class="line">v9  = <span class="number">0x555157570108520DL</span>L;</span><br><span class="line">v10 = <span class="number">0x5707530453040752L</span>L;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>(s); ++i)</span><br><span class="line">  s2[i] ^= s[i];</span><br><span class="line"></span><br><span class="line">fgets(s1, <span class="number">33</span>, <span class="built_in">stdin</span>);</span><br><span class="line"><span class="keyword">if</span> (!<span class="built_in">strcmp</span>(s1, s2))</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;You found the flag!\\n247CTF&#123;%s&#125;\\n&quot;</span>, s2);</span><br></pre></td></tr></table></figure>
-<p>So the binary builds <code>s2</code>, XORs it with <code>s</code>,
-then compares it against input.</p>
-<p>Reconstruct the secret with Python</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> p64, xor</span><br><span class="line"></span><br><span class="line">chunks = [</span><br><span class="line">    <span class="number">0x5A53010106040309</span>,</span><br><span class="line">    <span class="number">0x5C585354500A5B00</span>,</span><br><span class="line">    <span class="number">0x555157570108520D</span>,</span><br><span class="line">    <span class="number">0x5707530453040752</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">s2_bytes = <span class="string">b&quot;&quot;</span>.join(p64(chunk) <span class="keyword">for</span> chunk <span class="keyword">in</span> chunks)</span><br><span class="line">key = <span class="string">b&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span></span><br><span class="line">password = xor(s2_bytes, key)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;247CTF&#123;&#123;<span class="subst">&#123;password.decode()&#125;</span>&#125;&#125;&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{141c85ccfb2ae19d8d8c224c4e403dce}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-commutative-payload/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-commutative-payload/" class="post-title-link" itemprop="url">247CTF - Commutative Payload</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-commutative-payload/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-commutative-payload/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>We have a honey pot running on one of our internal networks. We
-received an alert today that the machine was compromised, but we can’t
-figure out what the attacker did. Can you find the flag hidden in the
-attacker's payload?</p>
-<p>我们在内部网络中运行了一个蜜罐。今天我们收到警报，显示该机器已被入侵，但我们无法确定攻击者做了什么。你能找到隐藏在攻击者有效载荷中的
-flag 吗？</p>
-<h3 id="network-traffic">Network Traffic</h3>
-<p>The provided logs show SMB (Server Message Block) traffic on port 445
-(<code>microsoft_ds</code>). The sequence of
-<code>SMBNegotiate_Request</code> and
-<code>SMB2_Negotiate_Protocol_Request</code> suggests an attempt to
-exploit an SMB vulnerability.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0001 Ether / IP / TCP 192.168.10.168:microsoft_ds &gt; 10.0.5.15:42799 SA / Padding</span><br><span class="line">0003 Ether / IP / TCP 10.0.5.15:42799 &gt; 192.168.10.168:microsoft_ds PA / NBTSession / SMB_Header / SMBNegotiate_Request</span><br><span class="line">...</span><br><span class="line">0203 Ether / IP / TCP 10.0.5.15:43947 &gt; 192.168.10.168:microsoft_ds PA / NBTSession / SMB2_Header / SMB2_Negotiate_Protocol_Request / Raw</span><br></pre></td></tr></table></figure>
-<h3 id="payload-extraction">Payload Extraction</h3>
-<p>Following the TCP stream and exporting the raw data with Wireshark,
-we get the following hex dump:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">❯ xxd a.raw</span><br><span class="line">...</span><br><span class="line">00000270: 0031 c941 e201 c3b9 8200 00c0 0f32 48bb  .1.A........2H..</span><br><span class="line">00000280: f80f d0ff ffff ffff 8953 0489 0348 8d05  .........S...H..</span><br><span class="line">00000290: 0a00 0000 4889 c248 c1ea 200f 30c3 0f01  ....H..H.. .0...</span><br><span class="line">000002a0: f865 4889 2425 1000 0000 6548 8b24 25a8  .eH.$%....eH.$%.</span><br><span class="line">...</span><br><span class="line">000007c0: 4d55 9dce ebc1 2620 2357 4052 6f23 7627  MU....&amp; <span class="comment">#W@Ro#v&#x27;</span></span><br><span class="line">000007d0: 2226 2277 7027 2122 232c 2075 2523 752d  <span class="string">&quot;&amp;&quot;</span>wp<span class="string">&#x27;!&quot;#, u%#u-</span></span><br><span class="line"><span class="string">...</span></span><br></pre></td></tr></table></figure>
-<p>The challenge name <strong>"Commutative Payload"</strong> hints at a
-commutative operation like XOR used for obfuscation.</p>
-<h2 id="solution">Solution</h2>
-<ol type="1">
-<li><strong>Extract Data</strong>: Save the raw payload from the
-Wireshark TCP stream.</li>
-<li><strong>CyberChef Analysis</strong>:
-<ul>
-<li>Use the <strong>XOR Brute Force</strong> operation.</li>
-<li><strong>Sample length</strong>: 10000.</li>
-<li><strong>Crib</strong>: <code>247CTF</code> (knowing the flag
-format).</li>
-</ul></li>
-<li><strong>Identification</strong>: When testing a key length of 2, the
-key <code>14 14</code> (effectively a 1-byte XOR with <code>0x14</code>)
-decrypts the payload to reveal the flag.</li>
-</ol>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{7b3626cd356784a17a9e49447356f229}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-more-the-merrier/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-more-the-merrier/" class="post-title-link" itemprop="url">247CTF - The More The Merrier</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-03-06 14:01:32" itemprop="dateModified" datetime="2026-03-06T14:01:32+08:00">2026-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/247CTF/247CTF-the-more-the-merrier/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/247CTF/247CTF-the-more-the-merrier/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="the-more-the-merrier">The More The Merrier</h1>
-<p>One byte is great. But what if you need more? Can you find the flag
-hidden in this binary?</p>
-<h2 id="analysis">Analysis</h2>
-<p>The challenge provides a 64-bit ELF executable. Checking its
-details:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file the_more_the_merrier</span><br><span class="line">the_more_the_merrier: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=0f750d638337391328fa7432dd362189de908c1e, stripped</span><br></pre></td></tr></table></figure>
-<p>Upon inspecting the binary's data section or its hex dump, we find
-the 247CTF flag hidden in the binary:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">00000000000006E0  01 00 02 00 00 00 00 00  32 00 00 00 34 00 00 00  ........2...4...</span><br><span class="line">00000000000006F0  37 00 00 00 43 00 00 00  54 00 00 00 46 00 00 00  7...C...T...F...</span><br><span class="line">0000000000000700  7B 00 00 00 36 00 00 00  64 00 00 00 66 00 00 00  &#123;...6...d...f...</span><br><span class="line">0000000000000710  32 00 00 00 31 00 00 00  35 00 00 00 65 00 00 00  2...1...5...e...</span><br><span class="line">0000000000000720  62 00 00 00 33 00 00 00  63 00 00 00 63 00 00 00  b...3...c...c...</span><br><span class="line">0000000000000730  37 00 00 00 33 00 00 00  34 00 00 00 30 00 00 00  7...3...4...0...</span><br><span class="line">0000000000000740  37 00 00 00 32 00 00 00  36 00 00 00 37 00 00 00  7...2...6...7...</span><br><span class="line">0000000000000750  30 00 00 00 33 00 00 00  31 00 00 00 61 00 00 00  0...3...1...a...</span><br><span class="line">0000000000000760  31 00 00 00 35 00 00 00  62 00 00 00 30 00 00 00  1...5...b...0...</span><br><span class="line">0000000000000770  61 00 00 00 62 00 00 00  33 00 00 00 36 00 00 00  a...b...3...6...</span><br><span class="line">0000000000000780  63 00 00 00 7D 00 00 00  00 00 00 00 4E 6F 74 68  c...&#125;.......Noth</span><br></pre></td></tr></table></figure>
-<h2 id="solution">Solution</h2>
-<p>Each character of the flag is stored as a 4-byte little-endian
-integer. For example: - <code>32 00 00 00</code> -&gt; <code>0x32</code>
--&gt; <code>'2'</code> - <code>34 00 00 00</code> -&gt;
-<code>0x34</code> -&gt; <code>'4'</code> - <code>37 00 00 00</code>
--&gt; <code>0x37</code> -&gt; <code>'7'</code> -
-<code>43 00 00 00</code> -&gt; <code>0x43</code> -&gt;
-<code>'C'</code></p>
-<p>We can extract the flag by reading the first byte of each 4-byte
-chunk.</p>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{6df215eb3cc73407267031a15b0ab36c}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/20/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/20/">20</a><span class="page-number current">21</span><a class="page-number" href="/page/22/">22</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/22/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/20/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/20/">20</a><span class="page-number current">21</span><a class="page-number" href="/page/22/">22</a><span class="space">&hellip;</span><a class="page-number" href="/page/32/">32</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/22/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
