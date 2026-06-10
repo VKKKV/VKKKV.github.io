@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">314</span>
+          <span class="site-state-item-count">320</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">207</span>
+        <span class="site-state-item-count">206</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,232 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-caterpillar/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-caterpillar/" class="post-title-link" itemprop="url">WeChall - Training - Caterpillar</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 19:47:33 / Modified: 19:49:46" itemprop="dateCreated datePublished" datetime="2026-06-10T19:47:33+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-caterpillar/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-caterpillar/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>I have drawn a picture of a caterpillar and hid some text in it. I am
+sure you can figure it out, as it is not too hard :)</p>
+<h3 id="solution">Solution</h3>
+<p>下载 <code>caterpillar.png</code>（220x55, RGBA）</p>
+<p>标准 stegano 分析（zsteg, bit plane 扫描, LSB/MSB 全通道）无结果。PNG
+只有 IHDR/sRGB/bKGD/pHYs/IDAT/IEND 六个 chunk，无附加数据。</p>
+<p>数据不在 RGB 裸值里，而是藏在<strong>其他色彩空间的 Hue
+值</strong>中。</p>
+<p>RGB 是加色混色——R, G, B 各 0-255。毛虫的主色是黄绿，以
+RGB(135,194,41) 为例：</p>
+<ul>
+<li>R=135：不在可打印 ASCII 范围（32-126）外，chr(135) 是扩展字符</li>
+<li>G=194：同上，超出范围</li>
+<li>B=41：chr(41) = <code>)</code>，无意义</li>
+</ul>
+<p>直接用 RGB 值当 ASCII 只能得到一堆乱码。</p>
+<h4 id="色彩空间可以互相转换">色彩空间可以互相转换</h4>
+<p>RGB 和 HSV
+描述的是<strong>同一个颜色</strong>，只是坐标系不同——就像经纬度
+(116.4°E, 39.9°N) 和北京市地址是同一地点。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> colorsys</span><br><span class="line"></span><br><span class="line">r, g, b = <span class="number">135</span>, <span class="number">194</span>, <span class="number">41</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># RGB -&gt; HSV</span></span><br><span class="line">h, s, v = colorsys.rgb_to_hsv(r/<span class="number">255</span>, g/<span class="number">255</span>, b/<span class="number">255</span>)</span><br><span class="line"><span class="comment"># h = 83° (色相角度), s = 79% (饱和度), v = 76% (明度)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># HSV -&gt; RGB (可逆)</span></span><br><span class="line">r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)</span><br><span class="line"><span class="comment"># (r2,g2,b2) == (135,194,41)  # 无损还原</span></span><br></pre></td></tr></table></figure>
+<p>转换公式是解析的，无精度损失。</p>
+<h4 id="解法">解法</h4>
+<p>毛虫的 8 个主 body segment，每个用了一种特定的颜色。RGB→HSV
+后，H（色相角度）落在可打印 ASCII 范围内：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">segment 1 (x=  0- 22)  #e1f0c9    H=83° -&gt; &#x27;S&#x27;</span><br><span class="line">segment 2 (x= 23- 46)  #e8f4d7    H=85° -&gt; &#x27;U&#x27;</span><br><span class="line">腿阴影   (x= 47- 69)  #6e7d4d    H=79° -&gt; &#x27;O&#x27;</span><br><span class="line">腿阴影   (x= 70- 92)  #465512    H=73° -&gt; &#x27;I&#x27;</span><br><span class="line">segment 3 (x= 93-115)  #a9bb27    H=67° -&gt; &#x27;C&#x27;</span><br><span class="line">segment 4 (x=116-140)  #557315    H=79° -&gt; &#x27;O&#x27;</span><br><span class="line">segment 5 (x=141-165)  #7dad30    H=83° -&gt; &#x27;S&#x27;</span><br><span class="line">segment 6 (x=166-187)  #eaf4d0    H=77° -&gt; &#x27;M&#x27;</span><br><span class="line">头部     (x=188-219)  #e06478    H=350° -&gt; 不可打印 (结束标记)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">import</span> colorsys</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> Counter</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;caterpillar.png&#x27;</span>).convert(<span class="string">&#x27;RGBA&#x27;</span>)</span><br><span class="line">w, h = img.size</span><br><span class="line"></span><br><span class="line"><span class="comment"># 逐列取最常见的非白色 Hue</span></span><br><span class="line">x_hues = &#123;&#125;</span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(w):</span><br><span class="line">    hues = []</span><br><span class="line">    <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(h):</span><br><span class="line">        r, g, b, a = img.getpixel((x, y))</span><br><span class="line">        <span class="keyword">if</span> (r, g, b) == (<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        h_val, _, _ = colorsys.rgb_to_hsv(r/<span class="number">255</span>, g/<span class="number">255</span>, b/<span class="number">255</span>)</span><br><span class="line">        hues.append(<span class="built_in">round</span>(h_val * <span class="number">360</span>))</span><br><span class="line">    <span class="keyword">if</span> hues:</span><br><span class="line">        x_hues[x] = Counter(hues).most_common(<span class="number">1</span>)[<span class="number">0</span>][<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 合并连续相同 Hue 为段，只保留稳定段（&gt;=10 列宽）</span></span><br><span class="line">result = []</span><br><span class="line">run_h, run_start, run_len = <span class="literal">None</span>, <span class="literal">None</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(w):</span><br><span class="line">    h = x_hues.get(x)</span><br><span class="line">    <span class="keyword">if</span> h == run_h:</span><br><span class="line">        run_len += <span class="number">1</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">if</span> run_len &gt;= <span class="number">10</span> <span class="keyword">and</span> <span class="number">32</span> &lt;= run_h &lt;= <span class="number">126</span>:</span><br><span class="line">            result.append(<span class="built_in">chr</span>(run_h))</span><br><span class="line">        run_h, run_start, run_len = h, x, <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> run_len &gt;= <span class="number">10</span> <span class="keyword">and</span> <span class="number">32</span> &lt;= run_h &lt;= <span class="number">126</span>:</span><br><span class="line">    result.append(<span class="built_in">chr</span>(run_h))</span><br><span class="line"></span><br><span class="line">decoded = <span class="string">&#x27;&#x27;</span>.join(result)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Decoded Hue sequence: <span class="subst">&#123;decoded&#125;</span>&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Answer (last word):   <span class="subst">&#123;decoded.split()[-<span class="number">1</span>]&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">COLOR-SHEMES</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-bacon-returns/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-bacon-returns/" class="post-title-link" itemprop="url">WeChall - Training - Bacon Returns</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 18:46:47 / Modified: 18:46:49" itemprop="dateCreated datePublished" datetime="2026-06-10T18:46:47+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-bacon-returns/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-bacon-returns/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Mr. Bacon is back with an advanced Bacon cipher. The encoder uses a
+non-standard mapping where the case pattern depends on the letter's
+position in the alphabet (a-m vs n-z), not just uppercase/lowercase.</p>
+<h3 id="solution">Solution</h3>
+<p>从 GitHub 源码 (<code>gizmore/gwf3</code>) 分析编码器逻辑：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// bit=0: letter a-m → UPPERCASE (match), n-z → lowercase (skip)</span></span><br><span class="line"><span class="comment">// bit=1: letter n-z → UPPERCASE (match), a-m → lowercase (skip)</span></span><br></pre></td></tr></table></figure>
+<p>解码方法： 1. 遍历 carrier 文本，只看 UPPERCASE 字母 2.
+每个大写字母提取 1 bit：a-m→0, n-z→1 3.
+小写字母是噪声（编码器跳过的位置），忽略 4. 拼接 bit stream，每 5 bit
+一组查 26 字母表（A=00000..Z=11001） 5. X=space</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">letters = [c <span class="keyword">for</span> c <span class="keyword">in</span> encoded_text <span class="keyword">if</span> c.isalpha()]</span><br><span class="line">bits = <span class="string">&#x27;&#x27;</span>.join(<span class="string">&#x27;0&#x27;</span> <span class="keyword">if</span> c.lower() &lt; <span class="string">&#x27;n&#x27;</span> <span class="keyword">else</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">for</span> c <span class="keyword">in</span> letters <span class="keyword">if</span> c.isupper())</span><br><span class="line">answer = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(bits[i:i+<span class="number">5</span>], <span class="number">2</span>) + <span class="number">65</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">5</span>))</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">OCGMBBNGDAAM</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1625,241 +1851,6 @@ stream。</p>
 <blockquote>
 <p>session-bound: reverse bits per byte, answer varies</p>
 </blockquote>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-no-action/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-no-action/" class="post-title-link" itemprop="url">WeChall - No Action</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 12:57:51 / Modified: 12:57:52" itemprop="dateCreated datePublished" datetime="2026-06-10T12:57:51+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-no-action/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-no-action/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Hello hacker, In this challenge you will find a little form, but
-where does it sends it's data too?! Good Luck!</p>
-<ul>
-<li>gizmore</li>
-</ul>
-</blockquote>
-<p>页面上只有一个小表单。题目问的是：这个表单到底把数据提交到哪里？</p>
-<h3 id="solution">Solution</h3>
-<p>核心是看 HTML
-source，而不是看渲染后的表单。表单本身没有明显按钮动作，真正线索在
-<code>action</code>。</p>
-<p>源码里可以看到类似结构：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;indice.php&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>因此表单提交目标不是当前题目页，也不是 <code>?</code>，而是隐藏在
-action 属性里的 <code>indice.php</code>。</p>
-<p>答案就是表单提交到的文件名：</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">indice.php</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-2021-christmas-hippety/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-2021-christmas-hippety/" class="post-title-link" itemprop="url">WeChall - 2021 Christmas Hippety</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 12:54:26 / Modified: 12:54:28" itemprop="dateCreated datePublished" datetime="2026-06-10T12:54:26+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-2021-christmas-hippety/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-2021-christmas-hippety/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p><strong>2021 Christmas Hippety (Stegano, Javascript)</strong> --
-score: 1</p>
-<blockquote>
-<p>The Easter Bunny is angry, because he hates winter and has to wait so
-long for easter season and the sun. Can you calm him down? We wish you a
-merry Christmas 2021!</p>
-</blockquote>
-<h3 id="solution">Solution</h3>
-<p><strong>Step 1: 查看页面源码</strong></p>
-<p>页面描述中 "angry" 是一个可点击链接。HTML 源码揭示了两层意图：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">The <span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;/profile/EasterBunny&quot;</span>&gt;</span>Easter Bunny<span class="tag">&lt;/<span class="name">a</span>&gt;</span> is</span><br><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;hoppety.php&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;this.href=&#x27;hop.php&#x27;&quot;</span>&gt;</span>angry<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li><code>href</code> 原本指向 <code>hoppety.php</code></li>
-<li><code>onclick</code> 在点击瞬间将目标改为
-<code>hop.php</code>，隐藏了真实路径</li>
-</ul>
-<p><strong>Step 2: 直接访问 hoppety.php</strong></p>
-<p>绕过 JS 拦截，直接请求 <code>hoppety.php</code>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s https://www.wechall.net/en/challenge/christmas2021/hippety/hoppety.php</span><br></pre></td></tr></table></figure>
-<p>返回的 301 页面中，响应体包含明文密码，同时还有另一层 JS
-重定向阻止普通访问：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"><span class="variable language_">window</span>.<span class="property">location</span>.<span class="title function_">replace</span>(<span class="string">&#x27;hop.php&#x27;</span>);</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span>HippetyHoppetyConfusion<span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>这就是 <strong>Stegano</strong>
-标签的含义：信息隐藏在页面响应体中，不被用户直接看到。而
-<strong>Javascript</strong>
-标签则对应了两层误导机制（<code>onclick</code> 改 href +
-<code>window.location.replace</code> 自动跳转）。</p>
-<p><code>hop.php</code> 最终只展示一个困惑兔子的 GIF
-动画——它是纯粹的诱饵。</p>
-<p><strong>Step 3: 提交答案</strong></p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">HippetyHoppetyConfusion</span></span>
 
       
     </div>
