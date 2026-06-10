@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">313</span>
+          <span class="site-state-item-count">314</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,143 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/ritsec2026/ritsec2026-ocean-wildlife/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/ritsec2026/ritsec2026-ocean-wildlife/" class="post-title-link" itemprop="url">RITSEC CTF 2026 - Ocean Wildlife</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-07 11:25:07 / Modified: 11:42:49" itemprop="dateCreated datePublished" datetime="2026-04-07T11:25:07+08:00">2026-04-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/ritsec2026/ritsec2026-ocean-wildlife/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/ritsec2026/ritsec2026-ocean-wildlife/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>You have recieved a message in a bottle, saying something about the
+strange behavior of sea creatures. I wonder what that could be
+about?</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides a <code>rosbag2</code> recording consisting of
+a <code>metadata.yaml</code> file and a SQLite database
+<code>mystery_message_0.db3</code>. The metadata indicates that the
+recording contains messages for several topics, most notably
+<code>/draw_commands</code>.</p>
+<h3 id="database-inspection">Database Inspection</h3>
+<p>Opening the database with <code>sqlite3</code>, we find several
+tables, including <code>topics</code> and <code>messages</code>. The
+<code>topics</code> table reveals that the <code>/draw_commands</code>
+topic uses the <code>std_msgs/msg/String</code> type and contains
+JSON-formatted instructions.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> topics <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;/draw_commands&#x27;</span>;</span><br><span class="line"><span class="comment">-- topic_id 6, type std_msgs/msg/String</span></span><br></pre></td></tr></table></figure>
+<h3 id="data-extraction">Data Extraction</h3>
+<p>The messages in the <code>messages</code> table are stored in CDR
+(Common Data Representation) format. For
+<code>std_msgs/msg/String</code>, the actual string data starts after an
+8-byte header (4 bytes CDR header + 4 bytes string length).</p>
+<p>By extracting and parsing these strings, we find two types of
+commands:</p>
+<ul>
+<li><code>&#123;"cmd": "pen", "off": 0/1, ...&#125;</code>: Controls whether the
+turtle is drawing.</li>
+<li><code>&#123;"cmd": "teleport", "x": ..., "y": ..., "theta": ...&#125;</code>:
+Moves the turtle to specific coordinates.</li>
+</ul>
+<h3 id="visualization">Visualization</h3>
+<p>Using a Python script with <code>matplotlib</code>, we can
+reconstruct the path drawn by the turtle. By treating
+<code>teleport</code> as a movement and <code>pen</code> as the draw
+state, we can plot the lines.</p>
+<p>The coordinates reveal two distinct rows of characters:</p>
+<ul>
+<li><strong>Top Row (Y ≈ 6.0):</strong> Letters forming
+<code>RS&#123;f0ll0w_th3_</code></li>
+<li><strong>Bottom Row (Y ≈ 4.7):</strong> Letters forming
+<code>5ea_Turtles&#125;</code></li>
+</ul>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">RS{f0ll0w_th3_5ea_Turtles}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1492,125 +1629,6 @@ decode them to recover the secret payload:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="comment"># Concatenated subdomains</span></span><br><span class="line">encoded_payload = <span class="string">&quot;NNQXG2DJINKEM63ENZZV6ZLYMZUWY5DSMF2GS33OL5UXGX3TNZSWC23ZPU&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Base32 decoding (adding padding if necessary)</span></span><br><span class="line">decoded = base64.b32decode(encoded_payload + <span class="string">&quot;======&quot;</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded flag: <span class="subst">&#123;decoded&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{dns_exfiltration_is_sneaky}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-mid-forensics/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/kashiCTF2026/kashictf2026-mid-forensics/" class="post-title-link" itemprop="url">kashiCTF 2026 - Mid Forensics</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-04 11:14:52 / Modified: 12:11:09" itemprop="dateCreated datePublished" datetime="2026-04-04T11:14:52+08:00">2026-04-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-mid-forensics/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-mid-forensics/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>A forensics challenge involving network traffic analysis and IP
-Time-to-Live (TTL) steganography.</p>
-<h3 id="challenge-description">Challenge Description</h3>
-<blockquote>
-<p>A packet capture was collected from an internal network segment
-during routine monitoring. No alerts were triggered at the time, and the
-traffic appears largely normal. Your task is to analyze the capture and
-determine whether any meaningful information can be recovered.</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The provided file <code>ttl_stego.pcap</code> contains a series of
-ICMP Echo (ping) requests. While the payloads appear standard, the IP
-Time-to-Live (TTL) values fluctuate between <strong>64</strong> and
-<strong>65</strong>, suggesting binary data is encoded in these
-variations.</p>
-<p>Using <code>tshark</code> to inspect the TTL values:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tshark -r ttl_stego.pcap -c 10 -T fields -e ip.ttl</span><br><span class="line"><span class="comment"># Output: 64, 65, 65, 64, 65, 64, 65, 65, 64, 65...</span></span><br></pre></td></tr></table></figure>
-<h3 id="extraction-decoding">Extraction &amp; Decoding</h3>
-<p>The TTL values can be mapped to binary bits: - <strong>64</strong>
-<span class="math inline">\(\rightarrow\)</span> <code>0</code> -
-<strong>65</strong> <span class="math inline">\(\rightarrow\)</span>
-<code>1</code></p>
-<p>We can extract the full sequence of TTLs and decode them using a
-Python script:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract TTLs using: tshark -r ttl_stego.pcap -T fields -e ip.ttl &gt; ttls.txt</span></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;ttls.txt&#x27;</span>, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    ttls = [<span class="built_in">int</span>(line.strip()) <span class="keyword">for</span> line <span class="keyword">in</span> f <span class="keyword">if</span> line.strip()]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert TTLs to bits</span></span><br><span class="line">bits = <span class="string">&quot;&quot;</span>.join([<span class="string">&#x27;0&#x27;</span> <span class="keyword">if</span> t == <span class="number">64</span> <span class="keyword">else</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">for</span> t <span class="keyword">in</span> ttls])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert bits to characters (8 bits per byte)</span></span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>):</span><br><span class="line">    byte = bits[i:i+<span class="number">8</span>]</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(byte) == <span class="number">8</span>:</span><br><span class="line">        flag += <span class="built_in">chr</span>(<span class="built_in">int</span>(byte, <span class="number">2</span>))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Decoded message: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{ttl_stego_is_evil}</span></span>
 
       
     </div>

