@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">320</span>
+          <span class="site-state-item-count">321</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">207</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,145 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-broadcast/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/kashiCTF2026/kashictf2026-broadcast/" class="post-title-link" itemprop="url">kashiCTF 2026 - Broadcast</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-06 17:46:03 / Modified: 17:50:16" itemprop="dateCreated datePublished" datetime="2026-04-06T17:46:03+08:00">2026-04-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-broadcast/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-broadcast/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>We sent the same announcement to three servers for redundancy. Each
+server has its own RSA key. Intercept all three — maybe you can piece
+something together.</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provides an <code>output.txt</code> containing an
+exponent <span class="math inline">\(e=3\)</span>, three moduli (<span
+class="math inline">\(n1, n2, n3\)</span>), and three ciphertexts (<span
+class="math inline">\(c1, c2, c3\)</span>). By examining the data, we
+notice:</p>
+<ol type="1">
+<li><strong>Low Exponent:</strong> <span class="math inline">\(e =
+3\)</span> is very small.</li>
+<li><strong>Identical Ciphertexts:</strong> <span
+class="math inline">\(c1 = c2 = c3\)</span>. This means the raw message
+<span class="math inline">\(M\)</span> was not padded differently for
+each server.</li>
+<li><strong>Magnitude of <span
+class="math inline">\(c\)</span>:</strong> The ciphertext <span
+class="math inline">\(c\)</span> is significantly smaller than any of
+the moduli <span class="math inline">\(n\)</span>.</li>
+</ol>
+<p>In RSA, the encryption process is <span class="math inline">\(c = M^e
+\pmod n\)</span>. Usually, <span class="math inline">\(M^e\)</span> is
+much larger than <span class="math inline">\(n\)</span>. However, if
+<span class="math inline">\(M^e &lt; n\)</span>, then the modulo
+operation has no effect, and <span class="math inline">\(c =
+M^e\)</span>.</p>
+<h3 id="solution">Solution</h3>
+<p>Since <span class="math inline">\(c &lt; n_i\)</span> and <span
+class="math inline">\(e=3\)</span>, the message <span
+class="math inline">\(M\)</span> can be recovered simply by calculating
+the integer cube root of <span class="math inline">\(c\)</span>: <span
+class="math display">\[M = \sqrt[3]{c}\]</span></p>
+<h3 id="implementation">Implementation</h3>
+<p>Using Python and the <code>gmpy2</code> library, we can solve for
+<span class="math inline">\(M\)</span>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> gmpy2</span><br><span class="line"><span class="keyword">from</span> binascii <span class="keyword">import</span> unhexlify</span><br><span class="line"></span><br><span class="line"><span class="comment"># Intercepted ciphertext</span></span><br><span class="line">c = <span class="number">475436441896018898725156479190091126537849994697426945980826369000641892902004477923335055269088235139492237640527487698088281484953901383579636883543216552932099156009006828723690550706326538736801225046068870773990108130474408522838234755277972911893744937243892927414355347438993698991261629557719442242861719577879055371620865465785392597257968132649494474946507819896785671106833645551504301840437212737125</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Calculate the cubic root</span></span><br><span class="line">m, exact = gmpy2.iroot(c, <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> exact:</span><br><span class="line">    <span class="comment"># Convert integer to hex, then to ASCII</span></span><br><span class="line">    flag = unhexlify(<span class="built_in">hex</span>(m)[<span class="number">2</span>:]).decode()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Flag: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p><em>Note: This challenge is a simplified version of Håstad's
+Broadcast Attack. While Håstad's attack typically uses the Chinese
+Remainder Theorem (CRT) to solve for <span
+class="math inline">\(M^e\)</span> when <span class="math inline">\(M^e
+&gt; n_i\)</span>, the small size of the message relative to the key
+size here allowed for a direct cubic root calculation.</em></p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{h4st4d_s4ys_sm4ll_3xp0n3nts_k1ll_RSA_br04dc4sts}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1423,112 +1562,8 @@ part hidden inside a comment: <figure class="highlight html"><table><tr><td clas
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/kashiCTF2026/kashictf2026-sanity/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/kashiCTF2026/kashictf2026-sanity/" class="post-title-link" itemprop="url">kashiCTF 2026 - Sanity</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-04 11:14:52 / Modified: 12:03:32" itemprop="dateCreated datePublished" datetime="2026-04-04T11:14:52+08:00">2026-04-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/kashiCTF2026/kashictf2026-sanity/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/kashiCTF2026/kashictf2026-sanity/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>The flag was hidden in the <strong>#rules</strong> channel of the
-kashiCTF Discord server.</p>
-<h3 id="solution">Solution</h3>
-<p>The following encoded string was found:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Tk5RWEcyREpJTktFTTYzVU5CVVhHWDNYTUZaVjYzVFBPUlBXUVlMU01SNlFVPT09Cg==</span><br></pre></td></tr></table></figure>
-<ol type="1">
-<li><strong>Base64 Decoding</strong>: Decoding the string once results
-in a Base32-encoded string. <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">NNQXG2DJINKEM63UNBUXGX3XMFZV63TPORPWQYLSMR6QU===</span><br></pre></td></tr></table></figure></li>
-<li><strong>Base32 Decoding</strong>: Decoding the resulting string</li>
-</ol>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kashiCTF{this_was_not_hard}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/14/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/14/">14</a><span class="page-number current">15</span><a class="page-number" href="/page/16/">16</a><span class="space">&hellip;</span><a class="page-number" href="/page/32/">32</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/16/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/14/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/14/">14</a><span class="page-number current">15</span><a class="page-number" href="/page/16/">16</a><span class="space">&hellip;</span><a class="page-number" href="/page/33/">33</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/16/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
