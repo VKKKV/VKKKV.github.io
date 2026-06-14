@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">337</span>
+          <span class="site-state-item-count">339</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -376,6 +376,325 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-tracks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-tracks/" class="post-title-link" itemprop="url">WeChall - Tracks</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-06 15:25:38 / Modified: 15:25:40" itemprop="dateCreated datePublished" datetime="2026-06-06T15:25:38+08:00">2026-06-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-tracks/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-tracks/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>一个投票系统，需要投至少 2 次票。没有 IP 检查，但使用 HTTP
+缓存机制（ETag/VOTE cookie）防止重复投票。</p>
+<h3 id="solution">Solution</h3>
+<p>投票页面 <code>votes.php</code> 用 HTTP
+缓存头做投票去重——这不是缓存的典型用法，但原理相同:</p>
+<ol type="1">
+<li><strong>VOTE cookie</strong>: 服务器设置
+<code>VOTE=&lt;value&gt;</code> cookie 标记已投票</li>
+<li><strong>ETag / If-None-Match</strong>: 服务器返回 <code>ETag</code>
+头，浏览器后续请求带 <code>If-None-Match</code> 验证资源未变</li>
+</ol>
+<p>两层缺一不可: 没有 cookie 服务器不知道你投过票；没有 If-None-Match
+服务器认为是新的投票请求。</p>
+<p>第一次投票成功后，服务器返回 "Please press the vote button
+again"。关键在于第二次请求必须同时带上第一次响应的 VOTE cookie 和 ETag
+值。</p>
+<p>ETag 值带 <code>W/</code> 前缀表示 weak
+validator（语义等价即可，不要求字节一致），但 curl 传 If-None-Match
+时要带这个前缀。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 第一次投票 - 捕获 ETag 和 VOTE cookie</span></span><br><span class="line">$ curl -v -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span> 2&gt;&amp;1 | grep -i <span class="string">&#x27;etag\|set-cookie&#x27;</span></span><br><span class="line"><span class="comment"># ETag: W/22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"><span class="comment"># Set-Cookie: VOTE=22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 第二次投票 - 带上 VOTE cookie 和 If-None-Match</span></span><br><span class="line">$ curl -s -b <span class="string">&#x27;WC=...; VOTE=22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;If-None-Match: W/22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span></span><br><span class="line"><span class="comment"># Vote registered!</span></span><br><span class="line"><span class="comment"># Your answer is correct</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-connect-the-dots/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-connect-the-dots/" class="post-title-link" itemprop="url">WeChall - Connect the Dots</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-06 14:37:02 / Modified: 14:37:47" itemprop="dateCreated datePublished" datetime="2026-06-06T14:37:02+08:00">2026-06-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-connect-the-dots/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-connect-the-dots/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Connect the Dots (Stegano) This is a stegano challenge from galen.
+Can you see the solution?</p>
+</blockquote>
+<p>点阵隐写挑战。下载图片后需要识别点阵图案代表的含义。</p>
+<h3 id="solution">Solution</h3>
+<p>下载 <code>dots.jpg</code>（288×96 JPEG，Adobe Photoshop CS
+制作）。</p>
+<p>图片由大量黑色圆点组成，分布在白色背景上。仔细观察可以发现点阵排列非常规律：</p>
+<p>顶部的 18×3 点阵，每 2 列一组可以形成 3 行 2 列的 <strong>Braille
+盲文"方"（cell）</strong>，共计 9 方。</p>
+<h4 id="盲文解码">盲文解码</h4>
+<p>英文一级盲文字母表（Grade 1 English Braille）：</p>
+<table>
+<thead>
+<tr>
+<th>字母</th>
+<th>点位</th>
+<th>字母</th>
+<th>点位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a</td>
+<td>1</td>
+<td>n</td>
+<td>1,3,4,5</td>
+</tr>
+<tr>
+<td>b</td>
+<td>1,2</td>
+<td>o</td>
+<td>1,3,5</td>
+</tr>
+<tr>
+<td>c</td>
+<td>1,4</td>
+<td>p</td>
+<td>1,2,3,4</td>
+</tr>
+<tr>
+<td>d</td>
+<td>1,4,5</td>
+<td>q</td>
+<td>1,2,3,4,5</td>
+</tr>
+<tr>
+<td>e</td>
+<td>1,5</td>
+<td>r</td>
+<td>1,2,3,5</td>
+</tr>
+<tr>
+<td>f</td>
+<td>1,2,4</td>
+<td>s</td>
+<td>2,3,4</td>
+</tr>
+<tr>
+<td>g</td>
+<td>1,2,4,5</td>
+<td>t</td>
+<td>2,3,4,5</td>
+</tr>
+<tr>
+<td>h</td>
+<td>1,2,5</td>
+<td>u</td>
+<td>1,3,6</td>
+</tr>
+<tr>
+<td>i</td>
+<td>2,4</td>
+<td>v</td>
+<td>1,2,3,6</td>
+</tr>
+<tr>
+<td>j</td>
+<td>2,4,5</td>
+<td>w</td>
+<td>2,4,5,6</td>
+</tr>
+<tr>
+<td>k</td>
+<td>1,3</td>
+<td>x</td>
+<td>1,3,4,6</td>
+</tr>
+<tr>
+<td>l</td>
+<td>1,2,3</td>
+<td>y</td>
+<td>1,3,4,5,6</td>
+</tr>
+<tr>
+<td>m</td>
+<td>1,3,4</td>
+<td>z</td>
+<td>1,3,5,6</td>
+</tr>
+</tbody>
+</table>
+<p>6 点盲文结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">列1  列2</span><br><span class="line">●    ●  ← 行1 (点位 1, 4)</span><br><span class="line">●    ●  ← 行2 (点位 2, 5)</span><br><span class="line">●    ●  ← 行3 (点位 3, 6)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>左侧从上到下: 点 1, 2, 3</li>
+<li>右侧从上到下: 点 4, 5, 6</li>
+<li>凸起点 = "raised" (on), 平点 = "off"</li>
+</ul>
+<p>对照英文一级盲文（Grade 1 English Braille）解码每方中的凸起点位：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Cell 1: dots 2,4,5,6 → t</span><br><span class="line">Cell 2: dots 1,2,5   → h</span><br><span class="line">Cell 3: dots 1,5     → e</span><br><span class="line">Cell 4: dots 2,3,4   → s</span><br><span class="line">Cell 5: dots 1,3,5   → o</span><br><span class="line">Cell 6: dots 1,2,3   → l</span><br><span class="line">Cell 7: dots 1,3,6   → u</span><br><span class="line">Cell 8: dots 2,3,4,5 → t</span><br><span class="line">Cell 9: dots 2,4     → i</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">skunk</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1349,231 +1668,6 @@ NAT/VPN 后面没有公网 IP，就无法直接验证。</p>
 <p>解决方案: 在一台有公网 IP 的服务器上（VPS）搭建 Web
 服务，从该服务器登录 WeChall 并提交。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 在公网服务器上创建文件（USER 替换为 challenge 页面给你的值）</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /tmp/&lt;USER&gt;</span><br><span class="line"><span class="built_in">echo</span> -n <span class="string">&#x27;My name is &lt;USER&gt; and iChall.&#x27;</span> &gt; /tmp/&lt;USER&gt;/&lt;USER&gt;.html</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 启动 HTTP 服务器</span></span><br><span class="line"><span class="built_in">cd</span> /tmp &amp;&amp; python3 -m http.server &lt;PORT&gt; &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 用 Python 从服务器登录 WeChall 并提交端口</span></span><br><span class="line">python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import urllib.request, urllib.parse, http.cookiejar</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">cj = http.cookiejar.MozillaCookieJar()</span></span><br><span class="line"><span class="string">opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))</span></span><br><span class="line"><span class="string">opener.addheaders = [(&#x27;User-Agent&#x27;, &#x27;Mozilla/5.0&#x27;)]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Login (填入自己的 WeChall 账号)</span></span><br><span class="line"><span class="string">opener.open(&#x27;https://www.wechall.net/en/login&#x27;, timeout=30)</span></span><br><span class="line"><span class="string">data = urllib.parse.urlencode(&#123;&#x27;username&#x27;:&#x27;&lt;WC_USER&gt;&#x27;,&#x27;password&#x27;:&#x27;&lt;WC_PASS&gt;&#x27;,&#x27;login&#x27;:&#x27;Login&#x27;&#125;).encode()</span></span><br><span class="line"><span class="string">opener.open(urllib.request.Request(&#x27;https://www.wechall.net/en/login&#x27;, data=data), timeout=30)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Submit port</span></span><br><span class="line"><span class="string">data = urllib.parse.urlencode(&#123;&#x27;port&#x27;:&#x27;&lt;PORT&gt;&#x27;,&#x27;go&#x27;:&#x27;I have set it up. Please check my server.&#x27;&#125;).encode()</span></span><br><span class="line"><span class="string">opener.open(urllib.request.Request(&#x27;https://www.wechall.net/en/challenge/training/www/basic/index.php&#x27;, data=data), timeout=30)</span></span><br><span class="line"><span class="string">&quot;</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-zebra/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-zebra/" class="post-title-link" itemprop="url">WeChall - Zebra</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-05 11:50:00 / Modified: 11:48:31" itemprop="dateCreated datePublished" datetime="2026-06-05T11:50:00+08:00">2026-06-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-zebra/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-zebra/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Help! A zebra escaped from its enclosure. But where is it now?</p>
-</blockquote>
-<p>一张 PNG
-图片（斑马），斑马身上的条纹实际上是一个一维条码（barcode），但条码的条纹"越狱"了——bars
-没有延伸到应有的边界。</p>
-<h3 id="solution">Solution</h3>
-<p>条码的黑色条纹只在斑马身上，没有延伸到上下边界（"escaped from its
-enclosure"），所以 <code>zbarimg</code> 等工具直接解码会失败。</p>
-<p>第一步，提取斑马条纹区域。用 Python
-垂直平均条纹区域，再按阈值二值化，模拟"补全"条纹的效果：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;zebra.png&#x27;</span>)</span><br><span class="line">arr = np.array(img)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 取条纹密集区域 (y=46~258)</span></span><br><span class="line">region = arr[<span class="number">46</span>:<span class="number">258</span>, :, :<span class="number">3</span>].mean(axis=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 每列判断：若超过 40% 像素是暗色，则该列算黑条</span></span><br><span class="line">col_dark = np.mean(region &lt; <span class="number">128</span>, axis=<span class="number">0</span>) &gt; <span class="number">0.4</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成条码图像</span></span><br><span class="line">barcode = np.ones((<span class="number">100</span>, <span class="built_in">len</span>(col_dark) + <span class="number">40</span>), dtype=np.uint8) * <span class="number">255</span></span><br><span class="line">barcode[:, <span class="number">20</span>:-<span class="number">20</span>] = (<span class="number">1</span> - col_dark.astype(np.uint8)) * <span class="number">255</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 放大以使解码器识别</span></span><br><span class="line">h, w = barcode.shape</span><br><span class="line">big = np.repeat(np.repeat(barcode, <span class="number">4</span>, axis=<span class="number">0</span>), <span class="number">2</span>, axis=<span class="number">1</span>)</span><br><span class="line">Image.fromarray(big).save(<span class="string">&#x27;zebra_fixed.png&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p>然后用 <code>zbarimg</code> 解码：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ zbarimg -S*.<span class="built_in">enable</span> zebra_fixed.png</span><br><span class="line">QR-Code:The answer is saFFari</span><br></pre></td></tr></table></figure>
-<p>关键词就是 <code>saFFari</code>（斑马跑到 Safari 上了 🦓）。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">saFFari</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-baconian/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-training-baconian/" class="post-title-link" itemprop="url">WeChall - Training - Baconian</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-05 11:33:32 / Modified: 11:38:35" itemprop="dateCreated datePublished" datetime="2026-06-05T11:33:32+08:00">2026-06-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-training-baconian/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-baconian/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Bacon's cipher (Baconian cipher). A hidden message is encoded in the
-case pattern of a paragraph of text. Each letter is represented by 5
-bits of A/B (upper/lower case). Uses the full 26-letter Bacon
-alphabet.</p>
-<p>The page displays a Wikipedia article about Bacon's cipher with mixed
-case — the case pattern hides a secret message.</p>
-<h3 id="solution">Solution</h3>
-<p>提取大小写模式，Upper=B，Lower=A，每 5 位一组按 26 字母 Bacon
-字母表映射回 A-Z。空格用 <code>X</code> 表示。</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BaCoN&#x27;s cIphEr or THE bacOnIAN CiPHer iS a meThOD oF sTEGaNOGrapHY (a METhoD Of HidIng A sECRet MeSsaGe as OpPOsEd TO a TRUe CiPHeR) dEVIseD BY francis bAcoN. a MessAge Is coNCeALED in THe pRESenTatIoN OF TexT, ratHer thaN iTs coNteNt. tO enCODe A MEsSaGe, eaCh lETter Of THe pLAInText Is rePLAcED By A groUp oF fIvE OF the LETterS &#x27;A&#x27; or &#x27;B&#x27;. thIs REplaCement is dONE aCcordINg To tHe ALphAbet Of THe BACOnIAN cIpHeR, sHoWn bElOw. NoTe: A SeCoNd vErSiOn oF BaCoN&#x27;S CiPhEr uSeS A UnIqUe cOdE FoR EaCh lEtTeR. iN OtHeR WoRdS, i aNd j eAcH HaS ItS OwN PaTtErN. tHe wRiTeR MuSt mAkE UsE Of tWo dIfFeReNt tYpEfAcEs fOr tHiS CiPhEr. AfTeR PrEpArInG A FaLsE MeSsAgE WiTh tHe sAmE NuMbEr oF LeTtErS As aLl oF ThE As aNd bS In tHe rEaL, sEcReT MeSsAgE, tWo tYpEfAcEs aRe cHoSeN, oNe tO RePrEsEnT As aNd tHe oThEr bS. tHeN EaCh lEtTeR Of tHe fAlSe mEsSaGe mUsT Be pReSeNtEd iN ThE ApPrOpRiAtE TyPeFaCe, AcCoRdInG To wHeThEr iT StAnDs fOr aN A Or a b. To dEcOdE ThE MeSsAgE, tHe rEvErSe mEtHoD Is aPpLiEd. EaCh &#x27;TyPeFaCe 1&#x27; LeTtEr iN ThE FaLsE MeSsAgE Is rEpLaCeD WiTh aN A AnD EaCh &#x27;TyPeFaCe 2&#x27; LeTtEr iS RePlAcEd wItH A B. tHe bAcOnIaN AlPhAbEt iS ThEn uSeD To rEcOvEr tHe oRiGiNaL MeSsAgE. aNy mEtHoD Of wRiTiNg tHe mEsSaGe tHaT AlLoWs tWo dIsTiNcT RePrEsEnTaTiOnS FoR EaCh cHaRaCtEr cAn bE UsEd fOr tHe bAcOn cIpHeR. bAcOn hImSeLf pRePaReD A BiLiTeRaL AlPhAbEt[2] FoR HaNdWrItTeN CaPiTaL AnD SmAlL LeTtErS WiTh eAcH HaViNg tWo aLtErNaTiVe fOrMs, OnE To bE UsEd aS A AnD ThE OtHeR As b. ThIs wAs pUbLiShEd aS An iLlUsTrAtEd pLaTe iN HiS De aUgMeNtIs sCiEnTiArUm (ThE AdVaNcEmEnT Of lEaRnInG). BeCaUsE AnY MeSsAgE Of tHe rIgHt lEnGtH CaN Be uSeD To cArRy tHe eNcOdInG, tHe sEcReT MeSsAgE Is eFfEcTiVeLy hIdDeN In pLaIn sIgHt. ThE FaLsE MeSsAgE CaN Be oN AnY ToPiC AnD ThUs cAn dIsTrAcT A PeRsOn sEeKiNg tO FiNd tHe rEaL MeSsAgE.</span><br></pre></td></tr></table></figure>
-<p>解码：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line">text = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">BaCoN&#x27;s cIphEr or THE bacOnIAN CiPHer iS a meThOD oF sTEGaNOGrapHY (a METhoD Of HidIng A sECRet MeSsaGe as OpPOsEd TO a TRUe CiPHeR) dEVIseD BY francis bAcoN. a MessAge Is coNCeALED in THe pRESenTatIoN OF TexT, ratHer thaN iTs coNteNt. tO enCODe A MEsSaGe, eaCh lETter Of THe pLAInText Is rePLAcED By A groUp oF fIvE OF the LETterS &#x27;A&#x27; or &#x27;B&#x27;. thIs REplaCement is dONE aCcordINg To tHe ALphAbet Of THe BACOnIAN cIpHeR, sHoWn bElOw. NoTe: A SeCoNd vErSiOn oF BaCoN&#x27;S CiPhEr uSeS A UnIqUe cOdE FoR EaCh lEtTeR. iN OtHeR WoRdS, i aNd j eAcH HaS ItS OwN PaTtErN. tHe wRiTeR MuSt mAkE UsE Of tWo dIfFeReNt tYpEfAcEs fOr tHiS CiPhEr. AfTeR PrEpArInG A FaLsE MeSsAgE WiTh tHe sAmE NuMbEr oF LeTtErS As aLl oF ThE As aNd bS In tHe rEaL, sEcReT MeSsAgE, tWo tYpEfAcEs aRe cHoSeN, oNe tO RePrEsEnT As aNd tHe oThEr bS. tHeN EaCh lEtTeR Of tHe fAlSe mEsSaGe mUsT Be pReSeNtEd iN ThE ApPrOpRiAtE TyPeFaCe, AcCoRdInG To wHeThEr iT StAnDs fOr aN A Or a b. To dEcOdE ThE MeSsAgE, tHe rEvErSe mEtHoD Is aPpLiEd. EaCh &#x27;TyPeFaCe 1&#x27; LeTtEr iN ThE FaLsE MeSsAgE Is rEpLaCeD WiTh aN A AnD EaCh &#x27;TyPeFaCe 2&#x27; LeTtEr iS RePlAcEd wItH A B. tHe bAcOnIaN AlPhAbEt iS ThEn uSeD To rEcOvEr tHe oRiGiNaL MeSsAgE. aNy mEtHoD Of wRiTiNg tHe mEsSaGe tHaT AlLoWs tWo dIsTiNcT RePrEsEnTaTiOnS FoR EaCh cHaRaCtEr cAn bE UsEd fOr tHe bAcOn cIpHeR. bAcOn hImSeLf pRePaReD A BiLiTeRaL AlPhAbEt[2] FoR HaNdWrItTeN CaPiTaL AnD SmAlL LeTtErS WiTh eAcH HaViNg tWo aLtErNaTiVe fOrMs, OnE To bE UsEd aS A AnD ThE OtHeR As b. ThIs wAs pUbLiShEd aS An iLlUsTrAtEd pLaTe iN HiS De aUgMeNtIs sCiEnTiArUm (ThE AdVaNcEmEnT Of lEaRnInG). BeCaUsE AnY MeSsAgE Of tHe rIgHt lEnGtH CaN Be uSeD To cArRy tHe eNcOdInG, tHe sEcReT MeSsAgE Is eFfEcTiVeLy hIdDeN In pLaIn sIgHt. ThE FaLsE MeSsAgE CaN Be oN AnY ToPiC AnD ThUs cAn dIsTrAcT A PeRsOn sEeKiNg tO FiNd tHe rEaL MeSsAgE.</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 只取字母，忽略标点和空格</span></span><br><span class="line">bits = <span class="string">&#x27;&#x27;</span>.join(<span class="string">&#x27;B&#x27;</span> <span class="keyword">if</span> c.isupper() <span class="keyword">else</span> <span class="string">&#x27;A&#x27;</span></span><br><span class="line">               <span class="keyword">for</span> c <span class="keyword">in</span> text <span class="keyword">if</span> c.isalpha())</span><br><span class="line"></span><br><span class="line">bac26 = &#123;<span class="string">&#x27;AAAAA&#x27;</span>:<span class="string">&#x27;A&#x27;</span>,<span class="string">&#x27;AAAAB&#x27;</span>:<span class="string">&#x27;B&#x27;</span>,<span class="string">&#x27;AAABA&#x27;</span>:<span class="string">&#x27;C&#x27;</span>,<span class="string">&#x27;AAABB&#x27;</span>:<span class="string">&#x27;D&#x27;</span>,</span><br><span class="line">         <span class="string">&#x27;AABAA&#x27;</span>:<span class="string">&#x27;E&#x27;</span>,<span class="string">&#x27;AABAB&#x27;</span>:<span class="string">&#x27;F&#x27;</span>,<span class="string">&#x27;AABBA&#x27;</span>:<span class="string">&#x27;G&#x27;</span>,<span class="string">&#x27;AABBB&#x27;</span>:<span class="string">&#x27;H&#x27;</span>,</span><br><span class="line">         <span class="string">&#x27;ABAAA&#x27;</span>:<span class="string">&#x27;I&#x27;</span>,<span class="string">&#x27;ABAAB&#x27;</span>:<span class="string">&#x27;J&#x27;</span>,<span class="string">&#x27;ABABA&#x27;</span>:<span class="string">&#x27;K&#x27;</span>,<span class="string">&#x27;ABABB&#x27;</span>:<span class="string">&#x27;L&#x27;</span>,</span><br><span class="line">         <span class="string">&#x27;ABBAA&#x27;</span>:<span class="string">&#x27;M&#x27;</span>,<span class="string">&#x27;ABBAB&#x27;</span>:<span class="string">&#x27;N&#x27;</span>,<span class="string">&#x27;ABBBA&#x27;</span>:<span class="string">&#x27;O&#x27;</span>,<span class="string">&#x27;ABBBB&#x27;</span>:<span class="string">&#x27;P&#x27;</span>,</span><br><span class="line">         <span class="string">&#x27;BAAAA&#x27;</span>:<span class="string">&#x27;Q&#x27;</span>,<span class="string">&#x27;BAAAB&#x27;</span>:<span class="string">&#x27;R&#x27;</span>,<span class="string">&#x27;BAABA&#x27;</span>:<span class="string">&#x27;S&#x27;</span>,<span class="string">&#x27;BAABB&#x27;</span>:<span class="string">&#x27;T&#x27;</span>,</span><br><span class="line">         <span class="string">&#x27;BABAA&#x27;</span>:<span class="string">&#x27;U&#x27;</span>,<span class="string">&#x27;BABAB&#x27;</span>:<span class="string">&#x27;V&#x27;</span>,<span class="string">&#x27;BABBA&#x27;</span>:<span class="string">&#x27;W&#x27;</span>,<span class="string">&#x27;BABBB&#x27;</span>:<span class="string">&#x27;X&#x27;</span>,</span><br><span class="line">         <span class="string">&#x27;BBAAA&#x27;</span>:<span class="string">&#x27;Y&#x27;</span>,<span class="string">&#x27;BBAAB&#x27;</span>:<span class="string">&#x27;Z&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line">decoded = <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="comment"># 截断到 5 的倍数，忽略末尾不足 5 位的碎片</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits) - <span class="built_in">len</span>(bits) % <span class="number">5</span>, <span class="number">5</span>):</span><br><span class="line">    c = bac26.get(bits[i:i+<span class="number">5</span>], <span class="string">&#x27;?&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> c == <span class="string">&#x27;X&#x27;</span>:</span><br><span class="line">        decoded += <span class="string">&#x27; &#x27;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        decoded += c</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(decoded)</span><br></pre></td></tr></table></figure>
-<p>解码后得到类似：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">VERY WELL DONE FELLOW HACKER THE SECRET KEYWORD IS DRSLCAHINFSF</span><br></pre></td></tr></table></figure>
-<p><strong>注意</strong>：该挑战是 <strong>session-bound</strong>（每
-session 密码不同），上述消息只是示例。实际运行脚本会得到当前 session
-的密码，形如 <code>bpnnbnfonec</code>。</p>
-<p>关键点：</p>
-<ul>
-<li>使用 <strong>26 字母</strong>版本（I/J 各有独立编码）</li>
-<li>case 映射为 <strong>Upper=B, Lower=A</strong></li>
-<li><code>X</code> 代表空格（word separator）</li>
-</ul>
 
       
     </div>
