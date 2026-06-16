@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">339</span>
+          <span class="site-state-item-count">341</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">211</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,245 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-preg-evasion/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-preg-evasion/" class="post-title-link" itemprop="url">WeChall - Preg Evasion</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-13 19:50:00 / Modified: 21:20:24" itemprop="dateCreated datePublished" datetime="2026-06-13T19:50:00+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-preg-evasion/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-preg-evasion/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>绕过两个矛盾的检查：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 检查1：不允许包含 badmethod 或 evilfunction</span></span><br><span class="line"><span class="keyword">if</span> (<span class="number">1</span> === <span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;#^.*((?:badmethod)|(?:evilfunction)).*$#s&#x27;</span>, <span class="variable">$text</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;Evil text detected&#x27;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 检查2：必须同时包含 badmethod 和 evilfunction</span></span><br><span class="line"><span class="keyword">return</span> <span class="title function_ invoke__">strpos</span>(<span class="variable">$text</span>, <span class="string">&#x27;badmethod&#x27;</span>) !== <span class="literal">false</span></span><br><span class="line">    &amp;&amp; <span class="title function_ invoke__">strpos</span>(<span class="variable">$text</span>, <span class="string">&#x27;evilfunction&#x27;</span>) !== <span class="literal">false</span>;</span><br></pre></td></tr></table></figure>
+<p>来源：<code>sourcecode.php</code></p>
+<h3 id="solution">Solution</h3>
+<p>利用 PHP 的 <code>pcre.backtrack_limit</code>（默认值：PHP 5.3 为
+100K，PHP 7+ 为 1M）。当回溯次数超限时，<code>preg_match()</code> 返回
+<code>FALSE</code>（不是 <code>0</code> 也不是
+<code>1</code>），严格比较 <code>1 === FALSE</code> 结果为
+<code>false</code>，从而绕过拦截。而 <code>strpos()</code>
+是线性字符扫描，不受回溯影响。</p>
+<h4 id="payload">Payload</h4>
+<p>关键字放开头，尾部填充大量字符耗尽回溯预算：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 提取 CSRF token</span></span><br><span class="line">CSRF=$(curl -s --max-time 10 \</span><br><span class="line">  -b <span class="string">&#x27;WC=40700784-72047-P62VMhsWxh3elcYN&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/noother/preg_evasion/index.php&#x27;</span> \</span><br><span class="line">  | grep -oP <span class="string">&#x27;gwf3_csrf&quot;\s*value=&quot;\K[^&quot;]+&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 构造 payload：关键字 + 600K padding</span></span><br><span class="line">text=<span class="string">&quot;badmethodevilfunction<span class="subst">$(python3 -c <span class="string">&quot;print(&#x27;.&#x27; * 600000)&quot;</span>)</span>&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 提交</span></span><br><span class="line">curl -s --max-time 30 \</span><br><span class="line">  -b <span class="string">&#x27;WC=40700784-72047-P62VMhsWxh3elcYN&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&quot;text=<span class="variable">$text</span>&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&quot;hackit=Your button&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&quot;gwf3_csrf=<span class="variable">$CSRF</span>&quot;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/noother/preg_evasion/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<h4 id="原理">原理</h4>
+<p>正则 <code>^.*((?:badmethod)|(?:evilfunction)).*$</code> 中：</p>
+<ul>
+<li><code>^.*</code>
+贪婪匹配整个字符串（<code>badmethodevilfunction</code> + 600K 个
+<code>.</code>）</li>
+<li>交替 <code>(badmethod)|(evilfunction)</code> 在行尾匹配失败</li>
+<li>PCRE 逐字符回溯，每次在当前位置尝试两个分支</li>
+<li>总回溯次数 ≈ 600K × 2 = 1.2M，远超默认回溯上限</li>
+</ul>
+<p>若服务端 <code>pcre.backtrack_limit</code> 更高，等比例增大 padding
+即可。</p>
+<p>CSRF token 位于页面 form 中： <figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span> <span class="attr">name</span>=<span class="string">&quot;gwf3_csrf&quot;</span> <span class="attr">value</span>=<span class="string">&quot;7zluZ476&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-stop-us/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-stop-us/" class="post-title-link" itemprop="url">WeChall - Stop us</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-13 19:49:28 / Modified: 19:50:24" itemprop="dateCreated datePublished" datetime="2026-06-13T19:49:28+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-stop-us/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-stop-us/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Noother 写了一个卖 <code>.xyz</code> domain 的 PHP
+小站。目标是找到漏洞，不花钱完成购买。</p>
+<h3 id="solution">Solution</h3>
+<p><code>purchaseDomain()</code> 和 <code>reduceMoney()</code> 之间有约
+6 秒间隙（三次 <code>nooth_message()</code> 各 sleep 2 秒）。PHP 默认
+<code>ignore_user_abort = false</code>，客户端断开连接后，PHP 在 sleep
+间隙检测到中止并终止脚本。利用这个窗口可以让
+<code>purchaseDomain()</code> 提交但 <code>reduceMoney()</code>
+被跳过。</p>
+<p><strong>利用步骤：</strong></p>
+<ol type="1">
+<li>加载余额：<code>?load=balance</code>（+$10，+1 funding）</li>
+<li>等 timeout 结束（45 秒 cooldown）</li>
+<li>发送购买请求，curl 设置 <code>--max-time 12</code>：请求约 12s
+后被切断，此时 <code>purchaseDomain()</code> 已执行（domains+1，money
+未扣）但 <code>reduceMoney()</code> 未执行</li>
+<li>再等一次 timeout
+结束，发一次<strong>正常购买</strong>（不切断）</li>
+<li>此时 fundings=1，domains=2，条件 <code>fundings &lt; domains</code>
+触发，自动解决</li>
+</ol>
+<p>关键源码逻辑：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">noothtable::<span class="title function_ invoke__">purchaseDomain</span>(<span class="variable">$sid</span>);   <span class="comment">// domains=domains+1 WHERE money&gt;=price</span></span><br><span class="line"><span class="comment">// ~6s sleep via nooth_message()</span></span><br><span class="line">noothtable::<span class="title function_ invoke__">reduceMoney</span>(<span class="variable">$sid</span>, <span class="variable">$price</span>); <span class="comment">// money=money-price</span></span><br><span class="line"><span class="comment">// 随后检查 fundings &lt; domains</span></span><br></pre></td></tr></table></figure>
+<p>注意第二步必须是正常购买——如果第二次也切断，domains 只+1 但
+fundings=1，条件仍然 fundings &gt;= domains。只有
+<code>purchaseDomain</code> 成功两次而 <code>reduceMoney</code>
+只执行一次，才能制造差值。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1384,253 +1623,8 @@ dwyl/english-words 皆可，344K 单词 &gt;= 6 字符足够覆盖</li>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-the-travelling-customer/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-the-travelling-customer/" class="post-title-link" itemprop="url">WeChall - The Travelling Customer</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 14:01:53 / Modified: 14:23:36" itemprop="dateCreated datePublished" datetime="2026-06-11T14:01:53+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-the-travelling-customer/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-the-travelling-customer/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>The Travelling Customer (Coding, Training) by gizmore XKCD 287 风格
-bounded knapsack——5 轮，每轮 3 秒限时</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>页面给一个
-pricelist，要求选出指定数量的商品，使总价等于目标值，且每类商品不超过
-stock。需要连续解 5 轮，每轮 3 秒。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Endpoint: /en/challenge/training/programming/knapsaak/</span><br><span class="line">  problem.php     → 返回新问题</span><br><span class="line">  answer.php?answer=&lt;answer&gt;   → 提交答案（GET 方式）</span><br></pre></td></tr></table></figure>
-<p>题目参数（<code>problem.php</code> 返回的纯文本格式）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Items=50</span><br><span class="line">Sum=5001</span><br><span class="line">Stock=2</span><br><span class="line">Level=1</span><br><span class="line">Pizza=713</span><br><span class="line">Chips=590</span><br><span class="line">Eggs=523</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>这是 bounded knapsack（精确总价 + 精确件数 + 库存限制）。DFS + memo
-即可：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE = <span class="string">&#x27;https://www.wechall.net/en/challenge/training/programming/knapsaak&#x27;</span></span><br><span class="line">COOKIES = &#123;<span class="string">&#x27;WC&#x27;</span>: <span class="string">&#x27;...&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">parse_problem</span>(<span class="params">text</span>):</span><br><span class="line">    items = []</span><br><span class="line">    meta = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> text.strip().split(<span class="string">&#x27;\n&#x27;</span>):</span><br><span class="line">        <span class="keyword">if</span> <span class="string">&#x27;=&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> line: <span class="keyword">continue</span></span><br><span class="line">        k, v = line.split(<span class="string">&#x27;=&#x27;</span>, <span class="number">1</span>)</span><br><span class="line">        k, v = k.strip(), v.strip()</span><br><span class="line">        <span class="keyword">if</span> k <span class="keyword">in</span> (<span class="string">&#x27;Items&#x27;</span>, <span class="string">&#x27;Sum&#x27;</span>, <span class="string">&#x27;Stock&#x27;</span>, <span class="string">&#x27;Level&#x27;</span>):</span><br><span class="line">            meta[k] = <span class="built_in">int</span>(v)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            items.append((k, <span class="built_in">int</span>(v)))   <span class="comment"># (name, price)</span></span><br><span class="line">    <span class="keyword">return</span> items, meta[<span class="string">&#x27;Items&#x27;</span>], meta[<span class="string">&#x27;Sum&#x27;</span>], meta[<span class="string">&#x27;Stock&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>(<span class="params">items, need_count, need_sum, stock</span>):</span><br><span class="line">    n = <span class="built_in">len</span>(items)</span><br><span class="line">    prices = [p <span class="keyword">for</span> _, p <span class="keyword">in</span> items]</span><br><span class="line">    names = [n <span class="keyword">for</span> n, _ <span class="keyword">in</span> items]</span><br><span class="line">    <span class="comment"># 按价格降序排列（剪枝效果更好）</span></span><br><span class="line">    order = <span class="built_in">sorted</span>(<span class="built_in">range</span>(n), key=<span class="keyword">lambda</span> i: -prices[i])</span><br><span class="line">    sp = [prices[i] <span class="keyword">for</span> i <span class="keyword">in</span> order]</span><br><span class="line"></span><br><span class="line">    memo = &#123;&#125;</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">dfs</span>(<span class="params">idx, ri, rs</span>):</span><br><span class="line">        <span class="keyword">if</span> ri == <span class="number">0</span> <span class="keyword">and</span> rs == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> [<span class="number">0</span>] * (n - idx)</span><br><span class="line">        <span class="keyword">if</span> idx == n <span class="keyword">or</span> ri &lt; <span class="number">0</span> <span class="keyword">or</span> rs &lt; <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">        key = (idx, ri, rs)</span><br><span class="line">        <span class="keyword">if</span> key <span class="keyword">in</span> memo:</span><br><span class="line">            <span class="keyword">return</span> memo[key]</span><br><span class="line">        <span class="comment"># 剪枝：剩余件数超出库存限制</span></span><br><span class="line">        <span class="keyword">if</span> ri &gt; stock * (n - idx):</span><br><span class="line">            memo[key] = <span class="literal">None</span>; <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">        <span class="comment"># 剪枝：剩余金额超出价格范围</span></span><br><span class="line">        min_p, max_p = <span class="built_in">min</span>(sp[idx:]), <span class="built_in">max</span>(sp[idx:])</span><br><span class="line">        <span class="keyword">if</span> rs &lt; ri * min_p <span class="keyword">or</span> rs &gt; ri * max_p:</span><br><span class="line">            memo[key] = <span class="literal">None</span>; <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">        p = sp[idx]</span><br><span class="line">        <span class="keyword">for</span> qty <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">min</span>(stock, ri, rs // p) + <span class="number">1</span>):</span><br><span class="line">            sub = dfs(idx + <span class="number">1</span>, ri - qty, rs - qty * p)</span><br><span class="line">            <span class="keyword">if</span> sub <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">                memo[key] = [qty] + sub</span><br><span class="line">                <span class="keyword">return</span> memo[key]</span><br><span class="line">        memo[key] = <span class="literal">None</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    qs = dfs(<span class="number">0</span>, need_count, need_sum)</span><br><span class="line">    <span class="keyword">if</span> qs <span class="keyword">is</span> <span class="literal">None</span>: <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    <span class="comment"># 按原始顺序还原</span></span><br><span class="line">    quants = [<span class="number">0</span>] * n</span><br><span class="line">    <span class="keyword">for</span> i, orig_idx <span class="keyword">in</span> <span class="built_in">enumerate</span>(order):</span><br><span class="line">        quants[orig_idx] = qs[i]</span><br><span class="line">    <span class="comment"># 拼接答案：qtyName...</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">str</span>(quants[i]) + names[i]</span><br><span class="line">                   <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n) <span class="keyword">if</span> quants[i] &gt; <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.cookies.update(COOKIES)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> round_num <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">    resp = s.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/problem.php&#x27;</span>)</span><br><span class="line">    items, cnt, target, stock = parse_problem(resp.text)</span><br><span class="line">    answer = solve(items, cnt, target, stock)</span><br><span class="line">    resp2 = s.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/answer.php&#x27;</span>, params=&#123;<span class="string">&#x27;answer&#x27;</span>: answer&#125;)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;Round <span class="subst">&#123;round_num+<span class="number">1</span>&#125;</span>: <span class="subst">&#123;resp2.text.strip()&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p>Key Points:</p>
-<ul>
-<li><strong>GET 请求</strong>：抓题和提交都用 GET（不是 POST），不需要
-CSRF token</li>
-<li><strong>Cookie 复用</strong>：用 <code>requests.Session()</code>
-保持同一会话，5 轮连续</li>
-<li><strong>Answer 格式</strong>：数量直接拼接商品名，无分隔符。例如
-<code>2Pizza3Chips1Eggs</code></li>
-<li><strong>3 秒限时</strong>：每轮从抓题到提交必须在 3
-秒内完成，所以必须自动化</li>
-<li><strong>剪枝</strong>：价格排序 + 剩余范围检查，避免 DFS 爆炸</li>
-<li><strong>session-bound</strong>：每轮题目随机，答案不固定，无法直接复用</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-flow-over-astronomy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-flow-over-astronomy/" class="post-title-link" itemprop="url">WeChall - Flow Over Astronomy</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 13:59:36 / Modified: 14:04:08" itemprop="dateCreated datePublished" datetime="2026-06-11T13:59:36+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-flow-over-astronomy/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-flow-over-astronomy/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Flow Over Astronomy (Coding, Math) by anto
-自定义进制大整数计算，必须在 3.1416 秒内提交结果</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>页面给出一个 charset、input base、solution base，以及一串用 input
-base 表示的等式。计算结果并以 solution base 表示提交。限时 3.1416
-秒。</p>
-<p>典型输入：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Charset: hpQiNnoSt2E_guqOHd5j]P3v01wKZFk&#125;&#123;c8L6fmbDsMlVU7T[IzRYeWxGaB4#@JC9yrAX</span><br><span class="line">Input Base: 52</span><br><span class="line">Solution Base: 25</span><br><span class="line"></span><br><span class="line">js6Q * zQwi * 0_Qm * pOZTc * RS_m * QthQf * ... + HjRq</span><br></pre></td></tr></table></figure>
-<ul>
-<li>Base N 使用 charset 的前 N 个字符做编码表</li>
-<li>等式结构：一长串乘法，末尾 <code>+</code> 一个数（全部是 input base
-编码）</li>
-</ul>
-<h3 id="solution">Solution</h3>
-<p>两个转换函数搞定：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">from_base</span>(<span class="params">s, charset, base</span>):</span><br><span class="line">    value = <span class="number">0</span></span><br><span class="line">    table = &#123;ch: i <span class="keyword">for</span> i, ch <span class="keyword">in</span> <span class="built_in">enumerate</span>(charset[:base])&#125;</span><br><span class="line">    <span class="keyword">for</span> ch <span class="keyword">in</span> s:</span><br><span class="line">        value = value * base + table[ch]</span><br><span class="line">    <span class="keyword">return</span> value</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">to_base</span>(<span class="params">n, charset, base</span>):</span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> charset[<span class="number">0</span>]</span><br><span class="line">    out = []</span><br><span class="line">    <span class="keyword">while</span> n:</span><br><span class="line">        n, r = <span class="built_in">divmod</span>(n, base)</span><br><span class="line">        out.append(charset[r])</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">reversed</span>(out))</span><br></pre></td></tr></table></figure>
-<p>完整解法（抓题、计算、提交）：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re, sys</span><br><span class="line"><span class="keyword">from</span> urllib.request <span class="keyword">import</span> Request, urlopen</span><br><span class="line"></span><br><span class="line">CHALL_URL = <span class="string">&#x27;http://www.wechall.net/en/challenge/anto/FlowOverAstronomy/index.php&#x27;</span></span><br><span class="line">COOKIE = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fetch</span>():</span><br><span class="line">    req = Request(CHALL_URL, headers=&#123;<span class="string">&#x27;Cookie&#x27;</span>: COOKIE&#125;)</span><br><span class="line">    <span class="keyword">return</span> urlopen(req, timeout=<span class="number">10</span>).read().decode()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">from_base</span>(<span class="params">s, charset, base</span>):</span><br><span class="line">    table = &#123;ch: i <span class="keyword">for</span> i, ch <span class="keyword">in</span> <span class="built_in">enumerate</span>(charset[:base])&#125;</span><br><span class="line">    v = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> ch <span class="keyword">in</span> s: v = v * base + table[ch]</span><br><span class="line">    <span class="keyword">return</span> v</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">to_base</span>(<span class="params">n, charset, base</span>):</span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">0</span>: <span class="keyword">return</span> charset[<span class="number">0</span>]</span><br><span class="line">    out = []</span><br><span class="line">    <span class="keyword">while</span> n: n, r = <span class="built_in">divmod</span>(n, base); out.append(charset[r])</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">reversed</span>(out))</span><br><span class="line"></span><br><span class="line">html = fetch()</span><br><span class="line"><span class="comment"># Parse parameters</span></span><br><span class="line">charset  = re.search(<span class="string">r&#x27;Charset:\s*(\S+)&#x27;</span>, html).group(<span class="number">1</span>)</span><br><span class="line">in_base  = <span class="built_in">int</span>(re.search(<span class="string">r&#x27;Input Base:\s*(\d+)&#x27;</span>, html).group(<span class="number">1</span>))</span><br><span class="line">out_base = <span class="built_in">int</span>(re.search(<span class="string">r&#x27;Solution Base:\s*(\d+)&#x27;</span>, html).group(<span class="number">1</span>))</span><br><span class="line"><span class="comment"># Parse equation — split on operators, handle multi-line</span></span><br><span class="line">eq_match = re.search(<span class="string">r&#x27;Equation\s*\n(.*?)(?=\n&amp;copy;)&#x27;</span>, html, re.DOTALL)</span><br><span class="line">eq = eq_match.group(<span class="number">1</span>).replace(<span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>).strip()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Evaluate: split by + first, then *</span></span><br><span class="line">terms = eq.split(<span class="string">&#x27;+&#x27;</span>)</span><br><span class="line">product_terms = terms[<span class="number">0</span>].split(<span class="string">&#x27;*&#x27;</span>)</span><br><span class="line">add_term = terms[<span class="number">1</span>].strip()</span><br><span class="line"></span><br><span class="line">result = <span class="number">1</span></span><br><span class="line"><span class="keyword">for</span> t <span class="keyword">in</span> product_terms:</span><br><span class="line">    result *= from_base(t.strip(), charset, in_base)</span><br><span class="line">result += from_base(add_term, charset, in_base)</span><br><span class="line"></span><br><span class="line">answer = to_base(result, charset, out_base)</span><br><span class="line"><span class="built_in">print</span>(answer)  <span class="comment"># 提交这个值</span></span><br></pre></td></tr></table></figure>
-<p>关键陷阱：</p>
-<ul>
-<li><strong>不用 float</strong> — 数值巨大，全部用 Python big int</li>
-<li><strong>单 session 完成</strong> — charset 和 equation
-每次请求随机生成，不能手动分批</li>
-<li><strong>解析等式</strong> — 注意多行；末尾的 <code>+ HjRq</code>
-是加法项，前面的 <code>*</code> 是乘法</li>
-<li><strong>HTML 解析</strong> — 不要用 <code>.find()</code>
-切片，论坛反馈有人因此只错最后几位数字</li>
-<li><strong>限时 3.1416s</strong> — 自动化脚本必须在同一 HTTP session
-内完成抓题→计算→提交</li>
-</ul>
-<p>答案 session-bound，每次不同，无法复用固定值。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/34/">34</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/3/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>

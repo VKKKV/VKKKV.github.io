@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">339</span>
+          <span class="site-state-item-count">341</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">206</span>
+        <span class="site-state-item-count">211</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,297 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-batcave-bitflips/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umass2026/umassctf2026-batcave-bitflips/" class="post-title-link" itemprop="url">UMass CTF 2026 - Batcave Bitflips</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-15 10:10:00 / Modified: 17:52:54" itemprop="dateCreated datePublished" datetime="2026-04-15T10:10:00+08:00">2026-04-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umass2026/umassctf2026-batcave-bitflips/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-batcave-bitflips/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Batman's new state-of-the-art AI agent has deleted all of the source
+code to the Batcave license verification program! There's an old debug
+version lying around, but that thing has been hit by more cosmic rays
+than Superman!</p>
+<p>蝙蝠侠的新型先进人工智能代理删除了蝙蝠洞许可证验证程序的所有源代码！虽然还有一个旧的调试版本，但那东西被宇宙射线击中的次数比超人还多！</p>
+<p><strong>Hint 1</strong> BatAI estimates there are 3 bugs (BatAI
+估计有 3 个错误)</p>
+<p><strong>Hint 2</strong> Rotation rotation rotation! (旋转 旋转)</p>
+<p><strong>Hint 3</strong> Something about that SBOX seems off... (SBOX
+似乎有些不对劲...)</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The "Batcave Bitflips" challenge involves a binary that performs a
+custom hashing algorithm on a user-provided license key and compares the
+result to a hardcoded 32-byte hash. If the hashes match, the binary uses
+the key to "decrypt" the flag. However, as the name and hints suggest,
+the binary is riddled with three "bit-flip" bugs that corrupt its
+logic.</p>
+<h4 id="analysis-of-main">1. Analysis of <code>main</code></h4>
+<p>The <code>main</code> function (0x169f) follows a standard license
+check pattern: 1. Prompts for a 33-byte license key. 2. Calls
+<code>hash(input, buffer)</code> to generate a 256-bit (32-byte) digest.
+3. Calls <code>verify(buffer)</code>, which compares the digest to a
+global array named <code>EXPECTED</code> (at 0x4040). 4. If successful,
+calls <code>decrypt_flag(buffer)</code> and prints the <code>FLAG</code>
+global (at 0x4060).</p>
+<h4 id="identifying-the-3-bugs">2. Identifying the 3 Bugs</h4>
+<p><strong>Bug 1: The Decryption Logic
+(<code>decrypt_flag</code>)</strong> The <code>decrypt_flag</code>
+function (0x12a6) is intended to decrypt the flag using the successful
+hash. Standard encryption/decryption uses <code>XOR</code>, but the
+decompiled code shows: - <strong>Code:</strong>
+<code>FLAG[i] |= *(_BYTE *)(i % 32 + a1);</code> - <strong>Disassembly
+(0x12ec):</strong> <code>09 c1</code> (<code>OR ECX, EAX</code>) The
+bit-flip changed an <code>XOR</code> (<code>31 c1</code>) into an
+<code>OR</code> (<code>09 c1</code>).</p>
+<p><strong>Bug 2: The Rotation Logic (<code>rotate</code>)</strong> In a
+standard 8-bit rotation, the sum of the left and right shifts must be 8.
+- <strong>Decompilation:</strong>
+<code>*result = (*result &gt;&gt; 6) | (8 * *result);</code> -
+<strong>Analysis:</strong> <code>8 * *result</code> is equivalent to
+<code>*result &lt;&lt; 3</code>. A shift of 3 combined with a shift of 6
+is not a valid rotation. - <strong>The Flip:</strong> The SIB byte in
+the <code>lea</code> instruction at 0x1275 is <code>0xc5</code> (Scale
+8). If the bit-flip occurred here, changing <code>0xc5</code> to
+<code>0x85</code> (Scale 4), the instruction becomes
+<code>x &lt;&lt; 2</code>. Combined with <code>shr 6</code>, this forms
+a proper 2-bit rotation.</p>
+<p><strong>Bug 3: The SBOX Data (<code>SBOX</code>)</strong> The
+<code>substitute</code> function uses a global <code>SBOX</code> table
+(0x4080). Analysis reveals: - <strong>Duplicate:</strong> The value
+<code>0x43</code> appears at both index 24 and index 92. -
+<strong>Missing:</strong> The value <code>0x44</code> is entirely
+missing from the table. This single-bit difference (<code>0x43</code> vs
+<code>0x44</code>) in the data segment is the third bug.</p>
+<h3 id="solution">Solution</h3>
+<p>While we could patch the binary to fix the bugs and attempt to
+reverse the custom hash, there is a much faster path. The
+<code>main</code> function logic implies that if we provide the
+"correct" license key, the resulting hash will be equal to the
+<code>EXPECTED</code> bytes. Since the <code>decrypt_flag</code>
+function (if fixed) would simply XOR the <code>FLAG</code> bytes with
+the successful hash, we can perform this operation manually.</p>
+<p><strong>Target Hash (<code>EXPECTED</code> @ 0x4040):</strong>
+<code>3b 54 75 1a 24 06 af 05 77 80 47 c5 e4 83 d3 48 cb 87 30 de 1a 91 45 ab 15 c7 9b 22 04 02 2b ee</code></p>
+<p><strong>Encrypted Flag (<code>FLAG</code> @ 0x4060):</strong>
+<code>6e 19 34 49 77 7d f0 5a 07 b4 33 a6 8c e6 e6 17 fb e9 6f ae 2e e5 26 c3 70 e3 c4 7d 27 7f 2b 00</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">expected = [<span class="number">0x3b</span>, <span class="number">0x54</span>, <span class="number">0x75</span>, <span class="number">0x1a</span>, <span class="number">0x24</span>, <span class="number">0x06</span>, <span class="number">0xaf</span>, <span class="number">0x05</span>, <span class="number">0x77</span>, <span class="number">0x80</span>, <span class="number">0x47</span>, <span class="number">0xc5</span>, <span class="number">0xe4</span>, <span class="number">0x83</span>, <span class="number">0xd3</span>, <span class="number">0x48</span>, <span class="number">0xcb</span>, <span class="number">0x87</span>, <span class="number">0x30</span>, <span class="number">0xde</span>, <span class="number">0x1a</span>, <span class="number">0x91</span>, <span class="number">0x45</span>, <span class="number">0xab</span>, <span class="number">0x15</span>, <span class="number">0xc7</span>, <span class="number">0x9b</span>, <span class="number">0x22</span>, <span class="number">0x04</span>, <span class="number">0x02</span>, <span class="number">0x2b</span>, <span class="number">0xee</span>]</span><br><span class="line">flag_enc = [<span class="number">0x6e</span>, <span class="number">0x19</span>, <span class="number">0x34</span>, <span class="number">0x49</span>, <span class="number">0x77</span>, <span class="number">0x7d</span>, <span class="number">0xf0</span>, <span class="number">0x5a</span>, <span class="number">0x07</span>, <span class="number">0xb4</span>, <span class="number">0x33</span>, <span class="number">0xa6</span>, <span class="number">0x8c</span>, <span class="number">0xe6</span>, <span class="number">0xe6</span>, <span class="number">0x17</span>, <span class="number">0xfb</span>, <span class="number">0xe9</span>, <span class="number">0x6f</span>, <span class="number">0xae</span>, 2e e5, <span class="number">0x26</span>, <span class="number">0xc3</span>, <span class="number">0x70</span>, <span class="number">0xe3</span>, <span class="number">0xc4</span>, <span class="number">0x7d</span>, <span class="number">0x27</span>, <span class="number">0x7f</span>, <span class="number">0x2b</span>, <span class="number">0x00</span>]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(e ^ f) <span class="keyword">for</span> e, f <span class="keyword">in</span> <span class="built_in">zip</span>(expected, flag_enc)))</span><br></pre></td></tr></table></figure>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{<strong>p4tche5_0n_p4tche$</strong>#}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-ninja-nerds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/umass2026/umassctf2026-ninja-nerds/" class="post-title-link" itemprop="url">UMassCTF 2026 - Ninja-Nerds</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-04-14 16:25:08 / Modified: 16:25:10" itemprop="dateCreated datePublished" datetime="2026-04-14T16:25:08+08:00">2026-04-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/umass2026/umassctf2026-ninja-nerds/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-ninja-nerds/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>where are your little ninja-nerds?</p>
+</blockquote>
+<h3 id="initial-analysis">Initial Analysis</h3>
+<p>The challenge provided a single image file:
+<code>challenge.png</code>. Initial investigation focused on gathering
+basic information about the file and its metadata.</p>
+<ul>
+<li><strong>File Type:</strong> Standard PNG image (640x360).</li>
+<li><strong>Metadata:</strong> <code>exiftool</code> showed no unusual
+comments or hidden fields.</li>
+<li><strong>Strings:</strong> Running <code>strings</code> did not
+reveal the flag in plain text, suggesting it was encoded or hidden
+within the pixel data.</li>
+<li><strong>Embedded Files:</strong> <code>binwalk</code> did not detect
+any appended files (like zips or other images).</li>
+</ul>
+<p>Given that the file appeared to be a clean PNG with no obvious
+trailing data or metadata tricks, I suspected <strong>LSB (Least
+Significant Bit) Steganography</strong>. This technique hides data by
+slightly modifying the last bit of color values (Red, Green, or Blue),
+which is invisible to the human eye.</p>
+<h3 id="solution">Solution</h3>
+<p>To extract the hidden data, we can either use automated tools or a
+custom script to parse the LSBs from each color plane.</p>
+<h4 id="automated-approach">1. Automated Approach</h4>
+<p>Using <code>zsteg</code>, we can quickly scan for common LSB
+patterns: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">zsteg -E <span class="string">&quot;b1,b,lsb,xy&quot;</span> challenge.png | strings | grep <span class="string">&quot;UMASS&#123;&quot;</span></span><br></pre></td></tr></table></figure></p>
+<h4 id="manual-extraction-script">2. Manual Extraction Script</h4>
+<p>Alternatively, using the <code>Pillow</code> library in Python allows
+for precise extraction from specific color channels.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> PIL.Image</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_lsb</span>(<span class="params">image_path</span>):</span><br><span class="line">    img = PIL.Image.<span class="built_in">open</span>(image_path)</span><br><span class="line">    pixels = img.load()</span><br><span class="line">    width, height = img.size</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Check Red (0), Green (1), and Blue (2) planes</span></span><br><span class="line">    <span class="keyword">for</span> plane <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">        lsb_data = <span class="built_in">bytearray</span>()</span><br><span class="line">        current_byte = <span class="number">0</span></span><br><span class="line">        bit_count = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(height):</span><br><span class="line">            <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(width):</span><br><span class="line">                pixel = pixels[x, y]</span><br><span class="line">                bit = pixel[plane] &amp; <span class="number">1</span> <span class="comment"># Extract LSB</span></span><br><span class="line">                current_byte = (current_byte &lt;&lt; <span class="number">1</span>) | bit</span><br><span class="line">                bit_count += <span class="number">1</span></span><br><span class="line">                <span class="keyword">if</span> bit_count == <span class="number">8</span>:</span><br><span class="line">                    lsb_data.append(current_byte)</span><br><span class="line">                    current_byte = <span class="number">0</span></span><br><span class="line">                    bit_count = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="string">b&quot;UMASS&#123;&quot;</span> <span class="keyword">in</span> lsb_data:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Found flag in Plane <span class="subst">&#123;plane&#125;</span>!&quot;</span>)</span><br><span class="line">            <span class="comment"># Logic to print the found string...</span></span><br></pre></td></tr></table></figure>
+<p>Running the extraction against the color planes reveals that the flag
+is hidden in the <strong>Blue channel (Plane 2)</strong>.</p>
+<h3 id="flag">Flag</h3>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{perfectly-hidden-ready-to-strike}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1552,258 +1843,8 @@ back into a string.</li>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-funny-business/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-funny-business/" class="post-title-link" itemprop="url">UMass CTF 2026 - Funny Business</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 14:00:38 / Modified: 14:01:32" itemprop="dateCreated datePublished" datetime="2026-04-13T14:00:38+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-funny-business/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-funny-business/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>My friend tells me there's an office of a store that sells special
-bricks above a well-known shopping centre on this street. My friend
-tells me I'll it will bring me joy, but I'm not sure that the bricks are
-from the famous company. Can you give me the contact email address of
-the store so I can learn more?</p>
-<p>Flag format: UMASS{email@example.com}</p>
-</blockquote>
-<p>Key clues: - "Special bricks" (possibly a LEGO alternative store) -
-"Above a well-known shopping centre" - "Bring me joy" (might be part of
-the store's name)</p>
-<h3 id="solution">Solution</h3>
-<p>By researching shopping centers in Hong Kong known for hobbyist
-shops, we identified <strong>Ho King Commercial Centre
-(好景商业中心)</strong> and <strong>Ho King Shopping Centre
-(好景商场)</strong> as likely locations.</p>
-<p>Using tools like Google Gemini Deep Search to find shops selling
-"bricks" in these locations, we found a store associated with "Joy"
-(matching the "bring me joy" hint). The store in question is
-<strong>Joying Bricks</strong>.</p>
-<p>Searching for their contact information lead to the official email
-address.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{joyingwang@gmail.com}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/umass2026/umassctf2026-click-here-for-free-bricks/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/umass2026/umassctf2026-click-here-for-free-bricks/" class="post-title-link" itemprop="url">UMass CTF 2026 - Click Here For Free Bricks</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-04-13 12:03:34 / Modified: 13:52:32" itemprop="dateCreated datePublished" datetime="2026-04-13T12:03:34+08:00">2026-04-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/umass2026/umassctf2026-click-here-for-free-bricks/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/umass2026/umassctf2026-click-here-for-free-bricks/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Hey! A man was caught with malware on his PC in Lego City. Luckily,
-we were able to get a packet capture of his device during the download.
-Help Lego City Police figure out the source of this malicious
-download.</p>
-<p>The flag for this challenge is in the format UMASS{[sha256sum]} of
-the malicious download.</p>
-</blockquote>
-<h3 id="initial-analysis">Initial Analysis</h3>
-<p>The challenge provides a packet capture
-(<code>thedamage.pcapng</code>) containing traffic from a machine that
-downloaded malware. The goal is to identify the malicious file and its
-hash.</p>
-<h3 id="solution">Solution</h3>
-<p>Using <code>tshark</code>, we analyzed the HTTP traffic to see what
-files were downloaded:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tshark -r thedamage.pcapng -Y http -T fields -e http.host -e http.request.uri | <span class="built_in">sort</span> | <span class="built_in">uniq</span> -c | <span class="built_in">sort</span> -rn</span><br></pre></td></tr></table></figure>
-<p>The output revealed several interesting files: -
-<code>/installer.py</code> - <code>/launcher</code> - Several images
-(<code>/fungame.jpg</code>, <code>/cooldog.jpeg</code>, etc.)</p>
-<p>We extracted the objects from the HTTP sessions:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tshark -r thedamage.pcapng --export-objects http,extracted_files -q</span><br></pre></td></tr></table></figure>
-<p>The <code>launcher</code> file appeared suspicious, but its file type
-was obscured and it didn't match known malware signatures.</p>
-<p>Examining <code>installer.py</code> revealed it was a dropper script
-that decrypts <code>launcher</code>:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> nacl.secret</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fix_error</span>():</span><br><span class="line">    seed = <span class="string">&quot;38093248092rsjrwedoaw3&quot;</span></span><br><span class="line">    key = hashlib.sha256(seed.encode()).digest()</span><br><span class="line">    <span class="comment"># XSalsa20 + Poly1305 MAC</span></span><br><span class="line">    box = nacl.secret.SecretBox(key)</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./launcher&quot;</span>, <span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        data = f.read()</span><br><span class="line">    decrypted = box.decrypt(data)</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./launcher&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(decrypted)</span><br></pre></td></tr></table></figure>
-<p>The script uses <strong>PyNaCl (SecretBox)</strong> to decrypt
-<code>launcher</code> using the SHA256 hash of the seed
-<code>38093248092rsjrwedoaw3</code>.</p>
-<h4 id="decryption-and-hashing">Decryption and Hashing</h4>
-<p>After decrypting the file, we calculated its SHA256 hash. The
-decrypted file was identified as a
-<code>FreeBSD/i386 compact demand paged dynamically linked executable</code>.</p>
-<ul>
-<li><strong>Decrypted SHA256:</strong>
-<code>e7a09064fc40dd4e5dd2e14aa8dad89b328ef1b1fdb3288e4ef04b0bd497ccae</code></li>
-</ul>
-<p>Checking this hash on VirusTotal confirms it is a known malicious
-file.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UMASS{e7a09064fc40dd4e5dd2e14aa8dad89b328ef1b1fdb3288e4ef04b0bd497ccae}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/14/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/14/">14</a><span class="page-number current">15</span><a class="page-number" href="/page/16/">16</a><span class="space">&hellip;</span><a class="page-number" href="/page/34/">34</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/16/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/14/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/14/">14</a><span class="page-number current">15</span><a class="page-number" href="/page/16/">16</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/16/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
