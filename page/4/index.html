@@ -235,18 +235,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">340</span>
+          <span class="site-state-item-count">341</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">207</span>
+        <span class="site-state-item-count">215</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,172 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-order-by-query/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-order-by-query/" class="post-title-link" itemprop="url">WeChall - Order By Query</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 13:28:32 / Modified: 13:28:34" itemprop="dateCreated datePublished" datetime="2026-06-10T13:28:32+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-order-by-query/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-order-by-query/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>SQL injection in an <code>ORDER BY</code> clause. Recover Admin's
+32-character uppercase MD5 hash from the <code>users</code> table and
+submit it as the solution.</p>
+<h3 id="analysis">Analysis</h3>
+<p>Live source fetch (<code>index.php?highlight=christmas</code>)
+confirms the vulnerable view code:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">static</span> <span class="variable">$whitelist</span> = <span class="keyword">array</span>(<span class="number">1</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>);</span><br><span class="line"><span class="keyword">if</span> (!<span class="title function_ invoke__">in_array</span>(<span class="variable">$orderby</span>, <span class="variable">$whitelist</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">htmlDisplayError</span>(<span class="string">&#x27;Error 1010101: Not in whitelist.&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="variable">$orderby</span> = <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">escape</span>(<span class="variable">$orderby</span>);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM users ORDER BY <span class="subst">$orderby</span> <span class="subst">$dir</span> LIMIT 10&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>The bug is the non-strict <code>in_array()</code>. PHP loosely
+compares strings to numbers, so a value like
+<code>3,(SELECT ...)--</code> passes the whitelist check (converts to
+integer <code>3</code>), then reaches SQL as raw <code>ORDER BY</code>
+expression.</p>
+<p>Exposed table schema:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> IF <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> users(</span><br><span class="line">    username <span class="type">VARCHAR</span>(<span class="number">32</span>) <span class="keyword">CHARACTER SET</span> ascii <span class="keyword">COLLATE</span> ascii_general_ci,</span><br><span class="line">    password <span class="type">CHAR</span>(<span class="number">32</span>) <span class="keyword">CHARACTER SET</span> ascii <span class="keyword">COLLATE</span> ascii_bin,</span><br><span class="line">    apples <span class="type">INT</span>(<span class="number">10</span>) UNSIGNED <span class="keyword">DEFAULT</span> <span class="number">0</span>,</span><br><span class="line">    bananas <span class="type">INT</span>(<span class="number">10</span>) UNSIGNED <span class="keyword">DEFAULT</span> <span class="number">0</span>,</span><br><span class="line">    cherries <span class="type">INT</span>(<span class="number">10</span>) UNSIGNED <span class="keyword">DEFAULT</span> <span class="number">0</span>,</span><br><span class="line">    <span class="keyword">PRIMARY KEY</span>(username)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<h4 id="attempt-1-scalar-subquery-fails">Attempt 1: Scalar subquery
+(fails)</h4>
+<p>The initial approach used a scalar subquery in ORDER BY to compare
+one character at a time:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">3</span>,(<span class="keyword">SELECT</span> IF(<span class="built_in">SUBSTRING</span>(`password`,N,<span class="number">1</span>)<span class="operator">=</span><span class="type">CHAR</span>(X),<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">   <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="number">0x41646d696e</span>)<span class="comment">--</span></span><br></pre></td></tr></table></figure>
+<p>This does NOT work because MySQL evaluates scalar subqueries in ORDER
+BY as <strong>constants</strong> — the same value for all rows. Both
+<code>SELECT 0</code> and <code>SELECT 1</code> produce identical sort
+orders, so Admin's position never changes. Live diagnostic confirmed:
+both left Admin at position 12.</p>
+<h4 id="attempt-2-per-row-conditional-works">Attempt 2: Per-row
+conditional (works)</h4>
+<p>The key insight: <strong>column references and expressions</strong>
+in ORDER BY ARE evaluated per-row. The <code>password</code> column is
+directly accessible without a subquery:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">3</span>,IF(username<span class="operator">=</span><span class="number">0x41646d696e</span> <span class="keyword">AND</span> ASCII(<span class="built_in">SUBSTRING</span>(password,N,<span class="number">1</span>))<span class="operator">=</span>X,<span class="number">0</span>,<span class="number">1</span>)<span class="comment">--</span></span><br></pre></td></tr></table></figure>
+<p>How it works: - <code>username=0x41646d696e</code> (hex for "Admin")
+identifies Admin's row - <code>ASCII(SUBSTRING(password,N,1))=X</code>
+checks the N-th character - <code>AND</code> combines: only Admin's row
+with matching character gets IF=0 - All other rows get IF=1 - With
+<code>ORDER BY 3, IF(...)</code>, Admin moves from position 13 → 10 when
+the condition is true</p>
+<p>The <code>--</code> comments out <code>DESC LIMIT 10</code>,
+returning all rows sorted by the injected expression.</p>
+<h4 id="extraction">Extraction</h4>
+<p>Binary search on hex character ASCII values (0-9: 48-57, A-F: 65-70)
+using <code>&gt;=</code> comparisons, with equality verification per
+position. About 5 requests per character × 32 positions ≈ 160 requests
+total.</p>
+<p><strong>Result</strong>:
+<code>3C3CBEB0C8ADC66F2922C65E7784BE14</code></p>
+<h4 id="why-scalar-subqueries-fail-in-order-by">Why scalar subqueries
+fail in ORDER BY</h4>
+<p>In MySQL, ORDER BY evaluates expressions per row, but scalar
+subqueries are evaluated once and treated as constants. This is a common
+pitfall: <code>(SELECT ...)</code> in ORDER BY looks like it should work
+per-row, but the optimizer collapses it. Direct column references and
+non-subquery expressions (<code>IF(condition, value1, value2)</code>)
+are the correct path.</p>
+<h4 id="useful-observations">Useful observations</h4>
+<ul>
+<li><code>$db-&gt;escape()</code> does NOT strip parentheses — function
+calls and subqueries work fine</li>
+<li><code>in_array()</code> non-strict check: <code>3,anything</code>
+passes because PHP converts <code>"3,anything"</code> to integer
+<code>3</code></li>
+<li>Hex encoding (<code>0x41646d696e</code>) bypasses any single-quote
+escaping in <code>$db-&gt;escape()</code></li>
+<li>Backticks around <code>`password`</code> are needed in subquery
+contexts (to avoid collision with MySQL's <code>PASSWORD()</code>
+function) but not in direct expressions like
+<code>SUBSTRING(password,N,1)</code></li>
+<li>Admin's default position is 9 (sorted by apples DESC) or 13 (sorted
+by apples ASC)</li>
+<li>WeChall rate limits aggressively after ~80 rapid requests — use
+1.0-1.2s delays</li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">3C3CBEB0C8ADC66F2922C65E7784BE14</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1433,120 +1599,8 @@ A-F），共 16 种可能。每位用 4 次二分查询（16→8→4→2→1）�
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-factor-2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-factor-2/" class="post-title-link" itemprop="url">WeChall - Factor 2</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 12:00:00 / Modified: 17:01:59" itemprop="dateCreated datePublished" datetime="2026-06-10T12:00:00+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-factor-2/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-factor-2/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Two-factor authentication bypass. A German ordering application
-("Gurroga") has login + auth token (2FA). Need to order a "special
-article" without valid credentials.</p>
-<h3 id="solution">Solution</h3>
-<p>源码审计（GitHub gizmore/gwf3）发现 2FA 绕过：</p>
-<ol type="1">
-<li>登录流程：POST <code>/backend/api/login.php</code> →
-返回用户信息和文章列表</li>
-<li>认证流程：POST <code>/backend/api/authenticate.php</code> → 验证
-token</li>
-<li>订单流程：POST <code>/backend/api/bestellen.php</code> →
-<strong>不需要认证！</strong></li>
-</ol>
-<p>关键漏洞：订单 API 不验证用户是否已通过 2FA 认证，直接接受
-<code>user</code> 和 <code>id</code> 参数。</p>
-<p>找到特殊文章：查询其他用户的订单历史（<code>/backend/api/bestellhistorie.php?user=6</code>），发现
-user 6 订购了 "Challenge solution for Factor 2"（ID: 5678363）。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST -d <span class="string">&#x27;user=1&amp;id=5678363&amp;amt=1&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/gizmore/factor2/backend/api/bestellen.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">5678363</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/3/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/34/">34</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/5/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/3/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/5/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
