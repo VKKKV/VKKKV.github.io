@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">351</span>
+          <span class="site-state-item-count">352</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">214</span>
+        <span class="site-state-item-count">216</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,130 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-htmlspecialchars/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-htmlspecialchars/" class="post-title-link" itemprop="url">WeChall - htmlspecialchars</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-05 18:22:39 / Modified: 18:22:40" itemprop="dateCreated datePublished" datetime="2026-06-05T18:22:39+08:00">2026-06-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-htmlspecialchars/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-htmlspecialchars/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>)).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><strong>漏洞分析</strong>: <code>htmlspecialchars()</code>
+的默认模式是 <code>ENT_COMPAT</code>，只转义双引号 <code>"</code>（转为
+<code>&amp;quot;</code>），不转义单引号 <code>'</code>。而 href
+属性值恰好用单引号包裹，因此可以通过单引号逃逸出属性值，注入 XSS
+事件。</p>
+<p><strong>第一步 — 漏洞利用</strong>:</p>
+<p>在 input 中输入一个单引号闭合 href，然后注入事件处理属性:</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; onmouseover=&#x27;alert(1)</span><br></pre></td></tr></table></figure>
+<p>生成的 HTML:</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&#x27;http://&#x27;</span> <span class="attr">onmouseover</span>=<span class="string">&#x27;alert(1)&#x27;</span>&gt;</span>Exploit Me<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>注意三个单引号的闭合逻辑： - <code>href='http://</code> 为 HTML
+模板的开头部分 - 第一个 <code>'</code> 闭合了 href 的起始单引号 -
+<code>onmouseover='alert(1)'</code> 被解析为新的 HTML 属性 - 最后的
+<code>'&gt;</code> 会落在属性值的单引号后面（不闭合也不影响渲染）</p>
+<p>悬停在链接上就会触发 <code>onmouseover</code>。在 WeChall
+自己的测试页面里，鼠标悬停就能看到 alert 弹窗。</p>
+<p><strong>第二步 — 修复</strong>:</p>
+<p>给 <code>htmlspecialchars()</code> 加上 <code>ENT_QUOTES</code>
+标志，使单引号也被转义：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>), ENT_QUOTES).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>加上 <code>ENT_QUOTES</code> 后，输入 <code>'</code> 会被转为
+<code>&amp;#039;</code>，无法再逃逸 href 属性。</p>
+<p><strong>提交方式</strong>: POST 到
+<code>htmlspecialchars.php</code>，字段名为 <code>solution</code>（不是
+<code>answer</code>），<code>cmd=Submit</code>。需要 CSRF token。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">echo
+<a href='http://.htmlspecialchars(Common::getPost(input), ENT_QUOTES).'>Exploit
+Me</a>;</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1381,134 +1505,6 @@ Central Directory (EOCD) 记录固定在文件的<strong>最后 22
 bit plane 上的</li>
 <li>答案 session-bound，每张 <code>carrier.png</code> 不同</li>
 </ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-warchall-training-the-beginning/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-warchall-training-the-beginning/" class="post-title-link" itemprop="url">WeChall - Training - Warchall - The Beginning</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-04 16:30:40 / Modified: 16:45:10" itemprop="dateCreated datePublished" datetime="2026-06-04T16:30:40+08:00">2026-06-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-warchall-training-the-beginning/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-warchall-training-the-beginning/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Warchall 入门挑战。在 WeChall 挑战页面注册 SSH 账号，然后 SSH 登录
-Warchall
-服务器（<code>ssh -p 19198 &lt;username&gt;@warchall.net</code>），完成
-Level 0-5 六个初始关卡。答案以逗号分隔提交，格式为
-<code>Solution1,Solution2,Solution3,Solution4,Solution5,Solution6</code>（对应
-Level 0-5）。</p>
-<h3 id="solution">Solution</h3>
-<p>SSH 登录后，关卡目录在 <code>/home/level/</code>，每关还有一个副本在
-<code>~/level/</code>（你的 home 目录下）。</p>
-<p><strong>Level 0</strong> (<code>/home/level/00_welcome/</code>):</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/00_welcome/README.md</span><br></pre></td></tr></table></figure>
-<p><strong>Level 1</strong>
-(<code>/home/level/01_choice_tree/</code>):</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">ls</span> /home/level/01_choice_tree/</span><br><span class="line">blue  green  README.md  red</span><br><span class="line">$ find /home/level/01_choice_tree/ -<span class="built_in">type</span> f</span><br><span class="line">/home/level/01_choice_tree/blue/hats/grey/solution/patience/SOLUTION.txt</span><br><span class="line">...</span><br><span class="line">$ <span class="built_in">cat</span> /home/level/01_choice_tree/blue/hats/grey/solution/patience/SOLUTION.txt</span><br></pre></td></tr></table></figure>
-<p>在目录树中探索，选择 <code>blue</code> 路径（提示: "become a gray
-hat"），深入到
-<code>blue/hats/grey/solution/patience/SOLUTION.txt</code>。</p>
-<p><strong>Level 2</strong> (<code>/home/level/02/</code>):</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">ls</span> /home/level/02/</span><br><span class="line">documents  photos</span><br><span class="line">$ <span class="built_in">ls</span> -al /home/level/02/</span><br><span class="line">drwxr-xr-x  2 root level02 4096 Jan 10  2023 documents</span><br><span class="line">drwxr-xr-x  2 root level02 4096 Jan 11  2023 photos</span><br><span class="line">drwxr-xr-x  2 root level02 4096 Jan 11  2023 .porb</span><br><span class="line">$ <span class="built_in">cat</span> /home/level/02/.porb/.solution</span><br></pre></td></tr></table></figure>
-<p><code>ls</code> 看不到答案，用 <code>ls -al</code> 发现隐藏目录
-<code>.porb</code>。</p>
-<p><strong>Level 3</strong> (<code>/home/level/03/</code>):</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/03/.bash_history</span><br><span class="line">The solution to SSH3 is: RepeatingHistory</span><br></pre></td></tr></table></figure>
-<p>读取 <code>.bash_history</code> 文件直接获得答案。</p>
-<p><strong>Level 4</strong> (<code>/home/level/04_kwisatz/</code>):</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/04_kwisatz/README.nfo</span><br><span class="line">Look <span class="keyword">in</span> your ~</span><br><span class="line">$ <span class="built_in">ls</span> -la ~/level/04_kwisatz/</span><br><span class="line">---------- 1 &lt;username&gt; &lt;username&gt; 248 Jun  4 05:02 README2.md</span><br><span class="line">-rw-r--r-- 1 &lt;username&gt; &lt;username&gt; 140 Jun  4 05:02 README.txt</span><br><span class="line">$ <span class="built_in">chmod</span> u+r ~/level/04_kwisatz/README2.md</span><br><span class="line">$ <span class="built_in">cat</span> ~/level/04_kwisatz/README2.md</span><br></pre></td></tr></table></figure>
-<p>README.nfo 提示看 home
-目录。<code>~/level/04_kwisatz/README2.md</code> 权限为
-<code>----------</code>（无任何权限），但文件所有者是自己，用
-<code>chmod u+r</code> 添加读权限。</p>
-<p><strong>Level 5</strong> (<code>/home/level/05_privacy/</code>):</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> /home/level/05_privacy/README.md</span><br><span class="line"><span class="comment"># WAR#5: Privacy</span></span><br><span class="line">Please protect your ~ from any other people than yourself.</span><br><span class="line">The 5th solution is <span class="string">&quot;OKPRIVATE&quot;</span> without the quotes.</span><br></pre></td></tr></table></figure>
-<p>README 直接给出答案。实际操作是用 <code>chmod 700 ~</code> 保护 home
-目录不被其他用户访问。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">bitwarrior,patience,HiddenIsConfig,RepeatingHistory,AndOfCourseIDoKnowChown,OKPRIVATE</span></span>
 
       
     </div>
