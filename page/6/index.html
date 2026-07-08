@@ -235,7 +235,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">353</span>
+          <span class="site-state-item-count">354</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -246,7 +246,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">219</span>
+        <span class="site-state-item-count">221</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -376,6 +376,161 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-no-dns/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-no-dns/" class="post-title-link" itemprop="url">WeChall - Training - No DNS</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 12:34:41 / Modified: 12:35:00" itemprop="dateCreated datePublished" datetime="2026-06-10T12:34:41+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-no-dns/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-no-dns/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>题目要求访问：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://make.love.not.war.com/challenge/training/net/nodns/etc/hosts.php</span><br></pre></td></tr></table></figure>
+<p>名字叫 No DNS——核心是让请求到达这个域名指向的服务器，而不依赖正常 DNS
+流程。域名 <code>make.love.not.war.com</code> 在 WeChall
+上是一个虚拟主机，你需要合适的方式把解析指向 WeChall 服务器。</p>
+<h3 id="solution">Solution</h3>
+<p>用 <code>curl --resolve</code> 最干净：只影响这一条请求，不需要改系统
+<code>/etc/hosts</code>。</p>
+<p>不要在 writeup 中硬编码老 IP。WeChall 的解析 IP
+可能变化，运行时动态取当前 IP：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IP=$(dig +short www.wechall.net A | <span class="built_in">head</span> -n1)</span><br></pre></td></tr></table></figure>
+<p>然后让 <code>curl</code> 对目标域名使用这个 IP：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl -sk \</span><br><span class="line">  --resolve <span class="string">&quot;make.love.not.war.com:443:<span class="variable">$IP</span>&quot;</span> \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://make.love.not.war.com/challenge/training/net/nodns/etc/hosts.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>参数含义：</p>
+<ul>
+<li><code>--resolve HOST:PORT:IP</code>：只为当前 curl
+请求手动指定解析结果，不发起 DNS 查询</li>
+<li><code>-k</code>：忽略证书校验（证书是 wechall.net
+签发的，域名不匹配）</li>
+<li><code>-b 'WC=...'</code>：携带 WeChall 登录 cookie</li>
+</ul>
+<p>等价方法是临时写
+<code>/etc/hosts</code>，但这会修改系统状态，完成后需要恢复；优先用
+<code>--resolve</code>。</p>
+<p><strong><code>--resolve</code> 在各协议层的影响：</strong></p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>直接连 IP</th>
+<th><code>--resolve</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DNS</td>
+<td>不查</td>
+<td><strong>不查</strong>（被 curl 的映射表劫持）</td>
+</tr>
+<tr>
+<td>TCP 目标</td>
+<td>你给的 IP</td>
+<td>你给的 IP</td>
+</tr>
+<tr>
+<td>TLS SNI</td>
+<td>IP（或无）</td>
+<td><strong>原始域名</strong> ✅</td>
+</tr>
+<tr>
+<td>HTTP Host</td>
+<td>IP</td>
+<td><strong>原始域名</strong> ✅</td>
+</tr>
+</tbody>
+</table>
+<p><code>--resolve</code> 只劫持了 DNS 解析入口——修改的是 curl
+进程自己的 DNS 缓存表，不是内核协议栈。TCP 层的目标 IP
+跟着你的指定走了，但上层的 TLS SNI 和 HTTP Host header
+都保持原始域名不变。这正是"No DNS"的精髓：不在 DNS
+层面做任何事（域名不存在），但让上层协议以为请求经过了正常解析。</p>
+<p>访问成功后页面会返回成功消息，挑战自动标记为 solved。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1487,151 +1642,6 @@ weird"。检查源码发现，在注册时会校验你输入的密码是否和�
 账号密码一致——如果是，会拒绝注册（<code>err_fool</code>：不允许在这里使用你的真实
 WeChall 密码）。但这不影响解题。</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">academic</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-11/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-11/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 11</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-09 20:55:39 / Modified: 20:55:40" itemprop="dateCreated datePublished" datetime="2026-06-09T20:55:39+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-11/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-11/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Sam decided to make a music site. Unfortunately he does not
-understand Apache.</p>
-<p>Sam 决定做一个音乐网站，可惜他不懂 Apache 配置。</p>
-</blockquote>
-<p>页面上随机显示一句歌词，如
-<code>"Ghetto Gospel" is the best!</code>，每次刷新会变。没有密码输入框，没有明显的交互元素。</p>
-<h3 id="solution">Solution</h3>
-<p>这题考察的是 Apache 服务器配置知识，解题过程像一个探索任务。</p>
-<h4 id="step-1-识别歌曲线索">Step 1 — 识别歌曲线索</h4>
-<p>多次刷新页面，歌曲会变化，包括：</p>
-<ul>
-<li>"Ghetto Gospel" (2Pac ft. Elton John)</li>
-<li>"Georgia" (Elton John)</li>
-<li>等等</li>
-</ul>
-<p>搜索这些歌曲，全部是 <strong>Elton John</strong>
-的作品。这暗示了目录结构。</p>
-<h4 id="step-2-目录遍历">Step 2 — 目录遍历</h4>
-<p>尝试拼出 Elton 的名字：访问
-<code>/missions/basic/11/e/</code>，发现目录列表！继续往下走：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">/missions/basic/11/e/</span><br><span class="line">/missions/basic/11/e/l/</span><br><span class="line">/missions/basic/11/e/l/t/</span><br><span class="line">/missions/basic/11/e/l/t/o/</span><br><span class="line">/missions/basic/11/e/l/t/o/n/    ← 最后一层，看起来是空的</span><br></pre></td></tr></table></figure>
-<h4 id="step-3-查看-.htaccess-文件">Step 3 — 查看 .htaccess 文件</h4>
-<p><code>/e/l/t/o/n/</code> 目录看起来是空的，但在 Apache
-中，<code>.htaccess</code> 文件可能被目录列表隐藏了。直接访问：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/.htaccess</span><br></pre></td></tr></table></figure>
-<p>内容：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">IndexIgnore DaAnswer.* .htaccess</span><br><span class="line"></span><br><span class="line">&lt;Files .htaccess&gt;</span><br><span class="line">require all granted</span><br><span class="line">&lt;/Files&gt;</span><br></pre></td></tr></table></figure>
-<ul>
-<li><code>IndexIgnore</code>：告诉 Apache 目录列表中不要显示
-<code>DaAnswer.*</code> 和 <code>.htaccess</code></li>
-<li><code>&lt;Files .htaccess&gt;</code>：允许所有人访问
-<code>.htaccess</code>（这是关键错误，应该禁止访问）</li>
-</ul>
-<h4 id="step-4-访问-daanswer">Step 4 — 访问 DaAnswer</h4>
-<p>既然 <code>.htaccess</code> 泄露了隐藏的文件名，直接访问：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/DaAnswer</span><br></pre></td></tr></table></figure>
-<p>页面显示动态文本，如：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">The answer is available!</span><br><span class="line">Just look a little harder.</span><br></pre></td></tr></table></figure>
-<h4 id="step-5-提交答案">Step 5 — 提交答案</h4>
-<p>访问
-<code>/missions/basic/11/index.php</code>（注意不是入口页面），会出现密码输入框。表单字段名是
-<code>answer</code>，提交 <code>available</code> 即可过关。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;answer=available&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>核心知识点：</p>
-<ol type="1">
-<li>Apache 的 <code>IndexIgnore</code>
-只是不在目录列表中显示文件，文件本身仍然可以被直接访问</li>
-<li><code>.htaccess</code>
-文件应该禁止外部访问（<code>Require all denied</code>），否则会泄露目录配置信息</li>
-<li>路径遍历 + 配置文件泄露是经典的 Apache 安全问题</li>
-</ol>
 
       
     </div>
