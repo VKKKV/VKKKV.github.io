@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">355</span>
+          <span class="site-state-item-count">356</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,125 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-15-still-binary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-cgx-15-still-binary/" class="post-title-link" itemprop="url">WeChall - CGX#15 - Still Binary</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 12:49:22 / Modified: 12:50:19" itemprop="dateCreated datePublished" datetime="2026-06-10T12:49:22+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-cgx-15-still-binary/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-15-still-binary/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>CGX#15: Still Binary 考察 7-bit
+ASCII。题目页面给出一个随机生成并绑定当前 session 的 bit
+stream，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">101000010100111001100100001010000011001001100010110000111010010100010110000101010000</span><br></pre></td></tr></table></figure>
+<p>每个 session 的 bit stream 不同，不能把示例解码结果当成固定答案。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>Recon</strong>: 观察 bit stream 长度。示例 84 bit，尝试 8-bit
+分组：84 % 8 = 4（不整除）。尝试 7-bit 分组：84 % 7 = 0 → 长度能被 7
+整除。早期 ASCII 只定义 0-127，每个字符只需要 7 bit；第 8 bit
+在一些通信场景中可作为 parity bit。因此本题不是 8-bit byte
+stream，而是连续的 7-bit ASCII stream。</p>
+<p><strong>解法步骤</strong>：</p>
+<ol type="1">
+<li>从页面抓取当前 session 的 bit stream（curl 或浏览器查看源代码）</li>
+<li>检查 <code>len(bits) % 7 == 0</code></li>
+<li>每 7 bit 一组，按普通二进制 MSB→LSB 转 ASCII</li>
+<li>提交解码后的文本</li>
+</ol>
+<p>Python：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bits = <span class="string">&#x27;101000010100111001100100001010000011001001100010110000111010010100010110000101010000&#x27;</span></span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(bits) % <span class="number">7</span> == <span class="number">0</span></span><br><span class="line">answer = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(bits[i:i+<span class="number">7</span>], <span class="number">2</span>)) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">7</span>))</span><br><span class="line"><span class="built_in">print</span>(answer)</span><br></pre></td></tr></table></figure>
+<p>本地验证示例输出为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PSLBAIECREBP</span><br></pre></td></tr></table></figure>
+<p>实际提交前要重新抓取当前 WeChall 页面并解码。</p>
+<blockquote>
+<p>session-bound: 7-bit ASCII decode, answer varies per session</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1493,116 +1612,6 @@ punctuation and case-sensitivity.</p>
 <p>解码脚本核心逻辑：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cipher = [<span class="built_in">int</span>(x, <span class="number">16</span>) <span class="keyword">for</span> x <span class="keyword">in</span> re.findall(<span class="string">r&#x27;\b[0-9A-F]&#123;2&#125;\b&#x27;</span>, hex_blob)]</span><br><span class="line">template = <span class="string">&#x27;Congratulations! This one was harder, but you got it! Very well done fellow hacker! The problem with this cipher is that the key is pretty long! I will come up with a better encryption sheme any soon! Your solution is: &#x27;</span></span><br><span class="line">mapping = &#123;byte: char <span class="keyword">for</span> byte, char <span class="keyword">in</span> <span class="built_in">zip</span>(cipher, template)&#125;</span><br><span class="line">plaintext = <span class="string">&#x27;&#x27;</span>.join(mapping.get(byte, <span class="string">&#x27;?&#x27;</span>) <span class="keyword">for</span> byte <span class="keyword">in</span> cipher)</span><br></pre></td></tr></table></figure>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">smrnneobfhoo</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-auth-me/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-auth-me/" class="post-title-link" itemprop="url">WeChall - AUTH me</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-10 10:59:25 / Modified: 10:59:27" itemprop="dateCreated datePublished" datetime="2026-06-10T10:59:25+08:00">2026-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-auth-me/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-auth-me/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>SSL/TLS client certificate authentication challenge. The apache.conf
-shows authme.wechall.net requires client certificate verification.</p>
-</blockquote>
-<p>需要使用客户端证书访问 authme.wechall.net 上的挑战页面。</p>
-<h3 id="solution">Solution</h3>
-<p>关键线索在挑战页面的 <code>find_me/</code>
-目录下，存放着客户端证书文件：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/space/auth_me/find_me/client.crt&#x27;</span></span><br><span class="line">$ curl -sL -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/space/auth_me/find_me/client.key&#x27;</span></span><br><span class="line">$ curl -sL -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/space/auth_me/find_me/client.p12&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>Apache 配置文件 <code>find_me/apache.conf</code>
-显示服务器要求客户端证书验证：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GnuTLSClientVerify require</span><br></pre></td></tr></table></figure>
-<p>使用下载的客户端证书访问目标页面：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sk -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  --cert client.crt --key client.key \</span><br><span class="line">  <span class="string">&#x27;https://authme.wechall.net/challenge/space/auth_me/www/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>返回：<code>Your answer is correct. Congratulations you have solved this challenge.</code></p>
-<p>关键：必须同时携带 WC cookie 和客户端证书，这样服务器才能将 solve
-注册到你的账户。<code>-k</code> 参数跳过自签名证书验证。</p>
 
       
     </div>

