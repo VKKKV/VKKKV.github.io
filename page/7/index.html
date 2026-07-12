@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">356</span>
+          <span class="site-state-item-count">357</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,126 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-substitution-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-substitution-2/" class="post-title-link" itemprop="url">WeChall - Training - Crypto - Substitution II</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-10 11:11:18 / Modified: 11:16:10" itemprop="dateCreated datePublished" datetime="2026-06-10T11:11:18+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-substitution-2/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-substitution-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>I have created an advanced version of the simple substitution cipher.
+It can now use chars in range from 0-255, but that should not stop you.
+The ciphertext is in the language of this text, and uses correct
+punctuation and case-sensitivity.</p>
+</blockquote>
+<p>Substitution I 的进阶版。每次页面会生成一套新的 0-255
+字节替换表，密文是十六进制字节序列，明文语言仍然是英文。</p>
+<h3 id="solution">Solution</h3>
+<p>这题不能复用旧答案：同一个挑战在不同 session 下会给不同密文和不同的
+<code>solution</code> 值。但明文模板是固定的，所以可以用 known plaintext
+方法解码。</p>
+<p>解法步骤：</p>
+<ol type="1">
+<li>访问挑战页面，获取当前 session 的十六进制密文</li>
+<li>已知明文以 <code>Congratulations!</code>
+开头，<code>o</code>、<code>n</code>、<code>a</code>、<code>t</code>
+等字母会在固定位置重复出现，以此建立字节到字符的映射</li>
+<li>继续根据英文句子上下文补全映射，直到解出完整明文</li>
+</ol>
+<p>完整明文模板为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Congratulations! This one was harder, but you got it! Very well done fellow hacker! The problem with this cipher is that the key is pretty long! I will come up with a better encryption sheme any soon! Your solution is: &lt;session-answer&gt;!</span><br></pre></td></tr></table></figure>
+<p>注意原文里故意写成了 <code>sheme</code>，不是
+<code>scheme</code>。</p>
+<p>解码脚本核心逻辑：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cipher = [<span class="built_in">int</span>(x, <span class="number">16</span>) <span class="keyword">for</span> x <span class="keyword">in</span> re.findall(<span class="string">r&#x27;\b[0-9A-F]&#123;2&#125;\b&#x27;</span>, hex_blob)]</span><br><span class="line">template = <span class="string">&#x27;Congratulations! This one was harder, but you got it! Very well done fellow hacker! The problem with this cipher is that the key is pretty long! I will come up with a better encryption sheme any soon! Your solution is: &#x27;</span></span><br><span class="line">mapping = &#123;byte: char <span class="keyword">for</span> byte, char <span class="keyword">in</span> <span class="built_in">zip</span>(cipher, template)&#125;</span><br><span class="line">plaintext = <span class="string">&#x27;&#x27;</span>.join(mapping.get(byte, <span class="string">&#x27;?&#x27;</span>) <span class="keyword">for</span> byte <span class="keyword">in</span> cipher)</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">smrnneobfhoo</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1519,127 +1639,6 @@ phpMyAdmin 的常见缩写，所以直接尝试对应子域名：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -skL \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://pma.wechall.net/&#x27;</span></span><br></pre></td></tr></table></figure>
 <p>如果账号状态更新成功，最终以 <code>/en/challs</code> 里
 <code>PHP My Admin</code> 的 <code>wc_chall_solved_1</code> 为准。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-repeating-history/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-repeating-history/" class="post-title-link" itemprop="url">WeChall - Repeating History</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-09 16:57:39 / Modified: 16:57:43" itemprop="dateCreated datePublished" datetime="2026-06-09T16:57:39+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-repeating-history/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-repeating-history/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This challenge is about researching the GWF3 codebase. I have put 2
-passwords somewhere, but .... The first password is obvious and the
-second is very subversive. Both are near. Combine them without any
-separator.</p>
-</blockquote>
-<p>需要研究 WeChall 的 GWF3 框架源码，找到两个隐藏的密码。</p>
-<h3 id="solution">Solution</h3>
-<p>GWF3 源码在 GitHub：<code>gizmore/gwf3</code></p>
-<p><strong>第一个密码</strong>（"obvious"）：</p>
-<p>在
-<code>www/challenge/subversive/repeating/what_do_you_want_here.php</code>
-中，PHP 注释里藏着密码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="comment">/*InDaxIn*/</span> <span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-<p>页面源码显示空引号，但查看原始 HTML 可以看到注释中的
-<code>InDaxIn</code>。</p>
-<p><strong>第二个密码</strong>（"very subversive"）：</p>
-<p>在 <code>www/challenge/subversive/history/install.php</code> 的 git
-历史中。当前版本：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$solution</span> = <span class="string">&#x27;2bda2998d9b0ee197da142a0447f6725&#x27;</span>;  <span class="comment">// MD5(&quot;wrong&quot;) — 红鲱鱼！</span></span><br></pre></td></tr></table></figure>
-<p>通过 <code>git log</code> 查看历史提交，原始密码是
-<code>NothingHereMoveAlong</code>，后来被替换成了 MD5("wrong")
-的哈希。</p>
-<p>这就是为什么挑战叫 "Repeating History" —— 你必须重复/回溯 git
-历史才能找到原始密码。</p>
-<p><strong>组合答案</strong>：<code>InDaxIn</code> +
-<code>NothingHereMoveAlong</code>（无分隔符）</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">InDaxInNothingHereMoveAlong</span></span>
 
       
     </div>
