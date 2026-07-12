@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">357</span>
+          <span class="site-state-item-count">358</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,174 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cracking-towers-of-hanoi/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-cracking-towers-of-hanoi/" class="post-title-link" itemprop="url">WeChall - Towers of Hanoi (Java, Cracking)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-14 13:12:16 / Modified: 13:15:53" itemprop="dateCreated datePublished" datetime="2026-06-14T13:12:16+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-cracking-towers-of-hanoi/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cracking-towers-of-hanoi/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Java applet 实现汉诺塔，10 个盘子从左柱移到右柱，限 60
+秒。无法在现代浏览器直接运行（Java applet 已被弃用），需要逆向 jar
+文件离线算出答案。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>Step 0: 获取 JAR</strong></p>
+<p>JAR 文件在挑战页面的 <code>&lt;applet&gt;</code> 标签中通过
+<code>archive="hanoi2.jar"</code> 引用，与页面同目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ wget https://www.wechall.net/challenge/Z/hanoi/hanoi2.jar</span><br></pre></td></tr></table></figure>
+<p><strong>Step 1: 逆向分析</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ jar xf hanoi2.jar</span><br><span class="line">$ javap -c -p Tower.class Tower\<span class="variable">$TowerPanel</span>.class</span><br></pre></td></tr></table></figure>
+<p>反编译关键发现：</p>
+<ul>
+<li>每次合法拖拽后，<code>mouseUp()</code> 构造
+<code>last_tower + new_tower</code>（如 <code>"a" + "b"</code> =
+<code>"ab"</code>），调用 <code>Tower.query(move)</code></li>
+<li><code>query()</code> 向
+<code>/challenge/Z/hanoi/?query=&lt;move&gt;</code> 发 HTTP
+请求，读取服务器返回的 2 字符响应，追加到 <code>solution</code>
+字符串</li>
+<li>所有 10 盘移到右柱（<code>win=true</code>）时，对
+<code>solution</code> 做 SHA-512，导航到
+<code>?solution=&lt;hash&gt;</code></li>
+<li>60 秒超时（<code>javax.swing.Timer</code>），移动超过 1023
+步自动重置</li>
+</ul>
+<p><strong>Step 2: 获取 6 种 query 的返回值</strong></p>
+<p>服务器对每种合法移动返回固定 2 字符令牌：</p>
+<table>
+<thead>
+<tr>
+<th>Move</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ab</td>
+<td>we</td>
+</tr>
+<tr>
+<td>ac</td>
+<td>ch</td>
+</tr>
+<tr>
+<td>ba</td>
+<td>lr</td>
+</tr>
+<tr>
+<td>bc</td>
+<td>al</td>
+</tr>
+<tr>
+<td>ca</td>
+<td>ul</td>
+</tr>
+<tr>
+<td>cb</td>
+<td>z!</td>
+</tr>
+</tbody>
+</table>
+<p>这些值可通过实际运行 applet 抓包或直接 curl 逐个获取：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://www.wechall.net/challenge/Z/hanoi/?query=ab&#x27;</span></span><br><span class="line">we</span><br></pre></td></tr></table></figure>
+<p><strong>Step 3: 生成最优序列</strong></p>
+<p>10 盘汉诺塔最优解需要 2^10 − 1 = 1023 步。经典的递归解法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line">MOVE_RESP = &#123;</span><br><span class="line">    <span class="string">&#x27;ab&#x27;</span>: <span class="string">&#x27;we&#x27;</span>, <span class="string">&#x27;ac&#x27;</span>: <span class="string">&#x27;ch&#x27;</span>, <span class="string">&#x27;ba&#x27;</span>: <span class="string">&#x27;lr&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;bc&#x27;</span>: <span class="string">&#x27;al&#x27;</span>, <span class="string">&#x27;ca&#x27;</span>: <span class="string">&#x27;ul&#x27;</span>, <span class="string">&#x27;cb&#x27;</span>: <span class="string">&#x27;z!&#x27;</span>,</span><br><span class="line">&#125;</span><br><span class="line">TOWER = [<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;b&#x27;</span>, <span class="string">&#x27;c&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hanoi_moves</span>(<span class="params">n, src, dst, aux</span>):</span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">0</span>: <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">yield</span> <span class="keyword">from</span> hanoi_moves(n - <span class="number">1</span>, src, aux, dst)</span><br><span class="line">    <span class="keyword">yield</span> (src, dst)</span><br><span class="line">    <span class="keyword">yield</span> <span class="keyword">from</span> hanoi_moves(n - <span class="number">1</span>, aux, dst, src)</span><br><span class="line"></span><br><span class="line">moves = <span class="built_in">list</span>(hanoi_moves(<span class="number">10</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">1</span>))</span><br><span class="line">solution = <span class="string">&#x27;&#x27;</span>.join(</span><br><span class="line">    MOVE_RESP[TOWER[s] + TOWER[d]] <span class="keyword">for</span> s, d <span class="keyword">in</span> moves</span><br><span class="line">)</span><br><span class="line">sha = hashlib.sha512(solution.encode()).hexdigest()</span><br><span class="line"><span class="built_in">print</span>(sha)</span><br></pre></td></tr></table></figure>
+<p>输出的 SHA-512 即为答案。</p>
+<p><strong>Step 4: 提交</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl <span class="string">&quot;https://www.wechall.net/challenge/Z/hanoi/index.php?solution=&lt;sha512&gt;&quot;</span></span><br></pre></td></tr></table></figure>
+<p>服务器返回 "Correct!" 即通过。</p>
+<p><strong>注意：</strong> 该 hash 是确定性的（固定响应表 + 最优路径 =
+固定 result），所以可以直接用提交的方式跳过
+applet。如服务器已有提交记录，会提示 "Your answer is correct but you
+have already solved this challenge."</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">feb3a1f6e5e259f381f42a4e72aceaea204403fab7eec9a2d3d0bcff076a647be88f6f6caeeb1b6295aabba9807f1a2260b466f9f0512498fb50300703eb2552</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1410,157 +1578,6 @@ fundings=1，条件仍然 fundings &gt;= domains。只有
 提取完整查询文本，确认当前账号下数据库和表名为：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nurfedtables37.userbobbytable7</span><br></pre></td></tr></table></figure>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">nurfedtables37_userbobbytable7</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-bill-for-bill/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-bill-for-bill/" class="post-title-link" itemprop="url">WeChall - bill for Bill</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-13 19:28:09 / Modified: 19:28:10" itemprop="dateCreated datePublished" datetime="2026-06-13T19:28:09+08:00">2026-06-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-bill-for-bill/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-bill-for-bill/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Cracking/Forensics 类（Storyline 系列），由 Z 创作。</p>
-<p>一个叫 Bill 的人把秘密藏在加密的 KeePass 数据库里。需要从他的 Windows
-SAM 文件开始，走完整条攻击链才能拿到最终的答案。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">给的文件: files.zip</span><br><span class="line">├── SAM        # Windows SAM (Security Account Manager)</span><br><span class="line">├── system     # SYSTEM registry hive（对应加密的 boot key）</span><br><span class="line">└── keepass.kdb  # KeePass 1.x KDB 格式</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<h4 id="step-1-从-sam-system-提取-ntlm-hash">Step 1 — 从 SAM + SYSTEM
-提取 NTLM hash</h4>
-<p><code>secretsdump.py</code>（impacket 包）从 SAM + SYSTEM
-离线提取本地用户的 hash：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ secretsdump.py -sam SAM -system system LOCAL</span><br><span class="line">Impacket v0.12.0 - Copyright 2023 Fortra</span><br><span class="line"></span><br><span class="line">[*] Target system bootKey: 0xac285427313a1c9a8dc2e8b3421a2e22</span><br><span class="line">[*] Dumping local SAM hashes:</span><br><span class="line">Bill:500:7f4ac180230c769790d3d8ad454f5167:cfb69fa6cb1d792d63b02c6eefc807e5:::</span><br></pre></td></tr></table></figure>
-<p>格式：<code>用户:RID:LM_HASH:NTLM_HASH:::</code> NTLM hash（第二个 32
-hex）是 <code>cfb69fa6cb1d792d63b02c6eefc807e5</code>。</p>
-<p>LM hash <code>7f4ac180230c769790d3d8ad454f5167</code> 非空（非
-<code>aad3b4...</code>），说明密码 &gt;= 8 字符，可以用 Ophcrack +
-rainbow table 破解。但走 NTLM 更直接。</p>
-<h4 id="step-2-破解-ntlm-hash">Step 2 — 破解 NTLM hash</h4>
-<p>在线 NTLM 查询 <span class="exturl" data-url="aHR0cHM6Ly9udGxtLnB3">ntlm.pw<i class="fa fa-external-link-alt"></i></span>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://ntlm.pw/cfb69fa6cb1d792d63b02c6eefc807e5</span><br><span class="line">→ W3cH4112u1Z99</span><br></pre></td></tr></table></figure>
-<p>离线可用 john + rockyou 或 hashcat。</p>
-<p>Windows 密码: <code>W3cH4112u1Z99</code></p>
-<p>index2.php 有一段 substitution cipher 隐藏 hint，解码后提示用
-Ophcrack + ~380MB rainbow table 破解 LM hash，但 NTLM
-在线查表更快，结果一致（LM 大写版 <code>W3CH4112U1Z99</code>
-无额外信息）。</p>
-<h4 id="step-3-解密-keepass">Step 3 — 解密 KeePass</h4>
-<p>剧情设计上 Bill 是密码复用受害者——KeePass 密码 == Windows 密码。</p>
-<p>keepass.kdb 是 <strong>KeePass 1.x KDB 格式</strong>（非
-KDBX），AES-256-CBC 加密。Python 库 <code>pykeepass</code> 只支持
-KDBX，需用 <code>libkeepass</code>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ pip install libkeepass</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> libkeepass</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> libkeepass.<span class="built_in">open</span>(<span class="string">&#x27;keepass.kdb&#x27;</span>, password=<span class="string">&#x27;W3cH4112u1Z99&#x27;</span>) <span class="keyword">as</span> db:</span><br><span class="line">    <span class="keyword">for</span> entry <span class="keyword">in</span> db.entries:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Group: <span class="subst">&#123;entry[<span class="string">&#x27;group&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Title: <span class="subst">&#123;entry[<span class="string">&#x27;title&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Username: <span class="subst">&#123;entry[<span class="string">&#x27;username&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Password: <span class="subst">&#123;entry[<span class="string">&#x27;password&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>()</span><br></pre></td></tr></table></figure>
-<p>KeePass 结构：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Group: credit card</span><br><span class="line">  Title: Amex</span><br><span class="line">  Username: 371234567895006:08/05-18/05:562</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: Personal</span><br><span class="line">  Title: Personal data</span><br><span class="line">  Username: William Henry Gates III</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: W1nd0ws</span><br><span class="line">  Title: My home w1n box</span><br><span class="line">  Username: Bill</span><br><span class="line">  Password: W3cH4112u1Z99</span><br><span class="line"></span><br><span class="line">Group: eMail</span><br><span class="line">  Title: My hotmail account</span><br><span class="line">  Username: BillG@h0tma1l.com</span><br><span class="line">  Password:               ← 空字符串，这就是密码</span><br></pre></td></tr></table></figure>
-<p>四个 entry 分布在 7 个 group 中（另有空的 L1nux、M4C、Backup
-组）。</p>
-<p>关键条目：<code>Amex</code> 的 username 包含完整信用卡数据（格式
-<code>CC_NUMBER:VALID_FROM-EXPIRY:CVV</code>）。</p>
-<h4 id="step-4-提交信用卡">Step 4 — 提交信用卡</h4>
-<p><code>check_card.php</code> 接受 POST 字段
-<code>cc</code>（maxlength=31）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  --data-urlencode &#x27;cc=371234567895006:08/05-18/05:562&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/challenge/Z/bill_for_bill/check_card.php&#x27;</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">371234567895006:08/05-18/05:562</span></span>
-<p>返回提示需要登录父亲的邮箱删除交易通知邮件，进入下一步。</p>
-<h4 id="step-5-登录邮箱删邮件">Step 5 — 登录邮箱删邮件</h4>
-<p><code>signin.php</code> 是一个仿 Microsoft Live ID 的钓鱼页面，POST
-到 <code>login.php</code>。</p>
-<p>KeePass 中 email 条目的 password 字段是空字符串——这就是密码：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POST login=BillG@h0tma1l.com&amp;passwd=&amp;SI=Signin&amp;LoginOptions=2</span><br><span class="line">→ 302 Redirect → loggedin.php</span><br></pre></td></tr></table></figure>
-<p>登录后收件箱中有一封来自 M4C 的未读邮件，checkbox 的
-<code>value="thisisit"</code>。通过 <code>loggedin.php?del=sel</code>
-标记删除。</p>
-<p>至此攻击链完成：从 Windows SAM 一路走到删除银行通知邮件。</p>
-<h4 id="step-6-提交-wechall-答案">Step 6 — 提交 WeChall 答案</h4>
-<p>全部分析完成后，在主站 solution form 提交答案：</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">passwordsuxx</span></span>
-<h3 id="summary">Summary</h3>
-<p>完整的 Windows
-凭证盗窃链：<code>SAM+SYSTEM → NTLM hash → 密码复用 → KeePass → 敏感数据泄露 → 登录邮箱销毁证据</code>。</p>
 
       
     </div>

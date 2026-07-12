@@ -23782,4 +23782,134 @@ Part 1 正确）</li>
         <tag>malware</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - eXtract Me</title>
+    <url>/wp/WeChall/wechall-extract-me/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>eXtract Me (Encoding, Stegano) — score 3, by oleg.</p>
+<blockquote>
+<p>Yo dog, I heard you like zips so we put a zip in your zip so you can
+unzip unzipped zips. Enjoy!</p>
+</blockquote>
+<p>Download: <code>r.zip</code> (2698 bytes).</p>
+<h3 id="solution">Solution</h3>
+<p>The challenge is an archive matryoshka: the <code>r.zip</code>
+contains an infinite recursive zip (<code>r/r.zip</code> → always the
+same inner zip), plus hidden data appended after the ZIP EOCD.</p>
+<p><strong>Step 1 — Cut out the second archive</strong></p>
+<p><code>r.zip</code> is actually two things stitched together:</p>
+<ul>
+<li>First 440 bytes: the recursive zip (r/r.zip, endless loop)</li>
+<li>Remaining 2258 bytes: LZW-compressed data (magic
+<code>\x1f\x9d</code>)</li>
+</ul>
+<p>Extract the trailing data and decompress with
+<code>uncompress</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ python3 -c &quot;</span><br><span class="line">with open(&#x27;r.zip&#x27;,&#x27;rb&#x27;) as f:</span><br><span class="line">    d=f.read()</span><br><span class="line">open(&#x27;trailing.Z&#x27;,&#x27;wb&#x27;).write(d[440:])</span><br><span class="line">&quot;</span><br><span class="line">$ uncompress -c trailing.Z &gt; stage1.xar</span><br><span class="line">$ file stage1.xar</span><br><span class="line">stage1.xar: xar archive compressed TOC</span><br></pre></td></tr></table></figure>
+<p><strong>Step 2 — Extract the chain</strong></p>
+<p>The XAR contains file "8", which is itself LZW-compressed:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ xar -xf stage1.xar       # extract → file &quot;8&quot;</span><br><span class="line">$ uncompress -c 8 &gt; stage2.rar</span><br></pre></td></tr></table></figure>
+<p>Then continue extracting each layer with 7z or the appropriate
+tool:</p>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 29%" />
+<col style="width: 19%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Format</th>
+<th>Tool</th>
+<th>Contains</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>r.zip tail</td>
+<td>LZW (.Z)</td>
+<td>uncompress</td>
+<td>XAR archive</td>
+</tr>
+<tr>
+<td>XAR</td>
+<td>xar</td>
+<td>xar / Python</td>
+<td>file "8" (LZW)</td>
+</tr>
+<tr>
+<td>file 8</td>
+<td>LZW (.Z)</td>
+<td>uncompress</td>
+<td>RAR archive</td>
+</tr>
+<tr>
+<td>RAR</td>
+<td>rar</td>
+<td>7z</td>
+<td>file "A" (XZ)</td>
+</tr>
+<tr>
+<td>XZ</td>
+<td>xz</td>
+<td>7z</td>
+<td>file "A~" (ZOO)</td>
+</tr>
+<tr>
+<td>ZOO</td>
+<td>zoo</td>
+<td>unar</td>
+<td>file "4" (RZIP)</td>
+</tr>
+<tr>
+<td>RZIP</td>
+<td>rzip → ZZ0 → gzip → ARJ</td>
+<td>uncompress + 7z</td>
+<td>file "1" (ARJ → "3")</td>
+</tr>
+<tr>
+<td>ARJ</td>
+<td>arj</td>
+<td>7z</td>
+<td>file "3" (LZW)</td>
+</tr>
+<tr>
+<td>file 3</td>
+<td>LZW (.Z)</td>
+<td>uncompress</td>
+<td>7z archive</td>
+</tr>
+<tr>
+<td>7z</td>
+<td>7z</td>
+<td>7z</td>
+<td>file "F" (bzip2)</td>
+</tr>
+<tr>
+<td>bzip2</td>
+<td>bz2</td>
+<td>bunzip2</td>
+<td><code>L0LYouThInkiTSh0uldB3SoEasY?</code></td>
+</tr>
+</tbody>
+</table>
+<p>The full extraction chain is:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">r.zip</span><br><span class="line"> ├─ r/r.zip (infinite recursion, ignore)</span><br><span class="line"> └─ trailing LZW data</span><br><span class="line">    └─ XAR → 8(LZW) → RAR → A(XZ) → A~(ZOO) → 4(RZIP)</span><br><span class="line">       └─ ZZ0(gzip) → 1(ARJ) → 3(LZW) → 7z → F(bzip2)</span><br><span class="line">          └─ &quot;L0LYouThInkiTSh0uldB3SoEasY?&quot; (password)</span><br></pre></td></tr></table></figure>
+<p>This showcases the depth of archive format history — ZIP, LZW
+compress, XAR, RAR, XZ, ZOO, RZIP, GZip, ARJ, 7z, bzip2 — almost every
+compression format ever invented.</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>stegano</tag>
+        <tag>encoding</tag>
+      </tags>
+  </entry>
 </search>
