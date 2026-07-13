@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">358</span>
+          <span class="site-state-item-count">359</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,123 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-14-cracking-intro-amaze-us/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-cgx-14-cracking-intro-amaze-us/" class="post-title-link" itemprop="url">WeChall - CGX#14 - Cracking Intro - Amaze Us</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-22 21:30:29 / Modified: 21:30:32" itemprop="dateCreated datePublished" datetime="2026-06-22T21:30:29+08:00">2026-06-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-cgx-14-cracking-intro-amaze-us/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-14-cracking-intro-amaze-us/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>"Dear fellow Hackers,"</p>
+<p>This time we will dive into a small windows application to get you
+started with cracking. We are using x64debug and analyze the crackit
+"Amaze Me" from bb on TBS.</p>
+</blockquote>
+<p>README 里提到是用 x64dbg 分析，但真正的解法不需要 Windows——PE 文件的
+<code>.data</code> 段直接包含了迷宫网格，简单字节提取 + BFS 即可。</p>
+<h3 id="solution">Solution</h3>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ file amazeme.exe</span><br><span class="line">amazeme.exe: PE32+ executable (GUI) x86-64, <span class="keyword">for</span> MS Windows</span><br></pre></td></tr></table></figure>
+<p>PE section 信息： - <code>.data</code> section: VA=0x403000,
+file_offset=0xC00 - 迷宫数据起始: VA 0x4030D0 = file offset
+<strong>0xCD0</strong> - 迷宫终点: VA 0x4032BE = file offset
+<strong>0xEBE</strong> - 网格宽度 16 字节，高度 32 行</p>
+<p><code>xxd</code> 看 <code>.data</code> 段会发现一段明显的 ASCII art
+迷宫的变体——字节值是
+<code>0x2e</code>（<code>.</code>）作为墙，<code>0x00</code>
+作为路：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">00000cc0: 2e2e 2e2e 2e2e 2e2e 2e2e 2e2e 2e2e 2e2e  ................</span><br><span class="line">00000cd0: 0000 2e00 0000 0000 2e00 0000 0000 2e2e  ................</span><br><span class="line">00000ce0: 2e00 2e00 2e2e 2e00 2e00 2e2e 2e00 2e2e  ................</span><br></pre></td></tr></table></figure>
+<p>这个格子逻辑在二进制中可以反汇编确认：比较指令
+<code>cmp byte [edi], 1</code> 后跟 <code>jge fail</code>，即字节值
+&gt;= 1 就是墙，<code>0x00</code> 是路。</p>
+<h4 id="提取-bfs-求解">提取 + BFS 求解</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;amazeme.exe&#x27;</span>, <span class="string">&#x27;rb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    data = f.read()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 迷宫参数（从二进制分析得出）</span></span><br><span class="line">ROW_WIDTH = <span class="number">16</span></span><br><span class="line">NUM_ROWS = <span class="number">32</span></span><br><span class="line">START_OFFSET = <span class="number">0xCC0</span>  <span class="comment"># .data section 开始 + 0xC0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 提取迷宫字节</span></span><br><span class="line">maze_bytes = data[START_OFFSET:START_OFFSET + NUM_ROWS * ROW_WIDTH]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 转二维网格：0=路, 1=墙</span></span><br><span class="line">grid = []</span><br><span class="line"><span class="keyword">for</span> row <span class="keyword">in</span> <span class="built_in">range</span>(NUM_ROWS):</span><br><span class="line">    r = []</span><br><span class="line">    <span class="keyword">for</span> col <span class="keyword">in</span> <span class="built_in">range</span>(ROW_WIDTH):</span><br><span class="line">        b = maze_bytes[row * ROW_WIDTH + col]</span><br><span class="line">        r.append(<span class="number">1</span> <span class="keyword">if</span> b != <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span>)</span><br><span class="line">    grid.append(r)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 起点 (1,0)，终点 (31,14)</span></span><br><span class="line">start = (<span class="number">1</span>, <span class="number">0</span>)</span><br><span class="line">goal = (<span class="number">31</span>, <span class="number">14</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># BFS 求最短路径</span></span><br><span class="line">queue = deque()</span><br><span class="line">queue.append((start, <span class="string">&quot;&quot;</span>))</span><br><span class="line">visited = &#123;start&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> queue:</span><br><span class="line">    (r, c), path = queue.popleft()</span><br><span class="line">    <span class="keyword">if</span> (r, c) == goal:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Solution: <span class="subst">&#123;path&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Length: <span class="subst">&#123;<span class="built_in">len</span>(path)&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">for</span> dr, dc, ch <span class="keyword">in</span> [(<span class="number">0</span>, -<span class="number">1</span>, <span class="string">&#x27;L&#x27;</span>), (<span class="number">0</span>, <span class="number">1</span>, <span class="string">&#x27;R&#x27;</span>), (-<span class="number">1</span>, <span class="number">0</span>, <span class="string">&#x27;U&#x27;</span>), (<span class="number">1</span>, <span class="number">0</span>, <span class="string">&#x27;D&#x27;</span>)]:</span><br><span class="line">        nr, nc = r + dr, c + dc</span><br><span class="line">        <span class="keyword">if</span> <span class="number">0</span> &lt;= nr &lt; NUM_ROWS <span class="keyword">and</span> <span class="number">0</span> &lt;= nc &lt; ROW_WIDTH:</span><br><span class="line">            <span class="keyword">if</span> grid[nr][nc] == <span class="number">0</span> <span class="keyword">and</span> (nr, nc) <span class="keyword">not</span> <span class="keyword">in</span> visited:</span><br><span class="line">                visited.add((nr, nc))</span><br><span class="line">                queue.append(((nr, nc), path + ch))</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1583,120 +1700,6 @@ injection 被堵了。</p>
 <li>所以 fake <code>wc</code> 可以 <code>cat solution.txt</code></li>
 </ul>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">CodingIsDamnHard3</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-www-rewrites/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-training-www-rewrites/" class="post-title-link" itemprop="url">WeChall - Training - WWW-Rewrites</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-14 16:42:38 / Modified: 16:44:24" itemprop="dateCreated datePublished" datetime="2026-06-14T16:42:38+08:00">2026-06-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-training-www-rewrites/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-www-rewrites/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>WeChall 会请求你服务器的
-<code>/WechallUsername/[0-9]+_mul_[0-9]+.html</code>
-路径，你的服务器需返回两数乘积。</p>
-<p>表单只提交 port，IP 由 WeChall 自动检测（从请求的 TCP 源 IP）。</p>
-<h3 id="solution">Solution</h3>
-<p>需要一台满足两个条件的机器： 1. 公网 IP 可被 WeChall 访问（入站） 2.
-能出站到 WeChall（提交表单）</p>
-<h4 id="方案临时-vultr-vps">方案：临时 Vultr VPS</h4>
-<p>用 <code>vultr-cli</code> 在 Frankfurt 区域开一台 Debian 12 VPS：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装 CLI</span></span><br><span class="line"><span class="built_in">sudo</span> pacman -S vultr-cli</span><br><span class="line"><span class="built_in">export</span> VULTR_API_KEY=<span class="string">&#x27;your-api-key&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 开机器</span></span><br><span class="line">vultr-cli instance create --region fra --plan vc2-1c-1gb --os 2136 --host wechall-ctf</span><br></pre></td></tr></table></figure>
-<p>拿到 IP 和 root 密码后：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 部署 rewrite server</span></span><br><span class="line">scp rw.py root@IP:/tmp/</span><br><span class="line">ssh root@IP <span class="string">&#x27;nohup python3 /tmp/rw.py 8889 &gt; /tmp/rw.log 2&gt;&amp;1 &amp;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 开放防火墙</span></span><br><span class="line">ssh root@IP <span class="string">&#x27;ufw allow 8889/tcp&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 提交表单</span></span><br><span class="line">curl -b <span class="string">&#x27;WC=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;port=8889&amp;go=I+have+set+it+up.+Please+check+my+server.&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/training/www/rewrite/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<h4 id="rewrite-server">Rewrite Server</h4>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> http.server, re, sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">H</span>(http.server.BaseHTTPRequestHandler):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">do_GET</span>(<span class="params">self</span>):</span><br><span class="line">        m = re.<span class="keyword">match</span>(<span class="string">r&#x27;^/WechallUsername/([0-9]+)_mul_([0-9]+)\.html$&#x27;</span>, <span class="variable language_">self</span>.path)</span><br><span class="line">        <span class="keyword">if</span> m:</span><br><span class="line">            r = <span class="built_in">str</span>(<span class="built_in">int</span>(m.group(<span class="number">1</span>)) * <span class="built_in">int</span>(m.group(<span class="number">2</span>)))</span><br><span class="line">            <span class="variable language_">self</span>.send_response(<span class="number">200</span>)</span><br><span class="line">            <span class="variable language_">self</span>.send_header(<span class="string">&#x27;Content-Type&#x27;</span>, <span class="string">&#x27;text/plain&#x27;</span>)</span><br><span class="line">            <span class="variable language_">self</span>.end_headers()</span><br><span class="line">            <span class="variable language_">self</span>.wfile.write(r.encode())</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="variable language_">self</span>.send_response(<span class="number">200</span>)</span><br><span class="line">            <span class="variable language_">self</span>.end_headers()</span><br><span class="line">            <span class="variable language_">self</span>.wfile.write(<span class="string">b&#x27;ready&#x27;</span>)</span><br><span class="line"></span><br><span class="line">httpd = http.server.HTTPServer((<span class="string">&#x27;0.0.0.0&#x27;</span>, <span class="built_in">int</span>(sys.argv[<span class="number">1</span>])), H)</span><br><span class="line">httpd.serve_forever()</span><br></pre></td></tr></table></figure>
-<h4 id="注意事项">注意事项</h4>
-<ul>
-<li>注意开放 UFW/iptables 端口（Vultr Debian 默认 INPUT DROP）</li>
-<li>Vultr 防火墙组也要加规则，或者不用 Vultr 防火墙直接用 UFW</li>
-<li>用完删实例避免继续计费：<code>vultr-cli instance delete &lt;ID&gt;</code></li>
-<li>最低成本 ~$0.004/hr（vc2-1c-1gb 约 $5/月，按小时计费）</li>
-</ul>
 
       
     </div>

