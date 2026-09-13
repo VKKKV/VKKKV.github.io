@@ -305,45 +305,10 @@ p.spoiler {
     brand.appendChild(underline);
   }
 
-  function initBackToTop() {
-    const button = document.querySelector('.badge-normal');
-    if (!button || button.dataset.hooked) return;
-    button.addEventListener('click', () => {
-      const useNativeScroll = document.dispatchEvent(new Event('hud:back-to-top', { cancelable: true }));
-      if (useNativeScroll) {
-        window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-      }
-    });
-    button.dataset.hooked = 'true';
-  }
-
-  let progressFrame = null;
-  function updateTacticalBus() {
-    progressFrame = null;
-    const bar = document.getElementById('busProgress');
-    if (!bar) return;
-    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const progress = height > 0 ? Math.min(100, Math.max(0, window.scrollY / height * 100)) : 0;
-    bar.style.height = `${progress}%`;
-    const value = document.getElementById('hudReadPercent');
-    if (value) value.textContent = String(Math.round(progress)).padStart(2, '0');
-  }
-  function scheduleProgress() {
-    if (progressFrame === null) progressFrame = requestAnimationFrame(updateTacticalBus);
-  }
-
   function initAll() {
     initAvatarHUD();
     initHeader();
-    initBackToTop();
-    const mode = document.getElementById('hudPageMode');
-    if (mode) mode.textContent = document.querySelector('.post-body') && !document.querySelector('.post-title-link') ? 'READING' : 'INDEX';
-    scheduleProgress();
   }
-  window.addEventListener('scroll', scheduleProgress, { passive: true });
-  window.addEventListener('resize', scheduleProgress);
-  window.addEventListener('load', scheduleProgress, { once: true });
-  if (window.ResizeObserver) new ResizeObserver(scheduleProgress).observe(document.body);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAll, { once: true });
   else initAll();
   document.addEventListener('pjax:success', initAll);
@@ -645,13 +610,6 @@ flag is readily available.</p>
   let loadBar = null;
   const tick = (time) => lenis?.raf(time * 1000);
 
-  document.addEventListener("hud:back-to-top", (event) => {
-    if (!lenis || reducedMotion.matches) return;
-    event.preventDefault();
-    // Retarget the active Lenis animation; native smooth scroll would fight its RAF.
-    lenis.scrollTo(0, { force: true, lock: true, duration: 1 });
-  });
-
   function cleanupPage() {
     cancelAnimationFrame(frame);
     frame = null;
@@ -790,7 +748,7 @@ flag is readily available.</p>
   const cells = new Map();
   const size = 24;
   const radius = 54;
-  const occluders = '.header, .sidebar, .footer, .search-pop-overlay, .hud-module, .badge-normal';
+  const occluders = '.header, .sidebar, .footer, .search-pop-overlay';
   let canvas = null;
   let context = null;
   let frame = null;
@@ -996,27 +954,6 @@ flag is readily available.</p>
 
 
 
-<!-- Combined instrument: keep the left margin clear. -->
-<div class="hud-assembly" aria-hidden="true">
-  <div class="hud-module hud-read-module" id="tacticalBus">
-    <div class="hud-module-cap"><span>NV / ARCHIVE</span><b>01</b></div>
-    <div class="hud-identity">
-      <div class="hud-aperture"><span>NV</span></div>
-      <div class="hud-stencil">NAVI</div>
-    </div>
-    <div class="hud-mode" id="hudPageMode">INDEX</div>
-    <div class="hud-read-label">READ / PROGRESS</div>
-    <div class="hud-read-value"><span id="hudReadPercent">00</span><small>%</small></div>
-    <div class="hud-read-channel">
-      <div class="hud-progress-track"><div id="busProgress" class="bus-progress"></div></div>
-      <div class="hud-scale"><span>100</span><span>75</span><span>50</span><span>25</span><span>00</span></div>
-      <div class="hud-channel-label">CODE / ANALYZE / SOLVE</div>
-    </div>
-    <div class="hud-barcode"></div>
-    <div class="hud-module-foot"><span>LOCAL / NOTES</span><i></i><i></i><i></i></div>
-  </div>
-</div>
-
 <!-- ============================================================
      CUSTOM CURSOR STALKER
      ============================================================ -->
@@ -1128,14 +1065,6 @@ flag is readily available.</p>
   enabled = media.matches;
 })();
 </script>
-
-<!-- Return-to-top control -->
-<div class="hud-status-group">
-  <button class="badge-normal" type="button" aria-label="Back to top">
-    <span class="hud-return-icon" aria-hidden="true">↑</span>
-    <span class="hud-return-copy"><b>RETURN</b><small>BACK TO TOP</small></span>
-  </button>
-</div>
 
 </body>
 </html>
