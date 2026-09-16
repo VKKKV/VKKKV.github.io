@@ -30,7 +30,7 @@
 <meta property="og:description" content="level 0 → level 1 1234567SSH InformationHost: maze.labs.overthewire.orgPort: 2225User: maze0Pass: maze0Passwords: &#x2F;etc&#x2F;maze_pass&#x2F;Binaries: &#x2F;maze&#x2F; Maze 是一个侧重 exploitation 技巧的 wargame，难度 5&#x2F;10，共 9 关（0-8）">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-10T07:15:29.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.239Z">
+<meta property="article:modified_time" content="2026-09-15T02:08:41.330Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="maze">
@@ -234,18 +234,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -318,7 +318,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:08:41" itemprop="dateModified" datetime="2026-09-15T10:08:41+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -376,13 +376,13 @@ hooking、shellcode、self-modifying code、自定义 ELF 解析、ptrace
 竞争条件。</p>
 <p>Binary 逻辑（r2 反汇编）：</p>
 <ol type="1">
-<li><code>memset(buf, 0, 0x14)</code> — 清空 20 字节 buffer</li>
-<li><code>access("/tmp/128ecf542a35ac5270a87dc740918404", R_OK)</code> —
-用 real uid (maze0) 检查可读性</li>
+<li><code>memset(buf, 0, 0x14)</code>：清空 20 字节 buffer</li>
+<li><code>access("/tmp/128ecf542a35ac5270a87dc740918404", R_OK)</code>：用
+real uid (maze0) 检查可读性</li>
 <li>如果 access 失败 → 直接 return</li>
-<li><code>setresuid(maze1, maze1, maze1)</code> — 全部提权到 maze1</li>
+<li><code>setresuid(maze1, maze1, maze1)</code>：全部提权到 maze1</li>
 <li><code>open(path, O_RDONLY)</code> → <code>read(fd, buf, 19)</code> →
-<code>write(1, buf, 19)</code> — 读取并输出</li>
+<code>write(1, buf, 19)</code>：读取并输出</li>
 </ol>
 <p>race window 在 access() 和 open()
 之间，只有十几个指令周期。<code>ln -sf</code> 太慢，需要用
@@ -406,7 +406,7 @@ maze1（maze1 可读）。</p>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">PBeZRPjetr</span></span>
 <h1 id="level-2-level-3">level 2 → level 3</h1>
 <p>maze2 的 binary 从 <code>argv[1]</code> 复制 8 字节到栈上
-buffer，然后 <code>call *buffer</code> — 8 字节 shellcode 约束。</p>
+buffer，然后 <code>call *buffer</code>，8 字节 shellcode 约束。</p>
 <p>反汇编要点：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cmpl $2, 8(%ebp)          ; if argc != 2 → exit(1)</span><br><span class="line">strncpy(buf, argv[1], 8)  ; copy 8 bytes</span><br><span class="line">mov buf_addr, %eax</span><br><span class="line">call *%eax                ; execute shellcode</span><br></pre></td></tr></table></figure>
 <p>解决方案：真正 shellcode 存入环境变量 <code>SC</code>，8 字节只做
@@ -430,11 +430,11 @@ shellcode。shellcode 检查 <code>argv[1] == 0x1337c0de</code>，通过则
 header，验证通过后 <code>execv()</code> 执行。</p>
 <p>验证逻辑（反汇编）：</p>
 <ol type="1">
-<li><code>read(fd, &amp;ehdr, 0x34)</code> — 读 52 bytes ELF header
+<li><code>read(fd, &amp;ehdr, 0x34)</code>：读 52 bytes ELF header
 到栈上</li>
-<li><code>lseek(fd, ehdr.e_phoff, SEEK_SET)</code> — 定位到 program
+<li><code>lseek(fd, ehdr.e_phoff, SEEK_SET)</code>：定位到 program
 header</li>
-<li><code>read(fd, &amp;phdr, 0x20)</code> — 读 32 bytes program
+<li><code>read(fd, &amp;phdr, 0x20)</code>：读 32 bytes program
 header</li>
 <li><strong>检查 1</strong>:
 <code>phdr.p_paddr == ehdr.e_ident[7] * ehdr.e_ident[8]</code>（两个
@@ -443,7 +443,7 @@ byte 乘积）</li>
 <code>stat.st_size &lt;= 0x7b</code>（文件大小 ≤ 123 bytes）</li>
 <li><code>puts("valid file, executing"); execv(file, NULL, NULL);</code></li>
 </ol>
-<p><code>execv()</code> 保留 setuid 权限 — 但 shell
+<p><code>execv()</code> 保留 setuid 权限，但 shell
 (<code>/bin/sh</code>) 会主动 drop privilege。需要编译一个专用 reader
 binary。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">maze4@maze:/tmp/work$ <span class="built_in">cat</span> &gt; reader.c &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">#include &lt;unistd.h&gt;</span></span><br><span class="line"><span class="string">#include &lt;fcntl.h&gt;</span></span><br><span class="line"><span class="string">int main()&#123;char b[50]=&#123;0&#125;;int fd=open(&quot;/etc/maze_pass/maze5&quot;,0);</span></span><br><span class="line"><span class="string">int n=read(fd,b,49);write(1,b,n);return 0;&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">maze4@maze:/tmp/work$ TMPDIR=. gcc -m32 -o reader reader.c</span><br><span class="line">maze4@maze:/tmp/work$ <span class="built_in">ln</span> -sf reader r</span><br></pre></td></tr></table></figure>
@@ -495,7 +495,7 @@ SIGTTOU。需要使用 pty：</p>
 <ol type="1">
 <li><code>strcpy(buf, argv[2])</code> 只能通过 argv 传入，不能含
 <code>\x00</code>（否则 strcpy 截断）</li>
-<li><code>memfrob(buf, len)</code> XOR 整个 buf 区域 — 所有数据需
+<li><code>memfrob(buf, len)</code> XOR 整个 buf 区域：所有数据需
 <strong>pre-XOR</strong>（<code>payload_byte ^ 0x2A = desired_byte</code>）</li>
 <li><code>fprintf</code> 不接受 fake FILE* → 需要在栈上构造合法的
 <code>_IO_FILE</code> 结构</li>

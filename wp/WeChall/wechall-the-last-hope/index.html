@@ -30,7 +30,7 @@
 <meta property="og:description" content="Challenge WeChall 上的 The Last Hope（Linux, Cracking），由一个 32-bit ELF 二进制构成。 反调试绕过 二进制有 5 层反调试，必须全部 patch 掉才能正常运行或调试。 先用 rabin2 获取基本信息： 123456789101112131415$ rabin2 -I bsd_thelasthope.elfarch     x86bin">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-14T08:04:50.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:47:51.495Z">
+<meta property="article:modified_time" content="2026-09-15T02:08:55.929Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="cracking">
 <meta property="article:tag" content="ctf">
@@ -242,18 +242,18 @@ ptrace(PTRACE_TRACEME)</span></a></li></ol></li><li class="nav-item nav-level-3"
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -326,7 +326,7 @@ ptrace(PTRACE_TRACEME)</span></a></li></ol></li><li class="nav-item nav-level-3"
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-15 10:08:55" itemprop="dateModified" datetime="2026-09-15T10:08:55+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -412,13 +412,13 @@ ptrace(PTRACE_TRACEME)</h4>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -q -c &#x27;afl~check&#x27; bsd_thelasthope.elf</span><br><span class="line">0x08048863  user_check</span><br><span class="line">0x08048bd1  pw_check</span><br><span class="line">0x080487a6  length_check</span><br></pre></td></tr></table></figure>
 <p><code>main</code> 中的处理流程：</p>
 <ol type="1">
-<li><code>fgets(username, 15, stdin)</code> — 读入包含换行符（如
+<li><code>fgets(username, 15, stdin)</code>：读入包含换行符（如
 <code>"whoami\n"</code>，<code>strlen=7</code>）</li>
-<li><code>lc(username, len)</code> — 检查前 <code>len-1</code>
+<li><code>lc(username, len)</code>：检查前 <code>len-1</code>
 个字符不含大写字母</li>
-<li><code>uc(username, len)</code> — 将前 <code>len-1</code>
+<li><code>uc(username, len)</code>：将前 <code>len-1</code>
 个字符转为大写（原地修改，内部调用 <code>toupper()</code>）</li>
-<li><code>user_check(username, len)</code> — 逐字符验证</li>
+<li><code>user_check(username, len)</code>：逐字符验证</li>
 </ol>
 <p>由于 <code>fgets</code>
 保留换行符，<code>strlen("whoami\n")=7</code>，循环 <code>i=0..5</code>
@@ -469,7 +469,7 @@ magic constant <code>0x2aaaaaab</code> 做的是除以 6（而非除以
 <code>whoami</code>（程序通过 <code>uc()</code> 自动转大写）。</p>
 <h4 id="z3-求解替代方案">z3 求解（替代方案）</h4>
 <p>此题约束本质是 CSP：6 个变量、有限域（A-Z）、线性方程 + 素性谓词。z3
-的 table-driven 模式很适合——预计算 26 个字符中哪些满足各位置约束，交给
+的 table-driven 模式很适合，预计算 26 个字符中哪些满足各位置约束，交给
 z3 解线性部分：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> z3 <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">is_fermat_prime</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">pow</span>(<span class="number">2</span>, n-<span class="number">1</span>, n) == <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 预计算：26 个字符中哪些满足各位置的素性约束</span></span><br><span class="line">valid_014 = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>)</span><br><span class="line">             <span class="keyword">if</span> is_fermat_prime(<span class="number">6</span>*c-<span class="number">1</span>) <span class="keyword">and</span> is_fermat_prime(<span class="number">6</span>*c+<span class="number">1</span>)]</span><br><span class="line">valid_25  = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> is_fermat_prime(c)]</span><br><span class="line">valid_3   = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> c % <span class="number">5</span> == <span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Bool table：每个字符是否满足对应约束</span></span><br><span class="line">table_014 = &#123;c: Bool(<span class="string">f&quot;twin_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_25  = &#123;c: Bool(<span class="string">f&quot;prime_<span class="subst">&#123;c&#125;</span>&quot;</span>) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_3   = &#123;c: Bool(<span class="string">f&quot;mod5_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line"></span><br><span class="line">s = Solver()</span><br><span class="line"><span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>):</span><br><span class="line">    s.add(table_014[c] == (c <span class="keyword">in</span> valid_014))</span><br><span class="line">    s.add(table_25[c]  == (c <span class="keyword">in</span> valid_25))</span><br><span class="line">    s.add(table_3[c]   == (c % <span class="number">5</span> == <span class="number">0</span>))</span><br><span class="line"></span><br><span class="line">U = [BitVec(<span class="string">f&#x27;U<span class="subst">&#123;i&#125;</span>&#x27;</span>, <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">    s.add(U[i] &gt;= <span class="number">65</span>, U[i] &lt;= <span class="number">90</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Per-position constraints via table lookup</span></span><br><span class="line">s.add(Or([And(U[<span class="number">0</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">1</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">4</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">2</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">5</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">3</span>] == c, table_3[c])   <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Hardcoded checks (from assembly)</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">0</span>] == <span class="number">174</span>)  <span class="comment"># 0xae → W</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">1</span>] == <span class="number">144</span>)  <span class="comment"># 0x90 → H</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">4</span>] == <span class="number">154</span>)  <span class="comment"># 0x9a → M</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Accumulator sum</span></span><br><span class="line">s.add(<span class="number">13</span> * (U[<span class="number">0</span>] + U[<span class="number">1</span>] + U[<span class="number">4</span>]) + U[<span class="number">2</span>] + U[<span class="number">3</span>] + U[<span class="number">5</span>] == <span class="number">3285</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> s.check() == sat:</span><br><span class="line">    m = s.model()</span><br><span class="line">    name = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(m[U[i]].as_long()) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;name&#125;</span> → <span class="subst">&#123;name.lower()&#125;</span>&quot;</span>)</span><br><span class="line">    s.add(Or([U[i] != m[U[i]] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Output:</span></span><br><span class="line"><span class="comment">#   WHGKMG → whgkmg</span></span><br><span class="line"><span class="comment">#   WHOAMI → whoami</span></span><br><span class="line"><span class="comment">#   WHIAMO → whiamo</span></span><br></pre></td></tr></table></figure>
 <blockquote>
@@ -477,7 +477,7 @@ z3 解线性部分：</p>
 浮点指令（<code>fprem</code>/<code>fmod</code> 做 Fermat 检验）+
 <code>fork/ptrace</code> 反调试 + <code>INT3</code> 断点检测。angr 的
 VEX IR 对 x87 浮点栈支持弱，<code>fork</code> 会直接 concretize，且
-patch 5 层反调试后 angr 能做的也只是验证已知路径——不如直接 z3
+patch 5 层反调试后 angr 能做的也只是验证已知路径，不如直接 z3
 解约束。</p>
 </blockquote>
 <h3 id="password-逆向-pw_check">Password 逆向

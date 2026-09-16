@@ -30,7 +30,7 @@
 <meta property="og:description" content="Challenge  Light in the Darkness (MySQL, Exploit) — score 6, by Mawekl. This challenge is the sequel to the &quot;Blinded by the lighter&quot; challenge. Again your mission is to extract an md5 password hash ou">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-14T02:13:27.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:47:51.491Z">
+<meta property="article:modified_time" content="2026-09-15T02:13:03.554Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="mysql">
@@ -235,18 +235,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -380,14 +380,11 @@ password hash，但限制更严：<strong>最多 2
 <h3 id="源码分析">源码分析</h3>
 <p>完整源码在 <code>gizmore/gwf3</code> GitHub 仓库：</p>
 <ul>
-<li><code>www/challenge/Mawekl/light_in_the_darkness/vuln.php</code> —
-注入点</li>
-<li><code>www/challenge/Mawekl/light_in_the_darkness/index.php</code> —
-表单逻辑</li>
-<li><code>www/challenge/Mawekl/light_in_the_darkness/install.php</code>
-— 挑战初始化</li>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/vuln.php</code>：注入点</li>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/index.php</code>：表单逻辑</li>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/install.php</code>：挑战初始化</li>
 </ul>
-<p><strong>vuln.php — 注入点：</strong></p>
+<p><strong>vuln.php：注入点</strong>：</p>
 <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">blightVuln</span>(<span class="params"><span class="variable">$password</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment"># Filter: blocks /* and &quot;blight&quot; in the injection string</span></span><br><span class="line">    <span class="keyword">if</span> ( (<span class="title function_ invoke__">strpos</span>(<span class="variable">$password</span>, <span class="string">&#x27;/*&#x27;</span>) !== <span class="literal">false</span>) || (<span class="title function_ invoke__">stripos</span>(<span class="variable">$password</span>, <span class="string">&#x27;blight&#x27;</span>) !== <span class="literal">false</span>) )</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$db</span> = <span class="title function_ invoke__">blightDB</span>();</span><br><span class="line">    <span class="variable">$sessid</span> = <span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getSessSID</span>();</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM (SELECT password FROM blight WHERE sessid=<span class="subst">$sessid</span>) b WHERE password=&#x27;<span class="subst">$password</span>&#x27;&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="variable">$query</span>) !== <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><strong>关键点：</strong></p>
 <ul>
@@ -395,14 +392,14 @@ password hash，但限制更严：<strong>最多 2
 <code>b</code></li>
 <li>过滤器：禁止 <code>/*</code>（堵多行注释截断）和
 <code>blight</code>（堵直接引用表名）</li>
-<li><code>setVerbose(true)</code>：SQL 错误会完整回显到页面 ——
-<strong>这是报错注入的前提条件</strong></li>
+<li><code>setVerbose(true)</code>：SQL
+错误会完整回显到页面。<strong>这是报错注入的前提条件</strong></li>
 <li><code>queryFirst()</code> 使用
 <code>mysqli_query()</code>（不支持堆叠查询）</li>
 <li>SLEEP/BENCHMARK 未被过滤，但 2
 次查询限制让时间/布尔盲注都不可行</li>
 </ul>
-<p><strong>index.php — 表单逻辑：</strong></p>
+<p><strong>index.php：表单逻辑</strong>：</p>
 <ul>
 <li><code>injection</code> + <code>inject</code> →
 <code>blightVuln($password)</code></li>

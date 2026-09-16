@@ -30,7 +30,7 @@
 <meta property="og:description" content="trytodecrypt.com Text 19 5F70017FDD92B75AA6668648B404223663157787B35686FA165A8193E5075777F 与 Text 16 类似，每 4 位 hex 一组（偏移 + 编码字符）。前 13 位 hex（8 字节）是前缀&#x2F;校验，有效数据从第 14 位开始。 1234567891011121314151617181920212">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-05-31T03:04:27.000Z">
-<meta property="article:modified_time" content="2026-05-31T03:44:20.165Z">
+<meta property="article:modified_time" content="2026-09-15T02:12:09.792Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="crypto">
 <meta property="article:tag" content="ctf">
@@ -237,18 +237,18 @@ guessing（渐进猜解）</span></a><ol class="nav-child"><li class="nav-item n
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -313,9 +313,15 @@ guessing（渐进猜解）</span></a><ol class="nav-child"><li class="nav-item n
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-05-31 11:04:27 / Modified: 11:44:20" itemprop="dateCreated datePublished" datetime="2026-05-31T11:04:27+08:00">2026-05-31</time>
+      <time title="Created: 2026-05-31 11:04:27" itemprop="dateCreated datePublished" datetime="2026-05-31T11:04:27+08:00">2026-05-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:12:09" itemprop="dateModified" datetime="2026-09-15T10:12:09+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -432,7 +438,7 @@ channel，因此没有把完整公式还原出来。</p>
 <h4 id="结构分析">结构分析</h4>
 <p>99 hex，每字符加密为 <strong>9 hex</strong>（<strong>3 组 × 3
 hex</strong>），共 11 字符。</p>
-<p>加密是<strong>确定性的</strong>——同一输入永远返回同一输出——但算法是<strong>位置相关的</strong>：同一个字符在不同位置产生完全不同的密文。</p>
+<p>加密是<strong>确定性的</strong>（同一输入永远返回同一输出），但算法是<strong>位置相关的</strong>：同一个字符在不同位置产生完全不同的密文。</p>
 <p>加密 <code>0</code>（charset index 0）和 <code>a</code>（index
 10）在不同位置的输出：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">位置 0: &#x27;0&#x27; → [001, 003, 008]   &#x27;a&#x27; → [001, 003, 050]   仅 group2 变化</span><br><span class="line">位置 1: &#x27;0&#x27; → [00A, 00F, 01F]   &#x27;a&#x27; → [00A, 012, 01C]   group1/2 都变</span><br></pre></td></tr></table></figure>
@@ -443,13 +449,13 @@ hex</strong>），共 11 字符。</p>
 永远是 001、位置 1 永远是 00A）</li>
 <li><strong>group1 + group2</strong>
 共同编码字符，但公式复杂且各位置不同</li>
-<li>不存在简单的线性公式——尝试过
+<li>不存在简单的线性公式：尝试过
 <code>(b2-b1) % 71</code>、<code>(b1+b2-K) % 71</code>、<code>(b1 XOR b2) % 71</code>
 等均不成立</li>
 </ul>
 <h4 id="解法progressive-guessing渐进猜解">解法：progressive
 guessing（渐进猜解）</h4>
-<p>不需要理解加密公式也能解密——只要能调用加密工具，就可以暴力猜解。</p>
+<p>不需要理解加密公式也能解密：只要能调用加密工具，就可以暴力猜解。</p>
 <p>核心依赖密文的<strong>前缀保持性质</strong>：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">encrypt(&quot;a&quot;)     → 001003050          (9 hex)</span><br><span class="line">encrypt(&quot;ab&quot;)    → 00100305000A01201F (18 hex，前 9 hex 与 &quot;a&quot; 一致)</span><br><span class="line">encrypt(&quot;abc&quot;)   → 00100305000A01201F... (前 18 hex 与 &quot;ab&quot; 一致)</span><br></pre></td></tr></table></figure>
 <p>密文的前 <code>N×9</code> hex 完全由明文的前 <code>N</code>
@@ -464,7 +470,7 @@ guessing（渐进猜解）</h4>
 <code>c</code> 就是第 i 位字符</li>
 <li>重复至 11 位全部破解</li>
 </ol>
-<p>最坏 11 × 71 = 781 次 API 调用，几分钟跑完。</p>
+<p>最坏 11 × 71 = 781 次 API 调用，几分钟内执行完毕。</p>
 <h5 id="关于反爬">关于反爬</h5>
 <p>最初尝试用 web
 端加密（<code>POST https://www.trytodecrypt.com/decrypt.php</code>）做猜解，但非浏览器请求被服务端

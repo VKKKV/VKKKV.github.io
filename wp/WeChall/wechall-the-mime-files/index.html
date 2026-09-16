@@ -30,7 +30,7 @@
 <meta property="og:description" content="Challenge  The Mime Files (Exploit) Hello Hacker, As you know, i am constantly developing great new websites. But this time, i am puzzled... Somehow, hackers broke into my new site &quot;The Mime Files&quot; an">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-14T11:30:58.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.471Z">
+<meta property="article:modified_time" content="2026-09-15T02:13:03.554Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
@@ -235,18 +235,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">409</span>
+          <span class="site-state-item-count">532</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">265</span>
+        <span class="site-state-item-count">348</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -372,7 +372,7 @@ Can you help me to find the vulnerability?</p>
 <h3 id="source-code-analysis">Source Code Analysis</h3>
 <p>Web app at <code>https://themimefiles.warchall.net/</code>
 是一个文件上传站点。</p>
-<p><strong>lib/upload.php</strong> — 核心上传逻辑:</p>
+<p><strong>lib/upload.php</strong>：核心上传逻辑:</p>
 <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">uploadFile</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$file</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable">$mime</span> = <span class="title function_ invoke__">mime_content_type</span>(<span class="variable">$file</span>[<span class="string">&#x27;tmp_name&#x27;</span>]);</span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">strpos</span>(<span class="variable">$mime</span>, <span class="string">&#x27;image&#x27;</span>) !== <span class="number">0</span>)  <span class="comment">// 检查 MIME 以 image 开头</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$data</span> = <span class="title function_ invoke__">file_get_contents</span>(<span class="variable">$file</span>[<span class="string">&#x27;tmp_name&#x27;</span>]);</span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">stripos</span>(<span class="variable">$data</span>, <span class="string">&#x27;&lt;?php&#x27;</span>) !== <span class="literal">false</span>)  <span class="comment">// 检查 PHP 代码</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// # This does not seem to help :/</span></span><br><span class="line"></span><br><span class="line">    <span class="variable">$path</span> = <span class="string">&#x27;upload/&#x27;</span> . <span class="title function_ invoke__">session_id</span>() . <span class="string">&#x27;/&#x27;</span> . <span class="variable">$file</span>[<span class="string">&#x27;name&#x27;</span>];</span><br><span class="line">    <span class="title function_ invoke__">rename</span>(<span class="variable">$file</span>[<span class="string">&#x27;tmp_name&#x27;</span>], <span class="variable">$path</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="vulnerabilities">Vulnerabilities</h3>
 <p><strong>1. MIME 类型绕过</strong>: <code>mime_content_type()</code>
@@ -380,7 +380,7 @@ Can you help me to find the vulnerability?</p>
 <code>image/gif</code>。</p>
 <p><strong>2. PHP 代码检测绕过</strong>:
 <code>stripos($data, '&lt;?php')</code> 只检测 <code>&lt;?php</code>
-字面串。使用 PHP 短标签 <code>&lt;?=</code> 即可绕过 — 它完全不含 "php"
+字面串。使用 PHP 短标签 <code>&lt;?=</code> 即可绕过，它完全不含 "php"
 字符串。作者注释 <code># This does not seem to help :/</code>
 也暗示了这个绕过。</p>
 <p><strong>3. 文件扩展名白嫖</strong>: 没有扩展名过滤，可直接上传
@@ -450,13 +450,13 @@ Apache 以 PHP 执行</p>
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/wp/WeChall/wechall-eigentor/" rel="prev" title="WeChall - Eigentor (Special, Tor)">
-                  <i class="fa fa-angle-left"></i> WeChall - Eigentor (Special, Tor)
+                <a href="/WeChall/wechall-cookie-is-a-lie/" rel="prev" title="WeChall - The Cookie is a lie">
+                  <i class="fa fa-angle-left"></i> WeChall - The Cookie is a lie
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/wp/WeChall/wechall-chessy-hawks/" rel="next" title="WeChall - Chessy Hawks">
-                  WeChall - Chessy Hawks <i class="fa fa-angle-right"></i>
+                <a href="/WeChall/wechall-wanda/" rel="next" title="WeChall - Wanda (Fun, Exploit)">
+                  WeChall - Wanda (Fun, Exploit) <i class="fa fa-angle-right"></i>
                 </a>
             </div>
           </div>
