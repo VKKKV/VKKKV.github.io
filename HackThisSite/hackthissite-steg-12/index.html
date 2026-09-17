@@ -30,7 +30,7 @@
 <meta property="og:description" content="Challenge  This is an encoded message, the only tip you get is &#39;I am the not of a file&#39;.  关卡作者 AzurPunk，页面在 https:&#x2F;&#x2F;www.hackthissite.org&#x2F;missions&#x2F;playit&#x2F;stego&#x2F;12&#x2F;， 数据文件是 https:&#x2F;&#x2F;www.hackthissite.org&#x2F;m">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-02T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-09-15T03:25:19.678Z">
+<meta property="article:modified_time" content="2026-09-16T06:27:40.991Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="bmp">
 <meta property="article:tag" content="ctf">
@@ -221,7 +221,7 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sample"><span class="nav-number">2.</span> <span class="nav-text">Sample</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">3.</span> <span class="nav-text">Solution</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#key-points"><span class="nav-number">3.1.</span> <span class="nav-text">Key points</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#sample"><span class="nav-number">2.1.</span> <span class="nav-text">Sample</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#key-points"><span class="nav-number">2.2.</span> <span class="nav-text">Key points</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -320,7 +320,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 11:25:19" itemprop="dateModified" datetime="2026-09-15T11:25:19+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-16 14:27:40" itemprop="dateModified" datetime="2026-09-16T14:27:40+08:00">2026-09-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -376,12 +376,12 @@ a file'.</p>
 <p>状态：<strong>live 已通关（verified）</strong>。提交后 profile 的
 <code>Stego:</code> 一行出现 <code>(12)</code>， 关卡页回执为
 <code>You have already done this mission.</code></p>
-<h3 id="sample">Sample</h3>
+<h3 id="solution">Solution</h3>
+<h4 id="sample">Sample</h4>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -sL -b <span class="string">&quot;<span class="variable">$HTS_COOKIE</span>&quot;</span> -o 12.bmp \</span><br><span class="line">  <span class="string">&#x27;https://www.hackthissite.org/missions/stego/lvl/12.bmp&#x27;</span></span><br><span class="line">file 12.bmp</span><br></pre></td></tr></table></figure>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">12.bmp: PC bitmap, Windows 3.x format, 123 x 1 x 8, image size 126,</span><br><span class="line">        resolution 2834 x 2834 px/m, cbSize 1204, bits offset 1078</span><br></pre></td></tr></table></figure>
 <p>一张 <strong>123×1</strong>、只有 1 个像素高的 <strong>8
 bpp（调色板）</strong> BMP，整个文件才 1204 字节。</p>
-<h3 id="solution">Solution</h3>
 <p>先把 BMP 头字段算清楚：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"></span><br><span class="line">d = <span class="built_in">open</span>(<span class="string">&quot;12.bmp&quot;</span>, <span class="string">&quot;rb&quot;</span>).read()</span><br><span class="line">bf_type, bf_size, _, _, off = struct.unpack_from(<span class="string">&quot;&lt;2sIHHI&quot;</span>, d, <span class="number">0</span>)</span><br><span class="line">hsz, w, h, planes, bpp, comp, img_size = struct.unpack_from(<span class="string">&quot;&lt;IiiHHII&quot;</span>, d, <span class="number">14</span>)</span><br><span class="line">row = ((w * bpp + <span class="number">31</span>) // <span class="number">32</span>) * <span class="number">4</span>                 <span class="comment"># 8bpp 每行按 4 字节对齐</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;bfType&quot;</span>, bf_type, <span class="string">&quot;bfSize&quot;</span>, bf_size, <span class="string">&quot;dataOffset&quot;</span>, off)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;w&quot;</span>, w, <span class="string">&quot;h&quot;</span>, h, <span class="string">&quot;bpp&quot;</span>, bpp, <span class="string">&quot;biSizeImage&quot;</span>, img_size)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;row_bytes&quot;</span>, row, <span class="string">&quot;pixel_bytes&quot;</span>, row * h)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;palette_entries&quot;</span>, (off - <span class="number">14</span> - hsz) // <span class="number">4</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;trailing&quot;</span>, <span class="built_in">len</span>(d) - off - row * h)</span><br></pre></td></tr></table></figure>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">bfType b&#x27;BM&#x27; bfSize 1204 dataOffset 1078</span><br><span class="line">w 123 h 1 bpp 8 biSizeImage 126</span><br><span class="line">row_bytes 124 pixel_bytes 124</span><br><span class="line">palette_entries 256</span><br><span class="line">trailing 2</span><br></pre></td></tr></table></figure>
