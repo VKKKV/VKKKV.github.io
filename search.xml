@@ -30509,4 +30509,271 @@ that to your algorithm.</p>
         <tag>primes</tag>
       </tags>
   </entry>
+  <entry>
+    <title>HackThisSite - Extended Basic Mission 10</title>
+    <url>/wp/HackThisSite/hackthissite-extbasic-10/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>The following is a batch script authentication system. Your goal here
+is to get the batch script to authenticate you by inputting a password
+into the field. For this extbasic, your goal is to circumvent
+authentication altogether. Decrypting the password is for
+extbasic11.</p>
+<p>关卡给出一个 Windows batch
+认证脚本，要求输入内容使脚本认证通过。本关的目标是绕过认证。</p>
+</blockquote>
+<p>关卡页把脚本正文放在 <code>&lt;code&gt;</code> 块里：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">@ECHO OFF</span><br><span class="line">SETLOCAL ENABLEDELAYEDEXPANSION</span><br><span class="line">SET PRIME=2  3  5  7  11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97 101</span><br><span class="line">SET CHARS=a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z</span><br><span class="line">SET PASSWORDVALUE=1</span><br><span class="line">SET INPUT=</span><br><span class="line">SET /P INPUT=Insert password:</span><br><span class="line">IF &quot;%INPUT%&quot;==&quot;&quot; &quot;%~0&quot;</span><br><span class="line">ECHO Authenticating...</span><br><span class="line">:OVERLOOP</span><br><span class="line">SET CURRENTPOSITION=0</span><br><span class="line">:SUBLOOP</span><br><span class="line">IF /I &quot;!INPUT:~%CHARACTERPOSITION%,1!&quot;==&quot;!CHARS:~%CURRENTPOSITION%,1!&quot; SET /A PASSWORDVALUE*=!PRIME:~%CURRENTPOSITION%,3!</span><br><span class="line">SET /A CURRENTPOSITION+=3</span><br><span class="line">IF NOT %CURRENTPOSITION%==78 GOTO :SUBLOOP</span><br><span class="line">SET /A CHARACTERPOSITION+=1</span><br><span class="line">IF NOT &quot;!INPUT:~%CHARACTERPOSITION%,1!&quot;==&quot;&quot; GOTO :OVERLOOP</span><br><span class="line">:END</span><br><span class="line">ENDLOCAL&amp;IF NOT %PASSWORDVALUE%==1065435274 GOTO :ACCESSDENIED</span><br><span class="line">ECHO You have been authenticated. Welcome aboard!</span><br><span class="line">GOTO :SILENTPAUSE</span><br><span class="line">:ACCESSDENIED</span><br><span class="line">ECHO Access denied!</span><br><span class="line">:SILENTPAUSE</span><br><span class="line">PAUSE &gt; NUL</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><code>PRIME</code> 和 <code>CHARS</code> 都按 3
+个字符一项排列。内层循环依次取
+<code>0</code>、<code>3</code>、<code>6</code> 直到
+<code>75</code>，将输入字符映射到 <code>2</code> 到 <code>101</code>
+的质数；命中后执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SET /A PASSWORDVALUE*=对应质数</span><br></pre></td></tr></table></figure>
+<p>最终判定要求 <code>PASSWORDVALUE</code> 等于
+<code>1065435274</code>。该值的分解为：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">1065435274 = 2 × 6827 × 78031</span><br></pre></td></tr></table></figure>
+<p><code>6827</code> 和 <code>78031</code>
+不在脚本的质数表中，因此按原有乘法路径无法得到目标值。可利用点在输入处理，而非乘积本身。</p>
+<p>认证前的判断直接把原始输入拼进双引号：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IF &quot;%INPUT%&quot;==&quot;&quot; &quot;%~0&quot;</span><br></pre></td></tr></table></figure>
+<p>输入未经过转义，可以闭合字符串并追加命令。使用以下 payload：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">&quot;==&quot;&quot; set passwordvalue=1065435274 &amp;&amp; goto :end abc</span><br></pre></td></tr></table></figure>
+<p>代入后得到：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">IF &quot;&quot;==&quot;&quot; set passwordvalue=1065435274 &amp;&amp; goto :end abc&quot;==&quot;&quot; &quot;%~0&quot;</span><br></pre></td></tr></table></figure>
+<p><code>""==""</code> 成立，<code>set passwordvalue=1065435274</code>
+将累积值直接设为目标值，<code>goto :end</code>
+跳过整个乘法循环。<code>set</code> 的变量名不区分大小写，所以这里的
+<code>passwordvalue</code> 与脚本中的 <code>PASSWORDVALUE</code>
+相同。</p>
+<p>到达 <code>:END</code> 后，判定行中的 <code>%PASSWORDVALUE%</code>
+会在整行执行前展开，早于 <code>ENDLOCAL</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ENDLOCAL&amp;IF NOT %PASSWORDVALUE%==1065435274 GOTO :ACCESSDENIED</span><br></pre></td></tr></table></figure>
+<p>此时展开结果为
+<code>1065435274==1065435274</code>，<code>IF NOT</code>
+条件为假，执行流进入认证成功分支。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>hackthissite</tag>
+        <tag>command-injection</tag>
+        <tag>batch</tag>
+        <tag>extbasic</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackThisSite - Extended Basic Mission 11</title>
+    <url>/wp/HackThisSite/hackthissite-extbasic-11/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<p>关卡给出一段 Windows
+批处理（batch）写的认证脚本，要求输入一个能让脚本认证通过的密码。脚本用
+<code>SET /P</code>
+读取输入，然后逐字符与字母表比对，命中时把一个累乘变量乘以对应的素数：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">@ECHO OFF</span><br><span class="line">SETLOCAL ENABLEDELAYEDEXPANSION</span><br><span class="line">SET PRIME=2  3  5  7  11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97 101</span><br><span class="line">SET CHARS=a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z</span><br><span class="line">SET PASSWORDVALUE=1</span><br><span class="line">SET INPUT=</span><br><span class="line">SET /P INPUT=Insert password:</span><br><span class="line">IF &quot;%INPUT%&quot;==&quot;&quot; &quot;%~0&quot;</span><br><span class="line">ECHO Authenticating...</span><br><span class="line">:OVERLOOP</span><br><span class="line">SET CURRENTPOSITION=0</span><br><span class="line">:SUBLOOP</span><br><span class="line">IF /I &quot;!INPUT:~%CHARACTERPOSITION%,1!&quot;==&quot;!CHARS:~%CURRENTPOSITION%,1!&quot; SET /A PASSWORDVALUE*=!PRIME:~%CURRENTPOSITION%,3!</span><br><span class="line">SET /A CURRENTPOSITION+=3</span><br><span class="line">IF NOT %CURRENTPOSITION%==78 GOTO :SUBLOOP</span><br><span class="line">SET /A CHARACTERPOSITION+=1</span><br><span class="line">IF NOT &quot;!INPUT:~%CHARACTERPOSITION%,1!&quot;==&quot;&quot; GOTO :OVERLOOP</span><br><span class="line">:END</span><br><span class="line">ENDLOCAL&amp;IF NOT %PASSWORDVALUE%==1065435274 GOTO :ACCESSDENIED</span><br><span class="line">ECHO You have been authenticated. Welcome aboard!</span><br><span class="line">GOTO :SILENTPAUSE</span><br><span class="line">:ACCESSDENIED</span><br><span class="line">ECHO Access denied!</span><br><span class="line">:SILENTPAUSE</span><br><span class="line">PAUSE &gt; NUL</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<h4 id="step-1-脚本语义">Step 1: 脚本语义</h4>
+<p><code>PRIME</code> 与 <code>CHARS</code>
+都是等宽分隔的字符串：<code>PRIME</code> 里每个素数被右填充到 3
+个字符宽，<code>CHARS</code> 里每个字母后面也有两个空格。内层循环的
+<code>CURRENTPOSITION</code> 取 <code>0,3,6,…,75</code> 共 26
+个位置，<code>!PRIME:~%CURRENTPOSITION%,3!</code>
+正好截出对应的一个素数，<code>!CHARS:~%CURRENTPOSITION%,1!</code> 截出
+<code>a</code> 到 <code>z</code>。</p>
+<p>外层对输入里每个字符位置 <code>CHARACTERPOSITION</code> 走一遍这 26
+个槽位。<code>IF /I</code>
+是大小写不敏感的，所以一个大写字母也会命中。命中的后果只有一个：<code>SET /A PASSWORDVALUE*=!PRIME:~…,3!</code>，也就是把累乘值乘上该字母对应的那个素数。因此</p>
+<ul>
+<li>输入里每个字符最多贡献一次乘法，乘的是 <code>{2,3,5,…,101}</code>
+中的某一个素数；</li>
+<li>非字母字符不贡献任何乘法；</li>
+<li>重复同一个字母就是重复乘同一个素数。</li>
+</ul>
+<p>关卡的门槛是</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">IF NOT %PASSWORDVALUE%==1065435274 GOTO :ACCESSDENIED</span><br></pre></td></tr></table></figure>
+<p>把目标值分解：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">1065435274 = 2 × 6827 × 78031</span><br></pre></td></tr></table></figure>
+<p><code>6827</code> 与 <code>78031</code> 都是素数，且都大于
+101，不在脚本能乘到的素数表里。换句话说，<strong>任何</strong>由列表内素数组成的乘积都不可能精确等于
+<code>1065435274</code>。如果只盯着凑乘积这一个方向，该关无法通过。</p>
+<h4 id="step-3-32-位溢出">Step 3: 32 位溢出</h4>
+<p><code>SET /A</code> 的整数运算是 <strong>32 位有符号</strong>
+的，累乘过程中超过 <code>2**31</code>
+会回环绕。于是真正需要满足的条件是同余：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">∏(选中的素数) ≡ 1065435274 (mod 2**32)</span><br></pre></td></tr></table></figure>
+<p>因为乘法在模 <code>2**32</code>
+下可结合，最终值只取决于所选素数构成的多重集合（与输入顺序无关）。</p>
+<p>再看目标值的 2-adic
+赋值：<code>1065435274 = 2 × 532717637</code>，<code>532717637</code>
+是奇数。<code>2**32</code> 以内的偶数按 2 的幂次分层，目标只含一个因子
+2，所以素数 <code>2</code>（字母
+<code>a</code>）必须恰好出现一次，其余部分是一个奇数乘积，需要满足</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">X ≡ 532717637 (mod 2**32)</span><br></pre></td></tr></table></figure>
+<h4 id="step-4-search">Step 4: Search</h4>
+<p>只剩 25 个奇素数（<code>3</code> 到
+<code>101</code>）可选，每个的多重度未知。用中间相遇（meet-in-the-middle）：把奇素数分成两半分别枚举各自的多重集合乘积，在一半的哈希表里查另一半需要的补数（对奇数取模逆），取总乘法次数最少的组合。每个素数的重数上限取
+2 就足够：25 个奇素数、每个重数取 <code>0..2</code>，组合数在
+<code>3**25</code> 量级，远多于模数
+<code>2**32</code>，解很多而长度很小。</p>
+<p>完整求解器：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> itertools <span class="keyword">import</span> product</span><br><span class="line"></span><br><span class="line">MOD = <span class="number">1</span> &lt;&lt; <span class="number">32</span></span><br><span class="line">TARGET = <span class="number">1065435274</span></span><br><span class="line">PRIMES = [<span class="number">2</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">17</span>, <span class="number">19</span>, <span class="number">23</span>, <span class="number">29</span>, <span class="number">31</span>, <span class="number">37</span>,</span><br><span class="line">          <span class="number">41</span>, <span class="number">43</span>, <span class="number">47</span>, <span class="number">53</span>, <span class="number">59</span>, <span class="number">61</span>, <span class="number">67</span>, <span class="number">71</span>, <span class="number">73</span>, <span class="number">79</span>, <span class="number">83</span>, <span class="number">89</span>, <span class="number">97</span>, <span class="number">101</span>]</span><br><span class="line">LETTERS = <span class="string">&quot;abcdefghijklmnopqrstuvwxyz&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">search</span>(<span class="params">limit=<span class="number">2</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Find prime multiplicities (0..limit per odd prime) with product == TARGET mod 2**32.&quot;&quot;&quot;</span></span><br><span class="line">    odd = PRIMES[<span class="number">1</span>:]</span><br><span class="line">    left, right = odd[:<span class="number">12</span>], odd[<span class="number">12</span>:]</span><br><span class="line">    table = &#123;&#125;</span><br><span class="line">    ranges = [<span class="built_in">range</span>(limit + <span class="number">1</span>)] * <span class="built_in">len</span>(right)</span><br><span class="line">    <span class="keyword">for</span> counts <span class="keyword">in</span> product(*ranges):</span><br><span class="line">        r = <span class="number">1</span></span><br><span class="line">        <span class="keyword">for</span> q, k <span class="keyword">in</span> <span class="built_in">zip</span>(right, counts):</span><br><span class="line">            r = r * <span class="built_in">pow</span>(q, k, MOD) % MOD</span><br><span class="line">        table.setdefault(r, counts)</span><br><span class="line">    best = <span class="literal">None</span></span><br><span class="line">    <span class="keyword">for</span> counts <span class="keyword">in</span> product(*([<span class="built_in">range</span>(limit + <span class="number">1</span>)] * <span class="built_in">len</span>(left))):</span><br><span class="line">        l = <span class="number">1</span></span><br><span class="line">        <span class="keyword">for</span> q, k <span class="keyword">in</span> <span class="built_in">zip</span>(left, counts):</span><br><span class="line">            l = l * <span class="built_in">pow</span>(q, k, MOD) % MOD</span><br><span class="line">        need = (TARGET // <span class="number">2</span>) * <span class="built_in">pow</span>(l, -<span class="number">1</span>, MOD) % MOD</span><br><span class="line">        rc = table.get(need)</span><br><span class="line">        <span class="keyword">if</span> rc <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> (best <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">or</span> <span class="built_in">sum</span>(counts) + <span class="built_in">sum</span>(rc) &lt; best[<span class="number">0</span>]):</span><br><span class="line">            best = (<span class="built_in">sum</span>(counts) + <span class="built_in">sum</span>(rc), counts, rc)</span><br><span class="line">    <span class="keyword">return</span> best</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">build</span>(<span class="params">best</span>):</span><br><span class="line">    _, lc, rc = best</span><br><span class="line">    counts = &#123;<span class="number">2</span>: <span class="number">1</span>&#125;</span><br><span class="line">    <span class="keyword">for</span> q, k <span class="keyword">in</span> <span class="built_in">dict</span>(<span class="built_in">zip</span>(PRIMES[<span class="number">1</span>:<span class="number">13</span>], lc)).items():</span><br><span class="line">        counts[q] = counts.get(q, <span class="number">0</span>) + k</span><br><span class="line">    <span class="keyword">for</span> q, k <span class="keyword">in</span> <span class="built_in">dict</span>(<span class="built_in">zip</span>(PRIMES[<span class="number">13</span>:], rc)).items():</span><br><span class="line">        counts[q] = counts.get(q, <span class="number">0</span>) + k</span><br><span class="line">    pw = <span class="string">&quot;&quot;</span>.join(LETTERS[q_index] * k</span><br><span class="line">                 <span class="keyword">for</span> q_index, k <span class="keyword">in</span> <span class="built_in">sorted</span>((PRIMES.index(q), k) <span class="keyword">for</span> q, k <span class="keyword">in</span> counts.items()))</span><br><span class="line">    <span class="keyword">return</span> counts, pw</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">replay</span>(<span class="params">pw</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Model the batch loop: each letter multiplies its prime; result is signed 32-bit.&quot;&quot;&quot;</span></span><br><span class="line">    value = <span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> ch <span class="keyword">in</span> pw.lower():</span><br><span class="line">        idx = LETTERS.find(ch)</span><br><span class="line">        <span class="keyword">if</span> idx &gt;= <span class="number">0</span>:</span><br><span class="line">            value = value * PRIMES[idx] % MOD</span><br><span class="line">    <span class="keyword">return</span> value - MOD <span class="keyword">if</span> value &gt;= (<span class="number">1</span> &lt;&lt; <span class="number">31</span>) <span class="keyword">else</span> value</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    counts, pw = build(search())</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;counts:&quot;</span>, counts)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;password:&quot;</span>, pw)</span><br><span class="line">    <span class="keyword">assert</span> replay(pw) == TARGET, <span class="string">&quot;replay mismatch&quot;</span></span><br><span class="line">    <span class="keyword">assert</span> pw == <span class="string">&quot;aghilmort&quot;</span></span><br></pre></td></tr></table></figure>
+<h4 id="step-5-result">Step 5: Result</h4>
+<p>搜索得到 9 个字符的最短解：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">密码：aghilmort</span><br><span class="line">对应素数：a=2, g=17, h=19, i=23, l=37, m=41, o=47, p=61, t=71</span><br></pre></td></tr></table></figure>
+<p>乘积在 32 位下回绕：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">2×17×19×23×37×41×47×61×71 = 4588090507402</span><br><span class="line">4588090507402 mod 2**32 = 1065435274</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>hackthissite</tag>
+        <tag>batch</tag>
+        <tag>extbasic</tag>
+        <tag>integer-overflow</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackThisSite - Extended Basic Mission 12</title>
+    <url>/wp/HackThisSite/hackthissite-extbasic-12/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>This site is run by a serious web admin. But the web developer
+doesn't know that much. URL: moo.com (any script you want); Exploit this
+code:</p>
+<p>站点由一个认真的 web 管理员在维护，但写代码的开发者水平不高。题目给定
+<code>moo.com</code>
+上的任意脚本（<code>any script you want</code>），要求利用这段 PHP。</p>
+</blockquote>
+<p>关卡页给出的脚本正文：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="variable">$password</span> = <span class="string">&#x27;IWantToCow&#x27;</span>;</span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable">$_GET</span> <span class="keyword">as</span> <span class="variable">$key</span> =&gt; <span class="variable">$value</span>) &#123; <span class="variable">$$key</span> = <span class="variable">$value</span>; &#125;</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$userpass</span> == <span class="variable">$password</span>) &#123; <span class="title function_ invoke__">ok</span>(); &#125; <span class="keyword">else</span> &#123; <span class="keyword">echo</span> <span class="string">&quot;&lt;form&gt;&lt;input type=&#x27;text&#x27; name=&#x27;usertext&#x27; /&gt;&lt;input type=&#x27;submit&#x27;&gt;&lt;form&gt;&quot;</span>; &#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><code>$$key = $value</code> 是 PHP 的变量变量写法：把
+<code>$key</code>
+的值当作变量名，再给它赋值。<code>foreach ($_GET as $key =&gt; $value)</code>
+遍历 URL query string 的每个参数，于是</p>
+<ul>
+<li><code>?userpass=IWantToCow</code> 会执行
+<code>$userpass = 'IWantToCow'</code>；</li>
+<li><code>?password=IWantToCow</code> 会执行
+<code>$password = 'IWantToCow'</code>；</li>
+<li>任何其他名字同理，脚本里的变量表完全由请求者给出的 query string
+决定。</li>
+</ul>
+<p>脚本原本先把 <code>$password</code> 设成
+<code>'IWantToCow'</code>，但紧接着的循环会把它连同
+<code>$userpass</code> 一起覆盖。最终判据是：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="variable">$userpass</span> == <span class="variable">$password</span>) &#123; <span class="title function_ invoke__">ok</span>(); &#125;</span><br></pre></td></tr></table></figure>
+<p>判据只比较 <code>$userpass</code> 与 <code>$password</code>
+两个变量，而两者都在循环的可写范围内。既然 query string
+能同时给它们赋值，直接让二者取同一个值就恒为真</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>hackthissite</tag>
+        <tag>php</tag>
+        <tag>extbasic</tag>
+        <tag>variable-variables</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackThisSite - Extended Basic Mission 13</title>
+    <url>/wp/HackThisSite/hackthissite-extbasic-13/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>The script's filename is vrfy.php. Make the script reply 1. Use the
+relative path. You don't know any users or emails.</p>
+<p>关卡给出校验脚本
+<code>vrfy.php</code>，要求给出一段<strong>相对路径的 URL</strong>（可带
+query），让脚本输出 <code>1</code>；没有任何已知的用户或邮箱。</p>
+</blockquote>
+<p>关卡页把脚本正文放在 <code>&lt;code&gt;</code> 块里：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;name&#x27;</span>]) &amp;&amp; <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;email&#x27;</span>])) &#123;</span><br><span class="line">                <span class="variable">$user</span> = <span class="title function_ invoke__">mysql_real_escape_string</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;name&#x27;</span>]);</span><br><span class="line">                <span class="variable">$email</span> = <span class="title function_ invoke__">mysql_real_escape_string</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;email&#x27;</span>]);</span><br><span class="line">                <span class="variable">$result</span>= <span class="title function_ invoke__">mysql_fetch_assoc</span>(<span class="title function_ invoke__">mysql_query</span>(<span class="string">&quot;SELECT `email` FROM `members` WHERE name = &#x27;<span class="subst">$user</span>&#x27;&quot;</span>));</span><br><span class="line">                <span class="variable">$reply</span> = <span class="literal">false</span>;</span><br><span class="line">                <span class="keyword">if</span> (<span class="variable">$email</span> == <span class="variable">$result</span>[<span class="string">&#x27;email&#x27;</span>])</span><br><span class="line">                &#123;</span><br><span class="line">                        <span class="variable">$reply</span> = <span class="literal">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="variable">$reply</span> = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">echo</span> (<span class="variable">$reply</span>) ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><code>name</code> 先过 <code>mysql_real_escape_string()</code> 作为
+WHERE 条件里的单引号字符串字面量。这个函数会转义
+<code>\ ' " \n \r \0</code> 和
+Ctrl-Z，所以引号无法闭合，<code>name</code> 侧没有 SQL 注入。同时
+<code>email</code> 也被转义后才参与比较，但它<strong>不进入
+SQL</strong>：它只和查询结果做相等判断。</p>
+<p>也就是说注入方向被堵死，能动的只有查询结果长什么样和比较表达式怎么算。</p>
+<p><code>SELECT \</code>email` FROM `members` WHERE name =
+'$user'<code>没有</code>LIMIT<code>，但脚本用</code>mysql_fetch_assoc()<code>只取**第一行**。关键在一行都取不到时它的返回值：布尔</code>false`。</p>
+<p>此时 <code>$result</code> 为 <code>false</code>，脚本却直接读
+<code>$result['email']</code>。布尔值上的下标访问在 PHP 5 里静默求值为
+<code>null</code>（PHP 8 会补一条
+<code>Trying to access array offset on value of type bool</code>
+警告，结果仍是 <code>null</code>）。于是只要让 <code>name</code>
+匹配不到任何成员，比较的右端就固定是 <code>null</code>。</p>
+<p><code>if ($email == $result['email'])</code> 用的是松散比较
+<code>==</code>，<code>null</code> 与字符串比较时按空串处理，于是：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="string">&quot;&quot;</span>    == <span class="literal">null</span>);   <span class="comment">// bool(true)</span></span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="string">&quot;0&quot;</span>   == <span class="literal">null</span>);   <span class="comment">// bool(false)</span></span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="string">&quot;x&quot;</span>   == <span class="literal">null</span>);   <span class="comment">// bool(false)</span></span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="string">&quot;0e0&quot;</span> == <span class="literal">null</span>);   <span class="comment">// bool(false)</span></span><br></pre></td></tr></table></figure>
+<p>所以 <code>$email</code>
+必须是<strong>空字符串</strong>，配合一个匹配不到的
+<code>name</code>，<code>$reply</code> 就变成 <code>true</code>，脚本回
+<code>1</code>。<code>email</code> 换成
+<code>0</code>、<code>x</code>、<code>0e0</code>
+都不行：<code>isset($_GET['email'])</code> 对空串仍为
+<code>true</code>，<code>email=</code> 不会被前一个 <code>isset</code>
+分支挡掉。</p>
+<p>PHP 8 已经移除 <code>mysql_*</code> 扩展，于是把三个 DB
+调用按关卡语义打桩：<code>mysql_query()</code>
+返回空结果集（表中不存在所发送的
+<code>name</code>），<code>mysql_fetch_assoc()</code> 对空集返回
+<code>false</code>，与线上行为一致。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="comment">// Level logic replayed against a members table we know nothing about.</span></span><br><span class="line"><span class="comment">// PHP 8 dropped ext/mysql, so the three calls are stubbed to reproduce exactly</span></span><br><span class="line"><span class="comment">// what the level depends on: a SELECT matching no row makes mysql_fetch_assoc()</span></span><br><span class="line"><span class="comment">// return FALSE, and FALSE[&#x27;email&#x27;] then evaluates to NULL.</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">mysql_real_escape_string</span>(<span class="params"><span class="keyword">string</span> <span class="variable">$in</span></span>): <span class="title">string</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">strtr</span>(<span class="variable">$in</span>, [</span><br><span class="line">        <span class="string">&quot;\\&quot;</span> =&gt; <span class="string">&quot;\\\\&quot;</span>, <span class="string">&quot;&#x27;&quot;</span> =&gt; <span class="string">&quot;\\&#x27;&quot;</span>, <span class="string">&#x27;&quot;&#x27;</span> =&gt; <span class="string">&#x27;\\&quot;&#x27;</span>,</span><br><span class="line">        <span class="string">&quot;\n&quot;</span> =&gt; <span class="string">&quot;\\n&quot;</span>, <span class="string">&quot;\r&quot;</span> =&gt; <span class="string">&quot;\\r&quot;</span>, <span class="string">&quot;\0&quot;</span> =&gt; <span class="string">&quot;\\0&quot;</span>, <span class="string">&quot;\x1a&quot;</span> =&gt; <span class="string">&quot;\\Z&quot;</span>,</span><br><span class="line">    ]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">mysql_query</span>(<span class="params"><span class="keyword">string</span> <span class="variable">$sql</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// &quot;SELECT `email` FROM `members` WHERE name = &#x27;$user&#x27;&quot; — the members table</span></span><br><span class="line">    <span class="comment">// contains none of the names we send, so every lookup returns no rows.</span></span><br><span class="line">    <span class="keyword">return</span> [];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">mysql_fetch_assoc</span>(<span class="params"><span class="variable">$result</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">empty</span>(<span class="variable">$result</span>) ? <span class="literal">false</span> : <span class="title function_ invoke__">array_shift</span>(<span class="variable">$result</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">vrfy</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$get</span></span>): <span class="title">void</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$get</span>[<span class="string">&#x27;name&#x27;</span>]) &amp;&amp; <span class="keyword">isset</span>(<span class="variable">$get</span>[<span class="string">&#x27;email&#x27;</span>])) &#123;</span><br><span class="line">        <span class="variable">$user</span> = <span class="title function_ invoke__">mysql_real_escape_string</span>(<span class="variable">$get</span>[<span class="string">&#x27;name&#x27;</span>]);</span><br><span class="line">        <span class="variable">$email</span> = <span class="title function_ invoke__">mysql_real_escape_string</span>(<span class="variable">$get</span>[<span class="string">&#x27;email&#x27;</span>]);</span><br><span class="line">        <span class="variable">$result</span> = <span class="title function_ invoke__">mysql_fetch_assoc</span>(<span class="title function_ invoke__">mysql_query</span>(<span class="string">&quot;SELECT `email` FROM `members` WHERE name = &#x27;<span class="subst">$user</span>&#x27;&quot;</span>));</span><br><span class="line">        <span class="variable">$reply</span> = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$email</span> == <span class="variable">$result</span>[<span class="string">&#x27;email&#x27;</span>]) &#123;</span><br><span class="line">            <span class="variable">$reply</span> = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="variable">$reply</span> = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">echo</span> <span class="variable">$reply</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">parse_str</span>(<span class="variable">$argv</span>[<span class="number">1</span>] ?? <span class="string">&#x27;&#x27;</span>, <span class="variable">$get</span>);</span><br><span class="line"><span class="title function_ invoke__">vrfy</span>(<span class="variable">$get</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;\n&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>工作区里用已安装的 PHP 8.5 跑了几组 query string：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ php replica_vrfy.php <span class="string">&#x27;name=&amp;email=&#x27;</span> 2&gt;/dev/null</span><br><span class="line">1</span><br><span class="line">$ php replica_vrfy.php <span class="string">&#x27;name=nobody&amp;email=&#x27;</span> 2&gt;/dev/null</span><br><span class="line">1</span><br><span class="line">$ php replica_vrfy.php <span class="string">&#x27;name=nobody&amp;email=0&#x27;</span> 2&gt;/dev/null</span><br><span class="line">0</span><br><span class="line">$ php replica_vrfy.php <span class="string">&#x27;name=nobody&amp;email=x&#x27;</span> 2&gt;/dev/null</span><br><span class="line">0</span><br><span class="line">$ php replica_vrfy.php <span class="string">&#x27;name=nobody&#x27;</span> 2&gt;/dev/null</span><br><span class="line">0</span><br></pre></td></tr></table></figure>
+<p>空 <code>email</code> 且 <code>name</code> 匹配不到 →
+<code>1</code>；非空 <code>email</code> → <code>0</code>；只给
+<code>name</code> 不给 <code>email</code>（<code>isset</code> 为假）→
+<code>0</code>。与上面的推导一致。（<code>2&gt;/dev/null</code> 只是滤掉
+PHP 8 那条布尔下标警告；线上 PHP 5 不产生警告，返回同样是
+<code>null</code>。）</p>
+<h4 id="key-points">Key points</h4>
+<ul>
+<li><code>name</code> 走 <code>mysql_real_escape_string()</code>
+后拼进单引号字符串，引号闭合不了，SQL 注入不通；<code>email</code>
+根本不进 SQL，只参与相等判断。</li>
+<li><code>mysql_fetch_assoc()</code> 在<strong>零行</strong>时返回
+<code>false</code> 而非空数组，脚本却直接读
+<code>$result['email']</code>，布尔下标求值为 <code>null</code>。</li>
+<li>松比较 <code>==</code> 下 <code>"" == null</code>
+为真、任何非空字符串（含 <code>"0"</code>）为假，所以 <code>email</code>
+必须留空；<code>isset($_GET['email'])</code>
+对空串为真，<code>email=</code> 能通过前置检查。</li>
+<li><code>name</code>
+只要匹配不到成员即可（本关没有任何已知用户），无需猜邮箱。</li>
+<li>playit 提交纪律：<code>formkey</code> 每次加载都变，必须取页面 →
+立刻提交；缺少 <code>Referer: &lt;关卡页&gt;</code> 会被
+<code>Invalid Referer</code> 拒掉且不计分。</li>
+<li>修正方式：用 <code>===</code> 做严格比较，并在使用结果前判断
+<code>mysql_fetch_assoc()</code> 是否为 <code>false</code>（更彻底地用
+PDO/mysqli 预处理替换已废弃的 <code>mysql_*</code>）。</li>
+</ul>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">vrfy.php?name=&amp;email=</span></span>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>hackthissite</tag>
+        <tag>php</tag>
+        <tag>extbasic</tag>
+        <tag>type-juggling</tag>
+        <tag>sql</tag>
+      </tags>
+  </entry>
 </search>
