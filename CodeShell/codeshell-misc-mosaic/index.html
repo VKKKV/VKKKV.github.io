@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/safari_pinned_tab.svg" color="#ff3e3e">
+  <meta name="google-site-verification" content="ixJcuHIxOAn36hBu980PgJYFR9hLoktNwfEAAimupCI">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Italianno:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.css" integrity="sha256-gkQVf8UKZgQ0HyuxL/VnacadJ+D2Kox2TCEBuNQg5+w=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
+
+    <meta name="description" content="Challenge 640 个 32×32 碎片拼 24×24 网格，允许旋转、禁止镜像。难点在于碎片不是精确裁剪，而且单个种子的结果不稳定，需要多种子共识加独立校验。  Some assembly required 需要一些拼装。  1https:&#x2F;&#x2F;codeshell.kr&#x2F;challenges&#x2F;misc-mosaic&#x2F; Solution pieces&#x2F; 下 640 个 32×32 PNG，目">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CodeShell.kr - Mosaic">
+<meta property="og:url" content="https://vkkkv.github.io/CodeShell/codeshell-misc-mosaic/">
+<meta property="og:site_name" content="Hello Navi">
+<meta property="og:description" content="Challenge 640 个 32×32 碎片拼 24×24 网格，允许旋转、禁止镜像。难点在于碎片不是精确裁剪，而且单个种子的结果不稳定，需要多种子共识加独立校验。  Some assembly required 需要一些拼装。  1https:&#x2F;&#x2F;codeshell.kr&#x2F;challenges&#x2F;misc-mosaic&#x2F; Solution pieces&#x2F; 下 640 个 32×32 PNG，目">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-09-22T04:19:30.000Z">
+<meta property="article:modified_time" content="2026-09-22T04:19:30.735Z">
+<meta property="article:author" content="vkkkv">
+<meta property="article:tag" content="codeshell">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="jigsaw">
+<meta property="article:tag" content="misc">
+<meta property="article:tag" content="ocr">
+<meta property="article:tag" content="writeup">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://vkkkv.github.io/CodeShell/codeshell-misc-mosaic/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://vkkkv.github.io/CodeShell/codeshell-misc-mosaic/","path":"CodeShell/codeshell-misc-mosaic/","title":"CodeShell.kr - Mosaic"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>CodeShell.kr - Mosaic | Hello Navi</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2L68NKWCGZ"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-2L68NKWCGZ","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/analytics/google-analytics.min.js" defer></script>
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.31/dist/fancybox/fancybox.umd.js" integrity="sha256-a+H7FYzJv6oU2hfsfDGM2Ohw/cR9v+hPfxHCLdmCrE8=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@7.2.0/dist/browser/pangu.umd.js" integrity="sha256-JnmRRnJK7DC6RQJbAJb6AXOM9OmWzS6z8eYultk/48Y=" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/utils.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/sidebar.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/next-boot.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/pjax.min.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/search/local-search.min.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/tags/mermaid.min.js" defer></script>
+
+  <script class="next-config" data-name="wavedrom" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/wavedrom.min.js","integrity":"sha256-INLAoJc6quTNfiMWkGZniYO2cxE8mHpddnLow1m6RFs="}}</script>
+  <script class="next-config" data-name="wavedrom_skin" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/skins/default.js","integrity":"sha256-fduc/Zszk5ezWws2uInY/ALWVmIrmV6VTgXbsYSReFI="}}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/tags/wavedrom.min.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/fancybox.min.js" defer></script>
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"ams","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/math/mathjax.min.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://vkkkv.github.io/CodeShell/codeshell-misc-mosaic/"}</script>
+  <script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/quicklink.min.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<style type="text/css">
+.spoiler {
+  display: inline;
+}
+p.spoiler {
+  display: flex;
+}
+.spoiler a {
+  pointer-events: none;
+}
+.spoiler-blur, .spoiler-blur > * {
+  transition: text-shadow .5s ease;
+}
+.spoiler .spoiler-blur, .spoiler .spoiler-blur > * {
+  color: rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 0);
+  text-shadow: 0 0 10px grey;
+  cursor: pointer;
+}
+.spoiler .spoiler-blur:hover, .spoiler .spoiler-blur:hover > * {
+  text-shadow: 0 0 5px grey;
+}
+.spoiler-box, .spoiler-box > * {
+  transition: color .5s ease,
+  background-color .5s ease;
+}
+.spoiler .spoiler-box, .spoiler .spoiler-box > * {
+  color: black;
+  background-color: black;
+  text-shadow: none;
+}</style><link rel="alternate" href="/atom.xml" title="Hello Navi" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="Hello Navi" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Hello Navi</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Tech, Security & Personal Notes</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#script"><span class="nav-number">2.1.</span> <span class="nav-text">Script</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="vkkkv"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">vkkkv</p>
+  <div class="site-description" itemprop="description">A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">565</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">382</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL1ZLS0tW" title="github → https:&#x2F;&#x2F;github.com&#x2F;VKKKV"><i class="fab fa-github fa-fw"></i></span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC8="><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="pjax">
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/CodeShell/codeshell-misc-mosaic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="CodeShell.kr - Mosaic | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CodeShell.kr - Mosaic
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-22 12:19:30" itemprop="dateCreated datePublished" datetime="2026-09-22T12:19:30+08:00">2026-09-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/CodeShell/codeshell-misc-mosaic/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="CodeShell/codeshell-misc-mosaic/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
+<p>640 个 32×32 碎片拼 24×24
+网格，允许旋转、禁止镜像。难点在于碎片不是精确裁剪，而且单个种子的结果不稳定，需要多种子共识加独立校验。</p>
+<blockquote>
+<p>Some assembly required</p>
+<p>需要一些拼装。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://codeshell.kr/challenges/misc-mosaic/</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p><code>pieces/</code> 下 640 个 32×32 PNG，目标网格 24×24 = 576 格（64
+片是干扰片），允许旋转、禁止镜像，拼好是一张 768×768
+海报：彩色模糊渐变背景 + 大号白色描边文字。</p>
+<p><strong>Step 1</strong>：碎片不是逐位精确裁剪：2560 个朝向里只有 3
+组左右边缘完全相等。但匹配信号够强：最优/次优距离比中位数
+6.02，无并列。多列或曲率度量反而更差（比值降到
+1.81），因为海报是大面积平滑渐变。</p>
+<p><strong>Step 2</strong>：自测暴露了第一个求解器的 bug：它把种子固定在
+(0,0) 并把生长限制在 0..23 方框内，方向被截断。改成无边界生长后又散成
+49×69。</p>
+<p><strong>Step
+3</strong>：当前用<strong>紧凑矩形生长</strong>：反复填满当前 bbox
+内的空格（按置信度），填满后才朝匹配最好的一侧扩一行/一列，并限制 bbox
+不超过 24×24；之后做单槽重指派与两槽交换两轮局部搜索。24×24
+全部填满，背景连续。</p>
+<p><strong>Step 4</strong>：单个种子的结果不稳定（OCR
+每次读出的行首都不同），所以改用<strong>多种子共识</strong>：9
+个不同种子各跑一遍求解器，每张结果按 4 个朝向分别 OCR，取含
+<code>CodeShell</code> 且字母数最多的朝向。4
+个种子收敛到同一行首，另几个给出 <code>CORNER</code> /
+<code>CORNERS</code>。</p>
+<p><strong>Step
+5</strong>：用<strong>字符宽度自校验</strong>定死字符数（白色像素按列投影分段，段宽
+≈ 33px = 1 字符）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">line1 span 324px / 10 chars = 32.4 px/char   CodeShell&#123;</span><br><span class="line">line2 span 528px / 16 chars = 33.0 px/char   CORNERS_REMEMBER</span><br><span class="line">line3 span 361px / 11 chars = 32.8 px/char   _THE_WHOLE&#125;</span><br></pre></td></tr></table></figure>
+<p>三行像素密度一致，第 2 行 528px ÷ 33 只能容纳 16 个字符（不是
+15），且分段结构为
+<code>C | O | RN | E | RS | _ | RE | M | E | M | B | E | R</code>，与
+<code>CORNERS_REMEMBER</code> 逐位吻合。第 2 行中间那段 40px 空隙正好是
+1 个字符（下划线），不是之前估计的 2 个。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CodeShell&#123;</span><br><span class="line">CORNERS_REMEMBER</span><br><span class="line">_THE_WHOLE&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="script">Script</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;CodeShell.kr — misc-mosaic: compact-rectangle jigsaw assembly.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">Free-form frontier growth sprawls: slots with a single constraint can look</span></span><br><span class="line"><span class="string">confident yet be wrong, so the blob drifts and ends up 49x69 instead of 24x24.</span></span><br><span class="line"><span class="string">This version keeps the assembly a solid rectangle: it repeatedly fills every</span></span><br><span class="line"><span class="string">empty cell inside the current bounding box (highest confidence first), and only</span></span><br><span class="line"><span class="string">then expands the box by one row/column on whichever side matches best.</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"></span><br><span class="line">PIECES = <span class="string">&quot;extracted/misc-mosaic/pieces&quot;</span></span><br><span class="line">OUT = <span class="string">&quot;extracted/misc-mosaic/assembled3.png&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Assembler</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, rows, cols, minconf, maxcost</span>):</span><br><span class="line">        ps = <span class="built_in">sorted</span>(Path(PIECES).glob(<span class="string">&quot;*.png&quot;</span>))</span><br><span class="line">        arrs = [np.array(Image.<span class="built_in">open</span>(p).convert(<span class="string">&quot;RGB&quot;</span>), dtype=np.int32) <span class="keyword">for</span> p <span class="keyword">in</span> ps]</span><br><span class="line">        <span class="variable language_">self</span>.O = np.stack([np.rot90(a, k=-r) <span class="keyword">for</span> a <span class="keyword">in</span> arrs <span class="keyword">for</span> r <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>)])</span><br><span class="line">        m = <span class="built_in">len</span>(<span class="variable language_">self</span>.O)</span><br><span class="line">        <span class="variable language_">self</span>.L = <span class="variable language_">self</span>.O[:, :, <span class="number">0</span>, :].reshape(m, -<span class="number">1</span>)</span><br><span class="line">        <span class="variable language_">self</span>.R = <span class="variable language_">self</span>.O[:, :, -<span class="number">1</span>, :].reshape(m, -<span class="number">1</span>)</span><br><span class="line">        <span class="variable language_">self</span>.T = <span class="variable language_">self</span>.O[:, <span class="number">0</span>, :, :].reshape(m, -<span class="number">1</span>)</span><br><span class="line">        <span class="variable language_">self</span>.B = <span class="variable language_">self</span>.O[:, -<span class="number">1</span>, :, :].reshape(m, -<span class="number">1</span>)</span><br><span class="line">        <span class="variable language_">self</span>.owner = np.arange(m) // <span class="number">4</span></span><br><span class="line">        <span class="variable language_">self</span>.m = m</span><br><span class="line">        <span class="variable language_">self</span>.avail = np.ones(m, dtype=<span class="built_in">bool</span>)</span><br><span class="line">        <span class="variable language_">self</span>.grid = &#123;&#125;</span><br><span class="line">        <span class="variable language_">self</span>.rows, <span class="variable language_">self</span>.cols = rows, cols</span><br><span class="line">        <span class="variable language_">self</span>.minconf = minconf</span><br><span class="line">        <span class="variable language_">self</span>.maxcost = maxcost</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">best_for</span>(<span class="params">self, r, c</span>):</span><br><span class="line">        left = <span class="variable language_">self</span>.grid.get((r, c - <span class="number">1</span>))</span><br><span class="line">        right = <span class="variable language_">self</span>.grid.get((r, c + <span class="number">1</span>))</span><br><span class="line">        top = <span class="variable language_">self</span>.grid.get((r - <span class="number">1</span>, c))</span><br><span class="line">        bottom = <span class="variable language_">self</span>.grid.get((r + <span class="number">1</span>, c))</span><br><span class="line">        cost = np.zeros(<span class="variable language_">self</span>.m, dtype=np.int64)</span><br><span class="line">        ncon = <span class="number">0</span></span><br><span class="line">        <span class="keyword">if</span> left <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            cost += np.<span class="built_in">abs</span>(<span class="variable language_">self</span>.L - <span class="variable language_">self</span>.R[left]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">            ncon += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> right <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            cost += np.<span class="built_in">abs</span>(<span class="variable language_">self</span>.R - <span class="variable language_">self</span>.L[right]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">            ncon += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> top <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            cost += np.<span class="built_in">abs</span>(<span class="variable language_">self</span>.T - <span class="variable language_">self</span>.B[top]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">            ncon += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> bottom <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            cost += np.<span class="built_in">abs</span>(<span class="variable language_">self</span>.B - <span class="variable language_">self</span>.T[bottom]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">            ncon += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> ncon == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">        cost = cost / ncon</span><br><span class="line">        cost[~<span class="variable language_">self</span>.avail] = <span class="number">10</span>**<span class="number">15</span></span><br><span class="line">        j = <span class="built_in">int</span>(cost.argmin())</span><br><span class="line">        bcost = <span class="built_in">int</span>(cost[j])</span><br><span class="line">        cost[<span class="variable language_">self</span>.owner == <span class="variable language_">self</span>.owner[j]] = <span class="number">10</span>**<span class="number">15</span></span><br><span class="line">        second = <span class="built_in">int</span>(cost.<span class="built_in">min</span>())</span><br><span class="line">        <span class="keyword">return</span> j, bcost, (second + <span class="number">1</span>) / (bcost + <span class="number">1</span>), ncon</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">place</span>(<span class="params">self, r, c, j</span>):</span><br><span class="line">        <span class="variable language_">self</span>.grid[(r, c)] = j</span><br><span class="line">        <span class="variable language_">self</span>.avail[<span class="variable language_">self</span>.owner == <span class="variable language_">self</span>.owner[j]] = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">fill_box</span>(<span class="params">self, r0, r1, c0, c1</span>):</span><br><span class="line">        placed_any = <span class="literal">False</span></span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            best = <span class="literal">None</span></span><br><span class="line">            <span class="keyword">for</span> r <span class="keyword">in</span> <span class="built_in">range</span>(r0, r1 + <span class="number">1</span>):</span><br><span class="line">                <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(c0, c1 + <span class="number">1</span>):</span><br><span class="line">                    <span class="keyword">if</span> (r, c) <span class="keyword">in</span> <span class="variable language_">self</span>.grid:</span><br><span class="line">                        <span class="keyword">continue</span></span><br><span class="line">                    res = <span class="variable language_">self</span>.best_for(r, c)</span><br><span class="line">                    <span class="keyword">if</span> res <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">                        <span class="keyword">continue</span></span><br><span class="line">                    j, bcost, conf, ncon = res</span><br><span class="line">                    <span class="keyword">if</span> conf &lt; <span class="variable language_">self</span>.minconf <span class="keyword">or</span> bcost &gt; <span class="variable language_">self</span>.maxcost:</span><br><span class="line">                        <span class="keyword">continue</span></span><br><span class="line">                    score = (ncon, conf)</span><br><span class="line">                    <span class="keyword">if</span> best <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">or</span> score &gt; best[<span class="number">0</span>]:</span><br><span class="line">                        best = (score, r, c, j, bcost, conf)</span><br><span class="line">            <span class="keyword">if</span> best <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            _, r, c, j, bcost, conf = best</span><br><span class="line">            <span class="variable language_">self</span>.place(r, c, j)</span><br><span class="line">            placed_any = <span class="literal">True</span></span><br><span class="line">        <span class="keyword">return</span> placed_any</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    ap = argparse.ArgumentParser()</span><br><span class="line">    ap.add_argument(<span class="string">&quot;--rows&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span>, default=<span class="number">24</span>)</span><br><span class="line">    ap.add_argument(<span class="string">&quot;--cols&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span>, default=<span class="number">24</span>)</span><br><span class="line">    ap.add_argument(<span class="string">&quot;--minconf&quot;</span>, <span class="built_in">type</span>=<span class="built_in">float</span>, default=<span class="number">1.15</span>)</span><br><span class="line">    ap.add_argument(<span class="string">&quot;--maxcost&quot;</span>, <span class="built_in">type</span>=<span class="built_in">float</span>, default=<span class="number">1500.0</span>)</span><br><span class="line">    ap.add_argument(<span class="string">&quot;--out&quot;</span>, default=OUT)</span><br><span class="line">    ap.add_argument(<span class="string">&quot;--seed&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span>, default=<span class="number">0</span>,</span><br><span class="line">                    <span class="built_in">help</span>=<span class="string">&quot;pick the Nth most confident seed pair&quot;</span>)</span><br><span class="line">    args = ap.parse_args()</span><br><span class="line"></span><br><span class="line">    A = Assembler(args.rows, args.cols, args.minconf, args.maxcost)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;pieces <span class="subst">&#123;<span class="built_in">len</span>(A.owner)//<span class="number">4</span>&#125;</span> oriented <span class="subst">&#123;A.m&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># seed: the Nth most confident horizontal pair</span></span><br><span class="line">    seeds = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, A.m, <span class="number">11</span>):</span><br><span class="line">        d = np.<span class="built_in">abs</span>(A.L - A.R[i]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">        d[A.owner == A.owner[i]] = <span class="number">10</span>**<span class="number">15</span></span><br><span class="line">        j = <span class="built_in">int</span>(d.argmin())</span><br><span class="line">        bcost = <span class="built_in">int</span>(d[j])</span><br><span class="line">        d[A.owner == A.owner[j]] = <span class="number">10</span>**<span class="number">15</span></span><br><span class="line">        conf = (<span class="built_in">int</span>(d.<span class="built_in">min</span>()) + <span class="number">1</span>) / (bcost + <span class="number">1</span>)</span><br><span class="line">        seeds.append((conf, i, j))</span><br><span class="line">    seeds.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">    conf, a, b = seeds[<span class="built_in">min</span>(args.seed, <span class="built_in">len</span>(seeds) - <span class="number">1</span>)]</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;seed #<span class="subst">&#123;args.seed&#125;</span> <span class="subst">&#123;a&#125;</span>-&gt;<span class="subst">&#123;b&#125;</span> conf <span class="subst">&#123;conf:<span class="number">.2</span>f&#125;</span>&quot;</span>)</span><br><span class="line">    A.place(<span class="number">0</span>, <span class="number">0</span>, a)</span><br><span class="line">    A.place(<span class="number">0</span>, <span class="number">1</span>, b)</span><br><span class="line"></span><br><span class="line">    r0 = r1 = <span class="number">0</span></span><br><span class="line">    c0, c1 = <span class="number">0</span>, <span class="number">1</span></span><br><span class="line">    total = args.rows * args.cols</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="built_in">len</span>(A.grid) &lt; total:</span><br><span class="line">        A.fill_box(r0, r1, c0, c1)</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(A.grid) &gt;= total:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="comment"># try expanding one side; score the side by its best cell</span></span><br><span class="line">        options = []</span><br><span class="line">        sides = &#123;</span><br><span class="line">            <span class="string">&quot;top&quot;</span>: [(r0 - <span class="number">1</span>, cc) <span class="keyword">for</span> cc <span class="keyword">in</span> <span class="built_in">range</span>(c0, c1 + <span class="number">1</span>)],</span><br><span class="line">            <span class="string">&quot;bottom&quot;</span>: [(r1 + <span class="number">1</span>, cc) <span class="keyword">for</span> cc <span class="keyword">in</span> <span class="built_in">range</span>(c0, c1 + <span class="number">1</span>)],</span><br><span class="line">            <span class="string">&quot;left&quot;</span>: [(rr, c0 - <span class="number">1</span>) <span class="keyword">for</span> rr <span class="keyword">in</span> <span class="built_in">range</span>(r0, r1 + <span class="number">1</span>)],</span><br><span class="line">            <span class="string">&quot;right&quot;</span>: [(rr, c1 + <span class="number">1</span>) <span class="keyword">for</span> rr <span class="keyword">in</span> <span class="built_in">range</span>(r0, r1 + <span class="number">1</span>)],</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment"># never let the box exceed the declared 24x24 grid</span></span><br><span class="line">        <span class="keyword">if</span> r1 - r0 + <span class="number">1</span> &gt;= args.rows:</span><br><span class="line">            sides.pop(<span class="string">&quot;top&quot;</span>, <span class="literal">None</span>)</span><br><span class="line">            sides.pop(<span class="string">&quot;bottom&quot;</span>, <span class="literal">None</span>)</span><br><span class="line">        <span class="keyword">if</span> c1 - c0 + <span class="number">1</span> &gt;= args.cols:</span><br><span class="line">            sides.pop(<span class="string">&quot;left&quot;</span>, <span class="literal">None</span>)</span><br><span class="line">            sides.pop(<span class="string">&quot;right&quot;</span>, <span class="literal">None</span>)</span><br><span class="line">        <span class="keyword">for</span> side, cells <span class="keyword">in</span> sides.items():</span><br><span class="line">            best = <span class="literal">None</span></span><br><span class="line">            <span class="keyword">for</span> (rr, cc) <span class="keyword">in</span> cells:</span><br><span class="line">                <span class="keyword">if</span> (rr, cc) <span class="keyword">in</span> A.grid:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                res = A.best_for(rr, cc)</span><br><span class="line">                <span class="keyword">if</span> res <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                j, bcost, cf, ncon = res</span><br><span class="line">                <span class="keyword">if</span> cf &lt; A.minconf <span class="keyword">or</span> bcost &gt; A.maxcost:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                <span class="keyword">if</span> best <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">or</span> cf &gt; best:</span><br><span class="line">                    best = cf</span><br><span class="line">            <span class="keyword">if</span> best <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">                options.append((best, side))</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> options:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;stop: no expandable side (placed <span class="subst">&#123;<span class="built_in">len</span>(A.grid)&#125;</span>)&quot;</span>)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        options.sort(reverse=<span class="literal">True</span>)</span><br><span class="line">        side = options[<span class="number">0</span>][<span class="number">1</span>]</span><br><span class="line">        <span class="keyword">if</span> side == <span class="string">&quot;top&quot;</span>:</span><br><span class="line">            r0 -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">elif</span> side == <span class="string">&quot;bottom&quot;</span>:</span><br><span class="line">            r1 += <span class="number">1</span></span><br><span class="line">        <span class="keyword">elif</span> side == <span class="string">&quot;left&quot;</span>:</span><br><span class="line">            c0 -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            c1 += <span class="number">1</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;expand <span class="subst">&#123;side&#125;</span>: box <span class="subst">&#123;r1-r0+<span class="number">1</span>&#125;</span>x<span class="subst">&#123;c1-c0+<span class="number">1</span>&#125;</span> placed <span class="subst">&#123;<span class="built_in">len</span>(A.grid)&#125;</span> &quot;</span></span><br><span class="line">              <span class="string">f&quot;conf <span class="subst">&#123;options[<span class="number">0</span>][<span class="number">0</span>]:<span class="number">.2</span>f&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    h, w = r1 - r0 + <span class="number">1</span>, c1 - c0 + <span class="number">1</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;placed <span class="subst">&#123;<span class="built_in">len</span>(A.grid)&#125;</span> tiles, bbox <span class="subst">&#123;h&#125;</span>x<span class="subst">&#123;w&#125;</span> &quot;</span></span><br><span class="line">          <span class="string">f&quot;(target <span class="subst">&#123;args.rows&#125;</span>x<span class="subst">&#123;args.cols&#125;</span>)&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># fill any remaining cell with the best available piece, then refine</span></span><br><span class="line">    A.minconf = <span class="number">0.0</span></span><br><span class="line">    A.maxcost = <span class="built_in">float</span>(<span class="string">&quot;inf&quot;</span>)</span><br><span class="line">    A.fill_box(r0, r1, c0, c1)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;after force-fill: <span class="subst">&#123;<span class="built_in">len</span>(A.grid)&#125;</span> tiles&quot;</span>)</span><br><span class="line"></span><br><span class="line">    refine(A, r0, r1, c0, c1, passes=<span class="number">6</span>)</span><br><span class="line">    cells = [(r, c) <span class="keyword">for</span> r <span class="keyword">in</span> <span class="built_in">range</span>(r0, r1 + <span class="number">1</span>) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(c0, c1 + <span class="number">1</span>)]</span><br><span class="line">    refine_swaps(A, cells, passes=<span class="number">6</span>)</span><br><span class="line"></span><br><span class="line">    canvas = np.zeros((h * <span class="number">32</span>, w * <span class="number">32</span>, <span class="number">3</span>), dtype=np.uint8)</span><br><span class="line">    <span class="keyword">for</span> (r, c), o <span class="keyword">in</span> A.grid.items():</span><br><span class="line">        canvas[(r - r0) * <span class="number">32</span>:(r - r0 + <span class="number">1</span>) * <span class="number">32</span>, (c - c0) * <span class="number">32</span>:(c - c0 + <span class="number">1</span>) * <span class="number">32</span>] = A.O[o]</span><br><span class="line">    Image.fromarray(canvas).save(args.out)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;wrote <span class="subst">&#123;args.out&#125;</span> (<span class="subst">&#123;canvas.shape[<span class="number">1</span>]&#125;</span>x<span class="subst">&#123;canvas.shape[<span class="number">0</span>]&#125;</span>)&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cell_costs_all</span>(<span class="params">A, r, c</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Vectorised local cost of every oriented piece at slot (r,c).&quot;&quot;&quot;</span></span><br><span class="line">    cost = np.zeros(A.m, dtype=np.int64)</span><br><span class="line">    left = A.grid.get((r, c - <span class="number">1</span>))</span><br><span class="line">    right = A.grid.get((r, c + <span class="number">1</span>))</span><br><span class="line">    top = A.grid.get((r - <span class="number">1</span>, c))</span><br><span class="line">    bottom = A.grid.get((r + <span class="number">1</span>, c))</span><br><span class="line">    <span class="keyword">if</span> left <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        cost += np.<span class="built_in">abs</span>(A.L - A.R[left]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> right <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        cost += np.<span class="built_in">abs</span>(A.R - A.L[right]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> top <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        cost += np.<span class="built_in">abs</span>(A.T - A.B[top]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> bottom <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        cost += np.<span class="built_in">abs</span>(A.B - A.T[bottom]).<span class="built_in">sum</span>(axis=<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">return</span> cost</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">local_cost_at</span>(<span class="params">A, r, c, o</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Edge cost of piece o sitting at slot (r,c) against placed neighbours.&quot;&quot;&quot;</span></span><br><span class="line">    tot = <span class="number">0</span></span><br><span class="line">    left = A.grid.get((r, c - <span class="number">1</span>))</span><br><span class="line">    right = A.grid.get((r, c + <span class="number">1</span>))</span><br><span class="line">    top = A.grid.get((r - <span class="number">1</span>, c))</span><br><span class="line">    bottom = A.grid.get((r + <span class="number">1</span>, c))</span><br><span class="line">    <span class="keyword">if</span> left <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        tot += <span class="built_in">int</span>(np.<span class="built_in">abs</span>(A.L[o] - A.R[left]).<span class="built_in">sum</span>())</span><br><span class="line">    <span class="keyword">if</span> right <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        tot += <span class="built_in">int</span>(np.<span class="built_in">abs</span>(A.R[o] - A.L[right]).<span class="built_in">sum</span>())</span><br><span class="line">    <span class="keyword">if</span> top <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        tot += <span class="built_in">int</span>(np.<span class="built_in">abs</span>(A.T[o] - A.B[top]).<span class="built_in">sum</span>())</span><br><span class="line">    <span class="keyword">if</span> bottom <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        tot += <span class="built_in">int</span>(np.<span class="built_in">abs</span>(A.B[o] - A.T[bottom]).<span class="built_in">sum</span>())</span><br><span class="line">    <span class="keyword">return</span> tot</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">refine_swaps</span>(<span class="params">A, cells, passes=<span class="number">4</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Local search allowing both substitution and swaps between two slots.&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> p <span class="keyword">in</span> <span class="built_in">range</span>(passes):</span><br><span class="line">        pos = &#123;&#125;</span><br><span class="line">        <span class="keyword">for</span> rc, o <span class="keyword">in</span> A.grid.items():</span><br><span class="line">            pos[A.owner[o]] = rc</span><br><span class="line">        changed = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> (r, c) <span class="keyword">in</span> cells:</span><br><span class="line">            cur = A.grid[(r, c)]</span><br><span class="line">            base = local_cost_at(A, r, c, cur)</span><br><span class="line">            cost = cell_costs_all(A, r, c)</span><br><span class="line">            <span class="keyword">for</span> o <span class="keyword">in</span> np.argsort(cost)[:<span class="number">40</span>]:</span><br><span class="line">                o = <span class="built_in">int</span>(o)</span><br><span class="line">                <span class="keyword">if</span> o == cur:</span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                <span class="keyword">if</span> cost[o] &gt;= base:</span><br><span class="line">                    <span class="keyword">break</span>                       <span class="comment"># cannot beat the incumbent</span></span><br><span class="line">                oc = A.owner[o]</span><br><span class="line">                <span class="keyword">if</span> oc <span class="keyword">not</span> <span class="keyword">in</span> pos:               <span class="comment"># unused piece: substitute</span></span><br><span class="line">                    A.grid[(r, c)] = o</span><br><span class="line">                    pos.pop(A.owner[cur], <span class="literal">None</span>)</span><br><span class="line">                    pos[oc] = (r, c)</span><br><span class="line">                    changed += <span class="number">1</span></span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                r2, c2 = pos[oc]</span><br><span class="line">                <span class="keyword">if</span> (r2, c2) == (r, c):</span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                other = A.grid[(r2, c2)]</span><br><span class="line">                base2 = local_cost_at(A, r2, c2, other)</span><br><span class="line">                A.grid[(r, c)] = o</span><br><span class="line">                A.grid[(r2, c2)] = cur</span><br><span class="line">                <span class="keyword">if</span> local_cost_at(A, r, c, o) + local_cost_at(A, r2, c2, cur) &lt; base + base2:</span><br><span class="line">                    pos[oc] = (r, c)</span><br><span class="line">                    pos[A.owner[cur]] = (r2, c2)</span><br><span class="line">                    changed += <span class="number">1</span></span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                A.grid[(r, c)] = cur</span><br><span class="line">                A.grid[(r2, c2)] = other</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;swap pass <span class="subst">&#123;p&#125;</span>: <span class="subst">&#123;changed&#125;</span> slots changed&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> changed == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">refine</span>(<span class="params">A, r0, r1, c0, c1, passes=<span class="number">6</span></span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Local search: reassign cells to the best-fitting piece/rotation.&quot;&quot;&quot;</span></span><br><span class="line">    cells = [(r, c) <span class="keyword">for</span> r <span class="keyword">in</span> <span class="built_in">range</span>(r0, r1 + <span class="number">1</span>) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(c0, c1 + <span class="number">1</span>)]</span><br><span class="line">    <span class="keyword">for</span> p <span class="keyword">in</span> <span class="built_in">range</span>(passes):</span><br><span class="line">        occupied = &#123;&#125;</span><br><span class="line">        <span class="keyword">for</span> rc, o <span class="keyword">in</span> A.grid.items():</span><br><span class="line">            occupied[A.owner[o]] = rc</span><br><span class="line">        changed = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> (r, c) <span class="keyword">in</span> cells:</span><br><span class="line">            cur = A.grid[(r, c)]</span><br><span class="line">            cost = cell_costs_all(A, r, c)</span><br><span class="line">            order = np.argsort(cost)</span><br><span class="line">            pick = <span class="literal">None</span></span><br><span class="line">            <span class="keyword">for</span> o <span class="keyword">in</span> order[:<span class="number">60</span>]:</span><br><span class="line">                o = <span class="built_in">int</span>(o)</span><br><span class="line">                <span class="keyword">if</span> o == cur:</span><br><span class="line">                    pick = cur</span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                oc = A.owner[o]</span><br><span class="line">                <span class="keyword">if</span> oc <span class="keyword">in</span> occupied <span class="keyword">and</span> occupied[oc] != (r, c):</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                pick = o</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">if</span> pick <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            <span class="keyword">if</span> pick != cur:</span><br><span class="line">                A.grid[(r, c)] = pick</span><br><span class="line">                occupied.pop(A.owner[cur], <span class="literal">None</span>)</span><br><span class="line">                occupied[A.owner[pick]] = (r, c)</span><br><span class="line">                changed += <span class="number">1</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;refine pass <span class="subst">&#123;p&#125;</span>: <span class="subst">&#123;changed&#125;</span> cells changed&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> changed == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">CodeShell{CORNERS_REMEMBER_THE_WHOLE}</span></span>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>vkkkv
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://vkkkv.github.io/CodeShell/codeshell-misc-mosaic/" title="CodeShell.kr - Mosaic">https://vkkkv.github.io/CodeShell/codeshell-misc-mosaic/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC8="><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
+              <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/misc/" rel="tag"><i class="fa fa-tag"></i> misc</a>
+              <a href="/tags/ocr/" rel="tag"><i class="fa fa-tag"></i> ocr</a>
+              <a href="/tags/codeshell/" rel="tag"><i class="fa fa-tag"></i> codeshell</a>
+              <a href="/tags/jigsaw/" rel="tag"><i class="fa fa-tag"></i> jigsaw</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/CodeShell/codeshell-misc-no-show/" rel="prev" title="CodeShell.kr - No Show">
+                  <i class="fa fa-angle-left"></i> CodeShell.kr - No Show
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/CodeShell/codeshell-misc-checkin/" rel="next" title="CodeShell.kr - Check-in">
+                  CodeShell.kr - Check-in <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2024 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">vkkkv</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZy9taXN0Lw==">NexT.Mist</span>
+  </div><div class="beian">
+    <a href="https://icp.gov.moe/?keyword=20264433" target="_blank" rel="noopener noreferrer">萌ICP备20264433号</a>
+</div>
+
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"blog-3yiidetljv","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/third-party/comments/disqus.min.js" defer></script>
+<!-- HUD overlay nodes; behavior lives in /js/hud.js. -->
+<div id="pjax-load-bar" aria-hidden="true"></div>
+<div id="pjax-status" class="hud-visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<div class="hud-grid" aria-hidden="true"></div>
+
+<div
+  class="hud-title-projection"
+  id="bg-title-projection"
+  aria-hidden="true"
+  style="display: none"
+></div>
+
+<div id="cursor-container" aria-hidden="true">
+  <div id="cursor-outer"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-effect"></div>
+</div>
+
+<script src="/js/hud.js" defer></script>
+
+</body>
+</html>

