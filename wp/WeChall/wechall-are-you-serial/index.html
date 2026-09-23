@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge PHP 反序列化漏洞。页面显示多个源码文件，需要通过操控 serial_user cookie 触发 SERIAL_Solution::__wakeup() 调用 onChallengeSolved()。 Solution 源码结构:  code.php: 读取 serial_user cookie，调用 unserialize()，然后用结果调用 getUsername()&#x2F;">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Are you serial">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-are-you-serial/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge PHP 反序列化漏洞。页面显示多个源码文件，需要通过操控 serial_user cookie 触发 SERIAL_Solution::__wakeup() 调用 onChallengeSolved()。 Solution 源码结构:  code.php: 读取 serial_user cookie，调用 unserialize()，然后用结果调用 getUsername()&#x2F;">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-09T09:36:27.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.407Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.163Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="deserialization">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,33 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>PHP 反序列化漏洞。页面显示多个源码文件，需要通过操控
-<code>serial_user</code> cookie 触发
-<code>SERIAL_Solution::__wakeup()</code> 调用
-<code>onChallengeSolved()</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>源码结构:</p>
-<ul>
-<li><code>code.php</code>: 读取 <code>serial_user</code> cookie，调用
-<code>unserialize()</code>，然后用结果调用
-<code>getUsername()</code>/<code>getPassword()</code>/<code>getUserlevel()</code></li>
-<li><code>SERIAL_Solution.php</code>: <code>__wakeup()</code> 方法调用
-<code>onChallengeSolved()</code></li>
-<li><code>SERIAL_User.php</code>: 包含 <code>username</code>,
-<code>password</code>, <code>userlevel</code> 属性</li>
-</ul>
-<p>核心漏洞: <code>unserialize()</code> 会实例化 cookie
-中指定的类。如果反序列化 <code>SERIAL_Solution</code>
-对象，<code>__wakeup()</code> 会自动触发。</p>
-<p>Payload (设置为 <code>serial_user</code> cookie):</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">O:16:&quot;SERIAL_Solution&quot;:0:&#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>使用 curl 提交:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -b <span class="string">&#x27;WC=&lt;session&gt;; serial_user=O%3A16%3A%22SERIAL_Solution%22%3A0%3A%7B%7D&#x27;</span> \</span><br><span class="line">    <span class="string">&#x27;https://www.wechall.net/en/challenge/are_you_serial/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>注意: <code>__wakeup()</code> 触发后，代码继续调用
-<code>getUsername()</code> 等方法可能导致 fatal error。如果 curl
-不生效，尝试通过浏览器 cookie 注入。</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="c31fae4b9d42af407b001810525664cd4a4bfb139f4933eee6a673c36edc4645"
+     data-nonce="cf5749e0ddd461ee88b36a87"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    e4d834cbf47cd2f60f2a3e8119ae146bfda75bbadb640cbff1a8cf0b89206fef41e280e7357400c16c06eee4749da8961ef19f7ead436100c5577183bdaefc18366ffddc4eb3627c28ec8259c6d103577665465c21b68f1df6966cbf8d6198344bb0b921400753049ba6252fb85cf912f710bb01a0a16ba39465990c572dc21f23f1d041fe484fee0c73b7da5851a7b456ba1626815b536c47186b166b8f3b76517d29cbe493d5f3ee7565ebc171849a07819eb7a44fd951ebaa976525f7be4d20ae1e7ab6125bec069c4d7a19b5606f7d0fb19124dbf7725a970e9e621b781d3a1d5329e5ba909130fad6280c78441f01817fe330229cc6eadc3e53c28f7f7254e0a070e4cf1171e3fc361d511d8c467fc219aead66c52bc320778363a832b0700819bfbadefd4fa3dbb1f8c2fc2b17a3fb86fcdbcb579dbb1e7ff8c43eeb8c4ed95583ac9854be68668656c75f952e1430abb00ee2f571155091d52e79f0452a5d42ee08ae322f22cc8e73816ea28953bd4ca703be85de897eed3870a324727cdcf5c4ca09fb8e8141b293a6d0b231706dd5f84c40f90f3db7e4a23a3a2cb6514730f2dd3aab1357e0fda8fd5899a3ffa7ef7d4c3dbc99409b8703824123797d8bf46d51106933234b6ad302cd4622def7a1161dc53b91de10288f890c43739977a99a8011928fea2e0681f5d9ea448278a7664def432fa769e4bad79a477faca7454a3a9d75dd261cf34de2a94d76ef71173bb50dd80784616c3a69e00cb220a47d86100b011c06d5e6c801acd45f139f23504900344dc40e2c8869a8c21d4e4826e37dd0c01423958dcd0e19ef7b0daf49244fb403b49be49f581b75b33ee33858e2c0bd3ea256b8926a38ab05e4d4e55adce94040246d63e4e4f7537a7842520c1d7b5bad168020eabfdf149d3a3eca7191f3dcf2d656f13848983d69ca19bd06b47d9507b61767e008f9d66943b66e4818d2df45917358cf3e650e8ecd6697b096910e375499a66b88ee30bfd977ef083816b0acc4792b56109753afaad9903e1ef697b83a4ccb97f75cf0aba0e1bc6c4e6072d6d72a86e91bb4e27fc5b5b6f91de9aa48dc76f8713fd5133ca21b882c10dfe537a8c5115f6393a79b8049bbfca7bd453947dad632a7bc4b25a6c4f6c3d7dd5abc05c0cf7b64f0d102573e71be55e0f7e51e02d7d0b5b3e7423813569d5eeea41fbd7c779cc86f0968d0ef4f0ab586674e479d6b6e9508dbeb7c985eafc3fa86d9d131fdfb18cf855814faf60d25461cd1d39526c79d2398a2a175e5074986f2e06cd2bb0bf9e922aff20b41149094bc459ea5ff20cfc8f9078a5d3233c6b656a0dc2a63773e4cb8590fbd54de5325794cf72d025b43bbfeffd6d81fa6fcbf5f1e15ce07ce0c842a0fa09cc4af591f5fe4eebe883b61083387362f6e90a5fc2c8695118a5e7bacd2344666d75fb4eeb105457733d7fd65de7081ee79d4d9d797f601f823f26e3409579c5bd47fc92214f4a5bcbf1128e3cdba7c48a6b895432b593c9bc178c04f683a14f5850868b9530c649dfc9f2ddc52b5742c82bc5596fc356ec550151aa5721e05eb514fab7d2057a00e0366e59f1a03e6faffa7f112029c591e9eedaa04e2c3665cc8960e6065183472484372cb0e205d535b19c6e2d403d5ef6409515e30fa6122684fabe4e6d88559cddd617258aefe04559085ebc9317915674047bbefffd8cee17d9ed6706b31317fce820d035919dfdc61425cde45c725ee34f84c1fc49a08d5bd7d71487d06b748054fd99764b70541eb16a5527ffb74bb4ba66a0df8e22859e37454d2687d879a23ce3c1867b94bb1fc302b94c3036b7fb8c27ae719b87c3f181b43618a27c81d03878c447e6fb4cfb598c09b215d99e20cc36afde481ee8e0eafa80d79703bb8f657cba4f462234cc6562d25972eb8b8bcaabff4ff0018a44fa45a3d40c942ab3436dbb93b94558374e9568ddca17cfd488745c518fc86e3489187f2071d7c41ae9e5147925d9ea9a375a5e39c63c66042208f8f4686eb2071eace350b0e8e6c54c45d3c85c12672ee96347e299c9a6a6354b306ef321d774141faf836218b3806afb1fcea0de4bf55ef81c3858ed61d44f962ba33a52d2bb74cd2c33c2eb052da91d3305e6ba95c579ca1a0106701e7a0a4ec32f37616bc107ebf856bc47f97e6a7e9a22066eec7215ef5a34386852aae53ef60f10be8dd2c04e3ed190d06daf9e61d7e97a33674f3863d4c7a7950ae7e7fe260ba14b234d6a6aebc7265bb3fef1140e8a940f630381081d1bb1471c392c3a15f3b63418e5ae93f6dc1def1f3b3663453b07e1b78c2a1794493cb466aefe017e3513ebc5959eaaf477085cf1503b4c0603cb6f3d00f5c41365b87da040a36fd60b93f3a923513cdff04b86866cb11e7ac0a124df5b53b50dd24e3736e74e28d43e94c597e1ec7970d8b98861d1f5c9e2ab9152b7ce90cdc9cc23e7c7f1f13095da2fbeb7c176e32357a30f9d1bc8cba68a5bbf3f7dc3236b4ea842c5a3d21afe8fcaffef70bcc4029de9983421d00e8e70fdbd4e8481da68703ff3fe2616079d90221d0d4ef639771c818e65b54504b6593af484a62aa6ffad2a2aea43ede9c5d4f09072bed8d7e88d3c7fa582edbe056c1676708348e22dc80ac0d24d2a448e2b2084f6ef8db05f7a38c46f4bd257d32dffe5fedd6a290459846b3d2b37a281432d52d89fbba60ddba8a2e15720a0c318715090ec996ec4546afd5943e5f1ae7b9d7afe24d6eb7c54c117f7a5b5bf5778b6c83d189
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -432,8 +430,9 @@ p.spoiler {
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/deserialization/" rel="tag"><i class="fa fa-tag"></i> deserialization</a>
           </div>
 

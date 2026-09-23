@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge PHP Local File Inclusion。源码中的漏洞： 12$filename &#x3D; &#x27;pages&#x2F;&#x27;.(isset($_GET[&quot;file&quot;])?$_GET[&quot;file&quot;]:&quot;welcome&quot;).&#x27;.html&#x27;;include $filename; 用户输入被拼到 pa">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Training - PHP LFI">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-php-lfi/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge PHP Local File Inclusion。源码中的漏洞： 12$filename &#x3D; &#x27;pages&#x2F;&#x27;.(isset($_GET[&quot;file&quot;])?$_GET[&quot;file&quot;]:&quot;welcome&quot;).&#x27;.html&#x27;;include $filename; 用户输入被拼到 pa">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-10T06:37:36.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.421Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.172Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="web">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#safety-note"><span class="nav-number">3.</span> <span class="nav-text">Safety Note</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,34 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>PHP Local File Inclusion。源码中的漏洞：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$filename</span> = <span class="string">&#x27;pages/&#x27;</span>.(<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&quot;file&quot;</span>])?<span class="variable">$_GET</span>[<span class="string">&quot;file&quot;</span>]:<span class="string">&quot;welcome&quot;</span>).<span class="string">&#x27;.html&#x27;</span>;</span><br><span class="line"><span class="keyword">include</span> <span class="variable">$filename</span>;</span><br></pre></td></tr></table></figure>
-<p>用户输入被拼到 <code>pages/</code> 后面，末尾固定加
-<code>.html</code>。目标是包含挑战目录中的
-<code>solution.php</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>经典路线是 directory traversal + null byte truncation。PHP 5.3.4
-之前，字符串里的 null byte 会截断底层文件路径。</p>
-<p>Payload：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/training/php/lfi/up/index.php?file=../../solution.php%00</span><br></pre></td></tr></table></figure>
-<p>路径拼接过程：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pages/../../solution.php%00.html</span><br></pre></td></tr></table></figure>
-<p>底层打开文件时在 <code>%00</code> 处截断，实际路径等价于：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pages/../../solution.php</span><br></pre></td></tr></table></figure>
-<p><code>../../</code> 从 <code>up/pages/</code> 回到 LFI challenge
-根目录，从而包含 <code>solution.php</code>。</p>
-<p>如果 null byte 被过滤，旧 PHP 还可尝试 4096 字符路径截断：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">?file=../../solution.php/././././...[padding to 4096]...</span><br></pre></td></tr></table></figure>
-<h3 id="safety-note">Safety Note</h3>
-<p>访问 <code>solution.php</code> 可能直接触发 WeChall
-解题或改变账号状态。当前草稿记录的是已知 payload；执行 live
-请求前需要确认，并在执行后用 <code>/en/challs</code> 的
-<code>wc_chall_solved_1</code> 验证。</p>
-<blockquote>
-<p>session-bound: exploit URL triggers solve, no fixed answer</p>
-</blockquote>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="b34ae7a04ca7628f3900242ab7da2b07fcfd2f917a7f347d856a4e2e6100e704"
+     data-nonce="52e35b18e5f0cb6bb1dcab23"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    ff651eb7303e086b938f234adf0eda12405eb717589ec4ac048adad29f325f42daadcb8bf7cc907490a06061f3ccf4783e87b303e2d3186540d47287bccaedd8ac70f3ec3458b1dd61ae2056e675cb69c97f75a14e85870ecff9ac7885d5bb69bd9f9e78f3ee1719e7f66be8a605ec1be0656e4bb99dcd9b1170ec8598d2afe7891890061687b8075501f6cb5b3f241813d2c012c5b92b6d738af543d5d31179428ca85ef3dba9ad8a226a853d763b0d50abe92111e160d366a0c9d68c75d44b2bc849c17af78735f460a6d83a2d332530ce9820e1d77064959174922509c0a49acd98dfbb8b01ef1307ab31705f19b838fa755d414916b4b732a5ac4934dcde79e0442e5e4190360c83627951e4d8663d4ec785825939ebb7bc8d3c6627f172a8aa983a4ac1503ea0968e764612f65a74d3b5e111fdd974cded777af237de056da9c0fb7d6052c4f791b44d4a936a7cd58aee845044a91852ebdb8e2a2d26a0874a7ed88558db53f2cf88f7e8096cf587c1e119a63963fb2968876fcdbafc0e45a0e49161ecffb0f613af9a361bd0bf5c69bf4e4862fc1f5df2c44d6e10a39670ba5177588aa91c9096703356761e01c89393b20cea13a5f240894a8fbbc1b2be8ef7c0acbb465d401d0b545f0983672f73606b2d2b00bf4e56ff3900491ba6a61ca238e2556f6fcae39ca4342bc4eeb7a942a1ae2b61d39be18e1b2972c7fe3b4845fa4113097782c0608d1ca03abf09b8610b970b8cdaa10eceb0107eb98e829dac4447de6d56b00e3b25e453a104097be1f76eb03a76b79443e76a3275202c8720724595cf4ae6b70e6efc1914b3ea21c869144b455f125e866e9c563b145ff33c96c33dc822d56da0b0cf63eac194a41ae1559257e126bf805c751466cf2998fc68e7c163b334d3349df14f15ab301b44628c92ab890e816c51ef4183bddcd3ea3309330035420e633ad8fef86f73a05c07e2a793e64ce2aa25f1ef8f33902f3d87f2f5fd8fb73215a0e47fc4b767e0ca003c52a1ea3781db3a205d740936923ea80e07c7dd0012a819459da096cd61b4aa8f96edbab34c0dced36a609be64ab766a92040bfaa04536ae154f26b72b99ecd1df3b590b0a522866620475c347a789433cf50fbf2d9faf522fa6b3e921b39841be6cfede3a8a32f0459dcbccd9ef2dbb331a227fcea380f04f4ebc3f4681a9194c67eff84f724a728beedf66cc3ee04652321600bb98ae2ba59358366e269d8100ac1fd74268d914584edc7368e3416513908db8c8e8c1582a3cfa484416d08b16074131aa0e1dd68bf7329101feed8adc0317a9bd8c6e5efbf5ff479c9fdc6c2b658fe3e5edf6b44af3e95918c5116454140cd22d50717a88173fc85cb7ec6640fde1da7775dfec75edfcd2469a2298047b9fa76b7ca59cc0e64a745c6266e5e7048dbdb522c2a56431264797bb143c4dc43480138b3c6a4dc25b9eaf62a50243eb29c708144dcd31380c84504f7d5fdfde3ace495fe8cd310ba32542a11396da32130b43ed6cc54142b2262b6fbf7891e5186f289accd14da98b131f00a85977f50fd990edebbabb8c64d09034edf559d7131894492cd2380253112a665840c9c8de367e9a5404ed690f01c9632d51a67d05807971e700bca67bac91e52061976c316aa1eafb15c5627a5b254f26016b485e8e7c0bc8bb86f27de172e6ad23cb10f52463633bbd4ab15c70bcc7d5126d0de36ce4eeb56b90342d890a0611b210b8a93ffa98e3acd03b23ff5162758b98949f1043886894e879ba5b0edd858f39a90c0281b7687fe4a6c48b4ff42f54da82494eed75602fbf044a52c5b1852b3b23ef4c5b4ce8e5d584b42527de3b72542b6ee1580c821fdd1b28e6bb6e172f9ebec7a8495fa6cb10d60efdd5e69d1fd0751f619519f31f566d6abb03b18ce95d930d0711d9209409ee2093a6e0d41226fcaf35f3629afb70b4824dc645a3a549dc58ca43c304bb012eb4e15738d98484ba062b4335d787ebb44a2b50a4bb2e84e67d9c45f87763b9e7ceb0c53bb63f46bd1b18751cb3e3c84e9e0c6f6956a9ab1e648e52feda73417a3ba5f0164ba97fe291f518895cd8bf20434b30270c97f83b0428cd0d1f75c21037ceb22f7e020434c1b86edd6481994f3e748b04381fd8c34598c15d1cdd21e647cdef8f4db1a93668fb204c65828a4354cac6efbc1b9955e084db65efb717aa3cbcfb72bbd92a28e3b2efb6426b810f46f427939005fe25b04b858c2239f5760ac2ec0976fb3e3bbe213bbe8daf4941d88f3db4faa65f7eb09079820c31ae4d3f32ee9b2797442d74e21138e73ed6580345b7033540ac3ba9512b75c4c7f7393ccb05d1057f91b5c1dbe3f069c2ddb4c37fcad9d8693b365e3a7257b7d9ed0323b62010c9a357d09270718088a794e320e8895a4bb0dd87f82ad9251680cee7958dc3dceee521b5637995abbc63bb39de0e140abb5579022c527ccf3f0ef84049c65b5f39389dd33de5fe2d2b7ce230f6cf674bf3c5c2bbb304dd7e1be29cdc886fd56f12c5731ba3a0fa29ca2ceb7321075b90416be72742343924aab9560276599e0ab4f1339cc92a9cb27db625aead0e9ff8576ceab29a97f77fb2e37aa420547ff4fada1dd5b62b39b0b164c1bc39962160a5034dbef4a0fe22d16415b9c00e60c0efb0e163de1ea34f8683cfb55b98c9f28e7cc8ecb64b02a721e5ee026f486c6f446065b03ebd558d20a569417446b10830d9adbe162f51f4c64a321d501ac52f941778a358e9d3fb4a54ab626117389aa89df041002f0516a537b2af922fa23539d6c13d2a6d9f116e3e578cad6dc06e94f1821999860d5a5a08d1a191ce9a6a89a5b0b0f3b059cc2a8272ed8f2a4e114775edccc011ceb403d0324635fbd31ed8087fffb7fb87b725b15f3e2a57efc5fe77aed25b47d2212b431c73234f16381ff4c93ea8e444f983a1dac2dab733f2b04a483f599a28bd46df33ab7b12e1050aa67f0f942073483a5a8f978a2181a4c46be3a9493b011cdcbc78085dd16737c579662ae9ffce1029acaa38247993ac9901b6efa89848238b1c7fafa6bf715d3b4d735121750fb8b2116d248c62d406641ef806b929af5d68e9047040b9bc30ca96c72ddb0bb02d4c029e425b5eb24389e249c532e828dde8b02bb2cb14196c9e6d0a1a9274c9f3e91fc27fad68913bef667068a265c9eb2ffb594693d34c30efd33c1df446c7e0080e70b65728571ce41ffa0521144d582b90624ef1aa0332a804a6cd19022587f973f591e558f277304bbb7c7769b4ed5a1ff9d04e8b364f05f5aad0dc010093c8dcc1e83e750885fdceb6a488a4115c1d5131e89e8a58029fd37141506f7ddef5d182970fc1637a57fcbc9295027f00813fa13950ab42156d37f3d411936aea17f4bc6f6de874fa2ab3299513794588d479d221635a0a719a4ef9061a791d9ccef3b6196e54cd74b48675131eb5f06bc729ca6e978ece473664018fc3b1a63ac8b8fd2a72eb77a0b112b22cda2cc7bf8de81cef1fd9689b23f1d97d776f5ead33f8c34be09d2f7f800b715ebf60c9797b9a915bc7f5af42810b259a62c928dd201b6fb1c804352d21294b99296fcefda11c71f7ef6f42eb431e4c4d0c73a0015c1b53a3b84c755ed2f3f817d93285ce79e5e3b96d17c2ba072a53cd7a3793a57d38574787ea154fa65f2b0700711acb0e6c42b94ad4d7d18602c61f956babdbbd777fbeb35551cb29951c2f8c4c851dda163d6b3a9854b8e40623d92efebc03beeafd7b16e6d7b57c1d697252eb0374786f918b87e31d56017a7ca282723cf58585d10db995c792706edf5ced90eb5ddb15bcabf65a396fd4d16523ebaeaf02d7ceeb93374a00aa4a7bf2906bece6007422b71bdefadcbcb8ee705aea099b7f1d8b49b18245f45040199c05e6c69e550480cf70ce0be3bbe3c799ef879bb9d059f3afbcbb0e245f103c9e4183f11654683de285d52f5cc46654fea851e1287aa95112a8d7aab9c4572d7fcbc559f9ac81d28f35ee2e5dd
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -434,8 +431,9 @@ p.spoiler {
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/web/" rel="tag"><i class="fa fa-tag"></i> web</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
           </div>
 
         

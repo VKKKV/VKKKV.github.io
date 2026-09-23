@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="同 easy 版本的 ECB oracle + shellcode 注入，但没有 stack dump，需要手动逆向 offset。 Analysis 1r2 -A -q -c &quot;pdf @ sym.challenge&quot; &#x2F;challenge&#x2F;vulnerable-overflow 关键溢出点： 123456; plaintext struct 起始于 s1 &#x3D; rbp - 0">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="PwnCollege - IS ECB-to-Shellcode (hard)">
 <meta property="og:url" content="https://vkkkv.github.io/wp/PwnCollege/PwnCollege-is-ecb-to-shellcode-hard/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="同 easy 版本的 ECB oracle + shellcode 注入，但没有 stack dump，需要手动逆向 offset。 Analysis 1r2 -A -q -c &quot;pdf @ sym.challenge&quot; &#x2F;challenge&#x2F;vulnerable-overflow 关键溢出点： 123456; plaintext struct 起始于 s1 &#x3D; rbp - 0">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-03-20T06:32:45.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.293Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.186Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="pwncollege">
+<meta property="article:tag" content="restricted-pwncollege">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
 
@@ -205,7 +206,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -218,7 +219,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#analysis"><span class="nav-number">1.</span> <span class="nav-text">Analysis</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -239,12 +239,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -317,7 +317,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -359,21 +359,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>同 easy 版本的 ECB oracle + shellcode 注入，但没有 stack
-dump，需要手动逆向 offset。</p>
-<h2 id="analysis">Analysis</h2>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">r2 -A -q -c <span class="string">&quot;pdf @ sym.challenge&quot;</span> /challenge/vulnerable-overflow</span><br></pre></td></tr></table></figure>
-<p>关键溢出点：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">; plaintext struct 起始于 s1 = rbp - 0x70</span><br><span class="line">│           0x004016d3      lea rsi, [s1]           ; rbp - 0x70</span><br><span class="line">; message buffer = s1 + 0x10 (跳过 header + length)</span><br><span class="line">│           0x004016d7      add rsi, 0x10           ; rbp - 0x60</span><br><span class="line">; buffer overflow</span><br><span class="line">│           0x004016e1      call sym.imp.EVP_DecryptUpdate</span><br></pre></td></tr></table></figure>
-<ul>
-<li>message buffer: <code>rbp - 0x60</code></li>
-<li>saved rip: <code>rbp + 0x08</code></li>
-<li>offset = <code>0x60 + 0x08</code> = <strong>104 bytes</strong> (与
-easy 版本相同)</li>
-</ul>
-<p>Exploit 完全相同，只需对应修改 buffer
-地址即可。实际上因为栈地址固定且相同，exploit 代码可以直接复用。</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="126ca0c25310cd78f79338b5cf5c5459a61b02fbee562cb3e37864e45111ff2d"
+     data-nonce="b36fbfc049830912dbb44095"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    4745ac77ebb60dc0a2c04ae3f372c299aec77a718f073fa7ca24e14d5ea8a604a48087242b7ca07bbf5ef98b13adff0a5ffb544e22fd6513d0ddf2f3d6264ec0db9820e250e94b030ba7c4d327fb8930cf69061b907986eab9b326aec2050a4c863beb4d3c95ec3f62461c78871fde66ea52e276dadf0c99d229ea1c31176e37090db8e21b9845623563f8c56cdb30ed2262ccf2c98b805adeab69a7c8d99f4cee07ce9e086ac4109bbfb03b537bd3a84ef66b35667896715fb38770c38fc7014e5a6a9d4291af450d6393c394d813fdcc45ae15e2466cb8516bdac8d47068dff8e1e9dd96b72330154db7a522501f70935f7174fa90dce00345b9459921750ae7beed534c2da0f56e868a77dbfea347e2232c81681d8fd5d8a0a7f1ff7ad53ea2d10f13d606e73f2930a06a8f399e58c5afa99a738afcabe1d9989f90e4a70756363f12b816231b98b45311a6b80af9bc51a7e286e77d26f5e1545d3e00493ef5b504e0407480fd9dea9c28e982cd25895a84b64e7ca197132fb41afc414aa46c6415058196aa5e4006ff6660f5fc72b21cda51c957d2c1ffecdfee3c7e32fde0f8d9b4416522caa02ed7fb65fea6de8a717de60b28178ba1e8f6a7b4ef4b32b31332503f7d9ca0e71208dfaa78e2740a9a39788f891e75e008f141b86982f4a333850ce37c640831a6224ca3b80bd21d1d3e9f3412996ef431878b3d2ddd76dfa5bebb6a80e6b6607f0e1f1e11831be1087052a3c6923ae5c82807d592e923856f6cd3f96d0b8f9561b40b2e7547f904003d6ffbf4fa41fbcc7b5395f4fc141773de54de783afc87b5306a3118280a0ffb9d2be852a649e013aa544e7502a41c3937aeabf5c219efe90c8c23aa44cf4986a2f15af4a05242d30bace39962667fd73461c3193a22e315589b67df04790595568f5c6632bf92ccc2a5ce06fddad06fbb5d35a74cbc8d44f026336b84de16b42147914819d2a603d2d5f875bd4b7db4a003c2d95c4211ee37992ab52cd7c82f0467e56fd5b5f0aa29cc271713ddcf2871cd4a1c7e9ccbcf76e8dbcd8f1259f5d7049ca9a076f27322f1c1480e77d3130b77fa25dd9b3d1fedebc30d6271b75a3413deb770c91c0034d0a0c91d46b81ee50de96cc05ff6bea34fa14400c4172dcb8c006ef6bb9abb95ce6a5cf8d76c69f35b90161686560cc26bde1bc154297cc31878c54f20bb373e996b4cd6835c78f0217a582725caffb866c579feba640e051220552dd32c2ef092cf436cc74f23b122d1adff04c6754f9a3b09ed570214d79bfe0f1d8af784af2d599ed16d111baad2d95cb591df34fd97822cfa66b57ce3eebd5fec39965e2c2c5afcbbb03330021efc053c84f23c2437d0fe4522bf012de3980451de702524f9a352fae061da817162274aa8e509c37c754a0b7e77bc17050bd1f7a5659a342ce87cd34c6f4f498cf50174ac9561418cebeafaef5ad3360ed795475d146f12d964d3ffedb09e62a68c4ad12ce2f293159bf64f1fbe4a226d30e3b2649ae3307b4095590d254bb9e8008eeec223ef9f7584029957d3dd61a5c3ae96aeb2136849a4750650dbf1d9cd5c06ed0046382c2e63eb801d8d1873cbe4c3ff3fe199b54704c4f1c5fe23ec8263e846339c6fd2a06a80135568fd7e4bea24fa105f40b6a494c1d8e6265946d7d249fb3caebf52fc946da5e4bfaf033bd3dcd475ae8053502e563bb68bb0510c4ac2f0c257aee4b52712102b0db27aad9093c96e780b7365f9f62ec68701440196b4eec4575ea09536f9871b9e33406dcb41ea531df7b2e8612e9c3a24b510068a12f6745aedbc7037f79757cdac75b672e4fb5c9823e1c76eb38b931dca4bb62ec46ef1db21a49cd02032bd1c0e4fc97dda34f118aa2661f06d9a7ffe734ae8e870bd4e4ab6953b1bd2de511465a47ff09a6e9aa2a6a71f20905c52ed8bb985c6ee40e6662abc98fe52636d4ab4e796ff5952c7f6a1095c3049d23373d5b9c205a27ef7b416cc99934ef15674db74f9b94f190744d6762df500b3fdd2e35c22036a58d9685802f396c166a0fb6920b5e4ccfa6d961aab401e6c3493f9d4fb4b5bde93c40258939f51738b1532ca81dac190b8689b354fff97c04723bd4d33ad1385c1721e5f0a7ac37fa7c76cf829e2aac5fe7d0f39e1f2c6826a1705169c8b86d3c6d82afc40e8c56ab420c225c284941cedba6f9618ba1496ade178bb6dcd62f70ede89cec6add0e50d6558736d1297ac6c5f13eb3207e7b1b3d51ebfa3937b2789547b8da42f14a653678ca9dfd4db421012870632f87e4bc204550ad86cd3ac42
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -418,6 +428,7 @@ easy 版本相同)</li>
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/restricted-pwncollege/" rel="tag"><i class="fa fa-tag"></i> restricted-pwncollege</a>
               <a href="/tags/pwncollege/" rel="tag"><i class="fa fa-tag"></i> pwncollege</a>
           </div>
 

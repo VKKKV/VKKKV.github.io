@@ -22,20 +22,21 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="I have written another include system for my dynamic webpages, but it seems to be vulnerable to LFI. 一个 PHP LFI 挑战，利用 PHP 松散比较（type juggling）绕过 switch 限制。  Challenge 源码： 1234567891011121314&lt;?phpif">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - PHP 0817">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-php-0817/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="I have written another include system for my dynamic webpages, but it seems to be vulnerable to LFI. 一个 PHP LFI 挑战，利用 PHP 松散比较（type juggling）绕过 switch 限制。  Challenge 源码： 1234567891011121314&lt;?phpif">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-03T06:05:31.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:12:47.642Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.172Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
 <meta property="article:tag" content="lfi">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -208,7 +209,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -221,7 +222,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -242,12 +242,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -320,7 +320,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:12:47" itemprop="dateModified" datetime="2026-09-15T10:12:47+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -362,46 +362,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
-<p>I have written another include system for my dynamic webpages, but it
-seems to be vulnerable to LFI. 一个 PHP LFI 挑战，利用 PHP
-松散比较（type juggling）绕过 switch 限制。</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>源码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;which&#x27;</span>])) &#123;</span><br><span class="line">    <span class="variable">$which</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;which&#x27;</span>];</span><br><span class="line">    <span class="keyword">switch</span> (<span class="variable">$which</span>) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">require_once</span> <span class="variable">$which</span>.<span class="string">&#x27;.php&#x27;</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;Hacker NoNoNo!&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-<p><code>index.php?which=0</code> 加载 News，<code>which=1</code> 加载
-Forum，<code>which=2</code> 加载 Guestbook。</p>
-<p>目标是加载 <code>solution.php</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>PHP 的 <code>switch</code> 使用松散比较（<code>==</code> 而非
-<code>===</code>）。当字符串与整数比较时，PHP
-把字符串转成整数：<code>"solution"</code> 不以数字开头，转成
-<code>0</code>，因此 <code>"solution" == 0</code> 为
-<code>true</code>。</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="string">&quot;solution&quot;</span> == <span class="number">0</span>);  <span class="comment">// bool(true)</span></span><br></pre></td></tr></table></figure>
-<p>传入 <code>which=solution</code>：</p>
-<ul>
-<li><code>$which</code> = <code>"solution"</code></li>
-<li><code>switch</code> 比较 <code>"solution" == 0</code> →
-<code>true</code>，命中 <code>case 0</code></li>
-<li><code>case 0</code> 无代码也无 <code>break</code> →
-<strong>fall-through</strong> 到 <code>case 1</code>，再 fall-through 到
-<code>case 2</code></li>
-<li><code>case 2:</code> 的 <code>require_once $which.'.php'</code>
-执行</li>
-</ul>
-<p>注意一点：<strong><code>$which</code> 的值不会被 switch
-改变</strong>，匹配到 case 0 之后，<code>$which</code> 仍然是
-<code>"solution"</code>，不是 <code>0</code>。fall-through
-只是让执行流落入 case 2 的代码块，而那块代码引用的是原始变量值。</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$which</span> = <span class="string">&quot;solution&quot;</span>;</span><br><span class="line"><span class="keyword">switch</span> (<span class="variable">$which</span>) &#123;</span><br><span class="line"><span class="keyword">case</span> <span class="number">0</span>:   <span class="comment">// &quot;solution&quot; == 0 → match, 但 $which 还是 &quot;solution&quot;</span></span><br><span class="line"><span class="keyword">case</span> <span class="number">1</span>:   <span class="comment">// fall-through</span></span><br><span class="line"><span class="keyword">case</span> <span class="number">2</span>:   <span class="comment">// fall-through, require_once &quot;solution&quot;.php&quot; ← 用的是原始 $which</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>绕过了 switch 的 default 拦截，也无需 <code>.</code> <code>/</code>
-等特殊字符。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.wechall.net/challenge/php0817/index.php?which=solution</span><br></pre></td></tr></table></figure>
-<p>验证：页面显示 "Well done, too easy... Do you know why this is
-possible?"，<code>solution.php</code> 成功包含。</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="ad91e07c77bc78dc95bb8de7f632247ed0e6bb666d593a5fba340a61c5a5cb78"
+     data-nonce="3798ab728e0f526f71fddad1"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    5240351208edcf3ed48a57ff05ff2495ed066e0992dd4cddbd4b385ea9ff53d42ac7d1a48f8a0eafea10f4fa8d052b9cb95cff2c248b13ef8d72a20a45371acb57b2cfb3826f3d9bd80d96d4a803488617a2ef15ac482759977d22a139b7f03d77f2d4b69e945971ffaf578832ee4a6a4177e5c5b2b265f9554b82cec79c672506d81f6cb6965874d5cff464c7a347ec1ee9d723736ebf6c6b13f465fead082f1f06d16f8cac5c5dc4d885dffb7e28448d55647254bbcb50a33411983f3143d26a4220a42dc3276a428373289c5ba8176b8f5192c12e04cef4ea59385d8270576acf2249dfde6759220c8292e8cf9b420cdf922a07f574b4c2951d988585e3f2d18881f8e5f1f0ae9247c29a65bade98a77b3e3d2bec6425b2b0ee1fa4f5259ff023211b9a9ffffa6744933dfddbadd84b9a01c95e70a78ea1a1e3c94c450682fca3c10bd4f201fb8fde7f147d926929d4b6c543f10226c44e9b784064bd7df8738f0f8f9379014f0a9e5e9e10fe059d6c7db5c551cbfe7493396c2fa32f63fdbfd8a017f4aa3bd04aa873eed7cc86c8f095b2e4da1f312387a76733a778de809b9ab914120faef600a6b16cf65534a8ebd3ae7cd8fa6f39446690c1b079170ad4eb504401636608cf464e981de5a2d6f65d71aca97425846858385a19d96a916ebae8353fa449fee6e1d9f91085593534ab5306ca042cc9a79e954bc490c7780df87ca63718deab649649eb72905ca86e33e81b25116fb6914f26860dd8064e75115cbd1cd3b5c7da9ad35b80f5feb2925cf0fa39358cba7d6a8c7eb5e370535085865dd4d92e31e61fcd47e4521addb33adbda51e3982d70d47cd266050adbba71701522e6c0311de5058c2d4962f4ff618c3d44c584b2a6d8390c4edd2be04e30f78dc3ded8ead722a7d26a24e0b2bf222a65a30dcc8a77d4ca2e7831e0d43d7f87fb5fd7713dcb5d63484f3ecb0c065d942c2734b587a945222fd0c66335da78e3505384304d577698bb756fbe6c7a62a6f231821910d65ff83ed0c79dec34ef4ff362c3c7d6fc81113a98b864906b11b183a27b167b18ecd1b9f7d8f684b3326b8e144546881484af6a175379800cf825c606b31a2e86994e2fe61ecc98d410f44c8fa1aeed2c120995050590e0e4f04120e6325b3a10828aa18716b6e43a6231d5aa1c8888919eecbb3ef178f3552a918505174d602c919e0577134d76ed308f816661174a7f92ce8c6370bfa68f6c8b586321c2bd743eabd0386c92edf4f574ab1395ce998021fe51e6ca7bfe888059903d410039f8c13467f5df630cfef283e73f5e3a9c1a64258c056be62eaee60de46a00ed79ef586a1444d29e1bff204ce9530403ee60538419c6e550cb01192f380761d22f85887e40daf152b6c7ff9304a69bfc8cb20a362d7a62f36fe933ae8be141c0a22ebf840114a73599b01ab2c8210debc6714a69e0313cd762812058e93d7970aa05b18740683ed6d5a9119decf3867d0a4ea51db715a659cc14558ed19a7323c40822e2004c133267682d62756eff959b9b794a3051f1b0de6ffde08f7754350747ab5ca0c6e9f97f91e56a050cbd49f471c32bcff1f054b7ecbfb298f63d048020b1e2a2d4b7192587a677bcb7d8cf4df8d390952cbb9e9cb9751ede2814e6285b65438e1b3d2210166040d07ae3abb3696ddfa8203fab4e8f3d5715f216fbe6977986b914a1d81a2db45a0093a994e449ee81d5c02dc205854caf41eb4c540de66e57042017b56e23971200c698c3f6bb905cefae2fd24c5e107129078dadfd1db23f6f5767bf90a8877417b014bda30d1ce8323beac0b0e7f36a3729ecd11ed6de183abc91401ca1f0b18b3981f09a949ffb63f7e41a5ccb969b24d5d0b2cd6d6b7c99cf721baaea0cf9b2f8cc50b7a8f69da14dbce2ed53b58eeca7e2d8cd5a15bfe97e61b9f325b64b4438d855b20892a9171f636643a856b7cb89c9ae0741285a9cbbf5498d644f6268ca98ab4d0de38f2352984218539b09f14d38bf7eef4d4118cb7a616725ddd827318208d2633b7e240b07975e21854bb8086107a3cef3af0b3697b7de7c15efbd22585715f6c6ca82f8e5fa5fa09d9944a28372790e59dbc17c8a7bcdc13558c59f1b4b5d4210dabe7ce3b03e4a1ed8306f8e03989e81a8dfd5d17e5b325316bb17d3d3e92b5bee146b30d1a15760a3952e013ead90aa45d6b1ad7260c2fcec72833d1012ef56ac1214e4169c8e1bde08b1dedb1a2cdc021066d2d37f1411a9cfa9caf9154d5c131d9ecf11fe982c824c98a3fc19653b601104135ed384f7fa895f47bc118782aebab67700e4a761b33229017262a60f11e1c09a6efcfaa43a365891866e132a0a2ca2145af6e4995b16c5c761d03f399332a2dbd2b06eeff5fafd6c57a5df59c65a3c759b25150b13003c17dc10f2cd7f06a60a28290b83a12dfa2db1e5e1b483cf094b8b3b4f9f88d23a925eb1cb43b4fd03ddf6991feb02374d3cd1d79b85302aaf02fdd5d927a663a38ad96352512c667f0dc8016714b4c702e8b353e68f02053e951c7a20ada1c43b9caeca0ddd472e9c27a472acd10182f62fb43783592ff3ea0d616f0c05adc4c9f044a84ba19724bf19f193b654ede5bb120bd26c2047b684e002cd460f5399c6eeb2410ff1935537baaf80940197b160968b867bfaef9fdd1a8f28a302d1f5e957dd703f8338360577d63170b0cf45bb69cd4ef5f79e5640ca1d1d66b297555254afc5b4b9d8f33ae8c50d33f8a9e52fc77fc3a6bdd889308275089613e20a4076acf1a840692a526e0e769dcf5fce2c066e739e406b82645f0a789a7e041794042ed11c4432b7a240e3ddb3bcc0690c5c32eb75046457cbedd86075f209fe060fb42ae2c8e59b227165427ce7728efde85ec843bc199151dde98c6b260a45d3d9d2154dbf5bdd3dc91fb91dd92711e685678b4feb703b5851ad89537d6cd2e836ab20e3ac2323c0f63534eed38df524d3a88751b01695ddc5949652a01baf68c5adb7e2b5d0b52ba6afe8556077204d64bf183ee97084ce639a0ab213d46789c29cb70bb79ba6fa883fe2efe0147e4e094f166df665c958ea1a5499bbb6fa4d003535faec9368471683cb5f41b972bced4ad83e1e3d9718ebdc026accb9d56c6d196365a6977883979e11fb0f73c7e9dfa2b6470a642c66d9447f0a4c205373db5312ce80b0b045f9f5aa9190b7e73f9c9e52379fbbe79aff0b4cfc2f10f497fb50d2a2d5cb62e7373e6fe836bde6d9f3d0a71e646f2aac3a4aed11e99b59a60f5882910307102f219c7274418c331f8fb32d82f5f9879b55d91b9e1128f97beababc570d9576c4cf8e854df342ff881642d2d8a4e65ab87e79df736304f1122e610e366ba139c8a4fac9c4e4a9838d786a771b8ba1c2da7533983bb2c04d3b03523dc47a19769fe2991528e47df856111466c8e77551e11f87309d608c2bc37cccbf031b74ac1c8e13746d35158942ea765d7a36bf8c3d73b9735196d5c57ab6c76554167213cbc4df9b4b2a4986cdda268e385ee66bb3e705d81ef9c5a8b44f3cb91e2672d98b5f6e2a6c0555f89d21c783ed4e4e97be9e52a23717e373b197804317d98e54103aad2bfadbdb2cb8816fce80fadde3a346864470e940f94cf3b8ba8990ec31cdaa572940528c46b34630cd6c5fed81d5605f6c4fb2af2c4863760224dfaced5e50fdab34f2925bbfc093ccf74938d667cb42dd67c0156c40678080bfd289fc2d1217cd01a62c7de6d9149a53f626572d0b00873aa478fd266e9b4ce85bcad75a522fa99a2c4d21742b5b49095f5abf5058fd5db9d049535a2a5a9dbc61dd4a7bf398defe1e61d82a36a9af759f381631912c3b9e47038e73d49d2446d3e34c8c1d436d738ab3ea712f7e836bfee3e98e6a361c86a3be466e460a316031243828c4364e40913dfc40e2d42f5591055ef427dee8349a3ef4051ef0da30871888768964c1f6f0b79b1aa6747cffb7547af786b1e8d94d4c6c5fc8d74c5c68e6d77343e289891ede57c700b0017cded0d92595e1735e59a2f7fda89c42f78d4cccb30bc597175b666f8c7b1a90799e187e23bc62852defd02bef9fce939e16c791c14620193ae2e8edacb75304168d27de53adb149d2a59c02aedf9203d12a93aedc6e4993388e0846e3179058811e2fb63a34b1499bb56a33d93c4961af8700567c670e0b1c610c1efbf740ccc77ada58e7b4dda57511b894079b1292cfae0c0cdca3785ba7c3117134e77ce79ed4948f9003ee9e269757a5f496067c9ea709fcb47a7a97376f4c0a69652ba2905686e19d87ce15b9329be96f160e60d1c2cbc5311da768052e799da4a5ffe66722cc68192046ba4036c8b4db98797cd9459343b142811fc4a6e9563e5f3420be12b4055ee62b1a69b3d6eb0dfe9ce0db71df90c907492f7b08e4b7a15c0dee7983e1fec978bb2ff213bf0135493ef0a112786015fb63ede0d45972a623aceee19f52772a209712ba96d7dbad04aff1f6f23f43e9704667cfbe7cc72cebca8ff42d18a5ad9ecf8f596285bf1665e7d6bb62d49d917602aae651edd5124899e38ad691903ea5bd851283306fdac70d6e03593aebef62889c9762a6504fe05423f16a7425f3c9b0a01850e1bfe45e65c1dc494f62ddcd3b2a9c6f6ee15121293d1b5786d2f50f39d1c639004717bffa996b628b4b46523fc6c539883fb064480108e9e5cbd7bb758daf6e51414b0f7eafd773c0409c26c04608e4f0abede21b8ee19889100d305a4d2b5f3a5a05695f0bdb4e6329e0f20ff8a86c903993a090d931ef461714b957fd4e60ddd00c5b65051516be913a189c7ae1e56f5ac5c2f309b2708a302117e56ad3f839a99a43e53577e8faca4579b62c4ca29956e65622f5b3cfbd4e9cd1c861fef243afdf3733377614eb629c12030a331b30a7e097fa1f39646936ccfe3753ff29f25d1b9535a548e39fba5b4122b60c69e56080972061e685f9fcc38cf9517f906297e48ae0801e832b6943ea91fea0791df8680db7a8af80f3ee2834c65c02e17b1682dba6dbe182c04f0cd670e421a8a6c1c39e600dd305d99fbf8131280c81eb683945989f7be5e350c912d69dbdf41c6acf98f52782760983c80acd297dd0510d7e38ddbc281dbb580818c5573116f0168300d130ca163fbd00d1e01ed5266a589ab29904b0c19781585c5a2ac248fcce3466a5354484e416018520179e6942be03fd05e33b66d885c6da0f69534f0b97ee82adc26978844af4b5d92acec20f436f977490333a83088bc8fa0ddd5335e007f5b2a7d1f1bd2985ab61ef473bb704cab8914b623e1d895a09d9f156dd02129ced7ff9804ba56c1ed64ee632bdc385ecc6077371be4e72dec563446cbfe073ec9fb8f0a52be2c494bc3e17a0250d2e024ecdbd40bf1b09438871c4d3e60ab141f3cf0b217066815e1e17fc22886d94f7075a277d7f796906e3af1186f57cf872faeca9346daf36d52133f3b15c4bf10f32eca08dd55210f2d835d43b8336c63a991174fd9dc49048315f0e8961dbe59f3efdaa05f62e8b095ae745a96a32b4fdcf7daf6fdd95c6f8a316203f63b4d0ae76271a96c62d6797ee0ce869fcf429a0df2f9d028dec011db90b69048aa1697c805605d588010edd2a4dd0dad1ab5898c59ac3b4b526b66e6533711776f8413d3d009ce049b91b1c36681c6c87e3ac4bc5da4dc84054ff53451c10be600d5496a1b8b360ef20bf07fd1304d469ff0c36aebb6110f69ee980c547369621782ad6302696f97ac2882253105e77a22129834dbd12f036d9623e3ba9cc74bff86ec294484eac915dc0eff4e1b149001ac291aec5c107cf651832127f657f1ab8f4e88292119c76fddd9f88ebf48f5bc3dc8c7a4033dae9ca263e96791a5f3b96b1ba35aabb481fd45d83a4b7ce65c614d2201eb85e249c2d621cdbc71f968d24753432941ff62b8d71c3ff72349077dec02ca385a5afc3204d00a43a0a4eeb779c06b6f31dc12d9186ecb79185238664fa04239e10c93e8c63e009aa2b162b45a65350cd3020152f235d2387cd2c72b7352800d7079786040a6d78ef87a776ea516d0a10f9f359a251cd3b4c5036785e1b8e561996c2f7d0debbc13ff259287a2a5282187bdaeb14deda7795ebffe9ee59b85079feace9300ca38f1580352b44497d0f009f0ca067cb78bfc0c5a628a0a0119c96cb67f825fc15994d66aabbfefaf659f853f6aad70a572efe372c99929145d3470e9869fef2dd424e2241f90c08418165e760185f6f647538e2c9e97243143a77e840b71e3439a00b9eb364af9486a1d0e8564de0e25d894b048aa79fca52d65c5636724d694362f7d9ed69810ae8fa2960b176f016372f8c4e670f9ffdafae4d5a6adfaf04523fdce691f585b00fa76606ae96d94fcb6087321eebd3c869892e487f0dc44a63c6464c891cd0fb2b4907c92d7708405ab36fc5c0b4d2b9f62ae3cde30f483833ee4f5b6fd54835d9bfb35d81fec5be0819906764beb5469676ce87ccea88498a033ff5788cf141b43102f26be96800ce394e1e8d659b6f2db3fd30fca8165610f8782ff30cdb16cf71a097f2ea8b62ad436bfc947b40e29dcc4e56f8b9796e41929310c302d3807edf70c6ba031d0b0bf17562d9bf2f6fde1a7c47058ee890423f1bd19e7d82a6bd282b58ea59457cca3de954081c134763457530aafb22f62253d7b6c07a3dfaa920dc67f80787dd182ee632e7338d47ce1da8274ab09c9145cbfe960d69dc5af53a4d4b1845eb7c751596783b23e8c8e7db7ab4b7ec3b9803d18a78fa5f00108ed3c1d7c7f409548e3a8749f2c5c61d4886422182f2db5a8628140bf8cd6412f95300149e77b0b176a2a4b2f3bb199ab47393a0f7c7ae46d48ee6972cf6a2c003aa9fa6dfcf8cdf0a67f0df3ca812996453632c76803f4e9d6d4f68e597b16e3ddb2643c7baaa282b4fc24b8f7a8ccf3ede6ff6d972aa5f7dd497bcc8af8747c5125696cd86d715df0d9390688c3f654b75620dc4dfe5616968e08432a1032d12a40a71f7502d4180147102b6d0610f820f871c322aa879b63d73678abde2de5c182846eded40482fc63265f80eb30467280b1ec6431fbaa2204adc3c5e6aa1093d5087619472387f507df6c3ee7c64e85ec4205c714d3af563c65bc4104c4ea8f57c397bb6cfd2be26ce6df5d629e0f8216a6ef034237126b2781e7b62cc6feeeca0fd604c020bed60ceb0f5b017419db391d8af620821a5e9bdb6c694ffad60c862d01252e7dbe5f47e1399c159a727bb7bc15ff12b7ebba6c62857ef85d6f84d2f7ac8f86e85d0c096fa46a908733040e79226c0593826ed00f75fe3fc601e058a971f194e18ba23c8283ebcadfb0b1e54f48526193f84f682ac913dbf115804fe26c8e3329fce585c7421c5f3802f88d745f460d1b8bb22acee4edba96efe95d2dce93cc5136b3199c06d7671a5c8e27e11fd35a3d74882747982becab78bb648bc2107fe45c4b7144e71404f252fc56dbf69e02addb02d7d6457947734d53790067843f71b252c6037b42457b6cc83b64459bf08c38799c820114d2dbe4adb59bcfce15d52792fcbed8554a3d03d4eb74e2cf5ec642b6b719ba24450de0e0586bdfe79433623376dad252d2308e35a343deb1449c43d5a4800a4613a87197ca43cb93ec3ed35c14a598b14e2a71964710c058770860a381dec2a43af7e42b7dc3385398a0eb2b1bd870cc843bfe41496075003ce8f755674d3b4002d578292322a99a08d27e9d175745755787c6d62da19676a5f4df509c86eab085cff3c9e747ec7576a18d2cd0f1c186ce397b197fd138d650466690d92fc
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -446,9 +431,10 @@ possible?"，<code>solution.php</code> 成功包含。</p>
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
-              <a href="/tags/lfi/" rel="tag"><i class="fa fa-tag"></i> lfi</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/lfi/" rel="tag"><i class="fa fa-tag"></i> lfi</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>
 

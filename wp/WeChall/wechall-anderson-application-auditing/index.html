@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge Anderson Application Auditing 是 storyline&#x2F;realistic 多阶段挑战。背景：VSA 委托 SoftMicro 开发程序、Anderson 负责审计，你作为 hacker 需要劫持 Anderson 与 SoftMicro&#x2F;VSA 之间的通信，替换被审计程序为恶意版本。过程中收集六段 secret code，拼接后提交。 已知信息：">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Anderson Application Auditing (AAA)">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-anderson-application-auditing/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge Anderson Application Auditing 是 storyline&#x2F;realistic 多阶段挑战。背景：VSA 委托 SoftMicro 开发程序、Anderson 负责审计，你作为 hacker 需要劫持 Anderson 与 SoftMicro&#x2F;VSA 之间的通信，替换被审计程序为恶意版本。过程中收集六段 secret code，拼接后提交。 已知信息：">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-08T11:18:57.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:08:03.831Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.162Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="mitm">
 <meta property="article:tag" content="realistic">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%98%B6%E6%AE%B5%E8%B7%AF%E7%94%B1%E5%8A%AB%E6%8C%81"><span class="nav-number">2.1.</span> <span class="nav-text">第一阶段：路由劫持</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5md5-%E7%A2%B0%E6%92%9E"><span class="nav-number">2.2.</span> <span class="nav-text">第二阶段：MD5 碰撞</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E9%98%B6%E6%AE%B5ssh-fingerprint"><span class="nav-number">2.3.</span> <span class="nav-text">第三阶段：SSH Fingerprint</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E9%98%B6%E6%AE%B5%E6%B8%85%E7%90%86%E7%97%95%E8%BF%B9"><span class="nav-number">2.4.</span> <span class="nav-text">第四阶段：清理痕迹</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%80%E7%BB%88%E6%8F%90%E4%BA%A4"><span class="nav-number">2.5.</span> <span class="nav-text">最终提交</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:08:03" itemprop="dateModified" datetime="2026-09-15T10:08:03+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,49 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>Anderson Application Auditing 是 storyline/realistic
-多阶段挑战。背景：VSA 委托 SoftMicro 开发程序、Anderson 负责审计，你作为
-hacker 需要劫持 Anderson 与 SoftMicro/VSA
-之间的通信，替换被审计程序为恶意版本。过程中收集六段 secret
-code，拼接后提交。</p>
-<p>已知信息：</p>
-<ul>
-<li>SoftMicro 网段：<code>207.46.197.0</code></li>
-<li>你的 public IP：<code>17.149.160.49</code></li>
-<li>Anderson 主页：<code>index2.html</code></li>
-</ul>
-<h3 id="solution">Solution</h3>
-<h4 id="第一阶段路由劫持">第一阶段：路由劫持</h4>
-<p>阅读 <code>tech_spec.txt</code>
-获取网络文档，其中泄露了路由器管理凭据 <code>admin/admin</code>。</p>
-<p>访问
-<code>router_config.html</code>，用默认凭据登录。添加两条路由，将
-SoftMicro 和 Anderson 相关网段的流量劫持到 public IP：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route add -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route add -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
-<p>成功添加后获得第一段 secret code。</p>
-<h4 id="第二阶段md5-碰撞">第二阶段：MD5 碰撞</h4>
-<p>题目模拟 Anderson 通过 PKI/MD5 验证程序完整性。需要上传两个内容不同但
-MD5 相同的文件来替换合法程序。</p>
-<p>页面提示使用 MD5 碰撞工具。用 fastcoll（Linux）生成碰撞文件：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;prefix&quot;</span> &gt; good.txt</span><br><span class="line">fastcoll -p good.txt -o evil1.txt evil2.txt</span><br></pre></td></tr></table></figure>
-<p>上传两个碰撞文件后获得第二段 secret code。</p>
-<h4 id="第三阶段ssh-fingerprint">第三阶段：SSH Fingerprint</h4>
-<p>服务只检查 SSH fingerprint 的前 2 字节和最后 1 字节。需要用 fuzzy
-fingerprint 工具生成满足部分匹配的密钥对。</p>
-<p>使用 THC-FuzzyFingerprint（<code>ffp</code>）工具：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 目标 fingerprint（16 进制，只关心前 2 和后 1 nibble）</span></span><br><span class="line">ffp -f md5 -k 4 -l 1000 -t 03:88:9c:36:41:50:39:15:04:95:89:a4:15:84:fb:b3 -e -d /tmp</span><br></pre></td></tr></table></figure>
-<p>生成后上传 <code>ssh-rsa00.pub</code>（公钥）和
-<code>ssh-rsa00</code>（私钥），通过验证后获得第三、四段 secret
-code。</p>
-<h4 id="第四阶段清理痕迹">第四阶段：清理痕迹</h4>
-<p>回到 <code>router_config.html</code>，删除之前添加的路由：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">route del -net 207.46.197.0 netmask 255.255.255.0 gw 17.149.160.49</span><br><span class="line">route del -net 12.110.110.0 netmask 255.255.255.0 gw 17.149.160.49</span><br></pre></td></tr></table></figure>
-<p>完成后获得第五、六段 secret code。</p>
-<h4 id="最终提交">最终提交</h4>
-<p>六段 secret code 按顺序拼接：</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">routeevilmd5mitmfingerprintgameover</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="3cec15bb0bfd419c4d6881acc1586c2b9750694c005dafaa6b454a5b457b14a3"
+     data-nonce="32b9257060ea422f5b9450e3"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    b08925d6548d81be1865515e4f6f3728bba288f7a3a1401f476ad8d376f9528f3c4472f58cfa799f7742b2f83a1ed822a09e7479e28e09be4e0cc9b13b2eaf8f59d35431c594c776c44cd48a60bc5bea8849ec0ec821c974269698bafd55d6b4db2384c8442c68d10b53dc34140ee74e0856d69cdc9d12307fe04598a7bbdca331d98622a582be337bda5681b55ec415cd90993ec00d32d2a139e7b99a0563e9e8585d6625fb72bbe4437cdabd132f46436d157d46ba4289f829224c6fbaa06c2870ab111742ec88c119a44488bb1a2e834b5f5d4c85eadc4b6577801bfd85702a4b2f6528d9498878e84366783e079965bc2a7248bb53bcd493970450219c60cfba1e1c38dbbd629cab122bf05b77c85c78776727410f3bd35f59adf8e4796090d610743e11b0a5e4c3196bb94c0817227412133bd500ab3ad704ad884ace81ce1e05b17450ef26550e2bbed0cb620bf13ea777e938ff00204b61d7d19170490a49ce56e6db157c81feedcea23eb4a33d3071a33196a19b430cdc4ee54f9ea8e0d2bd6ba2947afb14be14f67600be463f5831c8eb3925024b91f1397d7f2cb155990a58a8dfd1f5b55fb2b1f1f40c42ffa0e48db88b0869869e498942364a1156d1de61e02a64d59e91458301294b9df8e377886bba7604baee57fefd9d1ff63a7696021cfd80b04c1349232d64071fac996ea461a440bbcd92fce9eff6311a3e4a8ea7a05d13926bc0a6d23fa43fdbb6c4a738466a716fcc5feb6076c996a062d5809efcfc5449a5faed226a5f5043998fe470e2b10a3889d35109e23ceea0cdb56b49069421c4b5d9885e3810d56a178060b76cb6abe3e74215f6954c8079b394ac4097f6df44ec15fad0df7dc548fd169543499a59e1952d2c2e7cb6d221d7b0e29b879c2fcc10518888be8b7e8023144338d481ff41851436bb89fa513df93e468080bf6d6ef4a4395264cca313e19b7ebb212337e25e3eda62d0d1ce604176a184a9b2b4c7fdd7035417510bff608d19f6c86531df9c0fb1548d78b8096b6c2e882be21d2db1f448e6c343cd3c6de843f4d9e7bc181e90a9cbb9ebacda373a3d3fc9be44bd1485c1a34995f0f4774525353626ea3d0e751c92e4b600ca19692e7fef73215481a175b5dc9e79bdcbeb497a7ffda030c066978b6aa3f49be780c2d3eb8d0847e3c4d1e140f10a7e680455d260e4ff30c2b4ae1fbd6b04450f2b1645601bf68276cbfc39de529c2dbf05e69780975067a8897df3042f2b0a12ca42caee783313437b2007d5789453ef180c8c3610c5de5075c454ae6374167795c034b2b24f9a0869cc4b5beabf9b39b092cf66b2636414a53e2d67d3430a62a2972db16c9ffe411cd45ae861d5b843ffe16952d867f73c930f3b7b86905ec01dbaefa23f315ee41c9c008128de04a7c25ea87827b734aaadcfec3ae642f37c88293f02835e867b314b67dfc155f9023e14f5f2e06e73e7a0ab38af4943a1817a874f778e02fc712a5ca016c8cb6116d7593aa2d0b5fa5b88a370cfbc67215866095c9d1f0d5a462fa49f60a8e0febf191713b7f4c78c5112296608d6f643fd8c9ae88464e6e690151e90b82579e5b4b9db5a250a4b028d204bee48326dd2c6e42f699f8961c5103213bf99447df1841f482b342663585a2448a71c8d3dca66076ec5d526f6a7471172976e3f38ff6c378ac405bbd3dc6ef4312e3477def24aad9b6225062f813d0087283982ca422b78f932d43b7aa77502e420cfca4b4687d7d7528059730a4da1ce6bf9d4dcd5d7df2070f5c4cb9d0f311acd168f2752faa3f3dd6541c788fa04aac6ac6d6743606d59f18b254040dd4639b2836329c98374a70426775eb486806e842f924a2288e01507dd91e571d8e7b080a68ab4d04007b2a087f4878d6045ff6ce3a29aa15dd11a249127874be7c6fe87f18b2a006e3532768e3647632309cc99dfe44dd579ba2c793dd25d6fe78aadfe9cee6c5b50c1a6f972d01e103e9940bfdb6eaefaad92d1cead473e47c6b4b6a687ae8791eebf4fc1eded16297f98740fb2635ce83df4dd642e779b64ed8cf4c1db3cff20824c1d4b7755e3e0c12f43ca62090820c7c024a550daf825aac4d6adcd50cc7260d5173d1a9352849e28a2c073ed204709676e682456cb7a30a753faec5f7327822e5f421cfacfa18d371a5476454939eb6185e4a62fca6ae1d3f67490e24a494d47dd54ffd9ed11daa57482d6b491491b02b92e2bf728362c7d807f57d946c01967ec2f4325c74f83f88c0a0ade504996f0791ff0cd4b46ff04f6675d0dc4b1412e3ebb7a63edf590ebd1eec3141545413236fd53204c4ba1b2af094f94a64378586cd102eac1d2735b001d914fa9b7a4fe46d3926bacbc36311009298ceef143683c0546af5f4faa7901eb4fe22bbeeb03dd5fb8e2325a67cc452ce61864a9216252c6373f08cfbaccad8736b16075fe8745e01015bdb334f88ab546945f86e36b48816e2eebc00a01ddadff88881fc85fd4a6ea93639500edaabb30fac4b6be973aa3c38782fd83a431b3a77bec38ef1a0edc946282ae564d77d696f7a7fb6627138b1b08a07794581283f53afd98c9141410e35d4ab4bbd04bf6e55a00ca6fadee97e3398637955fc9721ec02aeb4bc4f2dbcc3bb5c07f58766397a7c0fc5b74928116b7dd9c61b3e75cb2ebb9732fe5691ad99f302dfa26d472a0ecc8c23f76ccbaa9fcc9f1093098f6e8ccdcffa22217985489eaa1a1723b5e0a77100395c1a251459dad9348f97db767c298ba747c7fb801290b17ff8a1e921103b8045dbf36f7e91dbe34af1ef50d46c41fa658e562e3eb4ca446ec3e9806047900212d3bade604766705808b260394973c73488fc0dbbf0a4a41a2a3cd25c885dcdf9c9e145834c08ec92a671cb5a6a10090ffc355527446737f9b51743c872055d62d5949c3e6ee4bebe0cf98e9d34b150cc35b7761aeef92e8a4bcafcf1b916c1bc7a5f16e5902f53e7e1005202058e1dbd750d57158edbdcced8b82bddd05f42af3a831ac19525aead56d771417151baa26b9e6bfd3ee862d01ca2e272f106547fcad407b8f8d52f2c246911b90f724437e32e6c4a11e6172636a68281c88bd9100b7eb4521e3d540ae562fb08d2931606d344d9b1a359152f0ac2bac90a3020d189f37a11663f5cd1b3559a0d2413e688f8920e89130a58f12db094484778e7c5529a2adc6e479ae974c0ea483c6241d36e901d27f7300f530fcf4d441decf113ae48a29b9ef8219dfe20959ae2487b6f08ad47d7ef2d25d94715df3166a5ee192de8de869096f5c3f40bebe571a92729a90ffa28955f2ed8c53f8694e4e5631ad306dbadfb151afcce61759fa8f3597b9b693fb3fe792bd3a0818ffca73ce364b56cc1e0382b643b6eb7e7df30f22d4742b59536f3f019d55d37d62d765ff2268ba00ecf8b72fb0be3e7804a813d6a8964d5b70da83f76fc3ed9689eb2787690fcb3e95a3e286946b85b2a5463529bb14bb8fb1ff8b0f9f2f5789f9d04affc562f55b3c04cb981b03b1bc811303b10d7834b99c78bb2ef3668719cbfdff3e3dc1f08e9eb7fbe4a3af7fa57b1ce176f6f1c89943c17dda890860b494aa5dc2d4c84b241b80e83abbee165961206fd988ce55c0f1c922c6ca6fad27c0e0e1f07c18667bffb2afdd2b9ef93f22206315a56aa01f91e79d23982feddc30c3a2860b9cf8d035ca7a725fa625a1867ec8f1cd345fba51bd9eae4568cfc4276d9cfbf6f043b6bf14abc30661a21c2cf84d7a280bd2ec5b101e22c4b3c1fda6b73d8ccc5f9c8a350b9a369e23a4380e295b71e6f5c6f7de233dd7388c13a6efc808dfe0d243e1ea6bb2f3844fe0614ccc70fcb471ee0ad24b3c53b696efbf360449fecc0a67f1dcd499a08898ca7b64d716dd5292b04c19b8baf9de862f07a29ccef1277c8a73cc7007d178723e3de0f94374fa19623756623e32ba298ec046ac7e06c570a853b8ed129bc73687425af5926db0198390da0f7b303ee37c4c1a52275bc486d751f9a9e01d40d2fb26e3efe21936e351d78a38571dfa6ba3d38e798c89b8c55e49b7014724c223b14d637cc3b668bc23ea867fe807e5b1b54c2819ef437083af9e4778742d358237bf8a1d5291dc97d0a53c6915202d86525f64c707325e0f4cd85581e4034a60c7425f6ecc5e6361de801602347b97c91f6d97ca720632e2f0dbe7b287530f4cb2a1d40bc0ea2ae65ea189cacee422d4afe112ed99264d3a93ec9c0d64066402b3098c661fc21e4cb6383732b49c6ad994a8913e6336e1a852b4a751bfabaecb63f7e52a78ce1e251f788615f524e9f71e55df3de3d28b149beb8f3a6ff8c52ddaa2f1d4cd22a9faf58f923860804968997f9d7e49cc9fa460bb561eedb90d25db8c6ec0ab0e2ba4963b1114f395287261f65ef5700ff419a54d3c95e5df80a3a8f7c37984e65624c10261330ab171044f342f863b373cf00af77997721ca19069a3d7a36b7366e7ba6ff2dca6954be9b9c65b713c2cc5929a4d7bd1f90bb736e9d980cfe685a18f4099cc77b96bf066741d800b05db473c87169725abea5263bea7ac9dec385c01e15de04ccd7dd4066a1070e9ce14c8b82d21e87261bb58ff776626d51889f005666fc5650abf3a56030349a08cea9465de3baea8e7f0169a04867f52b53c3d454fa133c7dfc62ed16fffe470f5c3da7fa8ae0064813c083a17c7cfbf027f4463529df8cba72e8ae0542aff6dedcd07bcba72d5b6b62c17ae9e4ab1cc8cec32391e2334c58317f14b084077f8e33b581a6a3b6513873dd65919f5cae9c8e836fd886beb8cd9a92f128e0711d1835683b288cc0e9725e05e78c421340b4908a591e223b5157be1625fe4fce525cdc3c36865961df150c10c874899b298d9c2ea26356e027cef85cd41c5f75792c5f4ce54d5f0b4fb8b84f61727cfe88477b5c943aef6c862365f78b770fa31e314f3997b440cfe1ca681c4a07aba172af5597b04ee2bb0b68a0871143b3612c36c54e49b793166237b6b73eeabc617dc3a07d757c0021b983672fe3b15cfe7d572e4e81d5037011bba6892f3c844dc0118e06ca00870ce6ed6ef2657de1d5a5cd550d1281cff816c381bd4dfaebc2a3d8399476e1e3b42aaba687bb6bd92c78477982469f7aab19d2096d56b1026ef08179eede66054ddefccd38a38dbaf2d7b01ecd1c14ac9b4f8e27df4c1853d7aff2b30bc04a06a7054151baded020158c616626b94ceb5f29f04ba1a82e6c2e91fb479b02aa193b7b2f690e92e5eed7acc9fb39c8fafe68109083ba3e8edc5526320037bc2d5c5bbb62fa68cc80cd1733befe033100a4f78875169560d96317e56950891a42bcc0200586e54bd9f08647190fa5dd554590bca4b8f69bb5138fcb025348b0e6bf3f549b07647e4dd00a29db5b8695a400d3c86be28ccb5e8dff8
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -449,6 +431,7 @@ code。</p>
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/realistic/" rel="tag"><i class="fa fa-tag"></i> realistic</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/mitm/" rel="tag"><i class="fa fa-tag"></i> mitm</a>
           </div>

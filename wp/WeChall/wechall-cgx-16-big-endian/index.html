@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge CGX#16: Big Endian 给出一个随机生成并绑定当前 session 的 bit stream，例如： 1001100101100101001110010001000101110001000110010010000100110001010100010101100100010001010000010 Solution Recon: bit stream 长 96 bi">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - CGX#16 - Big Endian">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-cgx-16-big-endian/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge CGX#16: Big Endian 给出一个随机生成并绑定当前 session 的 bit stream，例如： 1001100101100101001110010001000101110001000110010010000100110001010100010101100100010001010000010 Solution Recon: bit stream 长 96 bi">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-10T04:59:38.000Z">
-<meta property="article:modified_time" content="2026-09-15T01:52:05.349Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.165Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="cgx">
 <meta property="article:tag" content="ctf">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -206,7 +207,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -219,7 +220,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -240,12 +240,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -318,7 +318,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:52:05" itemprop="dateModified" datetime="2026-09-15T09:52:05+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -360,31 +360,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>CGX#16: Big Endian 给出一个随机生成并绑定当前 session 的 bit
-stream，例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">001100101100101001110010001000101110001000110010010000100110001010100010101100100010001010000010</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p><strong>Recon</strong>: bit stream 长 96 bit，96 % 8 == 0，显然是
-8-bit bytes。但直接按普通二进制（MSB-first）解码得到乱码。题名 "Big
-Endian" 暗示不是普通的字节序问题：这里不是多字节整数的 byte
-order，而是<strong>每个字节内部的 bit 权重反着读</strong>：最左 bit 是
-LSB，最右 bit 是 MSB。</p>
-<p>以第一个字节 <code>00110010</code> 为例，按本题权重计算：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0×1 + 0×2 + 1×4 + 1×8 + 0×16 + 0×32 + 1×64 + 0×128 = 76 = &#x27;L&#x27;</span><br></pre></td></tr></table></figure>
-<p>等价做法是先反转每个字节内部的 bit，再按普通二进制解释：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">00110010 -&gt; 01001100 -&gt; 76 -&gt; L</span><br></pre></td></tr></table></figure>
-<p>Python：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bits = <span class="string">&#x27;001100101100101001110010001000101110001000110010010000100110001010100010101100100010001010000010&#x27;</span></span><br><span class="line"><span class="keyword">assert</span> <span class="built_in">len</span>(bits) % <span class="number">8</span> == <span class="number">0</span></span><br><span class="line">answer = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(<span class="built_in">int</span>(bits[i:i+<span class="number">8</span>][::-<span class="number">1</span>], <span class="number">2</span>)) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(bits), <span class="number">8</span>))</span><br><span class="line"><span class="built_in">print</span>(answer)</span><br></pre></td></tr></table></figure>
-<p>本地验证示例输出为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LSNDGLBFEMDA</span><br></pre></td></tr></table></figure>
-<p>只反转每个字节内部的
-bit，不要反转字节顺序。实际提交前要解自己页面当前 session 的 bit
-stream。</p>
-<blockquote>
-<p>session-bound: reverse bits per byte, answer varies</p>
-</blockquote>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="923335a74f8519477dc98a834eb7755480a672b38d6e6ce8841b15b798da2e5b"
+     data-nonce="59185df563155573e0897ea3"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    07522d2ef8fff8d449033e9477d48489462e6a77340fbeae3240c7e38aca47a75982709d82e4ac733f3034856b758b0e7307584120e3cd62d22b2f64c0bf1994e24f50be90824235dfe848c9cce0a1605730ca9cfa5c3c64dcfe75c0acc5ef8ce7a80e601e896844bd3e9f0bc1a2a9b1375447a1c349bc157f63a0e57e85903afee75ce9feb7b10148b1333b28a05b83b5659b1e9b444575b11126053153c4a564b69cdbae84c8b56d4b80366202e0e3de4d41eb5967ecad25e56c7c1d64a8e95ac9646c31ce27a59ee74f9d377f6d50aa824f4b3cd5a713f32fe38cf6b3b11deefc0957f9690dbdbbf5f9160a18ab07c45be620d49b96cc278c8d9c9b8a932e7de334002aa77ce5c9fa16d5ced2520bc6a072028248f307b82178d476fe723d89f74f9c4fbbf8c8e0e6518050189c0e86a874eb6cc94c5d230f941e85318ea05db93eca7065c671b256ed658569bb8e9e3a97fc85d64a5f4db7f9ce0d3d16fab1b5c8694d104c58609c9aaffb3a7bfe4db9f08019e873993966dbdfe4e53afe8eb1d7635cfe67cb6a5c87edd8ac3acfeb160bbedaa77ef072e39752da05a458277f4a2a4143701af63fd775a4c5871e7f8cc4fc592986518d6e6dae7d6a85021cff6d4f2fcfa7d6a6999dec9a39422b373f7e385ae51dfa4592bb5d2a5e74f3a926fa030233215c78201f30d994aa7a19c1dba9c195f46941426630cad24f448ea27b098cca73b07cb5757d4ef2e1d42a75af6010d83f9c230dd740d132d3aa5e8bf096898289bb9e53089f59396fffb111ce4652466c6abc23cda19bcd18671b1016e8707e8f7a00f71b17c231f20efe9590ab9c0907f4b84dca0d71d7162f6f4d1425242a4ba3b2d2d46cbdd9d29370e6f3eecd7f0d52f9a677a193187f95c6d615a95b4015ab425dd9e0b55b6f69782b96953102680227c0ff68b023f33847b1e3eeac9e9d552aa96d0695e9dd41798afbfc16b737ae2c304fa154cb137797555a71c5768a86e781e059e150fd5ba0b4c3eba3ebece151197d748d6249c78b526a92e1252ab5c46869b791c3a55fa13f5154cba827914ce8f27a42d1e3d516d1d6e14b65c9b3e32916a59d344c27f44ed00730beea0624debbc1403a4f8a37a156d69643d9ce5d8b172c8e273589113132c722d6b6614d8a2625e5faaac3b0685d0e8c499fa162bf9dc8b3d5031b137fc63d6b16fad39365d1cf44a8ef88600a852ef01555cca71617a18089793ec87a44a4c589ba4233dcc939cbeca2c6dfc7896530da74341b5279a2a6dcba20a23c29b48d482ca24ba619d65a909ba48fee0b0cb50ad1748b7c6c81e541e9559add21dbcb9c83818f92d6b2c4a4a9c7d3ea2f1d5f2cb938de336d6094545267aa2ffad0b8474d79fba46d006bb1bfdef4f7b6fba88fb6cb487a4b2c0ba5f29bbdca32fbad375993339a598f9b759d2a5ea8f2cf67914f6cb584c1b0bd1c92870c84adaf23fd968e189be5ec0753eb74e377c6a39d2c7075b7d1e7c4faa998bca6200f3d44579a230587e58ca8a3c8a9a669245ce5d72576bcce48954b04bc41f4d19ba91514ca84d0d6780e36fa9b1f45bf43770957da015cd3b8090909b46ee4bbc4b2e260ce1da12f840a80df1589596eff7bf27e405bb1fa25d4fe5c6460bc8d28ede959f005700037fdfda813bbe838a691e3e8d93c89818734cac42e276b0325206ee53c86e8cc606ecd69caac7524a5386f468270bda1edec99f9e157e59317155145ae8f413ffa3323ba284d5271f6f95c3a192c8c125d356ceb54325630f4541f1d83d334262a44d2f7f187690467b961c354de415d885aaf91e4baf0e04cd4d86e3b03bc0e205c3404d00c12ed0854d2d421e32ed88c6fd69e9397f2cb437111acc784ea6df1ad6db0049fd8bc981cc75645b95e5d024bdae6116291c47ec4683852fc06c015767d6e15982a7fc090b5f6d0bbb8834c6e836ffa643cedc07846fd0a08f2dbc46a571a9c0ad8c8860799d1d4c0ddd87c26213dbec04482c7881851ef969362b7cb1bf2cf9eb22ba5d4b15dfeb34b632bb3e1f915f4718cdd8dbbc66d942da361fcc07fbb99e61eb3d4f17a6d00022f95b8004b1c0517793b4abc0c4672ad50cad5cc9b427021cdb1906c9982f89a5d302d463229809a8683b081b9e304e3857897bf5b6bf4b8dcbb6121dfa69b704c561383ae648ac70ae7187afb83780fc4ead8e654b965f17719c1a84dc221ae35644532b28601174a5ef126126844ada15ebc38288d1a34d658773268b86ab7735bd523b0d09bf5ea9ed3a74680a2f6890672e52a5cfd3ce5a3cbedb577286a399943bc322b22957e58a3ef8f09ce77de6575b3c3bd7824b4bbf464a6ad3510d03a78e2563e6b254ddbd4266c3f0cf88515bf514dccf34508bc8c4ea8532a02c48795067d72255b0717afb9ca5c8cb202515c15d2519cc8637eebf6f46b53ecfbaa4c2e296c4a0b830753b9c6bf209987643b2955be9ff80acfe3b32ac463543d4bd5597cfced54009378a31b543ca215db1f71195f2c27867c57ecad4a7ea15b72302475474d464321ebac7a74fad711aa5f01a619babf13adbddf1eedb9542bc055d97f83f26874f3043e53ad8da5b865f20fc089469420a9f99cc1cfea2d86030a9c307d05c3dfbf4819cd8cfdcfd828e7b8a8212c781c61ce74ebe06f63e5e6575cb244371e18fcf991f0286d59a033a90bca44321b523160b2bbde57a492259e6df9921040bb2186d87c9228892b185bafb06243c3db13b065d3230b018116ee6c40b4495d5f1e75f473835027e9beaa2df35e1ebba9d9a5efee6fbc9559e5ee3315ba2946781b956db281b6a5f1ecb0be219c283fa82a6dc307d72e2d1e4c8e40d3da63db6fde4a191ec99321f50f536ff96e76a905ba35d6246c3e13599b627aa018adb1730bad38e2fd37cfd3eb8c30a2623a01c041fbd63aa189809cfc4d5ba7c70b95f3c728795b49a6845bbf5c8e1ae4f1f0bccf0902bfdc45bc7c8955b0baec3fbf8fa730cb4afee963bc2ec2873605d7c930e5552c02c142c01c12f36e0bd0ea83e5987bc580d7501c24ab8b87e477c8f86ebe2bf0eeeb1dc03b6ded3b191207970b19abf709e9b9168c2454fb395301db00aeddd4500a44e61440441f5cb92408e2922019791821d314f63b90bf756414ac70b0efd3187b450796d4392325a9e0da58fb51836cfb207085dc4bdce0d14ca0f57f1fde878f0da470a2ed8ee6d87628cf4e5899ad1668e7fc48730777d0c7604abcaca21cc48c5e6cc592869454a644f8d590d52e8661cc83adb159dd2da8af3ed63fa16ba9adf484a07580de3ce494345fa4afba43812849c2a31f297c208c37b59d057d0f67c8d6bd06d65c787bb2bf5353721d21757408d0801529e7a1add12da3ca0ae99108fdaec5cade120f5047435a66c7b531809889e87921bf3f7a0efe105478ebea667acfd972ad1ad4e3aed377b19fbe28041b42ab2e94e154e910dc2ed5540de58b5acc46377338bcd46fdc998e569c5c4dfc40e0b4be91dde1defbd5e1ba71dbcacc2616d437aaff1325d234284105d8aadc730196b78d146df4e082cd2f649efd34c2ce915a8e46cdf7c090377a38527cadf0379f70863509916b3d85d455ab6bef1a89175101e40c6443b8f02baf05a1ce3f32f1c6f0ab7a9eee281cac0030634ee65ce73efd46410dfc84d4a8788af69563f4dd080a1b4d2b78686b72ae7c0ba1adc6239ed1f17740fc877fd850c1e7b37ac8ed6dea67683a3340b1cbac32d721b873c2147c1ba203950ad0e067fcac0b54478b7c81498de068913b2be3ed5d357e4aed2e35983e04d28d561427efa253124b8dd9ee7fba563056053a6f52b429bbe7b5238844cfc653dba5508abad18adbb37b697ebd4fce6b1db33a32c7bcab0fd2a8529b9fa4bd607582e6e5612caef0b0bec51ac3ebc7ddb1db9ae9849f936083547856d0eb5a276144fb567ddb789b609832d1c9698516ade9eb9237d59f428a8884ef268626b1322e7b6ae83bfaa5d65748a4af9ab93cdb42eead426a04a77793ba3c427d9c2df9a0b985908fb040966df84f74dd4e0affcfa0bfdad22b75fa7688dfa704b4e44123a163d0c8eabe2f900caf554f7fcd47bb9ae297a745e93e90cabff18c8c586098fac443ec64c2cb6810dca2088f46aab4f8078aa2cd4ebe12c854bad5231ca1ad5e2e5a1d8cb395238049b7f02448790f5f1ccfa1bd863b72327d1eaba540905a73d754927d65938216f94f7edfc82a24cf9777c9f0582d6188a63e449490d209573c6585b54fd74e608e3625f7da86ddf7a3dd8d5186be1283fcf20f5571ba30740f5725ea95af71986c7433bbfd962680299bbd0d6207c6b24da91236d213213f98dd20801adc4f66193ba147a0797a9a53149da542407165246a413dcedaa7e055c2fc35ec9fbe46a738f59cf73decf7bc9d2d3d1e7532fdf1f9f6a6a2c4d6f2f0ffc0d785841b
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -429,6 +429,7 @@ stream。</p>
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/cgx/" rel="tag"><i class="fa fa-tag"></i> cgx</a>
           </div>

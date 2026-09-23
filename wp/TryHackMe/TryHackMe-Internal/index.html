@@ -30,9 +30,10 @@
 <meta property="og:description" content="WordPress, Port Forwarding, and Jenkins Exploitation">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-02-16T08:50:24.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:48:26.494Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.199Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
+<meta property="article:tag" content="restricted-tryhackme">
 <meta property="article:tag" content="tryhackme">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -205,7 +206,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -218,7 +219,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#internal"><span class="nav-number">1.</span> <span class="nav-text">Internal</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#enumeration"><span class="nav-number">1.1.</span> <span class="nav-text">Enumeration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#wordpress-scanning"><span class="nav-number">1.1.1.</span> <span class="nav-text">WordPress Scanning</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#exploitation"><span class="nav-number">1.2.</span> <span class="nav-text">Exploitation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#post-exploitation"><span class="nav-number">1.3.</span> <span class="nav-text">Post-Exploitation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#jenkins-access"><span class="nav-number">1.3.1.</span> <span class="nav-text">Jenkins Access</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#root-access"><span class="nav-number">1.3.2.</span> <span class="nav-text">Root Access</span></a></li></ol></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -239,12 +239,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -317,7 +317,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -360,33 +360,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h1 id="internal">Internal</h1>
-<p><span class="exturl" data-url="aHR0cHM6Ly90cnloYWNrbWUuY29tL3Jvb20vaW50ZXJuYWw=">internal<i class="fa fa-external-link-alt"></i></span></p>
-<h2 id="enumeration">Enumeration</h2>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">➜  tmp rustscan -a 10.10.103.231</span><br><span class="line">Open 10.10.103.231:53</span><br><span class="line">Open 10.10.103.231:22</span><br><span class="line">Open 10.10.103.231:80</span><br><span class="line"></span><br><span class="line">➜  tmp gobuster <span class="built_in">dir</span> -u http://10.10.103.231/ -w /usr/share/dirb/wordlists/big.txt</span><br><span class="line">...</span><br><span class="line">/blog                 (Status: 301) [Size: 313] [--&gt; http://10.10.103.231/blog/]</span><br><span class="line">/wordpress            (Status: 301) [Size: 318] [--&gt; http://10.10.103.231/wordpress/]</span><br></pre></td></tr></table></figure>
-<h3 id="wordpress-scanning">WordPress Scanning</h3>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wscan --url http://10.10.103.231/blog --usernames admin --passwords rockyou.txt</span><br><span class="line">[!] Valid Combinations Found:</span><br><span class="line"> | Username: admin, Password: my2boys</span><br></pre></td></tr></table></figure>
-<h2 id="exploitation">Exploitation</h2>
-<ol type="1">
-<li>Found credentials in a private post:
-<code>william:arnold147</code>.</li>
-<li>Uploaded PHP reverse shell via WordPress theme editor
-(404.php).</li>
-<li>Found Aubreanna's credentials in <code>/opt/wp-save.txt</code>:
-<code>aubreanna:bubb13guM!@#123</code>.</li>
-</ol>
-<h2 id="post-exploitation">Post-Exploitation</h2>
-<h3 id="jenkins-access">Jenkins Access</h3>
-<p>Found <code>jenkins.txt</code> indicating a service on
-<code>172.17.0.2:8080</code>.</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -L 9999:172.17.0.2:8080 aubreanna@internal.thm</span><br></pre></td></tr></table></figure>
-<p>Brute-forced Jenkins login: - <code>admin:spongebob</code></p>
-<h3 id="root-access">Root Access</h3>
-<p>Executed Groovy script in Jenkins script console to get a reverse
-shell. Found root credentials in <code>/opt/note.txt</code>: -
-<code>root:tr0ub13guM!@#123</code></p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ssh root@internal.thm</span><br><span class="line"><span class="comment"># cat root.txt</span></span><br></pre></td></tr></table></figure>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="5ebf44690ca539697d92318a913eaa5d620fc9716e04f6e80dd5a87160c23e4c"
+     data-nonce="71e3c61e86513db9bb5c0d0b"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    0bdb7ea6b79c75138aadbc17ebcadfeb3c04e4e7dfc2501698abf67dd449255e061ca8cb048b552aa67f52adba4fd5e105c1b1c4a866ec255419252d52a3158e7ca0fe1a0215445b470de9f060cbb60add1e96d281d9b9042ac607b4f51bc3c978a5afea023b761b73e397b19393ee819d75ba7cbb5176dafa5f775e449dd4a24053320fb2688a694d5ba93425b02de0a9d264ad8b2dd7606785ab02181e5191482fc83825ba2e201023802bfec60225adcde370cc6b192953b93f8056054978c55e4ccdba6fb6591f86ed19c17af03768ecce48d74443266f680314f92299f9bb4759951d5ead78724e5aa8a95ce5da12830f72e1ca36a631a5b194501d22b2b339138f9b071d88f4c85577cad7d4e1e34ce84340eb0bee02c86b6e8b4708da5294bb5eccfaf134415bf08b6e9b951f325be5a5c92846f31e91390a5445582bdb573a3b37ecd1e081f86e5cf201679c4a6056270e0b3b537fc0ff68ff895c709f5f2b28610de0dc805adc3dffc95cd5125b5d5d39c21dac7db46065f826e823800152d4ecb19a15c449e557aed4186ab6f49b80f84d3b6919ee06dbed1873b3293b5337139a5fed01fc0a1ffa787955a39dbe69b71cd8c7485cdd3dc1db1e9efc9ad3de8d4c866f46b348b455f2705e370657568d7da4674619912052d20fbf68020c473533193f9c1024f2c0ae7b12f58b968924bfbb73bb67d5baf55eac19fc9c39d49c11f4b2f3762a64da881d409cda63d89e35ba24cd8783297036011ec36fff0cb423a3af58d9be7171dc77301d821a7f7e00bd29184398880ba548c2534a3ce7f10ea0b9e4b356d52c49e893553759030d28149f60a32382a52591e1d43dc98a919cb8293b58330659bbb565cf190c50139d4f5a230bfe549ba5241559e21893b6960a28368b83f4d5ab6eede30bb02e1aca1afe41dc77091d00e1c76d6ce0cbba22f41f3f6705ee9320c1a2e7efd1a6e4e726796c25d9c8cca6ac836b5dbaa33394fa2a7973caea62cdbc621f30881fa92571fb16574d04fa7f87fcd0a367880f13579c8499f21de8b5d6cd2667673ddec614bd94a0fb2c11464981f8b7475a6b9e99c2568dfe387ac7dcdfa428357854dadbca7b8dc77aea9038ed8a93da586ad2894719e697fc138538df32872272c526a47e366d19ad97e18bd4fee99e835f0a715dd620e3ea75de822ccba125fcd7615bd141148a4aedebe554f1d3bb826bf49b6a1b7f4193384d4be1fe54a95d55ff6bad6ce03046bf63ab0765cfeec803277747e94f297c69d5c4171231fa3b329b0b8ac9503c9d485d42b1bbb62fba2ef5910cb238206599d954490cd684ceebbb3282cb6dad8fba07cd240fc6266bbcebee6d34d70634001345365c7926c5e5c208ebf75fee4ae93d6e4c22b21bf27796b8132a7f6162385f67f5a6fadc9fad2baa4b952e9359537972b0659855a404668014907386fed00c9345828735a84c795157a4f9dce6f7b6b357229f5feccfe701b43d434a12ea32b3c7917a7dd2d2cb09ba183bef624fba79eeeff99b7f317339dc247c4b981eb6af888a6017234574d47378712e91ead737d77eb246fe6af972c32e397f7d92e0808029f6c863902ad4ee7a8af6e78d02007c45f5dc49a24dde6eb723de4f4b2ff84916ce845a9251ee61a73a913fc5c939f36607725f45d40ca496aa43fd95f2ce9381fa589c5bceb54aa2104962ed911790ca72ef6f09a66f42b1d8beb404b4a8e93e430e52fdc263672f1a7a7a00b35b95547c18d2c896b2a14f5a587aa8c64b5341c27869c0ddbf9351906b14a74a68476d33a7a5e02ab6c2990fb951634f07a266558036c9ae1d5059f009d416849969e39ad216d475443cdf08e4e36e4c7333d9d0b14d8d5900a32b78e538713bd704f0582e586e9d57b9e03fcab436af80c511d0d86fba18db7adbe87db1f8decfef67f1d8c678e9346da8b3dfba11341137e6b67381ee60494d5912db7c913f0471ae19e3a8f2bf8724a1821f24d32069f655079d402ee6bf1127f73679745895a1a30a5802432ef6b70c592526791668243c2501c99eacade18e8b0e18f74e0b45405ba3358d56a519029df7d2217164ec917a74cec7bb146c5ef0526eb65d9bec92fb6866f8017cd46f23a1717d4801cbd53f04a73e69e27b87b94db272e8a9235472c6e0968df8475c159dcb56ec66252472a9c9accaca8eaad2ecd80a038ad9c480ae93b0d813586284a5e213d181bf0b872525a72e847d07de121af6a5dfd75c31312dbffdefe5eb74cbcb52051c3fa557122cb6b9210cbf6f3f5f1c57b470681b78fd23cac49406e3825171ad48a916044e6829f89f9cbe14d1bf843881ce4aed4bebb20006b3553c11bcccbd84e3b0e38caeb913daf16f31a28c29b735e4df6eb5e056b74b1002f4fc8c38be613ef2848b3864204aeef0a0393ce20381a48dd7c4b103cc35f0d1f95bb9ee9b02570b89c34579703feb0902780539aa85d22c3041e19e222418f9ba67de3043790312cdb61fbdf77f1dbcd5979c41bf1aac9b27a9e331e9ab4abff6526e2695b795ec0f1e169407fa89a9bfa099de0bbb1feaec342cc0a0bb9877969b777a7ac68a0122aedb75cec753eb051133c192e377c4f30c5b1d49cc75eb6481b2d97396676a1439015c708f61917cf365a9f85ecccf56d0aa899fc9d567c4378e18f5201e520e5eb7121d49a6dc1c08282bbc71e5badfbe9ee4e8ec0ba78c00278652e336278e138294ca11083a4806b2433737f885f2566e6e11287e650c42f13a7ac9359ee8ff5894ee6e464fe70827aad7bfc713ea99292bc0866d6884f3b402dac5101131271f1cc919191df6350a62f75caecb598f53813852f780b4a95d7979239daf1b9417b3205bc4ec16610f5ea41c137fce497e1349ece6fa4af24ea6acd3e306be6f3ce6ffe5ef81aabbe45f7a990abad9c9cb130e84ea70c5b65c596a8de8f71c7b3dc1dc8308ae00d40f527c6b092b6b5cf36aff5c219e245226333ba6359bb435e7d608425e75e6b7470d28aa00e005a674bf0999ea8a319074d1fab1272c5464acd988f9a3bdab782cc0a869973ea8cd3ebbcb4542e070f467dd0b0c221e36a99eef9be9c2c2d7a5ff65b2027232d380068d839e76a212a74d17e1173fbde59e36541bc10ac19c081a54a94cfa40ad504350366783f421acb762176368f482dbd4e1fd1ec62a6fd83375305f47e7b9a0f88d41d77da6fa88ea76c6c3da68c702e56f38e32797be23ebdfdf3fe8326ba345ad043081adf9217526a1dd09e9cd8fece21b0d7010e2ad758aa0fec64603510c2c65c71fd2b7b604f233dcf9b3ae19c2c7691f44883878db017d46ec4dd0c94bed9f29d35c1933e504812d8cfba25a029d570f0ce3f7535203eeae058e11a7e53f1ba39b33aabbcb4258c88e08b5db88d862611d351811ba1fea31b607df6be2c7bb5abae0be9c1cab48c567d58b490ada2f891cf2a12a946271388076b04fb33fe1a08c8601857e069fe9022e1b75b141a4cff52d5ab2fd7a849731a670e337aff2a315a90a30727adc361b6dfea2a4e03771e75efd7e8e04d4f7916011c86559fcbf28a5f4834bc26fad20c007e3bd619179f17a5979afe0ef0e258bfb90d2517a185838f3019e12df47f7e89c6f3cba29b99fa0408edabba6e54156d5a92769c8cc9436fb6bfff51c22e4d90872594b12291c788374b6da6f1261f0945665ff8971eca4e69e76cebb7c51d930fe0c90eb9d7fec3b59091fe1076ee358ff2a26c04f6adcd38e081aca149aef62bd62879bd35a38c3e8dedf36e3ae981f7c806699c6041921f58171fd4daf5649ea558d70f990dd452bebb59451dde5f5429aee3dfdf36b835c208d826c1d1f25897b97c3845d0c4654a3fe1cdd5b0d114181f30fcd0146b8040f90e3fe51ef4f15d38ce221e1c6773694d62be4e21d40a64d62d445e365b3a02d828931a0a52e338b64805514924d7961378f66f5878b8e7ab5d11609d03fc877d65bbf876dc269d1614e870deb5568f7d98d69add0a949fb269c5577e250d37793a4462dfc7a7ff02d421e139a5ea7fb499ae9156a4b83caafcb53e31a3db33dcfca43bba587f76a6df5bfe5ef05758f8ef2b7e557139c06477c9bcb7e6df2a1841fb127f2050314a7e984efa623119bd67147ade70e1b29d2818f68ab5c1ec618722f4df15c94e33509cd74d36db002b0744b051dbf41f7ba3674fd350e97d527f96cfa2ce172adfb6425bd8f02579e905eff647473e988a82e8edbdaae74f49b9d0a8912916f2b33be8d60f6bb2cd21ceba7babcbbe48db7ae77de350a8980da8fd09f7f702dbd9c7ac44d4758debaab34093ec085de2806f4661aad8286466525631757bb0fd6ae37798d95797aeb818966dd228f1c21a99b3c85a934dd83f69ac69d1a66e74effae6bee422d5e5570457025468d8d69732e96cbbc4cd24d74
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -431,6 +429,7 @@ shell. Found root credentials in <code>/opt/note.txt</code>: -
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/restricted-tryhackme/" rel="tag"><i class="fa fa-tag"></i> restricted-tryhackme</a>
               <a href="/tags/tryhackme/" rel="tag"><i class="fa fa-tag"></i> tryhackme</a>
           </div>
 

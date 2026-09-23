@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge Two-factor authentication bypass. A German ordering application (&quot;Gurroga&quot;) has login + auth token (2FA). Need to order a &quot;special article&quot; without valid credentials. Solution 源码审计（GitHub gi">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Factor 2">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-factor-2/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge Two-factor authentication bypass. A German ordering application (&quot;Gurroga&quot;) has login + auth token (2FA). Need to order a &quot;special article&quot; without valid credentials. Solution 源码审计（GitHub gi">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-10T04:00:00.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:08:03.826Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.168Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="web">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:08:03" itemprop="dateModified" datetime="2026-09-15T10:08:03+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,27 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>Two-factor authentication bypass. A German ordering application
-("Gurroga") has login + auth token (2FA). Need to order a "special
-article" without valid credentials.</p>
-<h3 id="solution">Solution</h3>
-<p>源码审计（GitHub gizmore/gwf3）发现 2FA 绕过：</p>
-<ol type="1">
-<li>登录流程：POST <code>/backend/api/login.php</code> →
-返回用户信息和文章列表</li>
-<li>认证流程：POST <code>/backend/api/authenticate.php</code> → 验证
-token</li>
-<li>订单流程：POST <code>/backend/api/bestellen.php</code> →
-<strong>不需要认证。</strong></li>
-</ol>
-<p>关键漏洞：订单 API 不验证用户是否已通过 2FA 认证，直接接受
-<code>user</code> 和 <code>id</code> 参数。</p>
-<p>找到特殊文章：查询其他用户的订单历史（<code>/backend/api/bestellhistorie.php?user=6</code>），发现
-user 6 订购了 "Challenge solution for Factor 2"（ID: 5678363）。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST -d <span class="string">&#x27;user=1&amp;id=5678363&amp;amt=1&#x27;</span> \</span><br><span class="line">  <span class="string">&#x27;https://www.wechall.net/en/challenge/gizmore/factor2/backend/api/bestellen.php&#x27;</span></span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">5678363</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="097ef4397ba6f5bdecc6a6670c1203d39a6ce174a891d5086c45596ab7b0c6cc"
+     data-nonce="e4a8e89dfcd91a224b00fe9e"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    30586d87f394b0aec22876013bc69b2b9a312bc2ef57b40f719a5160e6bd5f314023e53308467844766b72b1b8c47ed541220f41ac145bbc64b4d81d743885453bfc41a79c07ec9223eeede60353df71ee9741f7e8d5212aedf19311380c21a87563c725aff3ce78d9db13c35c34144c9033b99ab292da1af76602e9537a8621210f9d0e0867d0b431be4561b83d6d780a86672bb1b9e7a44e9a4a62cf9154ba7241cba90b7154c71884e0812912247393182004f11e4291bacba8da60d7204905cc96c71f95dc741eaecf914e43f1987d45bf6364aef39c0d6934d1c06b32320ed2d7e0fead0aebeadb26ae29a24d566846a0d6663906e06d77a15720cbed14e49f40fac45229ef81fd1d7e7c06340fbb958e600ee6393193b68427258baaf73b73b8c77becaf2f077ca37db0dcb4903e5c1b8cb07402f72429f71ac8f96be22ec6a9d3cc104690f96492acb8d942b786d20f31dbb41de79f190ff075510b4f50c944542804a623dc5569911a8eb0d96160941cb7e1525d2f11182408e610e941214c7c3126e3dcb3d622651850dce33296e04e2c0fa051591e58937d42af8119a82edff26a3b7720438516498e39568349b44def6c9dffeed0ef009a2149d91873f63b5ef55217fb8e13cf69fec1f978f094b389727a048250571052213a693761c27543d40b2f60177906ca2fa309c548aa10bb05a38f6f2f2e8d74ab6562454a847d9d63b2cc3931e65f89504bc429f1999c031a61b7c04047cef9f0463c6102e2be807313f74f076ae11b53a69ec6b04e3026eb8ce81436b64c82bd813c3a31483280c03a42c6f3aa907944571471ade26e6be60bfe46566b80329f98153241d9987df9bb518b64a3f539ae8095f683dc4c9ee51211870442652b4d347447ff4017f5b42b646115c6bda82bcfe10eb8702e6a7f7e6ae5934a45c6becf334ab7a4ed6d133d6406ffcc051bb8e12d282f916867385b8bb029d68cad0827ed37d6881d8c7b745c604717cece51eda933c7ca7ecd799458863ab9dff51b5bc1f403af75540cf0e161cf4be38c3836cbc04d48099053cb69309b517923b2798f1917587da4f652c1032bd749fa2500368b8aa78d874e6a7ecda381bd1cacec9735b8cda9e4e17cdc7a37aefcada3816ed9b722919f45fcc21717d2747d800d2ac0163de9f7c525090faac69223b8551c3297fc50f3aee86208185c9acde1cad8f6e82f39464a1dda25e729feb60be09825a1936569090367830d75f4f85e66c6ed4efcff903ce430a9e74c660d21f59b49544d8e9cb46aa32982936b4503e6e8e29c67aa7526a599014d8d7a9332c5bf211ab160f4721c1530724db2ae9d45ea3000454956cbfac257b951b8e67325b6f0575731e764a76bfb4ca26d99557460ec596f6ee6c023049a80a7ec6f8d99a16ba958b2d342af5abff629e0661e2fb14bc497bc6d65ed52ef63eea154b57ec33ece407862aee90cefda1c1c1a63ebf1ed7a1c55232aa4090ba28150d8edf0d9851903c0e3b22764349d3207f6ad572ad800866b856d94a5acafa785df7c2a28036edb144d7595337588a86305c3a4caef5987d17d0befc85ae7906a47b13f69684c30a0b5780f04ca18044f31894c3c10e5855fcd1d54eec7fdf23952a1656ea49af70204ec7640e8e6c1ecac07b0264a92924d5acb59726cd7848a4649ab1dd0258276caa13af1221ea2675e98c83ba5c8f55f13f30091d0ec985e6bd68f9b6fc78f81e879d925a966904b46d34233f69fe7aa404cd5c56cc6774c3cb6b8edcfae7ca480a18755609c0335293cc90a470b86b34fc35503f27d1f5bd4dff1bcf3f490214327891cd818124edc9620cec8c7049318aef52d35010d3788b177781d4014a3e44ff4654210e2e45a5d5009965bc2c453af37289bdb55b524c475163e4389c3f904972b6f74fdefbccd5c55bc1c02d39a6915290061d60f283ddfa34f04f3cf4cb0c48f47fbe200da05eb5dc1563f44adba4e3455ee568b8e9f075cf87c9d50087a7521cba60f864e687f3218d3c74fca05249bd67fc86d7402969282fb4944f4cdf99ada74b925f8a9099b448b29ef963a6db844f2ecea2221a3da5fcef008557d816ab67638d8256915cd1d0d19307046327d77d1254bc29a0d5243757058da5f03942d52b803c54122c2673e39dae3e91bb19d5b4366eb39557fab57d799e67ad4
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -427,6 +431,7 @@ user 6 订购了 "Challenge solution for Factor 2"（ID: 5678363）。</p>
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/web/" rel="tag"><i class="fa fa-tag"></i> web</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>

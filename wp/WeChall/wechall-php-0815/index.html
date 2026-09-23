@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge 一个有 SQL 注入漏洞的 PHP 脚本，in_array() 白名单检查可被绕过。要求提供最短的修复（least effort fix）。 1234567891011121314&lt;?php$whitelist &#x3D; array(1, 2, 3);if (false &#x3D;&#x3D;&#x3D; ($show &#x3D; isset($_GET[&#x27;show&#x27;]) ? $_GET[&amp;#">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - PHP 0815">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-php-0815/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge 一个有 SQL 注入漏洞的 PHP 脚本，in_array() 白名单检查可被绕过。要求提供最短的修复（least effort fix）。 1234567891011121314&lt;?php$whitelist &#x3D; array(1, 2, 3);if (false &#x3D;&#x3D;&#x3D; ($show &#x3D; isset($_GET[&#x27;show&#x27;]) ? $_GET[&amp;#">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-05T10:26:28.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:13:03.555Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.172Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,35 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>一个有 SQL 注入漏洞的 PHP 脚本，<code>in_array()</code>
-白名单检查可被绕过。要求提供<strong>最短的修复</strong>（least effort
-fix）。</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="variable">$whitelist</span> = <span class="keyword">array</span>(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>);</span><br><span class="line"><span class="keyword">if</span> (<span class="literal">false</span> === (<span class="variable">$show</span> = <span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;show&#x27;</span>]) ? <span class="variable">$_GET</span>[<span class="string">&#x27;show&#x27;</span>] : <span class="literal">false</span>)) &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;MISSING PARAMETER; USE foo.bar?show=[1-3]&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">elseif</span> (<span class="title function_ invoke__">in_array</span>(<span class="variable">$show</span>, <span class="variable">$whitelist</span>))&#123;</span><br><span class="line">    <span class="variable">$query</span> = <span class="string">&quot;SELECT 1 FROM `table` WHERE `id`=<span class="subst">$show</span>&quot;</span>;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&#x27;Query: &#x27;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="variable">$query</span>, ENT_QUOTES).<span class="string">&#x27;&lt;br/&gt;&#x27;</span>;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;SHOWING NUMBER &#x27;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="variable">$show</span>, ENT_QUOTES));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">die</span>(<span class="string">&#x27;HACKER NONONO&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p><strong>漏洞分析</strong>: <code>in_array()</code> 默认使用 loose
-comparison（<code>==</code>）。白名单是整数 <code>1, 2, 3</code>，而输入
-<code>"1 union select 1"</code> 通过 <code>==</code>
-比较时会先转为整数：<code>"1 union select 1" == 1</code> → true。因此
-whitelist 检查被绕过，<code>$show</code> 仍然带着完整注入字符串进入 SQL
-查询。</p>
-<p><strong>最短修复</strong>:</p>
-<p>挑战要求「least
-effort」，即在代码的某个逻辑位置增加最少字符来修复漏洞。</p>
-<p>有两种 2 字符的方案：</p>
-<ul>
-<li><code>1*</code>：将 SQL 改为 <code>WHERE \</code>id`=1*<span
-class="math inline">\(show`，在 SQL 层面做乘法运算强制 `\)</span>show`
-转为数字</li>
-<li><code>-0</code>：将 SQL 改为
-<code>WHERE \</code>id`=$show-0`，减法运算同样强制转为数字</li>
-</ul>
-<p>两种都只增加 2 个字符，比 <code>(int)$show</code>（4 字符）或
-<code>in_array($show, $whitelist, true)</code>（6 字符）更短。</p>
-<p>漏洞页面接受 <code>answer</code>
-字段提交，<code>cmd=Fix+It</code>，不需要 CSRF token。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">1*</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="739b06a9c18f4511fc235456a7b8111fcd73e8abb46b503bbc97b922aee4d190"
+     data-nonce="6d201f588e1e8734cfa57f77"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    267113aadacaf950158e5c65e54547bb60b88d8ce4d7cdfbe6689e52fe34a763e1be6d46365f016b3d070dad582188eac795c68c7b55c23b633f81fbd4933bb55ae313144a920083d2f3d317094ed362e49ea2183b2ac4a608ff000d03efc0fd8846af64db77d0c07787a2200172dbe72120c395c71d5fabf1a7dad7418649b5cd85e20fd357115c1d92a6b5dffbcd0424f5a7f2875995d1b0321281cd699fadf27341a7a01510092c42735cb1b5889ce55eced05371a4af1b0d4938806689511d342d25de68fbb6cd4dc667a527884d80d2bf1d240908f27380c7de2b096617c4be9a0c999b5c30c03b7a03684bd326665b304404b07b34b6f0171126fda70798612f131a642e7584f3d9eb91a24f2b609019b9af500c9be9ecde9c82e0c5052cd45399174b08c00309afd2b140e4a4d1f869ed4e51dce4e4ca1cffe0e4ad4f5d2512947bc364f3d02f0092a5ff3e8cbadc3bc92f04539bbd16f64df654df68fc8413e7357b64cdc09d1c0dcb22618d7e4cf2358e550da58c75a0098a7c6de09e91fa94bfc8ea3db774cba007677b54c14f4a5a3dacd28f29c1beb0231027141dbb4ca4726049130744b543fb5f6405c37febbd3ee83925cbb7cc48bb000ce0be0faf77699b8a6465419c63bb5f6479a0bb2292d577f09723cfafcc77e51a89fc46fafe53b73b6dbd976cb86bba733c94d16e2e531d945e58e4c10adf6b460e32f0da484db7d69bd4ea31e2796daca9660a769ed1ef72643b13e049b1fc80f0407dbf464e8453d6b51bbe8d10ec8ff022fc394f69f3827b07d1f545340e12161db14efeb3ad91f23b02e0719680c67675a6a4b90c0d1df4aaa29108f1c3377938f96038d3bbb2b657610c1d7d281ac28558a20e5a31ac61d4707e4c74cd50739c525eb171ee5d6534a84e5bead928050a0897928f4771878b262d4be7f9bbae9e044a5aaa7a557e0dcde11bb47eca7c31e1c78e945669496589993345c4744cb614d40dec029f82a7cce0161f6d2ab3b2ba9618f003522a5a0a62a2d7d4d6d4337da5436b27b6223fb4f350e5b12d301034314166d647e9676cfc665b777cda630db0803ff56f457808863e4d536e0654436e688d30c1002fc1e87853d39acbb632e0a82d5e84154de4dffa8196d516854dab41516c03058ac20210030f854c30099ab908d3d3d890162e9add95f3a1671ab2ecd6ed6a69083e9fff415248baf3f37647526aa4706e3e5a85aaa6065e6887793632473c1eb8545a26e95b2874bc7aa0a457cbbaa509c387896ed7ab0cb3206bc0aa5829aa8a725ce6d838e980f003e412e60791d87ccd358810c5693955968802cfc086efdaeecd09407a78b9e7a0813178157edae28f7cae6eeba2795d0db3f5fee4d2b7f4c79a8e9dbe25b166c2728720d92248cb92cb6f7bca8ad7b4f9b286cbae1ec41ffbfa93ebc5505a635e7dbb945ea9c29fd9fa52ba2b94411d86097d303c54ee70584f7097e175503d8df707aec0a9b8c9122b9b1b5b3af2ce715658ce63f578a69d8a704863d6fa4a85e11e176debd4a81a717e301f428063e86269b03510623e46527e37aeeaac7530aa02b9c8a8418aa8c5249ea8eced99f8a3ebb5357b10ba02953820ea425cffbf650a5811698b5a219b3256cb8fc70f541d92cde7c7cbea5f0568e065414c960f15efab4b46051e95ef424d2af03d7418526d71c452a03aebe8329ba53a2f54291bb595326ab4c4571cab1c67e2896699cb8796799463ac2078d534b6887eaec8f7ee957ef5a6fb22d54bd1eef74542bdf9504d27afd7182e558107e8555769a85e5480968603634dd9df10fbfd9cbe64684c7b2d0e41b32988ee4fcfbb3a79ca5062b2fbb2b8dcbd602f6da2e1b249a65a4f8600f91dde002507bdb7fd9a19d76236d0e41191334e3fc07e90cd3552f4854a4fb55e67074d18a6a7d89b766d523cb41904ff9fc3524ae39cb8ba6156b0bcf43cdf752c3fbe29c2d9c1ff3ff8c2a55586bc81248c8f0083bba824f51daec496804d4a33558c5c95a7aac94788066a8a4398bb99f6fc96319052e2b42ab42efaa4ec6dfe5b62ec7c56fc1bf83b8e13e9fd4e45da25a7762a5cb8460d9995fc93a0028d7f7252ee0746fb718bf5c1b209b95a55c5ca62288119ff8b8c9e36d88692f17ba3240cc80d39c6f57cb57a0a6993da98038a924c3ecb47fab3e2870e1ccdb17f00665288bc7fae9828cd20a5c6c3406bfb94bd4fbf330ef955ffb2e29c8692b3fcbef92c73569f1dbc64aca1f6e8cecc2c738a023271bff056e379f6000e213c342cf5ab18d807b9cecbaae0d703a87f5e8f6012dfb26e4464107d92b886784c3a68f2a174b6dad4a7a74558c94d8b866764c571c2a5797dc7a6b398cf11f79a46692506310ae9eece1f6c522b73c9b40f9e72dd9c0ffafce725be122881e67265ba2c2c64a0fc19d295bed98cbcdc9c513c45e31214f616533a805895950a01027bf9f0ae74e98de70ff6e3512c178a7e8b1931a53dcaa439b5aec7585a1faaf2944268145d7e14354ba018d89895d6d1b0639b6b86cda138caa891b0906f26db788cfdfaf49d14f93bbaf48aedc850e8847122fa54f9b1f0edf95b3f0473aa2ea6d6c75b0740b104aadc3bb52e4268afa5cf2c1c4308b9ac466e6130a4c90ac9e47f3a55435afe4cac58862dab161e09d74778b7024ae4f71b5f0c24426f32d46d071a52b6b50b1067aed3d5cd7070c00c5ecd8d8956a15693a3c45d67940508ed083fcaed25cd0475185fffca5e01ea08ce0eedf5353e3ffeb7621b7b81bd112c57a6baaee2c506b97b131b845a67621efe153fe91deb839171db15fc5cfc5c07f0c4544a7eba01c4b7631dbfd30e245da24cf8a1f45c2ccc48a349c67b80f91446aaf306421e3e9ecba09eef03711599a719d5f62055cf8149eb7249356bf55dbbc38db57f4cdad3c164e1380d942cbcff6f2f0fb10a95da640d23c9bf188de36cd93d58122b430c8da7a034c1e08c256b314a48fad178f835ccc45c4cdcbb0d68da25bef6f2ebea121c68dc2312932d37dc34485eb14b1a66d3bee99ee55a0e189ee8b1ca2dd648e40b98205ee2b5dc4c46c6627937c340853d1731417994a3c61254c72c700cb37545058c887bc2aa6762f48ce8931e203dc988556c481c6c6dbb55aa074edbd6257ca485c355e834e6683d777aded0101dfaf913972697b655054bdab497b49e866d42569db7b2d184bc9727c5aaf67e832dd98471c993270ef59aa967618ba3c767dac1801316e015d1f2760e1b719aec90a9ebe004f06976c1d06f5546c864fbbf8d7f5c5d55ad8d83fae28e770fcddffa5be542717d8cc3ee787b00408f496b2ef40337b254c6616b26e616ecbfaaad35d5e4b106080c68223ee38acea63f90175aa1ec66f1396f39d6ffdb4fe44afdee0db944ac271ab01694417ddb6cb1ea75e24cd71f45f238525502db2fa01e550128b4884bb58a0e1087290a966dd3e435b6f556a31b2631d52024ea3bb91dd7aeff5dcc344d739acd7e78c1d28581d980d23f63e97ae2cac92046405d51dfbb8021010bba6125a75e30d10124f9e5b9e511b7baa88b8dc2428d851bb2ad50c6892866e759c30ab4f8891b4dce1be183aecc42cd8260b7ffd153bba0a0e058be01cda4afc7ff85ba3d0c0402cef1a3ceddb83a44235010982568dd8acfe45db695abaca370204c10a7dd805adca062f86aaefb83a53dfec2fc9b547eec624156c7383b105e0b80ae29dcb9399f6c661dc26429f01e65fadaa3437354909a82889913c045a72340e80df8f945c47f2b83bfd0bd11d9b64e4365edb5ed36e3ab2bcea55773b13a84b3c0dd3915b6cc2de0e57571a68535a294edaa1764876e55e276d8aed0f6a8550ffb3f09c95895616f566ab1dd590c54e89a1e5a069b8acb819eccf54594f8be96de794935f3b77347a0297ee87be63789c7a673e9deebf2055bb78793fd620ad3384395d0348862bc38d91f7913e8c091da74d17dfc261f2e57dc4de1a06c64091cd0f80dce4db949798835eee87abf7086ee1c6c561cda053b246b6c581d73056701654d71e2642cc1b148f7f4a494edcc6264940f0451f983b37a854d57b6a94914a4c80fc396c2d7b5154e458782f6c11519ea88fd09a77355d64f476c286b250a586864c79525818ed99be22e7b0ec943c99c408f33b4bb6b952560bee75ae5eb8f0f361fe0258e03f08a5c8bb0838e623708d2a9679e15549bbedab1bd972c6e892bcca9383df09a5abdff654db02dfe93122d66822fef223df1322c33c6499d5e6f40558bdcc7f9b5cad3d042d7b81af160aa0513fc58fa6d7bdfc0053f417d8964ab1bbcf12ff32f752258e8ccbdb7be8455e42ad8e91b60033acf080bb4aa43e06c9ced21c55a70ad64e8893670daac905f21e87e9ca3ddb687ff024db641bfc83aba1476684ace60dc2d648f22645679d5561dd3036bbfbd48d07534a7332ea9ed8b4b8ca471514052d94c351301eb2627cad1544e99065e13f835dd763b90974f75a4a2e1b5b9bf1c4010c95d56a21ccf891317a6a098139adf83df62bc55bc9e8c440e2e94b7d282cedd30ef3e52346fd9f80fea383ef380e03140ace14d6462fdb81deedb0f167adb651df81ba52302e8d33bf5534b8c11276e1aa0965c332b5b7975bca25718b73bf1147dd7337e42d80355aa10b079d293bb0ac4010ba923c7682e79c07b3d25c5507f1cd15bbb08c682e3ac3834c34df3b934c4db1b31d55735c6e83575351864e51d3610e6d84e5ddc84f56a4cd379eb8740bd0ef2b451b0c21852f9e360e6c4a46618a24aeee360716bbcc18b6aa5100b809d96295eb123248bd81e23a665639db5182c368a6eb71fdd04fe43986e1a6f1bc0bf25431166a02d3aa2a25067c6725b31f5e79d41da4bcb56452accd6f7b304bbce1c18bbe7ca9f4f397d58c2549870f920b76ca5f0ae9abd1e2fda659533e924cca674e47b2382c8a7ecd999c1b3ff72948cbdadb17e56b8b239468301ae748a49867fb8507c3b4c38f440e47dfa032c26dfd582237fb2768c95c1244265c87ccfa03b6ca61ae8c8f49de1285cb695d0cea2755450192b76ff252fb0b2da9af418204381b884d33d0fea43d7c12b6019cdfab56aa510d318c42feda3b9078c68afd79fdd7eb137a4832dd06795f2cbcefe8fe20bafd842693b34c69bfad643828bde6351da52739d8e7a0f1d5068de8009c222af315a864e7d5a3684bdfa51e4d9540e402d73bf5cba5c24f5ce6e3655cc32fe9f85a442b47b5bf962d3cd45a799988ac0d7a498388218ef76717298d1b758209f22ee1c387e35b84b91581b597e993ded49b2ca98fa9bec482a7d8b6f4b8917d99570e190927f5d5850c85babbf212fd708cdd62174f31875a59fa1dc6619495ce0bb380390c1b65b23d4abd7b255451a992e2d83c0985476d2e79dfb0632d9a992b9ec2643d8edb15140ea49fa923d9a465cfc23c5967ee12c20276f5131dd9bde932babf9ad0b0ad6a2ea3582a0796fbd173a2d04ef62ad2576fde83f65a97d2997862059157a83da2ea91c0404cb880d5d7a6146ac7a0f2d4ba5db8f1c908b18277b225d448e35be395cc0c33c00f15e35979264274c47309e8245720e83c3925d16f69f16275adc8abdb9f28f24ba9312ac1ad019d36f61c09b99345cf5194820cf0a8035a4d248cfe7f5ffd6ab86c4da414335f49f5a96f9a7d9890159d620fee6b4ce53147ad609135f0df224d397749dd2ba6af2c5cf4d32c877719d584d1acdad64a4927b679edd3ea40b60b35e8396659c58aa1c4f11b4dd6f673cb6cda75afb222beaa651f185f16b50e1cc19a55cde877c0ca9db5f3e20f7abce277982947f036d798a9b0779c06c94f4
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -434,8 +430,9 @@ class="math inline">\(show`，在 SQL 层面做乘法运算强制 `\)</span>show
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>
 

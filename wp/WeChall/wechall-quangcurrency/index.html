@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge 购买 10 个 item。初始余额不够，click 每次 +1 cent，最多 50 次。题名 Quangcurrency 暗示 concurrency（race condition）。 Solution 核心是竞态条件（TOCTOU &#x2F; lost update）。buy.php 和 click.php 两个端点的余额读写操作不加锁，并发请求可以制造覆盖： 12buy.php:">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Quangcurrency">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-quangcurrency/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge 购买 10 个 item。初始余额不够，click 每次 +1 cent，最多 50 次。题名 Quangcurrency 暗示 concurrency（race condition）。 Solution 核心是竞态条件（TOCTOU &#x2F; lost update）。buy.php 和 click.php 两个端点的余额读写操作不加锁，并发请求可以制造覆盖： 12buy.php:">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-20T06:44:57.000Z">
-<meta property="article:modified_time" content="2026-09-15T01:54:43.819Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.173Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="race-condition">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="web">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:54:43" itemprop="dateModified" datetime="2026-09-15T09:54:43+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,39 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>购买 10 个 item。初始余额不够，click 每次 +1 cent，最多 50 次。题名
-<code>Quangcurrency</code> 暗示 concurrency（race condition）。</p>
-<h3 id="solution">Solution</h3>
-<p>核心是<strong>竞态条件</strong>（TOCTOU / lost
-update）。<code>buy.php</code> 和 <code>click.php</code>
-两个端点的余额读写操作不加锁，并发请求可以制造覆盖：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">buy.php:   读余额 → 判断够买 → item+1 → balance -= price</span><br><span class="line">click.php: 读余额 → balance += 1</span><br></pre></td></tr></table></figure>
-<p>如果两个请求同时执行，可能发生：</p>
-<ol type="1">
-<li>buy 读余额 X，扣除 price，写回 X-price</li>
-<li>click 同时读余额 X（旧值），写回 X+1</li>
-<li>click 的写入<strong>覆盖</strong>了 buy 的扣款 → item
-增加了但余额没有正确减少</li>
-</ol>
-<p>利用这个漏洞，成对发送 <code>buy.php</code> 和 <code>click.php</code>
-请求，每次买一个 item 的同时用 click 覆盖扣款。重复直到 items &gt;=
-10。</p>
-<p><strong>实现要点：</strong></p>
-<p>登录后先访问 <code>stats.php</code> 查看当前 money / items / clicks
-状态。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests, threading</span><br><span class="line"></span><br><span class="line">s = requests.Session()</span><br><span class="line">s.cookies.<span class="built_in">set</span>(<span class="string">&#x27;WC&#x27;</span>, <span class="string">&#x27;your_cookie&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">race_round</span>(<span class="params">s</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;并发发送 buy 和 click&quot;&quot;&quot;</span></span><br><span class="line">    t1 = threading.Thread(target=<span class="keyword">lambda</span>: s.get(<span class="string">&#x27;buy.php&#x27;</span>))</span><br><span class="line">    t2 = threading.Thread(target=<span class="keyword">lambda</span>: s.get(<span class="string">&#x27;click.php&#x27;</span>))</span><br><span class="line">    t1.start(); t2.start()</span><br><span class="line">    t1.join(); t2.join()</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">15</span>):  <span class="comment"># 不需要太多轮</span></span><br><span class="line">    race_round(s)</span><br><span class="line">    stats = s.get(<span class="string">&#x27;stats.php&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> stats.json().get(<span class="string">&#x27;items&#x27;</span>) &gt;= <span class="number">10</span>:</span><br><span class="line">        <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li>click 只有 50 次，不要浪费在大循环上</li>
-<li>并发强度不需要太高，官方论坛提示甚至可以用浏览器多标签手动复现</li>
-<li>不要 reset，除非状态已不可恢复</li>
-<li>可以在浏览器中手动验证：同时按 buy 和 click 按钮，观察 item
-增加但余额未对应减少</li>
-</ul>
-<p><strong>备选方案（来自论坛提示）：</strong>
-用浏览器打开两个标签页，快速交替点击 buy 和 click，有一定几率触发
-race。脚本更稳定。</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="709ef5177703c07e1df49d06107b500c61702a98f4dbe89ab952c37c23401923"
+     data-nonce="09ca19e7f4edd191dc91d509"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    a44a727205384d8cf266e89cd58d9700b7606c8cfbe505e43050cda05fcf5c6a930b9c38eb92da1a51ac4189b86338f10e2d17a89a08b0fe1d3a31d59d55259c0b357b3c325e74d8d85dec2c51618706128b23ad742926f58bffa7626a54df4cb5120c5049451b1f073efaa22161ecf7fab4a4d490c42c9831db9f72a27bdfb24b3964af9c089d455ef1009d4b2a3c74ddf62640d7a374937b84f1e3b9783c60cd77db43c5ea065a9a562ab5b692f69d1f66926398436cfd218f763d564112bf8e0eabb84e867e448015e79434c57f4e7e574d80ba5023029b30eaeae2909e0c6f29cc0611f87dc4fb6ae7dc15acf839c06de1e9a19e3eb0d8826574a04475caf9b861838ec89aa9485a5dc69efaea768f69a8e3a0fff8a2657ac40c8c0f39048516362582a2b0955aeb4c4396976ec526476fd9bfb21d15e170e7574dd5df139223a46c3dd82614f2b9bcaad0c344cb47c56a6e9829dadd76a59c13235584a39f2ae6c2f9eb7ce5c123180ad6f9b4820a474982b62651b18efa2dc44fe62363321976632a9133c0ddb1cec7e919d3931364814d3c054e5cd9516175058cdf69adacd467ba5544b735dac9a4910e6fc64076cac1d7a36989c48a5c007cfcad72c64c5f42e55cbfbf221cd9e2ace943fd0dd92a3d3a2c04e8406fd07034a0f79d7786f093173eb9a7f789420a7b882c0fa9b32013203685e7c749366b78122d0feb5f925e4f90da65679f1c4d492844d98d00ef0093e81c74de118fda92648051e986ecd896abd25a428a9d45a91a5faa8c417a074832bbdca56b12fca51f02dcc69ed85bf31816df5f2305ef5bc7a7d6f3eb84f627cd8f703afa75de00ccbeb70091fbd10fc45abb3c8dfe713a46776ec77c6e09c3738d5624e7e0c55b86f44246d607e56182517a8641a16e96a3c5eedbe37a5b31118a261363dae35587edfbf778480a782b87bd2c9fcef4a0421d4d19d2ed1021cd3441e48f256dcbd2de01596cabaff8e513540c8f106ff5fe0faf8df0ff88aefe6001a0d2582b8468dbe324f3eb3b59c4c9d0b20fc8419bc18f9565ba6ba7883bd6e73173ec112db0159a16f5e21651160c3665a3bd238f4deec35336a810d89d72814993ae340aa834280ac58caf602131850d4833e66ccc105e62f242fbdb9f5a6752fb3d36df73d84c89aa68c234e81bcd4299e88d7c8a387192f48ff234725d10c004b9169329256036954a5c874e2e2dbf87a31a9b79c7215496cca1436fec26f128dacd7bfcf248bce88cbc48a445df735764a5debcbb829cbe2e67881245578c50843a7985d4dcd7e8805c920982040acf806d4a66ceb17ba49589a1871b27704540d6f0f2c9480ffd1049e36d346cb8b7bcf2f7d034032ec7b07143f79fa36f53417ccbb774bd6963cbd0d18c880a5f8433512d6a01d660329de76a803c81d26ccec45c2e6bf206dadd435812667c5296729b9413bef1fd1180e30ad35701a8079e07592fc3535c1ccbf418cd415d7618556b49569dc813d80ec8723ecc733774ed6b4341b64ab1a1f725123eb3f2bf94f030475222dcda8e56dfd5a100e4b6a0bf0c0dc06432d91674c9806d9fbc9654a383129f31ba478eef14b9fc318b3acfc4cb33c319e7c16d1577046723da461760c981d0417120f61f9f5f389c6d35f64a134ef3ac2f82577885e238cf5ca413eb97b84457db8d347316603fc6fcf1fdab52a7d40c96ae749f23a0931bceb5f6bcb17b4d565d8526628a9f96bcac869448146a36b4cb18f3786e458efba37bad6d3b4f7ed8173f10fe7dc308d59cc9b1228f46af6bd693070867052184550e2dbfd479db200e1410bf4effabd46b1c7d6b8aab970bf15ae3f857ab745b2deaa6bd4992a3ed0b125840284f37df8142e965b0587e0d5706f4b3dbb9e88d4cf91c135f2dc28b7e5aec24403ddc5dab6297843ad84b5e04ae9d9faa9c4cf6a3454d66102d850afb1f5f63107d68dda3ee1699e9bb2258879d0fdd10ad1430f267b543f2f9c1ba6b8eef2410ee35856fbe7d5d71f69346f04bffa3ebec0398799c1b0bb2a588da9b19adf3b32e2fdfd5b9bdf1af611a437567f671c0fc6995bdcc799935d0446eb3da73b9d23dd64c906b197540a5d7bf8ff2fcd53cd54449b816da97d1bf2e3445da6849c8a8a8b43dee7862073f7d5c40dfbfdee4b7fb88b9e9cba3071f25ff62f5efa0f6303d23304d1f2cc920d1209b701452590023f70309b30edd86523bef2dea5a05ec977037b8804f2ea8f4ee0374dcb3599f592fca6676131ced100dd25fd7a3aec4680b3bdc40cac157032d93347fa11d37d26414f5d15ac952b0a55e79c2feacdb27b6c737f1caf4ecbd37ec6f850d20b4360b5c9c8ef25b0c5290b313d5ef15122c7ae39226d31aeb3953b357dfecaed6345d6aad6ab4000d3686fa5ac305594d13119bf147fca7419e06289054e49b9602f974e11765074933fab94b761d3ef64db7f6b708afc3c45f40594625262f873e3bf38acfda934116e5d7e9997de949b6e1911f82c2e91567be6b4935f3a19afc516e704186c0e205b60297667c4b5051f63fbf0683bb394f85667f5287da6b5f5c51831bb6425ef8a4e354c9fe3fe86f2a229e4893ce8e0efee7d96578b8f38d175b0e3d1ab50d2d798d6014fd3c9b0d7cfa98bc2b8b2e926a5e2ee41c55f9a4afc11cecbcf70239190991d9fdc112787eb62d4af9350e57a3a35dd36b83ad8ba7567b6a737f55c8788f1c0832452317071ada1e0b7d323aa728469522ca4a81df49da7f113ad8a34821ef4b96ed85a0018aeaf1d169523a572c2f68b24a9ae5def558ce08d93cd834aa546cd35f68606c898822453d3969432b3b8bb96a49cdfab76b6be6f7934921df5a673db498b9c23bef71df25a992e52b6a4ba4016a7e2d7c025e02250eed7a910608619d08a7f8ee88786b6713618b92228f389399bc534f17b8dc81ed36af4cdca6771ad0f55c0fd0e4933e58f7a5f8f2e2bee162b98ea89319682950e7a630c2acbde502aabcc21dc5980f03dd323b21bdc2cfa6cb836a6e1cae827e6a3236aff53dddc81ccf9fcb2d18006496abc9c4b259261563ce9be68bc729166d5e1477ff053eeaffa7742009a26a4d7d2f9c9f8320c51184a1ce32e2371c2ec7c8ba06edbaf259c3673e1ec83af63b3be26d9571b5cf9cb4a51db2876e0735ea5a27e45fa9615986a242a6ab313da3881c8e87a97028b9cc73217b9126c0a6bf4f2e74a20d105749d8080caf472761b07962c7388847030a2949b53f4f8b58f5b5a9c08a573643daff09ae4e3599e3f5574474e35c9f9fcd4c7082e911c1839735e58ef2a0c8d4c2bf32b3ce007db695dd9fef3d837cc0877f52b44f4f6632e7b3eab27407727a6a4ad249705676ac4fecf378e24a7e947802a565d324e0f0a6104ac9145015d709707c1d918880736143382af7ac39af55956a4fa49c8981ce1a092ed4aaa881b78287a38e11151db1654ad5b0de0bfb8fc16c0580d6946f273bbaa33588edf63dec794cc450420e0ab1582b006786a9b2c81a72d28ed0a10b29e598645b3d0c8f05f8d9d778c03f214f8c8a79b2b41f2aa5bf8a95c8c794d6e663b9a103aec325bc0a69b35f3dbd07ec9a00a4537306ede6373f4caa420d75669e4fc02eff50ae98c98b01a4980b7405990769a6e9a09a381f534b8260a3f4bb128f81567a6467b7598c0dddd25d6c9383d6d84a1ec3ca6d883f936d70221b18bd0333bd689bf28e38bab6c73edefff826cb361b7d88f4765b09f2473ca895a0cbaaaf315434eaf5edcbd98d7566c441cddb2e6c3fe1ef67f64c032ba1c69713407e080a10b914902ecd91ac37e7a455a9d81f6cbac5678ed18e5a950eebe9bfda521de39447fd0cf3a41f88e55f1ebb6c1961d53633a5c91b88562bcb4eb9f826cd9f0b0fef145b4c579364742e14b0ce3f9aaceb826ae7edcd185b59a1337231cc5840accadab03156988175ccbea1e15fa2991f0a5f3395a0b5940bad03ad0c4ad998388422d251c90fc0f428ae7e5239ce76d8870ea737075ceaf7d5c6c0e773849c806f56ea3977b0604293df897006603871b68641014702394e2a5f3ee8289f6b2becd276a7dd5bf353796b54a280904a6729e070655cdd6a0ef57ef615ca47a3ac86623fda74d83d44c457cf57563b02e4bacaf2d354e06b3c1f5b464af0553421dfbe1e9fd65697f7b4db0d63f46e838220a83c606cdde3a02dc5ceaf5c3c101103f12795158fbae03d00e316dd33592839b708cb6b7f681562eca06e92ffed0a1926153e2f6aef4a671087c2e45ee1e473c7d357e9c5b2c4387a29abe50b3dcd9464a82b800e566841ca16a9ba28c9c74aee844a4feeb54f865117da7d6017cad5d5bb022e673d1027972c1c98126ccbfa5c925dc8ff7a25c8472577b72918b1a40f107e3bc39947da6e36396ca71205e34364da93c658630071d5ca369e151af7ab5e34de21904fc5016bfe9aa77fff84a10247cf46269253c5acc69e2b344085e18abf5119aa03852527be48a906e4a0466cdef52afab97f195ab20716f45b5202ad944a60fd746faebbc52d8bde1e627e3ffbad7c9b637e469865e2a62f15f0f5a69e9e379e52ec1a4d4ecccded2fef06421c1284964108b4b00131a0498c9515008522c4550fd3ec893588376f3232c3eb1acf69b75238ed809955d03ec8d594aa73bc76ca73eba3de71576f2b87230edf10dcbede228931db60624930a0feab7ae84ef794e78c0a4bd05209e3e3d93aeacad48a46db4290ea6a7c3dbbebf506c4508844f90dbd329b07c37a00455dd4e5af05fd634d8d10e398edc9edcd5d40d25584b3e3e0bb29176142164502f08fba339ab5cb2843ee8189b4cc10636604c908ec4640ffc96074dd98ecdf47a3636135f3d03204be9586353e5c255a34e4395fb2141e6f565a965269254686932efaaf2089f4ff3ded675bfb075b514f68e95766865dfe999d501c35c60afe17b4980f422913c1dba21da450a6f38e20d34ac313ad3e0b0262e21db57a3be227bfc59d05bb30e3f56c0861193f9f9623b68f705c44d87e474091b8d41ab9e33a4db0a68c622bcd1a03f37be8bd297d5599010b76eefb331544d1941ac7f1718726cf04f61c53c392929d71c2b00bd78cf374a1cd82bd351aba9a7367ea080e06a42169b6404162fc6020321c8d5488a26c04ea3f495f25292954e73d4f0310d5aef1aff1a9e14fb4f2c06c8b365dcea0b5860cfab60e412b929f56415909a882d03de1aeb08c3e621f567dcfbfa8485f5531785e8140a6ca30d8904cbc63af1219efbea3757d79e4b116fb2dab5b02c6751fe60ff8c1c503d33cc44e154deb90d4c8efc78d880aa086043ad7910743e2228ac36886e0b403ffbc70fe5430fa266769ae16f9614792fcd11a3de3b26b5d6eb5e066a7859934fcf8db70e17b894442bb70d01d894fceb0d41354d759dc6a15cb024ce81219aea2de04766131317385f57bfe39535a624b74fef3f4a83b79d6df268547efcb65d425cda0806e362e53aa9a230f8e88984cbf816b9520ffd09ca396d9919d6bb3ac85728dfc11144ecaccfe2e88983f8e3a9a683fea39c16d8119fff9599829b666505a1094ea53e3fafcf3b43e2d14b603bd47ef05ccf941954e70d7093a784f9c97adea216b300e05afb31e81bf6f98e7ccbcc0bfd78e1addb22e30c0496a4b19b67a77edf90daeeac27e44f444a20629dd7c8b89cdb92303ed964e913dbb2978b9cd72aa28cacb2ec6c72d7d8894a41df32d3ac98b5ce5a5ee03993ef80793498bff69bbcd866c73d25fd45b30f6d543ba7b9e4fdb88aa4ce34325724d6f2284e2da7f0e5afa2c6931328df58b1c0381dd25a8ab2914006b72955e690b1e845342c30ecf2c2d5abd0cf28551c51bf192222b28603ffddda9df438bf84f5a2e5474230f0574b79ae735c0baf7d68f928b90d197928a4ed49152edb988a673f0844d73265e74392bca93e47e9c6ee7b5d1972fd0b261e2831940479b9042c1a212ba60be22243893388bdca6182def2d1c7bdd22ef861de08ee1b9f09d0d3dffd75a075128329766b79db989c392b805a5aed5dd5adc8a88cf56333e22d9bd6f35
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -439,8 +431,9 @@ race。脚本更稳定。</p>
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/web/" rel="tag"><i class="fa fa-tag"></i> web</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/race-condition/" rel="tag"><i class="fa fa-tag"></i> race-condition</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
           </div>
 
         

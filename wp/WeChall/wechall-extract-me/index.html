@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge eXtract Me (Encoding, Stegano) — score 3, by oleg.  Yo dog, I heard you like zips so we put a zip in your zip so you can unzip unzipped zips. Enjoy!  Download: r.zip (2698 bytes). Solution T">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - eXtract Me">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-extract-me/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge eXtract Me (Encoding, Stegano) — score 3, by oleg.  Yo dog, I heard you like zips so we put a zip in your zip so you can unzip unzipped zips. Enjoy!  Download: r.zip (2698 bytes). Solution T">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-12T07:15:07.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:47:51.490Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.167Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="encoding">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="steganography">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:47:51" itemprop="dateModified" datetime="2026-09-09T10:47:51+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,122 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>eXtract Me (Encoding, Stegano) — score 3, by oleg.</p>
-<blockquote>
-<p>Yo dog, I heard you like zips so we put a zip in your zip so you can
-unzip unzipped zips. Enjoy!</p>
-</blockquote>
-<p>Download: <code>r.zip</code> (2698 bytes).</p>
-<h3 id="solution">Solution</h3>
-<p>The challenge is an archive matryoshka: the <code>r.zip</code>
-contains an infinite recursive zip (<code>r/r.zip</code> → always the
-same inner zip), plus hidden data appended after the ZIP EOCD.</p>
-<p><strong>Step 1 — Cut out the second archive</strong></p>
-<p><code>r.zip</code> is actually two things stitched together:</p>
-<ul>
-<li>First 440 bytes: the recursive zip (r/r.zip, endless loop)</li>
-<li>Remaining 2258 bytes: LZW-compressed data (magic
-<code>\x1f\x9d</code>)</li>
-</ul>
-<p>Extract the trailing data and decompress with
-<code>uncompress</code>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ python3 -c &quot;</span><br><span class="line">with open(&#x27;r.zip&#x27;,&#x27;rb&#x27;) as f:</span><br><span class="line">    d=f.read()</span><br><span class="line">open(&#x27;trailing.Z&#x27;,&#x27;wb&#x27;).write(d[440:])</span><br><span class="line">&quot;</span><br><span class="line">$ uncompress -c trailing.Z &gt; stage1.xar</span><br><span class="line">$ file stage1.xar</span><br><span class="line">stage1.xar: xar archive compressed TOC</span><br></pre></td></tr></table></figure>
-<p><strong>Step 2 — Extract the chain</strong></p>
-<p>The XAR contains file "8", which is itself LZW-compressed:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ xar -xf stage1.xar       # extract → file &quot;8&quot;</span><br><span class="line">$ uncompress -c 8 &gt; stage2.rar</span><br></pre></td></tr></table></figure>
-<p>Then continue extracting each layer with 7z or the appropriate
-tool:</p>
-<table>
-<colgroup>
-<col style="width: 12%" />
-<col style="width: 29%" />
-<col style="width: 19%" />
-<col style="width: 38%" />
-</colgroup>
-<thead>
-<tr>
-<th>Layer</th>
-<th>Format</th>
-<th>Tool</th>
-<th>Contains</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>r.zip tail</td>
-<td>LZW (.Z)</td>
-<td>uncompress</td>
-<td>XAR archive</td>
-</tr>
-<tr>
-<td>XAR</td>
-<td>xar</td>
-<td>xar / Python</td>
-<td>file "8" (LZW)</td>
-</tr>
-<tr>
-<td>file 8</td>
-<td>LZW (.Z)</td>
-<td>uncompress</td>
-<td>RAR archive</td>
-</tr>
-<tr>
-<td>RAR</td>
-<td>rar</td>
-<td>7z</td>
-<td>file "A" (XZ)</td>
-</tr>
-<tr>
-<td>XZ</td>
-<td>xz</td>
-<td>7z</td>
-<td>file "A~" (ZOO)</td>
-</tr>
-<tr>
-<td>ZOO</td>
-<td>zoo</td>
-<td>unar</td>
-<td>file "4" (RZIP)</td>
-</tr>
-<tr>
-<td>RZIP</td>
-<td>rzip → ZZ0 → gzip → ARJ</td>
-<td>uncompress + 7z</td>
-<td>file "1" (ARJ → "3")</td>
-</tr>
-<tr>
-<td>ARJ</td>
-<td>arj</td>
-<td>7z</td>
-<td>file "3" (LZW)</td>
-</tr>
-<tr>
-<td>file 3</td>
-<td>LZW (.Z)</td>
-<td>uncompress</td>
-<td>7z archive</td>
-</tr>
-<tr>
-<td>7z</td>
-<td>7z</td>
-<td>7z</td>
-<td>file "F" (bzip2)</td>
-</tr>
-<tr>
-<td>bzip2</td>
-<td>bz2</td>
-<td>bunzip2</td>
-<td><code>L0LYouThInkiTSh0uldB3SoEasY?</code></td>
-</tr>
-</tbody>
-</table>
-<p>The full extraction chain is:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">r.zip</span><br><span class="line"> ├─ r/r.zip (infinite recursion, ignore)</span><br><span class="line"> └─ trailing LZW data</span><br><span class="line">    └─ XAR → 8(LZW) → RAR → A(XZ) → A~(ZOO) → 4(RZIP)</span><br><span class="line">       └─ ZZ0(gzip) → 1(ARJ) → 3(LZW) → 7z → F(bzip2)</span><br><span class="line">          └─ &quot;L0LYouThInkiTSh0uldB3SoEasY?&quot; (password)</span><br></pre></td></tr></table></figure>
-<p>This showcases the depth of archive format history — ZIP, LZW
-compress, XAR, RAR, XZ, ZOO, RZIP, GZip, ARJ, 7z, bzip2 — almost every
-compression format ever invented.</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="eab3dc1bbdb8d63c6b7dd64a4f0f90a464fd618b2d3d7c14647afb3f15c36f83"
+     data-nonce="2073b7187b36e5b1484c49c4"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    b16458a4ea72d7f745fa53b9025f11a75739a2e727ef189750a2c9e9db2c3b8e8fe9a3ed42b9b7863be7b590afbc734fc2c58b3af1a5f496fc418099ac558c902370be09498ffc0a7baba816705deb5503ae9bfedea6dac460af3b448dbb65f36dd51773e660849e38201f2fd8f5e8413e5ec8c15c6475713900a2784b9dda3d6c2f4188985e7b6c09d7960a6265883618c5febaba5cfce50449f2d524b7caf0bb7bffb91b7818fce79bbb5eb434c2647488177fbb87572daa2d06db44aa447d52c6bf7355c6f657d89c25fc0d4d31508109aabcb00876dd406dfe67d8ec5a359310ac99497b2f8546603aeb3b81a3752803090db242b240f7f54ba3feb9a76294252a120f35a22bed6d4d17c0902ec1b2df4449bb366cf7eda6a2f406b847003aedea255093e76fac0d418cccbab3c836300c74185633b3ab227bacfbc1353740e917cac800a272f6c5a5a7a0ba25508e0311260de2f05a6adbadc2ce30e70d487e8e6de6064ff7f5bad8bede7e4d669f370d3bd791daf730a36e3b69abc881cd9f19ea4dc8244f696947ea698666f7b7ca010d110ea05f2a195f39e4a1be91925bf6b37a0b1aaab6638f7616e22daa297be6b72682da3c56d48fab323d9a3c6fc906a878d74a05d5ffa68597a91d1e9201b295c39cc3d0e6ea2999cf7d7b7633831813d0ab0ad064a8fb2e593e1555aec1f041e8e4610f5a5ce1db3d26dd39e47d7cb4a25e7fd9c018ade0a6ac2ea859be38310407a7bfe42113140e980e10b0fbb4d60ddfbf878c743bc95551c0ff0605c2f4f9fae6b7c3c9f99ece4c66d526dd422f76bdb734d784fbebd0c818c0b398a934adf8eab2a4e30246921242e4bb67b9ad177ed7e8da288b79b02b19ca442c634a27c87b16c556f795fec7881eaf2c8de46b3f5088d93196b0c5f2476f8f50c7101785299387a934755a4aac3c7a6d2f54b343f6c760132b9bd8628bafa0eb68d34fdf7f693d74f06c7c74f405875bcba813aedf86ece13fd1009507f05bc9f9ce69ab84e62a624394a79adf16f3dfe7a7412e77f84092ff5bcb3c846c385c99385571c6d76f1823f5dd698e34cd9fcae29bc8fbf507bcf950a7e0c7289d8866e5b3c5b40bfeb2307c9f97b81b988234d45ba843480da3d8ed1d894e1e6159526d000727ab51ac90bb0c9862a23e4ff1d1ed95c8e1eed6c1f769d1898634cb9d5f80766aca98b65333daef206249969e2dd95269297e432d80fa60621710da18982bb1cd120c6b1734cb23062382903a9f742c35433435dc2891fa317226991086ae1277938993e1968cbbd79b90d276705e9c364a0ff1c1ee7fee84f8b4efa978e0fd601eff86c325907cd9de0043cf7f4a969365bf630991117ae1d281a5ec8f5494b0eb9af213462057c6d272c275674ff568d3c3107e3b970149140b0fd311251f874d358316e8f2fa8daba7cf8aafeb38c0d6f728da91f5e0a9e9236529f18020fb04786d8cad3b5737fa6f4d004e41de1904d2e04576d1a71d5fd0905069cf3fa7f086fa5221880a77a2b8e6f4f6aa1d86f065c8f1012d9feb15a817661f7247312dec804f6be942aec9c55d692d2c8ac860095e4f4dadb2dceedaffff439a435e36e74840bffeebe440738945b140156aba1b98d0621ab6bbf234085378011729891fa54fd941c72637e5b8d7feb38a89acba341443755d3d362e47e7770a9e911fc2ac5d4255625f5a19e1bf7dbcd5c597f2a86f8148cc99639706c7a5724f5903bf44af2d45b2728e171343b9a11353dc38a125a4c54913bd404e28ae404149e072a05dcd743d59b82aa177fc8a80d4c1be3b4c7e9e7bbdcc9d7495b67d650c409ad973b6b4513bf889a48ba6860b2bcba08975410361c65f04258affe4b1b9e3f071742d59565ff777de0eb5bcfddd07af61cd7952176d44333eda240dbce97182354e8d57eccfe1bbaba37f62167772450352bf4fb2484a8aa8eada74130e229334f4c1a20ab45f2b5997a06c0ba083fa22be51603c6e271e11ff772622842ec845a7afdfc7ed86908a0ab6c95e31a5952e913bb92d89d9e0504358401d73c1d9d41d5fa79f9c4f82c983d9f651d4a0aee83aa922dd10a48e3ff529ae41ebd3a5611191f26437f068012b88ce956a9918c8fa4d608e6a03ab533a8dc9ca6a9af54ae05135b892427122edda3f6da4c6cace662e62fc682befbb1f95caa064af5a1e5a7b24c6cf34fa63cd91fa82b6f581e8b14d504ac765c414cc54b03ca304e3b1b787fe560be6eea76e4fcbaf8c5e6b61c3733eddf978d56887d5c82420180748a0b1ef03162499fb6dbe80335a157317e1432b98ef2c0b4d14a9ca1394d948a1cd71970b8d7a4e7ea08f96785fe6ccb2b3f0e11dc103aa38ebbc66221518347553bbf5bb044d2d237cdd229af3fd28daa354b5c399bf97fa6ec72442250e16f3cc54a89e3af9a762613a806189ea3900d2ef5b5efeb44d230b62271cfe37570a7effcc18f36acde22e52355d06889b1123d18d93b31aff906dc6ad1343ba85a19ddd0da52884e6889b9f9667dfe1fbde3fceda83acb5cd4ca79c118db0a7d1aee6e565883b5c6f3b0b375a18264430c0f85bc11e5ba5049ef44a3316bfa01d1e84f994619a6a87a6e9f166ea004412831a12b9f85e7e1281dca10697fc97c179b5bb14515960c55afbb3637ce1b6dfcc7e9bbebdfdd1fe7527ace20b4585f2b74cfbba5ef15197696247d8073637e62991f8d263ea1b1d02c6aea01ddbddf4cd214c5d92061e7b9c7baa33942444ed93fcf7bdb08767aa4b2a3ccf6d0885ef7855ed81019a318aab420c9e857a94b6330b87d4f868da488ea8d37d0a6da49b65650c219b7b2cdc42a435d130f9716afbd4c3aa18ac416292372af284e9f36e5e16d5c43c9752dc1bc75f29477090b5eafeb8bbe9b775d153f4b9936a0f55469c5462ffeff855cde17e5fc2bdf4ca89d82e299d7d2ca1342ed87ce5b97ff869ee1ad250424654c3c425b5483a106e9148ff1fb4255ae9157894decfd5271f8469f1edf3cb913d8beace4b897c7edcae14c4e8b8d5e30a266d2fcd0c016f8fc69ae4f86ae6df81f6d1f65d8be8fbbb0039f89acec44dc131de853e72ba04ce579e653eaa6af6dc24021c259ee85caf8637757955fcfa44ac4d3c673ac9e16ed38912b5f8d3dffa6a932b2578bbd110bfc8b4d0bae4060dbdabdbb2dca81ebcb815c6cae2208e9ad2cbd502fe20d9332d1369f5a6a5768b133d99bbdbde302d758e5dbdc9e8dd3a5e90b842016dc14736ec0a799a80991a8ad28ff83b58a91b7e7feb889bff01339c5fb3367003a64d7215d43786591359df758b74cc32650d9c36c1249c7648e9deec0d7f7d318c663fc7be6660fa5297b25cc368c96211cab05aca483ae3c95267889007b1203ef301ef33da7c7c6349437fb38d1ef97d1d17229572f67b4ce15387d3cf1c05957b3a17aba4f34262e39e2680500cfbf20680c52dbb48aa3a70c5a822fcd1093a844eb033607905265183184431f4052d59ccab9f426d64d6696fad0b5d0d71cb22e86a6b996d7c6d135baf2c1557ea0ad96fd7d3d23f0c58aa8e7fa35437a38f65d4b2718e6c760e8100768307623fdbe7a629776f30e352ff851ba0e942367f46e0cab34a5e595f9be4cc94a64e50322070154bdd6717bda3e09d78ac6968227669498a7f261931104b29c796a749c4b3d7345acedc350f9f9e5f9252082cc69bb15088dd5606c3906723e6ee4df3b6bbdbbbef8f5bb8858fc31e5929ad8145883fddd04653a90f625fb074eab21131baca1d45b76e0ad6e5e332ea2926806184b6ac6debc015144f71740ab0979ca6886b9f03ba778075adc36ad677a261e1b67248c629d3c8c45166403c3cb9a41a3fae4e5567379eb2687e6fb6dade9776838fac2bfd9c6de0d70bea7242d6a1d135c919d28c29fc93cc4612117c411913068f4d59702265bc73abd43cd44a3c501d927c81a2140595252b9b11f72cbc3a11203da043499640fe9edb818d24d1d910750398a936681ef55cb0fd6a8f3a5defe6aa0e579f5220e12c0ef70ec9f89d924de5a4bd984460f6c81195a64b6f96313424bf03c66a11c450db7459148d4393bf4ac372bc7780242547c5f13dbed35543f77a36d8163d28cca972ea488df73e9fca22f1bc8b3cf208add2c83e65c573630bcee9b9e2cfa46cf0a2c8ed5af4cbbaf6d5fa7f8938c53a76b0658445b2de0363d4f4fb1b3161bc9c420e0400c07fdc1710bfeab9e8aeafcb5cdf4cae7abe3fb32e81dcc5d0aa922f9a7fac3166df5e2c6c7a10b4ae435f4c7de7489d164abe7553d7a50ecf678bcb8c99616d6c88ce8152b0b6a68e2fa5f55dffd1129ab93a4f2993fd489c9e2e654b616da367c9522786d83cf3407eb0598526083c5ea122648c0852969fed19870c9ce4064b7c1ed50a3d9a618e04dc52f0fdcdf9ba96073f2b461b8bd249b252b82e38c153b3e314dc2fa2444b69b402529e76055102bd3286441ef7bb51b957de456d31b44b9282b1904b495e0bdeab7f39600911e220ebf8ee5b09abd6c9c0991917eaf0f8bdd81f18e84359abb951f49fb2c6e9522903c56bff798f3246c85f2bdf9a8b89cf6b1cb5d7228bc4b17564e44f2c277b22e6bb396b0a5c7adf4a9a52f5f2af6e5d115bf8a55b78941ed43729a4c809a7cdc190d0593b87a9c5861a8df1d17b0230544a6070483bb4e15069d3774c1e4b5447136860cf6770f9a7dce2e2e228a5ec5b7979b6a218c74e0f24ca4db13ed480a55c3474ad5925cfd0ac690f476a59204419133b5844edf4019d32e761ecbb7d321d91488b9b48e5e10415d3d01e88be0a916e3c4a94f802b94fd6ed25de9131f206757ac7494ab50c0b99108cc06b642e6908d818976a75774bacc9226f6e024904b05ba6463f38e1bf78b6f19cc5db961d8f2f0c2c106c02ea32dce48e1f244e15df08851714678e764be468bca80941efa9f7dd94c93b07b747535725264378b6a96a7af5301bc948902edae8d88d668dd06ee6f485538627fb41c1ae0f97fc4fdb46a353b14f70f5a2e5ed58284420a8a38ebf4daf43c2b563c07b216f79a787acbce396bff08d69468f633f65261a7ecefe3b3798884d26f80180b9115ecc205f6fd45083a10b8c2837cd0dfa5a75c4febb0a6699388d98b02fee8d0eb67e2473fbc93895c2248f2899953cf77a7b6e12535c2b13e5b2a549d556459ebb78f75d37660f747fb1605f3ea51556bbd1f45291b6c7d4c6478ff697f966abcbe2ddfdb0cdb20d0f9b4608f34f0bf393c81137291e6e9f53e5870ee8011898338453e2d2a84b8db290aebca01fd48a27b3a5bb8c94da9c6300fcef662f7555589099dd580b05fd2eba9f2b95235434340c3787b813751540f17f8605bb7ec61f4b4cf8874083f1c5be1587d067b3dc22ccbddbe49dbd55dfb4e2ccaa29fd1468b296a84e04f2712b00fc6c355033944d65a23e638d2b2b0ccff446f5476cbc30fd442a2935dac78dd13ba9db000201a2b6813733e1260e33392f27e02b2d8b99cfb1d93ad6cb7402fe51e7f4bec209aab8d2030f372a7836ad41306182bae1b46cac4f3a772619957f43fc4a8a7792fb57bc25021e690d54bc2a00a43abbf0bd75863795d90cd47bca981c077abf4d50697a24b7b4adcb8c45ccf07fc6dab67d1a5bb8461c05dcb0f9f1d96196004c96a13ab00f3847ca50d4e0c2cfc83b3c621c2856f4204bdb9b836f82de70f7544d83423960236ffd0f6a387a7cfc9c43f521c4f8f8d37573dae7d8cf787c6ece1cdd138f3623e526e3c81c745d1c3a723e9d3213b03eb49c56f46327db0486602595229870e16d38421f88e06049cd8e7802f8e8d7230b6a5e10c1ed4982830290ef13cc204276d70ccedf88a3d65a00ae43a6eb3a6237380cc0db893249ed923d29fc3c5ecf15a86f8cbf5e426ac821dfe9da83454eb4a9b5616b3d97c266fb820be97880c3fe2c7d6e84a67e7e6b8a7ad05865b74bb2bca3ffbb8f1b3e10ee7e208946b374f29af390b899811204a693ea2e5a27ca25e6acd9570ae05784b6fe9dae8a291f06330fee807ced9b60c2723e7b5f447b2e02a9f6ed4fa59f331d826664fc924e5d14c119f089a776e2d500a144f52335786ba110183c62913c52e7744b97f0a7f4f4bd737f12c24c0efd2cfeec39897f011670544ffc34c8bfc22ba1fb73e121d8bc86f91fcafe5ff95a7ed183782e3e74958f84fdcbb9260a26cdf36e31af82904efa8f2b0f30bdacea32a186a42cf423bd4b0131ba5fd1750f13275551ec9682645e567d8f3fd0947627ae00da2c9ceff88be73eab35d4293c88d1b18b683192737da9dd0ef4ed725a429150c5a394a5af67eaf9
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -522,6 +431,7 @@ compression format ever invented.</p>
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/steganography/" rel="tag"><i class="fa fa-tag"></i> steganography</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/encoding/" rel="tag"><i class="fa fa-tag"></i> encoding</a>
           </div>

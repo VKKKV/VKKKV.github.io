@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="经典 MySQL 认证绕过。登录表单直接将用户输入拼接进 SQL 查询。  Challenge 目标：以 admin 身份登录。 源码中的查询逻辑： 12$password &#x3D; md5($password);$query &#x3D; &quot;SELECT * FROM users WHERE username&#x3D;&#x27;$username&#x27; AND password&#x3D;&#x27;$pas">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Training - MySQL I">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-training-mysql-i/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="经典 MySQL 认证绕过。登录表单直接将用户输入拼接进 SQL 查询。  Challenge 目标：以 admin 身份登录。 源码中的查询逻辑： 12$password &#x3D; md5($password);$query &#x3D; &quot;SELECT * FROM users WHERE username&#x3D;&#x27;$username&#x27; AND password&#x3D;&#x27;$pas">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-03T06:11:28.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.375Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.178Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="mysql">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="sql-injection">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,30 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
-<p>经典 MySQL 认证绕过。登录表单直接将用户输入拼接进 SQL 查询。</p>
-</blockquote>
-<h3 id="challenge">Challenge</h3>
-<p>目标：以 admin 身份登录。</p>
-<p>源码中的查询逻辑：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$password</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$password</span>);</span><br><span class="line"><span class="variable">$query</span> = <span class="string">&quot;SELECT * FROM users WHERE username=&#x27;<span class="subst">$username</span>&#x27; AND password=&#x27;<span class="subst">$password</span>&#x27;&quot;</span>;</span><br></pre></td></tr></table></figure>
-<ul>
-<li><code>$username</code> 直接从 POST 参数拼接，无任何过滤</li>
-<li><code>$password</code> 经过 <code>md5()</code>
-编码后再拼接，注入困难</li>
-</ul>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">strtolower</span>(<span class="variable">$result</span>[<span class="string">&#x27;username&#x27;</span>]) === <span class="string">&#x27;admin&#x27;</span>) &#123;</span><br><span class="line">    <span class="variable">$chall</span>-&gt;<span class="title function_ invoke__">onChallengeSolved</span>(<span class="title class_">GWF_Session</span>::<span class="title function_ invoke__">getUserID</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>要求返回的 username 字段为 <code>admin</code>（大小写不敏感）。</p>
-<h3 id="solution">Solution</h3>
-<p>在 username 注入 SQL 注释，截断密码检查：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Username: admin&#x27; --</span><br><span class="line">Password: (任意)</span><br></pre></td></tr></table></figure>
-<p>实际执行的 SQL：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username<span class="operator">=</span><span class="string">&#x27;admin&#x27;</span> <span class="comment">-- &#x27; AND password=&#x27;&lt;md5&gt;&#x27;</span></span><br></pre></td></tr></table></figure>
-<p><code>--</code> 后的内容被注释掉，查询只检查
-<code>username='admin'</code>。数据库中存在 admin
-用户，返回其数据，<code>strtolower($result['username']) === 'admin'</code>
-成立，挑战解决。</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="37a67786cb3c7d9b1bbe79c318ae0e7275879fde440dbf59d0ab5718ca1a67ab"
+     data-nonce="84148393366985d50df2ec33"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    fd946189e68e3bcc61fb6b1025e5ce5f022c9cadac4d34160570d3ae333727752c111e4b2514c5d35e9c6dff3ab57e92107cce2b161a4d37bb59b7124588baec26f50f9c69997ae5acd76cfcf56a30037637ca7d59e7a53a7e9add8bab02873af6987dd849e3d4a6f5a748993b9286dd7e795ff93c5798297d4b5fb62ffa5de6b1c06632e6c4b89288410b739518048df71995ae53d150fa956b14805efa441e2718698e8d7f309a07d049e2f00eb3755d0cf9718063e7a15e85231e10b342e262b5fafc829a26fe4382caf2a19fa00519d98aae8e08f59525fe3bea0885ded830ef9247fe75bd0dbd94c77f8f8bda5c7b83d3e073315bb92de24f234fe2416a0f671c601d17ea53d8065924ce9e7c258202538bf2da1a01a6563a62543e1dbdbaa47fbfde62ce5f730e7115ebab121acc1f63a8bdcff4cb0aa21b7ddd0aac0dba41f7bb73b3836b555e429ea62c065f04dbc2db4ebede31556dd4c8595fc2069ab3990da824b060a1930c4c964d989bff9b59cfd7c52842eac2010364570b61bc0125bbcfa14ddfdd091e729ad90bf07cf724a353a78cf7b89a5f9d205d97108112b177c827a27930b95914ed97df808596c6de20e2c9a4613486d2a9fa5cd0e7139fa405f6280b1f1832b2ce345ae9497ff6e4ec1bec77353990618e7803188b2bdb04c3d9161d01247188080a9c205ebf4e6ec1c5b85042e21d26dbf531a898f49f9dd8edf71f12c7faf6726bce31822b28e09cc4dbd8b9f461b1fc84f0ad3c251e16203437d5fd8e2d71d0c78347395635272fe45afc1665e50574849adbdab22beef7217fdfa63749204d6c0422b8db6d53c4fd63f5b80796de862222fb31dbcdc2fc571cbdf4d8ca1686048259b8e0b3728091e0182bd42a99f62234857f433daf8bbc68d8be07ec558a9ba230ddb600c7eabaf02f3ab0614bc515ca4459cc8447b175ba3f5976971b97ab3088c0718d4fabc7aaf31d78385eec30bb8517fba98d4fa75fce7799ebcb2cecfa9e82cb424992be0a7800d1939f539f7ab4c7ba5fa48e60fac61e096c6afc936add52fc41910fcf7132d5584e124af48ba8cd5f4dc0409449588264c1beb887be26aeb3c9c8ebc77e74c3812fb9d720a339de0f132920e7d0ace31b91fe4af45934c9bf8ba50afae0fece258d23335312c9cd88d4bbac509a6e6ce0a474794ac444e2cc75b832f7b8629f53482d44cda1a56bd925796d3d158c1401273bee3536076b7569d202a7968dfce5a9dcd709dd7f47a1944dcb897c6b181446c89c63d25b3601ac55cdc4fc5dec1a4113cd6f0102f6b2b9f2bb94834348650a9c47542f82a8c6e79529978f311435d47878d76c4c77c9c65c7b56db4bee6e10d1d2d8a2a56d5ff55db185e52923710e1482b43adc831d843c6bae3d515c49d13e251b0610a19984cef5f69541f99c96c905d4defba3a8f20a22828075b377bf54c8d82bd56d3d7bf9220f58677e8431aae9ba8b92922606548eee86cf8fd3b12eb6bbffb5c899f7f2681763f1068078b0f5084f4ab03d893aece95fd07b3c7e55dd2f28744c51c8ad6b269d53bc67183f41fcee1cdcca18d5bf810bdaee5e9021680859a6e487dc6d0f65a5e017afaadcf663d75ccc359778b80f6fe0363dc7faa2859782e9f4e1ca1e0fb906ff4b8abd193a9d6dc381f257ee18017508641a7fb0b1bd3169af920124fd3318d8abc8aaeb5ae0e08fc59b30f1501b936ed43bfab3393aa933c617e373af3f3f502d7e1540ab2d39385689993cc632429950620bd2ea3e1b1e5e8d52289ecb0bcb8415cd29a79215a84cc4bd3215c6b1733a12dcf513913cb0e199a9fa97c959a1cfe325616575a793b70ebf8bbd92840d434a9e2fa20f331e2d770ba90032cba342f42f7828a6fcabd8b25bd79a7daf3d29c239b8921e7d0ccc497ff44be2bf3c5dee47d21b42690d71f2676d7f2ac9417ccf7b4bb833773a805b1e5d3f53d75c17d046946f2b277d0b6e41f83ddb376953d638f4cfc6e3afdacad1d6f4b7c8b0589816a416c0076d3dbea5a7f557fe9a9607b38a371ada455d300a765bb68e9d88d7c9c06bb8ae00adbee970133ef79a487607e9ea51149b16734a84c5c0e7fbf4ada5f4aede4b85afc81863cc979f3534c0a9c8bad66d58e0b40f66a67985e747e8d0a06c542c9badfcbdec1101ea9c466fc61c9b483e9c6713eb94a7771eef8ae771c66624f9313c111c804233a38fc69a3f9b29604d90eb5cfd4b2d755a184f97ee32e4cb6e78f7c5f838e56189a399d12e40a30a2e512d5f6a50a40dae7b428c9a8d54614b09277957dd46372b8a181ac7d1724bb2eaaf634af68f6f54c024f1ba0a299c0f791db73b7ae2561e424a12b4a2d7256c77a76110e36a6dd5c18edfd601288f848ac8f141e5f5c377f7feb97b13bdf369c73afe7bf91318d60471c3677fa4f4a1925eceaffd8048fd5821e1f62b824c644dd6580e3013850013dfba9507203a79de1dd44c5e76be8241f8eb433cdf67aea2d530bd1b1ce56655a6108cba5babfcb7cb4d54081e405db6b9baa8e09016cf84867ac7b53fc37c9178a16e14500a6e3659a1b8131079268fbc04e88eafd89c75c69c17838a85481773918cb646eac18b6c515862f1bd666cb519e2637dc73912d9f8ba76bdfa06f5bddea3e016c2df8ca938fd5d974b1c837c3b37c7591ed7fe7bc21da6c042915e985e5eef48d692783a3cbec45e80ce21d37616ac10070d142ab500a624bc05cf18633f5945333b26015dfcacd308dbf469d1b95c1a5bbb70c1a39f57ce3f7163a858f2b54a4f884a9d90eee21693d7d079234f951e1e4a954fe11cb3c2c5adaf58eb455fe8d7d549dc6ebc8a025402414c14cd3282d11eb2ad361b1ed5ce8a8375faa45318d87af9761111953364e4f53c3cd64b3c4ca788afd3144f73626846064d1573fcfd74bf5adb5a4de747a6fa125cf6aa527041d1475fcb59ea5ed77af13982ed27a9e1bcdf7c56f31f4c52768599c5540facb79bd92d53f08363f4adbed2dd1ce3dabdbe9bbd095d76610c5d49e1d7a956f3a44862fcded685a2800693d0dc10c1f0cc15b4d7af1bdae278fe9c19481d5db697a795a664015ac866f0afd1686db4318339bf39b56bf8b9c24caf28216c7d251c7ac036a586025fd9c57bda36e07d32d0d2897c6220fc1dc4575fcebe964874b7145f905e04cc7e8b0d8a9a43a2e9ceb04c3ac49886bf183947ebb0e9e4771cf88cdf83e9e70207cf4afe8c417e478cdb262d7d3e8397c2d0ab92f161336026784b0928ced7bd41591b564f35da0ff86493a31a198f355faaa4ac6722016719ba04bef93cc14da6605269b0f32a979b3a1d2dacbed1e2cebe0217ced2d37e24ed2891cfc1eb14f704cf7c9f738c0d5c1d576ec0548d7f5273e207e41390ce489aa91770c65ef4888517fc3b0a9f7eac05661b5db903b2be17e7f7974fb2da5bd4dc8cbc359b327f40115da3498ee99de8cd1297e7c9b632c788ec8208e6ccd2617271e356771bd31f8acc498be95d28d723bc189cc33670680bc34256761777b7ea893a1641c8192fcab5bab6e8707e2513f937dcaf45c5160481a49c4a9be83c518565816467d25020c13800ce6ea26ea5e8e91666bb96f84457518d789d5a5d279c2a2c661a80b1e4942da7e4b0db563a23ae356515ac906dbbe94e07281f266f128fadb9f677b1dee34560df7e22e5714f11f5575bfb641994d5337f138fdd9855724899895e630ac447a72979fb6fe06bc035f7e0dd8ae682a71e10fb0eafd0073cbef296759acf84bfec8e16be7aa886f6eccef05b39315993015e681cdf038341b30b69ed02544a6b13740f904bd42e7280dec1b8e51de64d148f99b1d6c2538d0be063d2a713765f5de429d46c18a232010ff333daa12fd84db26477525b47e286286630340115a7e07798d8bb1824937f3b72e71804c3183fe6e27237057a8563f57c96704080289ef6a4fa7b254185437cf4477f084d4ddadd9ffac683bb9ba2798b252992e1911ebac02fcd6ef2e2058f7cb04a07ce97c2d06ba2195bbe63d3575195f2cb2a223efdb0292a2a6f107a4fc78d70f28aaa6ee62f6a1df63543ad710fab83ef49382e296012c18cddbec19947c18224d0d0f652f46a44d8ebb98437b8a2f21c274bff4284e71811876b3f02f9595f0b340c4cd3db815330952c710ff4076a063384d73025dc01014cf7d90f9c284fc9062487026d73e0e92f8687199e4d212d099ddcb1ab963656776a701882ea3045acc6ba68f176f98ac23c43a651e1b9b7eaf509835129e48881ca4bc2621615bb18247c48
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -430,6 +431,7 @@ p.spoiler {
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/sql-injection/" rel="tag"><i class="fa fa-tag"></i> sql-injection</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
           </div>

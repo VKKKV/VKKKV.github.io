@@ -22,18 +22,19 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge  Railsbin (Exploit) — score 3, by gizmore. The project named &quot;railsbin&quot; is open source, but has a few security problems. Can you exploit the demo site? The solution is the password hash of u">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Railsbin">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-railsbin/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge  Railsbin (Exploit) — score 3, by gizmore. The project named &quot;railsbin&quot; is open source, but has a few security problems. Can you exploit the demo site? The solution is the password hash of u">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-07-14T06:22:27.000Z">
-<meta property="article:modified_time" content="2026-09-08T14:40:47.466Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.173Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="rails">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="web">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-08 22:40:47" itemprop="dateModified" datetime="2026-09-08T22:40:47+08:00">2026-09-08</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,27 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Railsbin (Exploit) — score 3, by gizmore.</p>
-<p>The project named "railsbin" is open source, but has a few security
-problems. Can you exploit the demo site? The solution is the password
-hash of user solution.</p>
-</blockquote>
-<p>Railsbin 是一个开源 Ruby on Rails pastebin demo。源码在 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2dpem1vcmUvcmFpbHNiaW4=">gizmore/railsbin<i class="fa fa-external-link-alt"></i></span>。目标是得到用户
-<code>solution</code> 的 bcrypt password hash。</p>
-<h3 id="solution">Solution</h3>
-<p>源码审计发现 <code>UsersController#index</code> 有一个漏洞：</p>
-<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># app/controllers/users_controller.rb:8</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span></span><br><span class="line">  <span class="variable">@users</span> = <span class="title class_">User</span>.all</span><br><span class="line">  <span class="variable">@users</span>.map &#123;|<span class="params">u</span>| u.password = u.encrypted_password &#125;</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
-<p>将 <code>encrypted_password</code>（bcrypt hash）复制到虚拟属性
-<code>password</code> 上。JSON view 直接序列化暴露：</p>
-<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># app/views/users/index.json.jbuilder</span></span><br><span class="line">json.extract! user, <span class="symbol">:id</span>, <span class="symbol">:name</span>, <span class="symbol">:email</span>, <span class="symbol">:password</span></span><br></pre></td></tr></table></figure>
-<p><strong>无需认证</strong>，直接请求：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET https://railsbin.wechall.net/users.json</span><br></pre></td></tr></table></figure>
-<p>返回所有用户的完整 bcrypt hash，包括 <code>solution</code> 用户：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">17</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;email&quot;</span><span class="punctuation">:</span> <span class="string">&quot;solution@wechall.net&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">$2a$10$44GwiA6ai0wxjzhFkeyjuO3kdVvmco8ReypH7H1tLsM2OrRFhe4CK</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="a93710a306ebb0c77aa7bec2722c111550fb3dabf775d661b0920a2a13758231"
+     data-nonce="5ae4fef8dbab6d181cecf263"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    d68073e8fee3de12e9bbac9648cc207bfbdd41cdf34ac456ecdf46f4b02a9a2695a6657d703c4ce073ac7df0267f7fd247cf3ae61479f63e889bee6e787decd493104eaafedff7277322bcc71d5fa779b26f1e51be4a1aae7e6e8fa7190e4a5e78caad27eca1b5055054b0b7af74a0ee8393b35c2a3a576f72d6c8d75e41101af8a53a2116f32f702e9df5000cc4a3266595b77e65875377520a37a7ccd8101125547585a680ef3c2483ccf58e24051d61130c79cb0f4129d336d1f86f96ce3379a26ef7f6842f24a4aa718e53292d137cb32e121323b186c70f1fb9b7216276e6bac4e813bd980e95ecb56dd75326298129c97179cc33bc9bb5aa8363be9dcfe7a26b222b791957a11a2c412067da94633aa51a8303dcb7a521ffa8be2818743197f04bba570c015fd3b26d8b5740424debd18bdf0390daf7c78be31b3bca154406227d24d1b328c69ad4ae1d7efa7723781ad9ef10534c1ff3d0d0c8a83b215ce8859839058dda5872f118f5cb1006480bab5e3e6b16140ccd24bad4c78108824dc73c4d7d0971acdcbc6893cd8c16bc316b2f64a225daa371bb4fec81c4d1b2397206ee00be9c98b63f9d490228376e9ba4cee28c8b16f5bc7294e45ce8752caad193c4e4053711ba4f112febd576fda2eeffe7a39c832c942e0953f65bf84c43b78a72850482d88d407e98b7fbe8aecdc99bb5ffd295b6954ca40034250735ca9f24adb7ff956f1ae1df7eac86913641b94e06cb86f6e47564babc8a6d4c25f90bf9333044da7e12b15a3acbe5aa6df3a4bdcf45bd1eef14f051f4a18bccfbab8af87d1302e1db3785bbc3e6bbfe8eccdd888c1a57b86e3163de9c675d6c5543e83b158aec824a8d2753c652eb58e22a2dfdd5b82fc21dd18392c3af0f596b939f73b84b9b35cea7258009867deac6694790fc8752e27a257dbb43e779d00f255b07f17c375c0524c8f36c9034621d5859ec075481ea171f29e0646937b1e9061aebc3a19d58800c5d62bc0bfc82aa87e035c686ef78f70c57cb354b01b1e733ed33d568eb5ac1aa7e1fede6fe3c1b03763a68f77c64d3122396da1a9ebc6b8d30bf4bce14a7626f6133fff05cdad9b7a3d3ab9d4b4b6f6836b3e8b11ae9c988ace688e525ab8a1b7ef8b330c6f207d6e96087648488beb9baae0c9a5ba3925a5fc87b5ec1d11138fbfa5f72fb4ccdd8f019d8c877e703f2577c641021b4b24978da7ca51b2dbe67f0f9767115abf55c75714862dc9c40db6f7f6a0428c5fa6e42a8fbe16cf2f60b146cfcf0110fe865d81decd0bf5ecf037bebba8c1507c4f2f172b139a7e4e4bc7602f9babd27b03f9b1987aae28f444f0d66ddbda17611c65b7a75d21a5f35b8c23aa70eb30b3887353855172a41c146a969cdfe691a02ef29a364f533945d416c69398b42853c3ff50d6068cc147d7a6c2d13aafdda320eee247edfc1c6b921509db32f6e4530d2c9428ce28d1cd04155dac2b298b8eb382e10d76d2df18cd55cca26a1929f3e735476dc2c372de756f87ea2fa075b1c493e393da2e4c19fa0788b69f91cd1e1e70a4aaa83c00c15d6ccc679288b47170ffcb1da4d30130ca2bd1a05a844e0155592f6b221ac515039de707ecfed53c993319fca26d2ca67aa4f557359c683031208f2ec50748a1ea342d0b3eb5c47480ee1deb011678e9cdc0db0872bf0b40f779591a36b5dfbcecbde485ffd80a367147f6b9f97efb52fd4e6c42ee6d0ad990d5acfea5f1b98c404f8c51434a42e289bca5d9c0ee83d25ebd4094ac8e08526a5015e085f37348203a833cc42bd93ff21d6a18bdb179ba668c784f14f0be5d165cc24eb2d8aecebcff633e614f7a65d81a139b742e5496c38ddbc9dc2c4bdbf60754fcfc77ed6cf278f9a542583d73efdd308f17d8f076b277230babbc8008437f4708637e928d99bdb048bbff130b024ed7d39263c9c2e4bc00e935b2ace19bf1d559830380215a7dc4ec28e9c82e776a72dcfcca02a7ceed00f5e2550915314fd8d9a5d52534813ba074f2d29b606141a84817d92b9ec75667045804d85e0b08740391c1e06205c9fd82c0b167d4488e721bb610621ce6eaa7d7ea42cc834e0ca7a59aecfdae5be2cc4b7fdf19439fa58d3e9e612a9526f00f2d0c85e94e021f303abd20c52ea11e9eed7945b63160ab7793bea24741ffff1359fda89d5e142e488c881e3cfdb87c195934096a1c2e3b10285ff0115746c67ef0dee9781451aaac3602d8112d5c4aaf4d67874c69a335025fb7fb761d5d70479b1bc18b0aa4ae10dc6ede21c33a8596de79519668a12837b61a1cc1a73fba8fece7f90a7e8424521b1155e65137aa406b1e9db8650d7ff3ab7d6d390503076678d8495e1f0a26c657ec42552563344c43457611a98358b31132643903d4b2873c49270216c15f4154934d31f7d062aa53a97bf089efc05001972f8a979e277269d6f73bc4799b8ef19cfa4b1083d30bf90f11d5c851cbb8201f82e2d97b70d258a0d61113cb0b3c43de153ea922e3a5b3ec8f18954a18b5a87b51d04105fb77af1ad57a6bbf90f8e0a217b40e7e6a103691da09d6b6c6dc640aa2ff94ccbf320618fbd15f7fe590af713303c8be7e47eaf8026ebc6e690987d6dbc37137ef4816b6126be2a26cd94ef285d67c9032b6f26a03081e62af659799cbae405344d17aeafe6a276608eff8d1251651b864323c0925dd47a193190c94a26c516959088bed599fbeeba4065b35154f9e0c7d0f1aec760c711e8cbb0af4708670607a62b4f7d059adf4a5aa3b9e523567ecb4748ba01226464a93a2aad4d7993e6aa5bcbabac80a7a52969a70df8c9d0ae3d0a5a1f93394ac1d483d87b464e92946886de0772b74d78f30026ba496c0caf2ff48030d01e4825e95c23c0f263981b6d1954d5ca89435a3b09ac15bda2a6d5f084cb7fa71cc65ad568853e3485e17964cbc8c5f4cd5375c334acdf699fdbda6d8777c14d13f6dc4409dbb57295c32d84892ebb4947bb0aa50a85fcd21a8ae5e03f8516e6e200736cef82161987aaf0c7848780723f4a146ec4f76a1d9fda6b36d6c5d8b8802f084af459f0571f25f45d00ab494f67a987eba162e2c694b4f8793fc2a4249a9eda87e385b8f86b2c9e2604945d49949c4bb8901418f655464282ae9221f3364257f2f647105774d65cd488f78a4ef0a6a382f73ed21b65687de8b2ca429f09d13fc017d9122c8e82ca29aa0aeb28f5447b3bcd7486c99ce75723090130be833a20c7882a8ea3279cc01e9a0e8ac4040e94e5a40a113f31ae1dfd587816689157f2f1987c0e5d998a9a31df4eda36e849156c063ef6a8ccd1101aee14b3a11361b61e161606f73a2c496bd8ac51f2e100aa1558eb00b43875df73a3db62b4db811c8c812ce34233223c3dd5b1e92378b3063b4ec825d4f7f9c162401d9ae2d3dc8b28c68b6bcc64634eda2b522c20b4c4d9b2a170717ae2739b1719cba9ccdaf666d053631d84dfebd37de8b9b507c3296e90166e157284400f325800f9b084153def7ee0c931d2a0c7456c861964a16258289d4e80f0540642ac499bc4574f2486fecfb533eda44bdd800ab34c42a84fa751372581967703478e588663ba0926fa125e29da104b15c634c011af7f44866efec025f25778103ae3db9ba3839de91a810fea97bfd45be2a2172ef9d15ad3dba722abd186b4aaff1a6e92dd08118f95cac4ca53ec00ed4dd99de5c2db0566b89be3198d9e74d6880cb903b8718a60c2923c7c7b58a746a6ac7c9456befac44b2da56fdbd3bd7fccc133c666c89f57a9b0bda3ee594221e2104c6e376b9a66c4514f35b7c5d7aa15c67f678aa3a00c993fd2c68552a00ec9aa78185f76b163c32f4077e946b7560391ece573b1aaae2d0f031b92cb76e7ba7d4de0b66ca46871a813d75edf70b4afc13a36ea7e30eb09163bcfaa18699d75729442566cad4647ae386d5c2b9ab6b6fd8d38549ad9f202adc7d1bed1dc86568f269e2add7419f3be76a5376a5f3ce14e89e541fc1013371d9b8ac7a5b4cff02b9fe84b739ee96732860434396f7e01b21e44a2459497fd6521170a276ae41644c3dfd8f5bb20368cedf50737b2eb1b90293eb91b50cb6555b211bc04aacc59f90dda33b83c74510b9d4e99ce785bc6f801e63dd851ea18b58a9087aa47f80acd5e67ffc2efee706acc5f8c9b23058e409d6d0bcebc227fa120dee52c8831bce2486c5bf8ae7e48bc1319f0f49ec82d05e9590726f20d77e9b175245a0474435677ea759b146a905af014397c783dc0aa60f1514c0178df9d78d9a70a482b505472b3228f2305eea3a666be20229de1e88a0affaa286f09bce94fc7f10396ee4803d44f8936104f1af4278ce053ae9e7b31a459103aae317059a0fd72d27c984da1a3312dc2539acae5dfee31b73a61305b03e9e225f9057bb0b067cc16856b5d2baf2086776faa9394c59b22eefa5d5035fda2f80fb97947c4f1a9451fa56413e9f547d0cc379613f4c584bb7961a5b4f5b69e309c1229b3435fbbc73ce3bd5f682b0fbe97ab8a4e6c22c5cda36ef22ba02ae508f489fad519097763c3b6f4bc90a5b5f3982e30017873d56aae608b3bb73239db87a8b4e1ed91d12b1dff4f0114fc707e7f4e81f199a657bec9546738016429cccc1c0fd8c027be6fec33862c355fbf6d972f6442bf7b293e0816ebc385a74e007fa2bf6e98001588c1307ab2f2f258eab86b66871b14c2409ec9caada4f44f31a9cc399708cbc7657c0ec8047044651e93ff7ac99da848ec4483969322e45784fb25d7bec824c236fa186e1e8e339ef651c3aaa3e088c6f78a6643cf045671b1821f910ff58a3fb6f5cfd43f3d7bef7fcf5129503b7797606a1b314aed9146d39b17f9a914d3cde9511ce215b580e1bc492199810257261830105ba46b407f375eb1efd7aded57219e400211a84be97c7f19c3a0c0b020484faf071b5108c54febb84306ee10b35d0ca8f96cb5b8468b255f3706ded4d7a6d65247814364d9826412b1815d108916245a283a53694ac8dda385378da0d98f0abb48e25a4d494171ab76c6a3beb67ffb86f55d8c84b2bdccf0671e28c1c74229b2714111ead3926704ee89cf8d0512e98b020d0727d615e4dd3d5ba95d860c8658ec3268ed2e163e6a4a3c6e76b0c3978e7768a1eb0edfb78a17b58fae46e5fb8889628b141da3ef532a5d54d9ea617409ff2a5fb77c9e4602233068e23ce4692ada60a98b237481f6ee1e4fadfbf18fa624c009b0c08d9928e3ae6e8800bd4bd0dc400b493b00ab5e8e901242c4634de70489b57ae7d1b7d05ba6da2d619d716cd4b1db3752690ab6838fff0d2165e5f2e8bc3c8ef087a57e53fe1b40dd8c62067448db9f3f10fa9111a6cb25e54a1b9e922c3126c31fdae5ff76c45d47071c14f280f0c724def3779dc73c1ae26f76a14b0e538d7d789a2e245b0fa435bedabb4373ef822afa4be8952d6050d420981366bf2a374a85bde3a6bc81f0c3287af9d3981e1e59d16cc6a77ca3d7c3e1466fa83c0e4d0fece8f8a1941f9699f6f0194338
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -427,6 +431,7 @@ hash of user solution.</p>
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
               <a href="/tags/web/" rel="tag"><i class="fa fa-tag"></i> web</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
               <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/rails/" rel="tag"><i class="fa fa-tag"></i> rails</a>
           </div>

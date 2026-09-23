@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge 利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。 1echo &quot;&lt;a href&#x3D;&#x27;http:&#x2F;&#x2F;&quot;.htmlspecialchars(Common::getPost(&#x27;input&#x27;)).&quot;&#x27;&gt;Exploit Me&lt;&#x2F;a&gt;&quot;; Solution 漏洞分">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - htmlspecialchars">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-htmlspecialchars/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge 利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。 1echo &quot;&lt;a href&#x3D;&#x27;http:&#x2F;&#x2F;&quot;.htmlspecialchars(Common::getPost(&#x27;input&#x27;)).&quot;&#x27;&gt;Exploit Me&lt;&#x2F;a&gt;&quot;; Solution 漏洞分">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-05T10:22:39.000Z">
-<meta property="article:modified_time" content="2026-09-15T02:13:03.554Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.169Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta property="article:tag" content="xss">
@@ -208,7 +209,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -221,7 +222,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -242,12 +242,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -320,7 +320,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 10:13:03" itemprop="dateModified" datetime="2026-09-15T10:13:03+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -362,39 +362,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>利用一行有 XSS 漏洞的 PHP 代码。目标是找到漏洞点并提交修复方案。</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>)).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p><strong>漏洞分析</strong>: <code>htmlspecialchars()</code>
-的默认模式是 <code>ENT_COMPAT</code>，只转义双引号 <code>"</code>（转为
-<code>&amp;quot;</code>），不转义单引号 <code>'</code>。而 href
-属性值恰好用单引号包裹，因此可以通过单引号逃逸出属性值，注入 XSS
-事件。</p>
-<p><strong>第一步：漏洞利用</strong>:</p>
-<p>在 input 中输入一个单引号闭合 href，然后注入事件处理属性:</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27; onmouseover=&#x27;alert(1)</span><br></pre></td></tr></table></figure>
-<p>生成的 HTML:</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&#x27;http://&#x27;</span> <span class="attr">onmouseover</span>=<span class="string">&#x27;alert(1)&#x27;</span>&gt;</span>Exploit Me<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>注意三个单引号的闭合逻辑： - <code>href='http://</code> 为 HTML
-模板的开头部分 - 第一个 <code>'</code> 闭合了 href 的起始单引号 -
-<code>onmouseover='alert(1)'</code> 被解析为新的 HTML 属性 - 最后的
-<code>'&gt;</code> 会落在属性值的单引号后面（不闭合也不影响渲染）</p>
-<p>悬停在链接上就会触发 <code>onmouseover</code>。在 WeChall
-自己的测试页面里，鼠标悬停就能看到 alert 弹窗。</p>
-<p><strong>第二步：修复</strong>:</p>
-<p>给 <code>htmlspecialchars()</code> 加上 <code>ENT_QUOTES</code>
-标志，使单引号也被转义：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;a href=&#x27;http://&quot;</span>.<span class="title function_ invoke__">htmlspecialchars</span>(<span class="title class_">Common</span>::<span class="title function_ invoke__">getPost</span>(<span class="string">&#x27;input&#x27;</span>), ENT_QUOTES).<span class="string">&quot;&#x27;&gt;Exploit Me&lt;/a&gt;&quot;</span>;</span><br></pre></td></tr></table></figure>
-<p>加上 <code>ENT_QUOTES</code> 后，输入 <code>'</code> 会被转为
-<code>&amp;#039;</code>，无法再逃逸 href 属性。</p>
-<p><strong>提交方式</strong>: POST 到
-<code>htmlspecialchars.php</code>，字段名为 <code>solution</code>（不是
-<code>answer</code>），<code>cmd=Submit</code>。需要 CSRF token。</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">echo
-<a href='http://.htmlspecialchars(Common::getPost(input), ENT_QUOTES).'>Exploit
-Me</a>;</span></span>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="36cdecb15986a2c136b44511168e321a43e0eb60dec0dd37ec200473de96717e"
+     data-nonce="fdaf8f16f34db4488112aead"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    a44fdd41c1b36fc195a333c3868357fc58a8ede7999199cb09e36f1bda426c08f8c1d68858cba3d9df829270edf470593b7cfba0f296b5eb3a61626902280b55b8b36f3abd9e55ab7a5e92b87db43229e1124df5ca60a2f2d77d74a4c18b3ca117b75ca0b8a740298de4e68cd3e25b25e83da54b2cb3bcba3d5a0ee274babfb50c2e4dd862b18119866c81bc8f22a1885fc300d69025a4ae6d311fe7e5331a41d253081a6c52e07c7d5bcf8a770fd7bf4da68d2a815da9becc5a4c4e76761c107234c8c75f0ee547b3510d9528ab9e3c1656c419bbb4da9cb189ed3e9673f6835440a1252dad6c1b37416a01dc9d0ea92e98e2ab1fc54c36429dfeeb7ddc6852e6a63d8b331beffd9b8a101526c6d0dd655a60f26061649f50ae879eb9003449c0145e46226bdfe6d3e99092a965d1ea1a693d5e8834f2d27ee90ce2800b852aeb799d3d440ccdc0c522dabd128aa8daf33e41572ed3b60c1008236325a9340ccd30c70a8e7c87e7d05c2983e6dc2cac8da529893e9864eba82fc69d2a80c0ef8757e7086245d9db5e8813f93db85338148e02a54d68d948bad99cb2358a7c0bc91ffba07fb2aa2c6a73297168c4d1d5ebf8c12e5a0d9bc712c779e3016831d522fb51f07def1261c50c2ced1daad6d1f7c0a9b013db5370f44ab6e321c30da9dfc4bae02eae7227f5e05e354c38706ed417713f26ced4ea440f222b0bc18f8c138028a021b17017a424fe4c3fadec9085cdec5c8923b20bb82f6362a44cda311ad9944ebd9e8be1d375722ade7044898c355dc30f893f020bf7d5d398fec48617d46723a742652d22a1b3b5c67d7cf67f3f373ff464588f856fcfd206df25cc58f5c54c0874ec44e04e6a09271cb7b77c174f0beac18788259cc366502dd89bdd866b467b296584215f2012f5e9ff84e8c661dae8371862d6ba0eb97dea3e37ae7c5f86ac6668295a5cd556a55cb3f55228113c94a1bd2a25ebf7ca80ccc0d37a20ad891f17746f7caff7f692126474e6da488013797d6c00bd315b9d671683927458a15b263393c27bc2b89e46c0689bae9b2d77befd02b093602ca04ce9439c4b648280688a63b2444f804d02095e0a99d6e2d0d3711c47c19bf370563bebd2cb042bf1b8e5db212646bc427a27d72dd3f83de028754848c74471345894d2278a5bcaa65d8a0db30853462288aaf43cb908ef7c5bae1ad4fa669927e7c1225e649b6582ad0dec4569cf43ad156ae281e8789dcfa6c54d5a2a821600f28d9dcde31ef4e0f80e53c84a80ab150f16b3dad62231c9de01c512e4f502f7f3b7902d9d9ceec9475b4842ec7a0e6e12e47d6120446d46366023daa4a085a97aa93ce37f23c32df358920dcab5a953d2a549e5bd3f751719351c2c8316ed1ba0b60136a71fcabebcbaeb706b08c55478742e88db64c9e4e3d8c34acfff0909724e3ad81763362220b6c8ea19f0681c212dae2a02e8d8e28efbdd501811ad8100721d556e882ddc8715cd6ef06e3776e1f460007f3063338a2423a32582c733897cfea5566691f9d712690a4bb8633818e7f7eeff3b745af77c9f247bc840f6eb69d03ca8730106d579090d44b4bc8c6e1b251ae4be6a3d6061d1ce7e015d64cc8d5107a9882d80939fb36e60cd6fd13254d59c1ae45d21e37ed2ae6830bf8cb959114c6ba6f747db897eadb1c69f2c42fd29714dfd686e06a3cbb0d601efd56a0fabc25969ab64a6fd74e0a3fd79681d514b0fa4e7a8c545d288b7cfdd5b49eb4b9adc5e90c44dcdd40a38eca21f0173da353ffa9598145e6c079ff1c8fbc27f14040c655463abfecafbbce6e2d943defbdcd8d69c470879c1970b3547f3edf7c76eaf5e20876e01e09bd973fb245f0e0bb0d798fea6928fb317c046b32dd3c1281ff63b023fe67804b944c71e07132c4d14e785e28c222b53b37730d10fc6a5b9a0d430e9f74a3c3c7e881b59da8169469fe784b184a9e3af3ef641812f424178faa110f00167ace60278cd39fca262f41386ad54b44a636553b9b32cbc1972bc54cb07f04f7fa7b52f68abd07ef071d77bccb21624dcb9cc620318dad86432135134156415b2c72efa7da27cd52aa1e0eae0dd731d00710dc654cb9c0bade009290d1f6aecef05fc8a69cd63da7dbd28b6bb289955fda8544408546ed3f8a40cdaa5152ef09f92b28f912ce606409ffe50a78e9e23ee4a76d6ee4a1309536603ebe9e25ca132a5e806206d94487aa30ade77f886eb71004de33c76b2d408a5c6435d48dc8a13c65221975c06d966f05d3a9a0cf4772f4d9b75d2d7834cd5499e2de6b9e692fb661def6d9fae613817640908089f24e8bcf264a2bc9cc42c346e78615b5e7499af5d8738e8a4f91810ca96abd066a6b52fc5c6ee40ea776ddc1194ed88042d1dc776f32da12cc6c88ab544b3a884d7bff04ffd474002e9f59da7f7e30e5f4b9cb1d4b17fc4bcf588cfe9495f17da140cd9b90ecfba5c0ff69ecd531d533ea32731a111fc597604c9ffac4cb621487f08004e09335a9a3661a1931375744412ceb0d76fe18308fe27eb528b0173608a7cd046a61d1db21a771efcb02e856c1630a31a0cd2b92ff65ed139f01711334c74a94f1add36b2887883b60ed38e2987ffdcb57764ef7044fc8751c6d4b8c2d04502ec50970797ea3dad67e03ed61178ac35eca74e1ab5c27c099e78fe083203e71ec17a572ba5be55103213a8d817f4a533e748280fb502c4e52771e3c96c100ca48b4a0830130bd0d2b059c1eea72d41c8469226de42588ca7b27da17f5d9abf285715c6ccc5169aed580bbae4c73e6d271448d8f13c430820f95f78bfb2af8e34dd830b110a5df7b1bb5d159209c14dfa1300725510db461d43a9c3435da67e79432c78ca71459ad4b383c57d8a00c5c66db91a9acc44a4713ecf2a025d4cbf0d3bb3ff5b94f46587a920338c3aab1177b95f66e9b34a1e15bcc0570bdbd70c144139396dc9287f07b8db872d248fadd2913297e31384a076008dc3abb2e719565e28eea56000fe00f32b8700c8835c900da32fd2e9479b3ffaad50245ff173e9c52fdca18508f6e91a29880a3f386f16bbba260d478614344b1ba44147ae40a369d96708a75c15f534ab24d53ae97fa9f0c108c98a2b8571c6eea41b54adbfcf64b8650f3cc94df039ca584189c8bfca33ba069c4be15879ead7ec08f84c95a3d76661909720e7f567eb2762fc24bb41945be6305f4cf60ae91590386e5c4c4890365843d79319acd87a3c151a92fe3cdd3dee7d3465d6f60a7e7de4740d117ee605500aed81927d9b5508bdcfc9221caa52260b85c261fb89d11ee726587fb552f7c043df7af9c1afb75592a13c9c73cb8e1f9ea03611285426a34eff8f47057514f308bdc9f9d841e2ebf485bb02f57201574480b3e63baa4196604cced7b804dd576a73b8bf0f81723a5f314b2c5447b831439de2cbc4335ffddb07ae37989a011a5bd5f21d6c3d87eb17788195bab9d2b2cf24407e60220bb8489a7d04d90c325cc2c11c0cc32ae08ca649c828c0030ea81a480023fd4cf4ff48290593a86145832d1b103125822133cd7e3e9d115eb208773e550c258481594d91a8f71a74791008599f1961a8bdaca8ac49efd740562ab8f2e46a70b5c0151f4517dd1852db304ae997d31e65ca1636bf70cedc8bae747f996d0a824c489c3690aca13dcb40cbacf312c8f32c47662ff675b7d69c6a96f05941a9f8d40659ed418835379693ce584fb7d0dfc110c3a1f4631e1ac729ffa8742a861edf17d83c0eefe6793e58c300971128d3b5267fab6a290f9754de69f3a018ae7c3c54d99debed0da4d31da00d9f968870c5af5cd296a9aba1d7d1c838b9e448a103bb43040fe1757102d1b328b5b2e39b5eae81709669af2f5bb68cfaea43a9de2bebc3218d37a1e4cbda063bd5b6b30625e6aef32cf8b4c3ab6a24005161a2264934541724ffd958a41b0c626dd4be37b30c72cb616a8c55e37cf669f4ffa716763c306f80d63abb93922a94a5e7072564ba814fba5752c90b0982b755597694068b9a2f3bfb467fffcd44163c6bf666a77334bc7f272eb3267d452eb5ac02ad94d80575c75ece90a14f997a25ee522c9c938ea399b031384d47d2a42ab950effeb0fe3e938e35de05b9b908f88cf7b02090a8c4976dc19332d01c9bac3f81bc01ece62d157c962859c1c83880375ffb030fa022a86973ee47e44ec130551a481c1e589fd2dbc5982c2f9bb0b0159856c6bc012c168848643007e75d3fdee790ada7c88d3379a7996d6b4b47a4043ea80fd105322df55e5dcdf785341044048f5784485e3173f0c2216a4b44420f8ca92e83c8a54c3ba056941ff529fe88c8c55663d78ceaefa0378399402914e563e3e411431247ec0977b179d414fcc82263250d4f9cf17078dae82425ca9729703b10d2f13124bfdd9ad4df4d428585c8f8c084e6724a6226c1c91aaebd29a739cdb51ba24fed91802755ed6d0e8b4db09c0fc131d1c77c8da7a14baf098083c63c7bc093a824ac57e01b5aae45dc4c90390eed6a2104605ab8bac5489f1bab52eb6e30be24b262e353ffe931ee1c3ce0b35ac07caca36645a8285b9eeaa95011fc8447010b67df7f546b29ec599fff06a6f5c63dcbd1956a8d89eea06aeaafbeb78178b66b2e01b755d4b7fd073f25dbc3b6a7e4a94c1aeb16e967baaf1e14a11495adbc5d0d88726f632284885bb71b2280a1c2fcf869930f81e9d8146f3d2ed96ccc63555f85d671b42d99d40d1e89fae13c6206dbb55c9404c2e77c1ae72d76451192eba1ebbbb6e347e83071124585a8ab7bf8642c70b42e14855e046b84d8d417b974624dea840e51ae1f7edec6b2008e1f2195d47ea42b5d3ab37b40ca2b8070f34818e3b3acd06ea98788371dfd416e1da90f745cc01ffc4d1c92b29525dd239de747b149b26ece5e3ade963b8ec659a389bd9eafe751d42d9dffba8d8a99ede866bd48efa135043e50ce6c04efb5c19686d357783141f533c79ae1d2172b2c3dbc17d386c4e75aea036bad91a28059321e363acd7f037cbe7ff6ee97fc656b4a7431ec5951750ff9edae614046cc9203ef13adce666f9f518f20e9fa3e19d67fe6093f86a337ae86fed2e8847ddca6685124d287d9c8516e97c5f12496fac3e4e5853ebedaa45de68cd294a365c9e5638cd940cfdcb8076fd7f92b2cf07fc62ccc458577c256b1ed1554e2b8922ab9cc504c3b3ecaf1e330fd07c17406a6da913d0d542746849fc5
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -439,9 +431,10 @@ Me</a>;</span></span>
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
-              <a href="/tags/xss/" rel="tag"><i class="fa fa-tag"></i> xss</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/xss/" rel="tag"><i class="fa fa-tag"></i> xss</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>
 

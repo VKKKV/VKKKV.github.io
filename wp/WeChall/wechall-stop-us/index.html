@@ -22,19 +22,20 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.27.0","exturl":true,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":false,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="https://cdn.jsdelivr.net/npm/hexo-theme-next@8.27.0/source/js/config.min.js" defer></script>
 
-    <meta name="description" content="Challenge Noother 写了一个卖 .xyz domain 的 PHP 小站。目标是找到漏洞，不花钱完成购买。 Solution purchaseDomain() 和 reduceMoney() 之间有约 6 秒间隙（三次 nooth_message() 各 sleep 2 秒）。PHP 默认 ignore_user_abort &#x3D; false，客户端断开连接后，PHP 在 sleep">
+    <meta name="description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="WeChall - Stop us">
 <meta property="og:url" content="https://vkkkv.github.io/wp/WeChall/wechall-stop-us/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge Noother 写了一个卖 .xyz domain 的 PHP 小站。目标是找到漏洞，不花钱完成购买。 Solution purchaseDomain() 和 reduceMoney() 之间有约 6 秒间隙（三次 nooth_message() 各 sleep 2 秒）。PHP 默认 ignore_user_abort &#x3D; false，客户端断开连接后，PHP 在 sleep">
+<meta property="og:description" content="Here&#39;s something encrypted, password is required to continue reading.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-06-13T11:49:28.000Z">
-<meta property="article:modified_time" content="2026-09-15T01:54:43.820Z">
+<meta property="article:modified_time" content="2026-09-23T06:59:49.175Z">
 <meta property="article:author" content="vkkkv">
 <meta property="article:tag" content="ctf">
 <meta property="article:tag" content="exploit">
 <meta property="article:tag" content="php">
+<meta property="article:tag" content="restricted-wechall">
 <meta property="article:tag" content="wechall">
 <meta property="article:tag" content="writeup">
 <meta name="twitter:card" content="summary">
@@ -207,7 +208,7 @@ p.spoiler {
   
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+    <div class="sidebar-inner sidebar-overview-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -220,7 +221,6 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">2.</span> <span class="nav-text">Solution</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -241,12 +241,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -319,7 +319,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-15 09:54:43" itemprop="dateModified" datetime="2026-09-15T09:54:43+08:00">2026-09-15</time>
+      <time title="Modified: 2026-09-23 14:59:49" itemprop="dateModified" datetime="2026-09-23T14:59:49+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -361,35 +361,31 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
-<p>Noother 写了一个卖 <code>.xyz</code> domain 的 PHP
-小站。目标是找到漏洞，不花钱完成购买。</p>
-<h3 id="solution">Solution</h3>
-<p><code>purchaseDomain()</code> 和 <code>reduceMoney()</code> 之间有约
-6 秒间隙（三次 <code>nooth_message()</code> 各 sleep 2 秒）。PHP 默认
-<code>ignore_user_abort = false</code>，客户端断开连接后，PHP 在 sleep
-间隙检测到中止并终止脚本。利用这个窗口可以让
-<code>purchaseDomain()</code> 提交但 <code>reduceMoney()</code>
-被跳过。</p>
-<p><strong>利用步骤：</strong></p>
-<ol type="1">
-<li>加载余额：<code>?load=balance</code>（+$10，+1 funding）</li>
-<li>等 timeout 结束（45 秒 cooldown）</li>
-<li>发送购买请求，curl 设置 <code>--max-time 12</code>：请求约 12s
-后被切断，此时 <code>purchaseDomain()</code> 已执行（domains+1，money
-未扣）但 <code>reduceMoney()</code> 未执行</li>
-<li>再等一次 timeout
-结束，发一次<strong>正常购买</strong>（不切断）</li>
-<li>此时 fundings=1，domains=2，条件 <code>fundings &lt; domains</code>
-触发，自动解决</li>
-</ol>
-<p>关键源码逻辑：</p>
-<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">noothtable::<span class="title function_ invoke__">purchaseDomain</span>(<span class="variable">$sid</span>);   <span class="comment">// domains=domains+1 WHERE money&gt;=price</span></span><br><span class="line"><span class="comment">// ~6s sleep via nooth_message()</span></span><br><span class="line">noothtable::<span class="title function_ invoke__">reduceMoney</span>(<span class="variable">$sid</span>, <span class="variable">$price</span>); <span class="comment">// money=money-price</span></span><br><span class="line"><span class="comment">// 随后检查 fundings &lt; domains</span></span><br></pre></td></tr></table></figure>
-<p>注意第二步必须是正常购买：如果第二次也切断，domains 只+1 但
-fundings=1，条件仍然 fundings &gt;= domains。只有
-<code>purchaseDomain</code> 成功两次而 <code>reduceMoney</code>
-只执行一次，才能制造差值。</p>
-
+    <div class="post-body" itemprop="articleBody"><div class="hbe hbe-container" id="hexo-blog-encrypt"
+     data-hbe-format="4"
+     data-wpm="Oh, this is an invalid password. Check and try again, please."
+     data-whm="Oh, this is an invalid password. Check and try again, please."
+     data-salt="8d452855cce2bf2b6a4fcd4e97aa739064ac2b665226b2aadee17caae8a86839"
+     data-nonce="ffcd500eeac992b93eeb4f83"
+     data-kdf-iterations="600000"
+     data-auto-save="false">
+  <script id="hbeData" type="hbeData">
+    e0e56667ea5053ce72b859907d61638b168ec88d8bb0b2ec4d74087ec30e14a0ad9bd61e345c332cb1605a5ca086abf12d4ddfc3ce324965b3b55ef1c9d8b793d3103cdc40aa6bffb65b4f2e30858996de041c605d16e24177fda615ad9ced51ca9d85f9327baa4ae8ce57730ab5e56e199e44ed38f95a49aea1495c4fef14cb8406320a57de4dd2a422b8a7708f63a1e967a2c388f85f01eddcd358b0de99d4b8be25c154fb24d632a1ea33d53d27f842ac89e630b2e9d309d8a740bb9c83b803df8facac37ddc62cbf2b61921c79fccec4884cad8516d4b6ad7f1d6d9cac41d233110a1070d189cef422fc9f3e6f2ad95942a578240088981ea1585fae480c141acf2a0a245723595ab82ff96fd7f32fe12280a840113f999260d9fdebddb14bccaad3f2ab07af5efa2841a2d3bba6076202955d6fe4db54ac1578ed270820383f97b526b3b0d7e6377e21cd2b95cf3c480617c9da6b36b3268c3e378757520323675e85510c79b177d45c9464907dfa7e96f8cd6cb2b77fb489df0164bceec32f21689d36b2ffe782270e3b45b28f400bd7019ab6bca6b9fddf0448ae0ea9aad22bc1f1f40d77b013e6c92f4b6e2d1945a45f6ac9ee22c8daf618ebe870f7e0b08e64162098f2b8af692c6b7f3d480b8842a1587476f2e4d2a5cc7cfe901d6d8913a75f0a51ec86a6b0d72e3dbff90b98a83d636ae91733419f94d1ad97cfe675a37fd1e4661739cbfa1cc5e4d9ba23503204811bec9aa05f943548a5000d32f3e432f820ac39680ef47501b517d99b07b1b82294ae383133c544e75a506fe9b105071641f6fa5f793e15ec1139dece97e1125e54f94193aa073a89a9110a31bf9925363eb509641f4c149d21b8dc0243765e487a35690bf3825d75e3ee95d98140f469e033926e0212aed1b5c928590d95292446fb1ac22b9d4dc2b845dc663cf492c236df75b4086bc8827e798d081d1a796bccf79bf215cd65269722a0459acce3a2e2eaed1bb4cc75058bfb422ebec7354739683c798642fad69f2dd3cf94b710872143addb23236b8883e256b64ab88ea89ff99bb304fe1b8d31c55f706328f6f6f354f115cf0ef7e79f80509d37f4f7f566cd230a68fc407ce430584e65cbff4dd3afb3042b8f13e715c7b53baa85f17fa39e3a731644b691ca7d0a859f1ded4942f0bec3f5f57c99fa14bdb07ee649c39555fefb49ff7808440034dd351db8f9e8fef6dc490bac58547a49208e2f69dbe789a5c64c460d27c622831e519c78c02f3ead2e88434262b39e5b8bceedffd498ebe6b29f1d275364d75f0d2461a14b0ba70f70d72a137e0950d8158a09a6fe44df6c4a0717bbba5aa2c1e32a03383327d8a7301571d4716a1d47b5796ed0b076fceaf9e653697cf7d5af7c70a9b845c187fd33791d6ee99d7f594768187f1e7ffd7fc22ac8b95d0fef7bc1b02fd463657dfe791aa0be268923d113486314052933ef67cf210181c70ffb18143e808f44cb53a8c0aaeb7181c9ee8063f63d1a762c3eb46521f0252dca900997bfcaee00971b1e51c1a3a4c471af65fcb3adabedcbffe401e2fe4c31decee7a960380d90fe12b2d734e4830246d63d8f9602e267b005a2b4a92baae7d48b6af6f4dc6b2ce50515ea65b25dbf2e7f5b1c8a189a389e81e6c4c0117b6aaf06ec6a36517ef2316f49cd90e43e2561c00c2ed7d6315fe7078c45b72774971b8d9b12459413b48420a8b28bf4eff381374e18f80b3adcc71756705a8f92ef1ce0e8e747955cb57a91f98eef326b8c30b64c7ef7a23a6e4d1b05b6e475511f218cee26eca209710ed89ca7de3658a48f4c1fce6a467eb3dc5ac8da56f41cca83e25423b5579075f2fbe8f3454ef1338fac530eaa0751ea0144585a478d3bc1947333d6a9907fee6ed970c58e5fa9adaf48f5ba564a4639fb34c3b74f3a74acdb6365cb2b5b8fc0f2a1e949730993efb19655a82319e184071d69698304a51fa561c490efc9a1a6fe3a535d48ded39eb9543da208af55bbaa2e94de9889fe1d6befa14dd13da704d4f3b3655b08ec577b44cc2c846ab6cee2cf53cab99ab54d1fbaced86de3b4a5bc1b6501066135eda26315f1ae3efeffa867c75505b3625bcf30714c9fef76394dee9f9ea69a1cc398cb73423a55bc7e51e9862d4b86fa75a9ae8ce0657437c800590beb7a30487975c14715b84e2ff25f9e221d0f327c1732e79e56636eb98684290c126e54c3029451709c095af3629cd123d29f881b2142ade03b6e2b7a3cb45b1b06faf72c0cc699edd090dcb98f702203d128eb150a6e54d599c6fc4398aa96d904710135a69886db769063adb216d4b61c74dd9c6fdac76b45d8886cbb57a31138c8e7c1a51e58c0b375cae8c4359e6a3fe24a39507db9fdf12018dc38980fff8368017bbbd4125be8f2fcbeb03511e9dce06e610bcd2b81bf0e79504cf623682ed0b58263ba7a40dbf6f89297320fabecf2eb776c2c778cd273192fa47b9e4b7352637d31c8a751c55a5917eb1f3c27fe1e81c874fedba194c175ddc2261db747827d39fcfc5a4dc89c86ccbcac29e348758c244900a77fb52fef5c5a5b6d50931db847d0f8e26fa150a284579a823f85c334c7769c74e7fb4f6f777c82da19744c98a5f4757f18d1699a15e2d09f9d70984be2c013fcd19804811770310ad9e05d754ec89787ad356bd49416d690177dc6f7a57d6ac5c055703ac7bc43ec989e63f0eef86ec5c1271ecd411823f588a5897f7ef34962aed21dedd0c463b553893d8f633881a333ea84390f26ff623c8feb764900137efe9f53bd06a94e7a59997697a3dad1dad83311d7aedec531265fb37ec7feba8456666c77d33f09e500bdfe81339e73aa2fedd2082cf91a45fdf1cd1c339414fb1d35cf8ceed1e94898c4a0d7fea45b4d07e3c2cf6ea8bfd1556c150dd29e9a1eb382c42b7db846e5d9999f00724bd603a80fbeba5f99d7dde77a7acb92f20dba26cfabed86f88f49b839ba22ab507911c4ee2c4f4fb994f363f0e771756c2ac9b5223a68bf8af92e422a9b3b6d8b70a93f64b988dd55419428d551db15e27558cde6f4b1f282d11b37147a89e267e3d280ece33f101165ce0f87cb6b64f2ad87293b0f9f2e4c5dee8c0cad25647f677b4546457848577f45dfbd12e92b7852980325e59ea0dc67b4b12032add36c25859ea3262bffde241356c7fef92fe9bbb7f9170be862eda4ab224ed60a13e2dfb24fc0dbacb7b8b999f8646f2bcce712dd8e7261595e849e58fe7ac2c3c21014a01cbfa8e53187c2d0c89abb32657c3fa6212c78c2b373d91282ca484669561aadc6a8d8a9eb5e7f3aff
+  </script>
+  <div class="hbe hbe-content">
+    <form id="hbeForm" class="hbe hbe-form" onsubmit="return false">
+      <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">Hey, password is required here.</span>
+      </label>
+    </div>
+      <button class="hbe hbe-button" type="submit">Decrypt</button>
+      <div class="hbe hbe-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.51dd9f3b98.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
     </div>
 
     
@@ -434,8 +430,9 @@ fundings=1，条件仍然 fundings &gt;= domains。只有
           <div class="post-tags">
               <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
               <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
-              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/php/" rel="tag"><i class="fa fa-tag"></i> php</a>
+              <a href="/tags/restricted-wechall/" rel="tag"><i class="fa fa-tag"></i> restricted-wechall</a>
+              <a href="/tags/wechall/" rel="tag"><i class="fa fa-tag"></i> wechall</a>
               <a href="/tags/exploit/" rel="tag"><i class="fa fa-tag"></i> exploit</a>
           </div>
 

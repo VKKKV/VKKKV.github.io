@@ -240,12 +240,12 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">370</span>
+        <span class="site-state-item-count">328</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -317,7 +317,7 @@ p.spoiler {
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-13 16:09:26" itemprop="dateModified" datetime="2026-09-13T16:09:26+08:00">2026-09-13</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -410,7 +410,7 @@ decrypt the traffic using the zeroed key:</p>
 the packets using the zeroed Temporal Key.</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.backends <span class="keyword">import</span> default_backend</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives.ciphers <span class="keyword">import</span> Cipher, algorithms, modes</span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> rdpcap</span><br><span class="line"><span class="keyword">from</span> scapy.layers.dot11 <span class="keyword">import</span> Dot11, Dot11CCMP, Dot11QoS</span><br><span class="line"></span><br><span class="line">PCAP_FILE = <span class="string">&quot;~/Downloads/00ps.pcap&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack_temporal_zeros</span>(<span class="params">pcap_file</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Parsing <span class="subst">&#123;pcap_file&#125;</span>...&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        packets = rdpcap(pcap_file)</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[!] File error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># CVE-2017-13077 (KRACK): The bug forces the TK (Temporal Key) to all zeros.</span></span><br><span class="line">    tk_all_zeros = <span class="string">b&quot;\x00&quot;</span> * <span class="number">16</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> idx, pkt <span class="keyword">in</span> <span class="built_in">enumerate</span>(packets):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> pkt.haslayer(Dot11CCMP):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        ccmp = pkt[Dot11CCMP]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 1. Extract Packet Number (PN), 6 bytes</span></span><br><span class="line">        pn = <span class="built_in">bytes</span>([ccmp.PN5, ccmp.PN4, ccmp.PN3, ccmp.PN2, ccmp.PN1, ccmp.PN0])</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 2. Extract Transmitter Address (A2), 6 bytes</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            mac_a2 = binascii.unhexlify(pkt[Dot11].addr2.replace(<span class="string">&quot;:&quot;</span>, <span class="string">&quot;&quot;</span>))</span><br><span class="line">        <span class="keyword">except</span> AttributeError:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 3. Extract QoS Priority (TID)</span></span><br><span class="line">        priority = <span class="string">b&quot;\x00&quot;</span></span><br><span class="line">        <span class="keyword">if</span> pkt.haslayer(Dot11QoS):</span><br><span class="line">            tid = pkt[Dot11QoS].TID &amp; <span class="number">0x0F</span></span><br><span class="line">            priority = <span class="built_in">bytes</span>([tid])</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 4. Construct 13-byte CCM Nonce</span></span><br><span class="line">        <span class="comment"># Nonce = Priority (1 byte) + MAC A2 (6 bytes) + PN (6 bytes)</span></span><br><span class="line">        nonce = priority + mac_a2 + pn</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 5. Assemble CTR Initial Vector (16 bytes)</span></span><br><span class="line">        <span class="comment"># Flags (0x01) + Nonce (13 bytes) + Counter (0x0001)</span></span><br><span class="line">        iv = <span class="string">b&quot;\x01&quot;</span> + nonce + <span class="string">b&quot;\x00\x01&quot;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 6. Decrypt using AES-CTR (Bypassing MIC check for speed/simplicity)</span></span><br><span class="line">        cipher = Cipher(</span><br><span class="line">            algorithms.AES(tk_all_zeros), modes.CTR(iv), backend=default_backend()</span><br><span class="line">        )</span><br><span class="line">        decryptor = cipher.decryptor()</span><br><span class="line"></span><br><span class="line">        raw_data = ccmp.data</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(raw_data) &lt;= <span class="number">8</span>:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">        ciphertext = raw_data[:-<span class="number">8</span>] <span class="comment"># Last 8 bytes are the MIC</span></span><br><span class="line">        plaintext = decryptor.update(ciphertext) + decryptor.finalize()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            decoded_text = plaintext.decode(<span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;ignore&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&quot;247CTF&quot;</span> <span class="keyword">in</span> decoded_text.upper():</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;\n[+] Flag found in packet #<span class="subst">&#123;idx + <span class="number">1</span>&#125;</span>:&quot;</span>)</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;    Plaintext: <span class="subst">&#123;decoded_text&#125;</span>\n&quot;</span>)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    crack_temporal_zeros(PCAP_FILE)</span><br></pre></td></tr></table></figure>
 <h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{5e19fbdfa7072d568a28dd47b0edd379}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -694,7 +694,7 @@ key (from a collection) matches a certificate found in the traffic.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -748,7 +748,7 @@ key</li>
 bytes provide enough information to recover the key without brute
 force.</p>
 <h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{ca4e3b7f913ca7ca8f33fb0504f2947f}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -811,7 +811,7 @@ force.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -873,7 +873,7 @@ decrypt equals target</li>
 <h2 id="solution">Solution</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://2c5a74f7cc3f1fdf.247ctf.com&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># Block 1: First 16 bytes of target</span></span><br><span class="line">    part1_plain = <span class="string">b&quot;impossible_flag_&quot;</span></span><br><span class="line">    payload1 = binascii.hexlify(part1_plain).decode()</span><br><span class="line">    r1 = requests.get(<span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/encrypt?user=<span class="subst">&#123;payload1&#125;</span>&quot;</span>)</span><br><span class="line">    cipher_part1 = r1.text[:<span class="number">32</span>]  <span class="comment"># 32 hex chars = 16 bytes</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Block 1 Cipher: <span class="subst">&#123;cipher_part1&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Block 2: Remaining 7 bytes + PKCS#7 padding to 16 bytes</span></span><br><span class="line">    padding_len = <span class="number">16</span> - (<span class="number">23</span> % <span class="number">16</span>) <span class="comment"># target is 23 bytes, part 2 is 7 bytes. 16 - 7 = 9.</span></span><br><span class="line">    part2_plain = <span class="string">b&quot;user&quot;</span> + <span class="built_in">bytes</span>([padding_len] * padding_len)</span><br><span class="line">    payload2 = binascii.hexlify(part2_plain).decode()</span><br><span class="line">    r2 = requests.get(<span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/encrypt?user=<span class="subst">&#123;payload2&#125;</span>&quot;</span>)</span><br><span class="line">    cipher_part2 = r2.text[:<span class="number">32</span>]</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Block 2 Cipher: <span class="subst">&#123;cipher_part2&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Forge token by concatenating blocks</span></span><br><span class="line">    final_token = cipher_part1 + cipher_part2</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Forged Token: <span class="subst">&#123;final_token&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Get flag</span></span><br><span class="line">    r_flag = requests.get(<span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/get_flag?user=<span class="subst">&#123;final_token&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;\n---&gt; FLAG: <span class="subst">&#123;r_flag.text&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
 <h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{ddd01e396dc1965c3fcf943f3968aa39}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -936,7 +936,7 @@ decrypt equals target</li>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -986,7 +986,7 @@ compute answers</li>
 <h2 id="solution">Solution</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> pwn</span><br><span class="line"></span><br><span class="line">HOST = <span class="string">&quot;7a3875d00fa5d462.247ctf.com&quot;</span></span><br><span class="line">PORT = <span class="number">50337</span></span><br><span class="line"></span><br><span class="line">pwn.context.log_level = <span class="string">&quot;info&quot;</span></span><br><span class="line">pwn.tube.newline = <span class="string">b&quot;\r\n&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve_challenge</span>():</span><br><span class="line">    conn = <span class="literal">None</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        conn = pwn.remote(HOST, PORT)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">500</span>):</span><br><span class="line">            conn.recvuntil(<span class="string">b&quot;answer to &quot;</span>)</span><br><span class="line">            question_line = conn.recvline().decode().strip()</span><br><span class="line">            expression = question_line.replace(<span class="string">&quot;?&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">            result = <span class="built_in">int</span>(<span class="built_in">eval</span>(expression))</span><br><span class="line">            conn.sendline(<span class="built_in">str</span>(result).encode())</span><br><span class="line">            pwn.log.info(<span class="string">f&quot;Progress: [<span class="subst">&#123;i + <span class="number">1</span>&#125;</span>/500] Solved: <span class="subst">&#123;expression&#125;</span> = <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        pwn.log.success(<span class="string">&quot;500 problems solved! Waiting for flag...&quot;</span>)</span><br><span class="line">        conn.interactive()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        pwn.log.error(<span class="string">f&quot;An error occurred: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        <span class="keyword">if</span> conn:</span><br><span class="line">            pwn.log.info(<span class="string">&quot;Connection closed.&quot;</span>)</span><br><span class="line">            conn.close()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve_challenge()</span><br></pre></td></tr></table></figure>
 <h2 id="execution-output">Execution Output</h2>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">❯ python tcp_auto.py</span><br><span class="line">[+] Opening connection to 7a3875d00fa5d462.247ctf.com on port 50337: Done</span><br><span class="line">...</span><br><span class="line">[*] Progress: [499/500] Solved: 221 + 474 = 695</span><br><span class="line">[*] Progress: [500/500] Solved: 4 + 449 = 453</span><br><span class="line">[+] 500 problems solved! Waiting <span class="keyword">for</span> flag...</span><br><span class="line">[*] Switching to interactive mode</span><br><span class="line">247CTF&#123;flag_here&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">❯ python tcp_auto.py</span><br><span class="line">[+] Opening connection to 7a3875d00fa5d462.247ctf.com on port 50337: Done</span><br><span class="line">...</span><br><span class="line">[*] Progress: [499/500] Solved: 221 + 474 = 695</span><br><span class="line">[*] Progress: [500/500] Solved: 4 + 449 = 453</span><br><span class="line">[+] 500 problems solved! Waiting <span class="keyword">for</span> flag...</span><br><span class="line">[*] Switching to interactive mode</span><br><span class="line">247CTF&#123;&lt;flag-redacted&gt;&#125;</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -1049,7 +1049,7 @@ compute answers</li>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1109,7 +1109,7 @@ files</li>
 <code>NOT_A_FLAG.jpg</code></li>
 <li>Flag is embedded in one of the extracted images</li>
 </ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{850bb436f0eecad0205eebb6c9b7b6c6}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -1172,7 +1172,7 @@ files</li>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1221,9 +1221,9 @@ value when incremented wraps around to the minimum negative value.</p>
 </ul>
 <p>So the condition <code>n &gt; (n + 1)</code> becomes true.</p>
 <h2 id="solution">Solution</h2>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nc 287ab557f3f29afd.247ctf.com 50088</span><br><span class="line">2147483647</span><br><span class="line">247CTF&#123;********************************&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nc 287ab557f3f29afd.247ctf.com 50088</span><br><span class="line">2147483647</span><br><span class="line">247CTF&#123;&lt;flag-redacted&gt;&#125;</span><br></pre></td></tr></table></figure>
 <p>Simply send the maximum 32-bit signed integer value.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{38f5daf742a4b3d74b3a7575bf4d7d1e}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -1286,7 +1286,7 @@ value when incremented wraps around to the minimum negative value.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1331,7 +1331,7 @@ potential data exfiltration channel.</p>
 <h2 id="solution">Solution</h2>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">from</span> scapy.<span class="built_in">all</span> <span class="keyword">import</span> rdpcap</span><br><span class="line"><span class="keyword">from</span> scapy.layers.inet <span class="keyword">import</span> ICMP</span><br><span class="line"></span><br><span class="line">packets = rdpcap(<span class="string">&quot;error_reporting.pcap&quot;</span>)</span><br><span class="line">flag = <span class="string">b&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> p <span class="keyword">in</span> packets:</span><br><span class="line">    <span class="comment"># ICMP type 0 = Echo Reply (responses to ping requests)</span></span><br><span class="line">    <span class="keyword">if</span> p.haslayer(ICMP) <span class="keyword">and</span> p[ICMP].<span class="built_in">type</span> == <span class="number">0</span> <span class="keyword">and</span> p.haslayer(<span class="string">&quot;Raw&quot;</span>):</span><br><span class="line">        flag += p[<span class="string">&quot;Raw&quot;</span>].load</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;flag.jpg&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(flag)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;[+] Extracted data saved to flag.jpg&quot;</span>)</span><br></pre></td></tr></table></figure>
 <p>The extracted data is a JPG image containing the flag.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{580e6d627470448064fa7bffd6284ddf}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -1394,7 +1394,7 @@ potential data exfiltration channel.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1446,7 +1446,7 @@ Python to plot them:</p>
 <p>Encoding data as coordinates is a simple steganographic technique.
 Visualizing data reveals hidden patterns that text alone cannot
 convey.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{0c895fb57954df7f83756e1f7718e661}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
@@ -1509,7 +1509,7 @@ convey.</p>
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-13 16:09:26" itemprop="dateModified" datetime="2026-09-13T16:09:26+08:00">2026-09-13</time>
+      <time title="Modified: 2026-09-23 15:01:05" itemprop="dateModified" datetime="2026-09-23T15:01:05+08:00">2026-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1569,7 +1569,7 @@ traffic and recover the flag.</p>
 critical—if a modulus can be factored, the entire RSA cryptosystem is
 broken for that key pair. FactorDB maintains a public database of
 previously factored numbers.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{ca0289c6804acd4812ee8f375515245e}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
 
       
     </div>
