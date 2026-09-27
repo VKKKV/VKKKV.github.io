@@ -232,7 +232,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">525</span>
+          <span class="site-state-item-count">527</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -243,7 +243,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">356</span>
+        <span class="site-state-item-count">357</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -270,6 +270,318 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-app-03/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/HackThisSite/hackthissite-app-03/" class="post-title-link" itemprop="url">HackThisSite - Application Mission 3</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-13 09:53:36" itemprop="dateCreated datePublished" datetime="2026-09-13T09:53:36+08:00">2026-09-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:12:06" itemprop="dateModified" datetime="2026-09-15T10:12:06+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/HackThisSite/hackthissite-app-03/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-app-03/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span></span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>NaN:aN</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Find the Password. (easy)</p>
+<p>找出密码（easy）。</p>
+</blockquote>
+<p>包内只有一个 <code>app3win.exe</code>（约 1.4 MB）。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>Recon</strong>:</p>
+<ul>
+<li><code>file app3win.exe</code> →
+<code>PE32 executable for MS Windows 4.00 (GUI), Intel i386</code>；导入表里只有
+<code>MSVBVM60</code>/<code>KERNEL32</code> 级别的系统
+DLL，用户代码与字符串表不在节区里。</li>
+<li>这是 <strong>REALbasic（Xojo 前身）</strong>
+原生编译的程序：它<strong>不把密码作为明文字符串常量保存</strong>，而是在运行时逐字符拼出来，用
+<code>mov reg, 0x73</code> / <code>push reg</code> /
+<code>call StringDBCSChr</code> 生成单字符，再
+<code>call RuntimeAddString</code> 追加到消息串。所以
+<code>strings</code> 搜不到密码本身，能搜到的只有格式串：</li>
+</ul>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ grep -a -o -E &#x27;Contratulations[^\x00]&#123;0,50&#125;&#x27; app3win.exe</span><br><span class="line">Contratulations! The password to this level is &#x27;</span><br><span class="line">$ grep -a -o -E &#x27;incorrect serial[^\x00]&#123;0,30&#125;&#x27; app3win.exe</span><br><span class="line">incorrect serial number. Please re-enter.</span><br></pre></td></tr></table></figure>
+<ul>
+<li>用户代码和字符链在文件 <strong>overlay</strong> 里：从 file 偏移
+<code>0x153800</code> 开始，运行时映射到 VA
+<code>0x55E000</code>。Ghidra 只把 PE 节区载入到
+<code>.reloc</code>（<code>0x55d000</code> 结束），overlay
+不在映射范围，所以 <code>analyzeHeadless</code> +
+<code>DecompileAll.java</code> 执行完毕得到 0
+个函数。<strong>反编译器这条路对本题无效</strong>，必须直接扫 overlay
+的指令模式。</li>
+</ul>
+<h4 id="step-1-扫-overlay-指令模式重建字符链">Step 1: 扫 overlay
+指令模式，重建字符链</h4>
+<p>字符链的形态是固定的 <code>mov r32, imm32</code> →
+<code>push r32</code> →
+<code>call rel32</code>，每次调用生成一个字符。按地址顺序把 immediate
+读出来就是被拼出来的字符串：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Rebuild run-time-built password strings from a Xojo/REALbasic native exe.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">REALbasic never stores the level password as a plain string constant.  It</span></span><br><span class="line"><span class="string">builds it one character at a time at run time:</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    mov  ecx, 73h        ; &#x27;s&#x27;</span></span><br><span class="line"><span class="string">    push ecx</span></span><br><span class="line"><span class="string">    call StringDBCSChr   ; -&gt; &quot;s&quot;</span></span><br><span class="line"><span class="string">    ; 每个字符重复 mov/push/call 这三步</span></span><br><span class="line"><span class="string">    call RuntimeAddString ; append to the message</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">so the password is invisible to `strings`.  This script finds the</span></span><br><span class="line"><span class="string">`mov reg,imm32 ; push reg ; call rel32` idiom, groups call sites by call</span></span><br><span class="line"><span class="string">target, and prints the immediate characters in address order for every</span></span><br><span class="line"><span class="string">target fed printable bytes.  The really long runs are the built strings.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">usage: ./rebuild_schr.py &lt;exe&gt; [min_run_len]</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> defaultdict</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">load</span>(<span class="params">path</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Return (image_base, sections, overlay_file_offset, overlay_bytes).&quot;&quot;&quot;</span></span><br><span class="line">    data = <span class="built_in">open</span>(path, <span class="string">&#x27;rb&#x27;</span>).read()</span><br><span class="line">    e_lfanew = struct.unpack_from(<span class="string">&#x27;&lt;I&#x27;</span>, data, <span class="number">0x3C</span>)[<span class="number">0</span>]</span><br><span class="line">    <span class="keyword">assert</span> data[e_lfanew:e_lfanew + <span class="number">4</span>] == <span class="string">b&#x27;PE\0\0&#x27;</span></span><br><span class="line">    coff = e_lfanew + <span class="number">4</span></span><br><span class="line">    nsec = struct.unpack_from(<span class="string">&#x27;&lt;H&#x27;</span>, data, coff + <span class="number">2</span>)[<span class="number">0</span>]</span><br><span class="line">    opt_size = struct.unpack_from(<span class="string">&#x27;&lt;H&#x27;</span>, data, coff + <span class="number">16</span>)[<span class="number">0</span>]</span><br><span class="line">    opt = coff + <span class="number">20</span></span><br><span class="line">    magic = struct.unpack_from(<span class="string">&#x27;&lt;H&#x27;</span>, data, opt)[<span class="number">0</span>]</span><br><span class="line">    image_base = (struct.unpack_from(<span class="string">&#x27;&lt;I&#x27;</span>, data, opt + <span class="number">28</span>)[<span class="number">0</span>] <span class="keyword">if</span> magic == <span class="number">0x10b</span></span><br><span class="line">                  <span class="keyword">else</span> struct.unpack_from(<span class="string">&#x27;&lt;Q&#x27;</span>, data, opt + <span class="number">24</span>)[<span class="number">0</span>])</span><br><span class="line">    sec = opt + opt_size</span><br><span class="line">    sections = []</span><br><span class="line">    end = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(nsec):</span><br><span class="line">        s = sec + i * <span class="number">40</span></span><br><span class="line">        name = data[s:s + <span class="number">8</span>].rstrip(<span class="string">b&#x27;\0&#x27;</span>).decode(<span class="string">&#x27;latin1&#x27;</span>)</span><br><span class="line">        vsize, va, rawsize, rawptr = struct.unpack_from(<span class="string">&#x27;&lt;IIII&#x27;</span>, data, s + <span class="number">8</span>)</span><br><span class="line">        sections.append((name, image_base + va, vsize, rawptr, rawsize))</span><br><span class="line">        end = <span class="built_in">max</span>(end, rawptr + rawsize)</span><br><span class="line">    <span class="comment"># REALbasic appends its own object code + string table as a file overlay</span></span><br><span class="line">    <span class="keyword">return</span> image_base, sections, end, data[end:]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">char_chains</span>(<span class="params">overlay, base_va, gap=<span class="number">0x120</span></span>):</span><br><span class="line">    <span class="comment"># one chain element is ~0x9c bytes: mov imm32 + push + call SChr + setup +</span></span><br><span class="line">    <span class="comment"># call RuntimeAddString, so the SChr sites of one string sit ~150 bytes apart</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Find `mov r32,imm ; push r32 ; call rel32` sites and chain their chars.&quot;&quot;&quot;</span></span><br><span class="line">    by_target = defaultdict(<span class="built_in">list</span>)</span><br><span class="line">    i = <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        i = overlay.find(<span class="string">b&#x27;\xe8&#x27;</span>, i)                 <span class="comment"># call rel32</span></span><br><span class="line">        <span class="keyword">if</span> i &lt; <span class="number">0</span> <span class="keyword">or</span> i + <span class="number">5</span> &gt; <span class="built_in">len</span>(overlay):</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">if</span> i &gt;= <span class="number">2</span> <span class="keyword">and</span> <span class="number">0x50</span> &lt;= overlay[i - <span class="number">1</span>] &lt;= <span class="number">0x57</span>:      <span class="comment"># push eax..edi</span></span><br><span class="line">            r = overlay[i - <span class="number">1</span>] - <span class="number">0x50</span></span><br><span class="line">            <span class="keyword">if</span> i &gt;= <span class="number">7</span> <span class="keyword">and</span> overlay[i - <span class="number">6</span>] == <span class="number">0xB8</span> + r:      <span class="comment"># mov reg, imm32</span></span><br><span class="line">                val = struct.unpack_from(<span class="string">&#x27;&lt;I&#x27;</span>, overlay, i - <span class="number">5</span>)[<span class="number">0</span>]</span><br><span class="line">                <span class="keyword">if</span> val &lt;= <span class="number">0xff</span>:</span><br><span class="line">                    rel = struct.unpack_from(<span class="string">&#x27;&lt;i&#x27;</span>, overlay, i + <span class="number">1</span>)[<span class="number">0</span>]</span><br><span class="line">                    by_target[i + <span class="number">5</span> + rel].append((i - <span class="number">6</span>, val))</span><br><span class="line">        i += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># per-call-site thunks: every SChr call goes through its own stub, so the</span></span><br><span class="line">    <span class="comment"># chain must be rebuilt from *all* char sites in address order, not grouped</span></span><br><span class="line">    <span class="comment"># by call target.</span></span><br><span class="line">    all_sites = <span class="built_in">sorted</span>(s <span class="keyword">for</span> sites <span class="keyword">in</span> by_target.values() <span class="keyword">for</span> s <span class="keyword">in</span> sites)</span><br><span class="line">    runs = []</span><br><span class="line">    cur, prev = [], <span class="literal">None</span></span><br><span class="line">    <span class="keyword">for</span> off, val <span class="keyword">in</span> all_sites:</span><br><span class="line">        <span class="keyword">if</span> prev <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> off - prev &gt; gap:</span><br><span class="line">            <span class="keyword">if</span> cur:</span><br><span class="line">                runs.append((<span class="number">0</span>, cur))</span><br><span class="line">            cur = []</span><br><span class="line">        cur.append((off, val))</span><br><span class="line">        prev = off</span><br><span class="line">    <span class="keyword">if</span> cur:</span><br><span class="line">        runs.append((<span class="number">0</span>, cur))</span><br><span class="line">    <span class="keyword">return</span> runs</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    path = sys.argv[<span class="number">1</span>]</span><br><span class="line">    min_len = <span class="built_in">int</span>(sys.argv[<span class="number">2</span>]) <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">2</span> <span class="keyword">else</span> <span class="number">8</span></span><br><span class="line">    image_base, sections, ov_off, overlay = load(path)</span><br><span class="line">    base_va = <span class="number">0x55E000</span>                       <span class="comment"># where REALbasic maps its overlay</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;[*] <span class="subst">&#123;path&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;[*] overlay at file 0x<span class="subst">&#123;ov_off:x&#125;</span>, <span class="subst">&#123;<span class="built_in">len</span>(overlay)&#125;</span> bytes, mapped at 0x<span class="subst">&#123;base_va:x&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="keyword">for</span> target, run <span class="keyword">in</span> <span class="built_in">sorted</span>(char_chains(overlay, base_va), key=<span class="keyword">lambda</span> r: -<span class="built_in">len</span>(r[<span class="number">1</span>])):</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(run) &lt; min_len:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        s = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(v) <span class="keyword">for</span> _, v <span class="keyword">in</span> run)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;\n=== run of <span class="subst">&#123;<span class="built_in">len</span>(run)&#125;</span> chars  -&gt;  <span class="subst">&#123;s!r&#125;</span> ===&#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> off, val <span class="keyword">in</span> run:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&#x27;    file <span class="subst">&#123;ov_off + off:#08x&#125;</span>  overlay+<span class="subst">&#123;off:#06x&#125;</span>  mov reg, <span class="subst">&#123;val:#04x&#125;</span>  <span class="subst">&#123;<span class="built_in">chr</span>(val)!r&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">$ cd &lt;hts-workspace&gt; &amp;&amp; uv run python challenges/hts-app/rebuild_schr.py challenges/hts-app/app3/win/app3win.exe</span><br><span class="line">[*] challenges/hts-app/app3/win/app3win.exe</span><br><span class="line">[*] overlay at file 0x153800, 81146 bytes, mapped at 0x55e000</span><br><span class="line"></span><br><span class="line">=== run of 12 chars  -&gt;  &#x27;fireyourboss&#x27; ===</span><br><span class="line">    file 0x15d475  overlay+0x9c75  mov reg, 0x66  &#x27;f&#x27;</span><br><span class="line">    file 0x15d50c  overlay+0x9d0c  mov reg, 0x69  &#x27;i&#x27;</span><br><span class="line">    file 0x15d5a4  overlay+0x9da4  mov reg, 0x72  &#x27;r&#x27;</span><br><span class="line">    file 0x15d63c  overlay+0x9e3c  mov reg, 0x65  &#x27;e&#x27;</span><br><span class="line">    file 0x15d6d4  overlay+0x9ed4  mov reg, 0x79  &#x27;y&#x27;</span><br><span class="line">    file 0x15d76c  overlay+0x9f6c  mov reg, 0x6f  &#x27;o&#x27;</span><br><span class="line">    file 0x15d804  overlay+0xa004  mov reg, 0x75  &#x27;u&#x27;</span><br><span class="line">    file 0x15d89c  overlay+0xa09c  mov reg, 0x72  &#x27;r&#x27;</span><br><span class="line">    file 0x15d934  overlay+0xa134  mov reg, 0x62  &#x27;b&#x27;</span><br><span class="line">    file 0x15d9cc  overlay+0xa1cc  mov reg, 0x6f  &#x27;o&#x27;</span><br><span class="line">    file 0x15da64  overlay+0xa264  mov reg, 0x73  &#x27;s&#x27;</span><br><span class="line">    file 0x15dafc  overlay+0xa2fc  mov reg, 0x73  &#x27;s&#x27;</span><br></pre></td></tr></table></figure>
+<h4 id="step-2-校验链路">Step 2: 校验链路</h4>
+<p>app3 同样是"远端提供 keys"的型号：程序把服务器返回的
+<code>true</code>/<code>false</code>
+直接当校验结果。公开逆向笔记里的做法是把程序里的 <code>true</code>
+覆盖成 <code>false</code>，让任意输入都通过。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ grep -a -o -E &#x27;Contratulations[^\x00]&#123;0,40&#125;|incorrect serial[^\x00]&#123;0,30&#125;&#x27; app3win.exe</span><br><span class="line">Contratulations! The password to this level is &#x27;</span><br><span class="line">incorrect serial number. Please re-enter.</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">fireyourboss</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-app-02/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/HackThisSite/hackthissite-app-02/" class="post-title-link" itemprop="url">HackThisSite - Application Mission 2</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-13 09:50:46" itemprop="dateCreated datePublished" datetime="2026-09-13T09:50:46+08:00">2026-09-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-15 10:12:06" itemprop="dateModified" datetime="2026-09-15T10:12:06+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/HackThisSite/hackthissite-app-02/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-app-02/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span></span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>NaN:aN</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Find the Password. (easy)</p>
+<p>找出密码（easy）。</p>
+</blockquote>
+<p>包内只有一个 <code>app2win.exe</code>（约 1.4 MB）。</p>
+<h3 id="solution">Solution</h3>
+<p><strong>Recon</strong>:</p>
+<ul>
+<li><code>file app2win.exe</code> →
+<code>PE32 executable for MS Windows 4.00 (GUI), Intel i386</code>；导入表里只有
+<code>MSVBVM60</code>/<code>KERNEL32</code> 级别的系统
+DLL，用户代码与字符串表不在节区里。</li>
+<li>这是 <strong>REALbasic（Xojo 前身）</strong>
+原生编译的程序：它<strong>不把密码作为明文字符串常量保存</strong>，而是在运行时逐字符拼出来，用
+<code>mov reg, 0x73</code> / <code>push reg</code> /
+<code>call StringDBCSChr</code> 生成单字符，再
+<code>call RuntimeAddString</code> 追加到消息串。所以
+<code>strings</code> 搜不到密码本身，能搜到的只有格式串：</li>
+</ul>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ grep -a -o -E &#x27;Contratulations[^\x00]&#123;0,50&#125;&#x27; app2win.exe</span><br><span class="line">Contratulations! The password to this level is &#x27;</span><br><span class="line">$ grep -a -o -E &#x27;incorrect serial[^\x00]&#123;0,30&#125;&#x27; app2win.exe</span><br><span class="line">incorrect serial number. Please re-enter.</span><br></pre></td></tr></table></figure>
+<ul>
+<li>用户代码和字符链在文件 <strong>overlay</strong> 里：从 file 偏移
+<code>0x153800</code> 开始，运行时映射到 VA
+<code>0x55E000</code>。Ghidra 只把 PE 节区载入到
+<code>.reloc</code>（<code>0x55d000</code> 结束），overlay
+不在映射范围，所以 <code>analyzeHeadless</code> +
+<code>DecompileAll.java</code> 执行完毕得到 0
+个函数。<strong>反编译器这条路对本题无效</strong>，必须直接扫 overlay
+的指令模式。</li>
+</ul>
+<h4 id="step-1-扫-overlay-指令模式重建字符链">Step 1: 扫 overlay
+指令模式，重建字符链</h4>
+<p>字符链的形态是固定的 <code>mov r32, imm32</code> →
+<code>push r32</code> →
+<code>call rel32</code>，每次调用生成一个字符。按地址顺序把 immediate
+读出来就是被拼出来的字符串：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;Rebuild run-time-built password strings from a Xojo/REALbasic native exe.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">REALbasic never stores the level password as a plain string constant.  It</span></span><br><span class="line"><span class="string">builds it one character at a time at run time:</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    mov  ecx, 73h        ; &#x27;s&#x27;</span></span><br><span class="line"><span class="string">    push ecx</span></span><br><span class="line"><span class="string">    call StringDBCSChr   ; -&gt; &quot;s&quot;</span></span><br><span class="line"><span class="string">    ; 每个字符重复 mov/push/call 这三步</span></span><br><span class="line"><span class="string">    call RuntimeAddString ; append to the message</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">so the password is invisible to `strings`.  This script finds the</span></span><br><span class="line"><span class="string">`mov reg,imm32 ; push reg ; call rel32` idiom, groups call sites by call</span></span><br><span class="line"><span class="string">target, and prints the immediate characters in address order for every</span></span><br><span class="line"><span class="string">target fed printable bytes.  The really long runs are the built strings.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">usage: ./rebuild_schr.py &lt;exe&gt; [min_run_len]</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> defaultdict</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">load</span>(<span class="params">path</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Return (image_base, sections, overlay_file_offset, overlay_bytes).&quot;&quot;&quot;</span></span><br><span class="line">    data = <span class="built_in">open</span>(path, <span class="string">&#x27;rb&#x27;</span>).read()</span><br><span class="line">    e_lfanew = struct.unpack_from(<span class="string">&#x27;&lt;I&#x27;</span>, data, <span class="number">0x3C</span>)[<span class="number">0</span>]</span><br><span class="line">    <span class="keyword">assert</span> data[e_lfanew:e_lfanew + <span class="number">4</span>] == <span class="string">b&#x27;PE\0\0&#x27;</span></span><br><span class="line">    coff = e_lfanew + <span class="number">4</span></span><br><span class="line">    nsec = struct.unpack_from(<span class="string">&#x27;&lt;H&#x27;</span>, data, coff + <span class="number">2</span>)[<span class="number">0</span>]</span><br><span class="line">    opt_size = struct.unpack_from(<span class="string">&#x27;&lt;H&#x27;</span>, data, coff + <span class="number">16</span>)[<span class="number">0</span>]</span><br><span class="line">    opt = coff + <span class="number">20</span></span><br><span class="line">    magic = struct.unpack_from(<span class="string">&#x27;&lt;H&#x27;</span>, data, opt)[<span class="number">0</span>]</span><br><span class="line">    image_base = (struct.unpack_from(<span class="string">&#x27;&lt;I&#x27;</span>, data, opt + <span class="number">28</span>)[<span class="number">0</span>] <span class="keyword">if</span> magic == <span class="number">0x10b</span></span><br><span class="line">                  <span class="keyword">else</span> struct.unpack_from(<span class="string">&#x27;&lt;Q&#x27;</span>, data, opt + <span class="number">24</span>)[<span class="number">0</span>])</span><br><span class="line">    sec = opt + opt_size</span><br><span class="line">    sections = []</span><br><span class="line">    end = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(nsec):</span><br><span class="line">        s = sec + i * <span class="number">40</span></span><br><span class="line">        name = data[s:s + <span class="number">8</span>].rstrip(<span class="string">b&#x27;\0&#x27;</span>).decode(<span class="string">&#x27;latin1&#x27;</span>)</span><br><span class="line">        vsize, va, rawsize, rawptr = struct.unpack_from(<span class="string">&#x27;&lt;IIII&#x27;</span>, data, s + <span class="number">8</span>)</span><br><span class="line">        sections.append((name, image_base + va, vsize, rawptr, rawsize))</span><br><span class="line">        end = <span class="built_in">max</span>(end, rawptr + rawsize)</span><br><span class="line">    <span class="comment"># REALbasic appends its own object code + string table as a file overlay</span></span><br><span class="line">    <span class="keyword">return</span> image_base, sections, end, data[end:]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">char_chains</span>(<span class="params">overlay, base_va, gap=<span class="number">0x120</span></span>):</span><br><span class="line">    <span class="comment"># one chain element is ~0x9c bytes: mov imm32 + push + call SChr + setup +</span></span><br><span class="line">    <span class="comment"># call RuntimeAddString, so the SChr sites of one string sit ~150 bytes apart</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Find `mov r32,imm ; push r32 ; call rel32` sites and chain their chars.&quot;&quot;&quot;</span></span><br><span class="line">    by_target = defaultdict(<span class="built_in">list</span>)</span><br><span class="line">    i = <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        i = overlay.find(<span class="string">b&#x27;\xe8&#x27;</span>, i)                 <span class="comment"># call rel32</span></span><br><span class="line">        <span class="keyword">if</span> i &lt; <span class="number">0</span> <span class="keyword">or</span> i + <span class="number">5</span> &gt; <span class="built_in">len</span>(overlay):</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">if</span> i &gt;= <span class="number">2</span> <span class="keyword">and</span> <span class="number">0x50</span> &lt;= overlay[i - <span class="number">1</span>] &lt;= <span class="number">0x57</span>:      <span class="comment"># push eax..edi</span></span><br><span class="line">            r = overlay[i - <span class="number">1</span>] - <span class="number">0x50</span></span><br><span class="line">            <span class="keyword">if</span> i &gt;= <span class="number">7</span> <span class="keyword">and</span> overlay[i - <span class="number">6</span>] == <span class="number">0xB8</span> + r:      <span class="comment"># mov reg, imm32</span></span><br><span class="line">                val = struct.unpack_from(<span class="string">&#x27;&lt;I&#x27;</span>, overlay, i - <span class="number">5</span>)[<span class="number">0</span>]</span><br><span class="line">                <span class="keyword">if</span> val &lt;= <span class="number">0xff</span>:</span><br><span class="line">                    rel = struct.unpack_from(<span class="string">&#x27;&lt;i&#x27;</span>, overlay, i + <span class="number">1</span>)[<span class="number">0</span>]</span><br><span class="line">                    by_target[i + <span class="number">5</span> + rel].append((i - <span class="number">6</span>, val))</span><br><span class="line">        i += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># per-call-site thunks: every SChr call goes through its own stub, so the</span></span><br><span class="line">    <span class="comment"># chain must be rebuilt from *all* char sites in address order, not grouped</span></span><br><span class="line">    <span class="comment"># by call target.</span></span><br><span class="line">    all_sites = <span class="built_in">sorted</span>(s <span class="keyword">for</span> sites <span class="keyword">in</span> by_target.values() <span class="keyword">for</span> s <span class="keyword">in</span> sites)</span><br><span class="line">    runs = []</span><br><span class="line">    cur, prev = [], <span class="literal">None</span></span><br><span class="line">    <span class="keyword">for</span> off, val <span class="keyword">in</span> all_sites:</span><br><span class="line">        <span class="keyword">if</span> prev <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span> <span class="keyword">and</span> off - prev &gt; gap:</span><br><span class="line">            <span class="keyword">if</span> cur:</span><br><span class="line">                runs.append((<span class="number">0</span>, cur))</span><br><span class="line">            cur = []</span><br><span class="line">        cur.append((off, val))</span><br><span class="line">        prev = off</span><br><span class="line">    <span class="keyword">if</span> cur:</span><br><span class="line">        runs.append((<span class="number">0</span>, cur))</span><br><span class="line">    <span class="keyword">return</span> runs</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    path = sys.argv[<span class="number">1</span>]</span><br><span class="line">    min_len = <span class="built_in">int</span>(sys.argv[<span class="number">2</span>]) <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &gt; <span class="number">2</span> <span class="keyword">else</span> <span class="number">8</span></span><br><span class="line">    image_base, sections, ov_off, overlay = load(path)</span><br><span class="line">    base_va = <span class="number">0x55E000</span>                       <span class="comment"># where REALbasic maps its overlay</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;[*] <span class="subst">&#123;path&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;[*] overlay at file 0x<span class="subst">&#123;ov_off:x&#125;</span>, <span class="subst">&#123;<span class="built_in">len</span>(overlay)&#125;</span> bytes, mapped at 0x<span class="subst">&#123;base_va:x&#125;</span>&#x27;</span>)</span><br><span class="line">    <span class="keyword">for</span> target, run <span class="keyword">in</span> <span class="built_in">sorted</span>(char_chains(overlay, base_va), key=<span class="keyword">lambda</span> r: -<span class="built_in">len</span>(r[<span class="number">1</span>])):</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(run) &lt; min_len:</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        s = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">chr</span>(v) <span class="keyword">for</span> _, v <span class="keyword">in</span> run)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;\n=== run of <span class="subst">&#123;<span class="built_in">len</span>(run)&#125;</span> chars  -&gt;  <span class="subst">&#123;s!r&#125;</span> ===&#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> off, val <span class="keyword">in</span> run:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&#x27;    file <span class="subst">&#123;ov_off + off:#08x&#125;</span>  overlay+<span class="subst">&#123;off:#06x&#125;</span>  mov reg, <span class="subst">&#123;val:#04x&#125;</span>  <span class="subst">&#123;<span class="built_in">chr</span>(val)!r&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">$ cd &lt;hts-workspace&gt; &amp;&amp; uv run python challenges/hts-app/rebuild_schr.py challenges/hts-app/app2/win/app2win.exe</span><br><span class="line">[*] challenges/hts-app/app2/win/app2win.exe</span><br><span class="line">[*] overlay at file 0x153800, 80323 bytes, mapped at 0x55e000</span><br><span class="line"></span><br><span class="line">=== run of 10 chars  -&gt;  &#x27;liberation&#x27; ===</span><br><span class="line">    file 0x15d6e8  overlay+0x9ee8  mov reg, 0x6c  &#x27;l&#x27;</span><br><span class="line">    file 0x15d77f  overlay+0x9f7f  mov reg, 0x69  &#x27;i&#x27;</span><br><span class="line">    file 0x15d817  overlay+0xa017  mov reg, 0x62  &#x27;b&#x27;</span><br><span class="line">    file 0x15d8af  overlay+0xa0af  mov reg, 0x65  &#x27;e&#x27;</span><br><span class="line">    file 0x15d947  overlay+0xa147  mov reg, 0x72  &#x27;r&#x27;</span><br><span class="line">    file 0x15d9df  overlay+0xa1df  mov reg, 0x61  &#x27;a&#x27;</span><br><span class="line">    file 0x15da77  overlay+0xa277  mov reg, 0x74  &#x27;t&#x27;</span><br><span class="line">    file 0x15db0f  overlay+0xa30f  mov reg, 0x69  &#x27;i&#x27;</span><br><span class="line">    file 0x15dba7  overlay+0xa3a7  mov reg, 0x6f  &#x27;o&#x27;</span><br><span class="line">    file 0x15dc3f  overlay+0xa43f  mov reg, 0x6e  &#x27;n&#x27;</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">liberation</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -2015,287 +2327,6 @@ User-Agent 和会话 Cookie 访问 Staff 页面。浏览器控制台示例：</p
 <code>studentid</code>、记录编号 <code>rec</code>、新成绩
 <code>grade</code> 及备注。例如，原验证记录使用：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">changeaction=modrec</span><br><span class="line">studentid=1</span><br><span class="line">rec=4 或 0</span><br><span class="line">grade=3</span><br><span class="line">comments=Improved</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-realistic-09/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-realistic-09/" class="post-title-link" itemprop="url">HackThisSite - Realistic Mission 9</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-11 14:38:31" itemprop="dateCreated datePublished" datetime="2026-09-11T14:38:31+08:00">2026-09-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-realistic-09/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-realistic-09/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span></span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>NaN:aN</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Pay employee <code>r-conner</code> and remove the evidence from
-CrappySoft's logs.</p>
-<h3 id="solution">Solution</h3>
-<h4 id="log-in-as-the-employee">1. Log in as the employee</h4>
-<p>The challenge provides:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Username: r-conner@crappysoft.com</span><br><span class="line">Password: ilovemywork</span><br></pre></td></tr></table></figure>
-<p>The login response sets the employee cookies. The employee page
-exposes a Private Message link and Pay Salaries link, but the latter
-requires administrator privileges.</p>
-<h4 id="use-the-simulated-xss-step">2. Use the simulated XSS step</h4>
-<p>Send a JavaScript payload to <code>m-crap</code> through Private
-Messages. The challenge explicitly supplies the simulated administrator
-cookie afterward:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">strUsername=m-crap%40crappysoft.com</span><br><span class="line">strPassword=94a35a3b7befff5eb2a8415af04aa16c</span><br><span class="line">intID=1</span><br></pre></td></tr></table></figure>
-<p>Replace the three challenge cookies with these values. Then open
-<code>payday.php</code> and submit the Pay form. The server displayed
-the employee's thank-you message and marked the payment transaction
-complete.</p>
-<h4 id="clear-the-logs">3. Clear the logs</h4>
-<p>The mailing-list form contains:</p>
-<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">input</span></span></span><br><span class="line"><span class="tag">  <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">name</span>=<span class="string">&quot;strFilename&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">value</span>=<span class="string">&quot;./files/mailinglist/addresses.txt&quot;</span></span></span><br><span class="line"><span class="tag">/&gt;</span></span><br></pre></td></tr></table></figure>
-<p>The log is publicly listed at <code>./files/logs/logs.txt</code>.
-Submit the mailing form with the hidden path changed to:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./files/logs/logs.txt</span><br></pre></td></tr></table></figure>
-<p>Use an address without <code>@</code> so the cleanup logic removes
-it.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackThisSite/hackthissite-realistic-08/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackThisSite/hackthissite-realistic-08/" class="post-title-link" itemprop="url">HackThisSite - Realistic Mission 8</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-08 19:26:53" itemprop="dateCreated datePublished" datetime="2026-09-08T19:26:53+08:00">2026-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-09 10:48:26" itemprop="dateModified" datetime="2026-09-09T10:48:26+08:00">2026-09-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/HackThisSite/hackthissite-realistic-08/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/HackThisSite/hackthissite-realistic-08/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span></span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>NaN:aN</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<p>Move Gary Hunter's <code>$10,000,000</code> to <code>dropCash</code>
-and clear the bank logs.</p>
-<h3 id="solution">Solution</h3>
-<h4 id="find-the-account">1. Find the account</h4>
-<p>The User Info search endpoint is vulnerable to SQL injection. From
-the current search form, submit:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27; OR 1=1 --</span></span><br></pre></td></tr></table></figure>
-<p>The result includes the target account:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GaryWilliamHunter : -- $$$$$ --</span><br></pre></td></tr></table></figure>
-<h4 id="register-and-inspect-the-authenticated-workflow">2. Register and
-inspect the authenticated workflow</h4>
-<p>Register a temporary account, then log in through
-<code>login1.php</code> → <code>login2.php</code>. The account page
-exposes two important client-controlled values:</p>
-<ul>
-<li><code>accountUsername</code> cookie</li>
-<li>hidden <code>TO</code> and <code>AMOUNT</code> fields in the
-transfer form</li>
-</ul>
-<p>The target amount is <code>10000000</code>.</p>
-<h4 id="tamper-with-the-cookie-and-transfer">3. Tamper with the cookie
-and transfer</h4>
-<p>Set the challenge cookie identity to Gary's account, then submit the
-transfer form:</p>
-<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">Cookie</span><span class="punctuation">: </span>accountUsername=GaryWilliamHunter</span><br><span class="line"></span><br><span class="line">POST /missions/realistic/8/movemoney.php</span><br><span class="line">TO=dropCash</span><br><span class="line">AMOUNT=10000000</span><br></pre></td></tr></table></figure>
-<p>The server returned:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Congratulations, 1st Objective Done, Now Cover Your Tracks</span><br></pre></td></tr></table></figure>
-<h4 id="clear-the-logs">4. Clear the logs</h4>
-<p>The normal clear-files form targets
-<code>&lt;username&gt;SQLFiles</code>. Change its hidden
-<code>dir</code> value to <code>logFiles</code> and submit:</p>
-<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POST /missions/realistic/8/cleardir.php</span><br><span class="line">dir=logFiles</span><br></pre></td></tr></table></figure>
-<p>The challenge then displayed:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Congrats</span><br><span class="line">Good Job, xxx, You have sucessfully completed Mission 8</span><br></pre></td></tr></table></figure>
 
       
     </div>

