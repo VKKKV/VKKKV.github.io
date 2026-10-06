@@ -54,6 +54,24 @@
   let statusNode = document.getElementById("pjax-status");
   let loadBarAnimation = null;
   let navigating = false;
+  let themeScrollTo = null;
+
+  function motionAllowed() {
+    return desktopMotion.matches && !reducedMotion.matches;
+  }
+
+  function adaptThemeScrolling() {
+    const utils = window.NexT?.utils;
+    if (!utils?.scrollTo || utils.scrollTo === themeScrollTo) return;
+    const original = utils.scrollTo;
+    themeScrollTo = function (...args) {
+      const [target, top] = args;
+      // Explicit instant also overrides CSS scroll-behavior on nested TOC areas.
+      if (reducedMotion.matches) return target.scrollTo({ top, behavior: "instant" });
+      return original.apply(this, args);
+    };
+    utils.scrollTo = themeScrollTo;
+  }
 
   function loadLenis() {
     if (window.Lenis) return Promise.resolve();
@@ -136,7 +154,7 @@
 
   function initPage() {
     pageFrame = null;
-    if (navigating || reducedMotion.matches) return;
+    if (navigating || !motionAllowed()) return;
     if (window.Lenis) {
       lenis?.destroy();
       lenis = new Lenis({
@@ -211,16 +229,18 @@
   }
 
   async function boot() {
-    if (reducedMotion.matches || !desktopMotion.matches) return;
+    adaptThemeScrolling();
+    if (!motionAllowed()) return;
     try {
       await loadLenis();
     } catch (error) {
       console.warn("[motion] Using native scrolling:", error);
     }
+    if (navigating || !motionAllowed()) return;
     schedulePage();
   }
 
-  // NexT uses Anime.js for these controls. Capture them so only Lenis owns page scrolling.
+  // NexT normally smooth-scrolls these controls. Capture them only while Lenis owns scrolling.
   document.addEventListener("click", event => {
     if (!lenis || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const control = event.target.closest?.(".back-to-top, .post-toc:not(.placeholder-toc) a.nav-link");
@@ -264,8 +284,10 @@
   const syncMotionPreference = () => {
     cleanupPage();
     resetLoadBar();
-    if (!reducedMotion.matches && desktopMotion.matches) boot();
+    if (motionAllowed()) boot();
   };
+  adaptThemeScrolling();
+  document.addEventListener("page:loaded", adaptThemeScrolling);
   reducedMotion.addEventListener("change", syncMotionPreference);
   desktopMotion.addEventListener("change", syncMotionPreference);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
@@ -276,10 +298,14 @@
   "use strict";
   if (window.__hudGridInit) return;
   window.__hudGridInit = true;
-  // ljj.world uses a 40px static grid and a separate 24px, non-glowing pixel trail.
+  // Share the CSS grid's cell size and origin, including fractional viewport sizes.
   const media = matchMedia('(min-width: 1081px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
   const cells = new Map();
-  const size = 24;
+  const grid = document.querySelector('.hud-grid');
+  if (!grid) return;
+  let size = 40;
+  let width = 0;
+  let height = 0;
   const radius = 54;
   const occluders = '.header, .sidebar, .footer, .search-pop-overlay';
   let canvas = null;
@@ -309,9 +335,15 @@
   function resize() {
     clear();
     if (!canvas) return;
-    // Deliberately use CSS-pixel resolution, matching the reference's square edges.
-    canvas.width = Math.ceil(innerWidth);
-    canvas.height = Math.ceil(innerHeight);
+    const bounds = grid.getBoundingClientRect();
+    width = bounds.width;
+    height = bounds.height;
+    size = parseFloat(getComputedStyle(grid).getPropertyValue('--hud-grid-size')) || 40;
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.ceil(width * ratio);
+    canvas.height = Math.ceil(height * ratio);
+    // Drawing coordinates stay in CSS pixels; the backing store must not stretch the lattice.
+    context.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
   }
 
   function sync() {
@@ -327,14 +359,14 @@
       canvas.setAttribute('aria-hidden', 'true');
       context = canvas.getContext('2d');
       if (!context) { canvas = null; return; }
-      document.querySelector('.hud-grid').appendChild(canvas);
+      grid.appendChild(canvas);
     }
     resize();
   }
 
   function stamp(x, y) {
-    const columns = Math.ceil(canvas.width / size);
-    const rows = Math.ceil(canvas.height / size);
+    const columns = Math.ceil(width / size);
+    const rows = Math.ceil(height / size);
     for (let col = Math.max(0, Math.floor((x - radius) / size)); col < Math.min(columns, Math.ceil((x + radius) / size)); col++) {
       for (let row = Math.max(0, Math.floor((y - radius) / size)); row < Math.min(rows, Math.ceil((y + radius) / size)); row++) {
         const distance = Math.hypot((col + 0.5) * size - x, (row + 0.5) * size - y);
@@ -360,10 +392,10 @@
       const tau = cell.target > cell.strength ? 80 : 150;
       cell.strength += (cell.target - cell.strength) * (1 - Math.exp(-dt / tau));
       if (cell.target <= 0.01 && cell.strength <= 0.01) { cells.delete(key); continue; }
-      const x = cell.col * size + 1.25;
-      const y = cell.row * size + 1.25;
+      const x = cell.col * size + 1;
+      const y = cell.row * size + 1;
       context.globalAlpha = (1 - (1 - Math.min(cell.strength, 1)) ** 3) * 0.34 * (0.82 + ((cell.col * 17 + cell.row * 29) % 11) / 60);
-      context.fillRect(x, y, size - 2.5, size - 2.5);
+      context.fillRect(x, y, size - 1, size - 1);
       left = Math.min(left, Math.floor(x)); top = Math.min(top, Math.floor(y));
       right = Math.max(right, Math.ceil(x + size)); bottom = Math.max(bottom, Math.ceil(y + size));
     }
