@@ -48,6 +48,8 @@
   const pageAnimations = new Set();
   let lenis = null;
   let revealObserver = null;
+  let revealSeen = new WeakSet();
+  const revealFrames = new Map();
   let pageFrame = null;
   let loadPromise = null;
   let loadBar = document.getElementById("pjax-load-bar");
@@ -124,11 +126,8 @@
     }));
   }
 
-  function initReveals() {
-    revealObserver?.disconnect();
-    revealObserver = null;
-    if (reducedMotion.matches || !window.IntersectionObserver) return;
-
+  function refreshReveals() {
+    if (navigating || !motionAllowed() || !revealObserver) return;
     const groups = [
       [".post-body h2", [{ opacity: 0, transform: "translateX(-40px)" }, { opacity: 1, transform: "none" }]],
       [".post-body h3, .post-body blockquote", [{ opacity: 0, transform: "translateY(30px)" }, { opacity: 1, transform: "none" }]],
@@ -136,20 +135,40 @@
       [".post-body > p, .post-body > ul > li, .post-body > ol > li, .post-body > table tbody tr", [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }]],
       [".post-block", [{ opacity: 0, transform: "translateY(40px)" }, { opacity: 1, transform: "none" }]],
     ];
-    const frames = new WeakMap();
-    revealObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        revealObserver?.unobserve(entry.target);
-        animateIn(entry.target, frames.get(entry.target));
-      });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
+    // Remember completed targets too: decrypt adds content, not a new page.
+    for (const element of revealFrames.keys()) {
+      if (element.isConnected) continue;
+      revealObserver.unobserve(element);
+      revealFrames.delete(element);
+    }
     groups.forEach(([selector, keyframes]) => {
       document.querySelectorAll(selector).forEach(element => {
-        frames.set(element, keyframes);
+        if (revealSeen.has(element)) return;
+        revealSeen.add(element);
+        revealFrames.set(element, keyframes);
         revealObserver.observe(element);
       });
     });
+  }
+
+  function initReveals() {
+    revealObserver?.disconnect();
+    revealObserver = null;
+    revealSeen = new WeakSet();
+    revealFrames.clear();
+    if (!motionAllowed() || !window.IntersectionObserver) return;
+    const observer = new IntersectionObserver(entries => {
+      if (navigating || !motionAllowed() || revealObserver !== observer) return;
+      entries.forEach(entry => {
+        const keyframes = revealFrames.get(entry.target);
+        if (!entry.isIntersecting || !entry.target.isConnected || !keyframes) return;
+        observer.unobserve(entry.target);
+        revealFrames.delete(entry.target);
+        animateIn(entry.target, keyframes);
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
+    revealObserver = observer;
+    refreshReveals();
   }
 
   function initPage() {
@@ -186,6 +205,8 @@
     pageFrame = null;
     revealObserver?.disconnect();
     revealObserver = null;
+    revealFrames.clear();
+    revealSeen = new WeakSet();
     pageAnimations.forEach(animation => animation.cancel());
     pageAnimations.clear();
     lenis?.destroy();
@@ -288,6 +309,7 @@
   };
   adaptThemeScrolling();
   document.addEventListener("page:loaded", adaptThemeScrolling);
+  window.addEventListener("hexo-blog-decrypt", refreshReveals);
   reducedMotion.addEventListener("change", syncMotionPreference);
   desktopMotion.addEventListener("change", syncMotionPreference);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
@@ -298,12 +320,12 @@
   "use strict";
   if (window.__hudGridInit) return;
   window.__hudGridInit = true;
-  // Share the CSS grid's cell size and origin, including fractional viewport sizes.
+  // Read the CSS trail size; its origin is shared with the larger background grid.
   const media = matchMedia('(min-width: 1081px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
   const cells = new Map();
   const grid = document.querySelector('.hud-grid');
   if (!grid) return;
-  let size = 40;
+  let size = 24;
   let width = 0;
   let height = 0;
   const radius = 54;
@@ -338,7 +360,7 @@
     const bounds = grid.getBoundingClientRect();
     width = bounds.width;
     height = bounds.height;
-    size = parseFloat(getComputedStyle(grid).getPropertyValue('--hud-grid-size')) || 40;
+    size = parseFloat(getComputedStyle(grid).getPropertyValue('--hud-trail-size')) || 24;
     const ratio = window.devicePixelRatio || 1;
     canvas.width = Math.ceil(width * ratio);
     canvas.height = Math.ceil(height * ratio);
@@ -445,6 +467,63 @@
   sync();
 })();
 
+// Share projection measurements only within one frame. Position-only transforms
+// do not notify ResizeObserver, and WAAPI does not dispatch CSS animation events.
+(function () {
+  "use strict";
+  function createGeometryCache(onChange) {
+    let rects = new WeakMap();
+    let sample = 0;
+    let resizeObserver = null;
+    let watched = new Set();
+    function invalidate() {
+      rects = new WeakMap();
+      onChange();
+    }
+    function isAnimating(element) {
+      for (let node = element; node; node = node.parentElement) {
+        if (node.getAnimations?.().some(animation =>
+          animation.playState === "running" || animation.pending
+        )) return true;
+      }
+      return false;
+    }
+    function disconnect() {
+      resizeObserver?.disconnect();
+      resizeObserver = null;
+      rects = new WeakMap();
+      watched.clear();
+    }
+    return {
+      invalidate,
+      animationChange(event) { if (watched.has(event.target)) invalidate(); },
+      begin() { sample++; },
+      read(element) {
+        let cached = rects.get(element);
+        if (!cached || cached.sample !== sample) {
+          const animated = isAnimating(element);
+          cached = { rect: element.getBoundingClientRect(), animated, sample };
+          rects.set(element, cached);
+        }
+        return cached;
+      },
+      watch(elements) {
+        disconnect();
+        watched = new Set([document.documentElement, document.body]);
+        elements.forEach(element => {
+          for (let node = element; node; node = node.parentElement) watched.add(node);
+        });
+        if (!window.ResizeObserver) return;
+        const observer = new ResizeObserver(() => {
+          if (resizeObserver === observer) invalidate();
+        });
+        resizeObserver = observer;
+        watched.forEach(node => { if (node) resizeObserver.observe(node); });
+      },
+      disconnect,
+    };
+  }
+
 (function () {
   "use strict";
   const projection = document.getElementById("bg-title-projection");
@@ -457,20 +536,33 @@
   let resizeFrame = null;
   let fadeAnimation = null;
   let currentY = 0;
+  let running = false;
+  let navigating = false;
+  let selectionDirty = false;
+  let selectionAnimating = false;
   const visible = new Set();
+  const headingTargets = new Set();
+  const geometry = createGeometryCache(() => {
+    selectionDirty = true;
+    if (running && !reducedMotion.matches) schedule();
+  });
 
   function tick() {
     frame = null;
-    if (!activeAnchor?.isConnected || reducedMotion.matches) return;
-    const targetY = Math.max(-20, Math.min(20, (activeAnchor.getBoundingClientRect().top - window.innerHeight * 0.3) * 0.05));
+    if (!running || reducedMotion.matches) return;
+    geometry.begin();
+    if (selectionDirty || selectionAnimating) { selectionDirty = false; selectVisibleAnchor(); }
+    if (!activeAnchor?.isConnected) return;
+    const measured = geometry.read(activeAnchor);
+    const targetY = Math.max(-20, Math.min(20, (measured.rect.top - window.innerHeight * 0.3) * 0.05));
     currentY += (targetY - currentY) * 0.16;
     if (Math.abs(targetY - currentY) < 0.25) currentY = targetY;
     projection.style.transform = `translate3d(-50%, ${currentY}px, 0)`;
-    if (currentY !== targetY) schedule();
+    if (currentY !== targetY || measured.animated || selectionAnimating) schedule();
   }
 
   function schedule() {
-    if (frame === null && !document.hidden) frame = requestAnimationFrame(tick);
+    if (running && !reducedMotion.matches && frame === null && !document.hidden) frame = requestAnimationFrame(tick);
   }
 
   function updateText(anchor) {
@@ -501,17 +593,28 @@
 
   function selectVisibleAnchor() {
     const activationY = window.innerHeight * 0.3;
-    const anchor = Array.from(visible).sort((a, b) =>
-      Math.abs(a.getBoundingClientRect().top - activationY) -
-      Math.abs(b.getBoundingClientRect().top - activationY)
-    )[0];
+    let anchor = null;
+    let nearest = Infinity;
+    selectionAnimating = false;
+    for (const candidate of visible) {
+      if (!candidate.isConnected) continue;
+      const measured = geometry.read(candidate);
+      selectionAnimating ||= measured.animated;
+      const distance = Math.abs(measured.rect.top - activationY);
+      if (distance < nearest) { nearest = distance; anchor = candidate; }
+    }
     if (anchor) updateText(anchor);
   }
 
   function stop() {
+    running = false;
+    geometry.disconnect();
+    selectionDirty = false;
+    selectionAnimating = false;
     observer?.disconnect();
     observer = null;
     visible.clear();
+    headingTargets.clear();
     cancelAnimationFrame(frame);
     cancelAnimationFrame(resizeFrame);
     frame = resizeFrame = null;
@@ -523,36 +626,76 @@
 
   function start() {
     stop();
+    if (navigating) return;
     const title = document.querySelector(".post-title, .page-title") || document.querySelector(".site-title");
     if (!title) { projection.style.display = "none"; return; }
+    running = true;
     currentY = 0;
     projection.style.transform = "translate3d(-50%, 0, 0)";
     updateText(title);
-    if (reducedMotion.matches || !window.IntersectionObserver) return;
-    observer = new IntersectionObserver((entries) => {
+    if (reducedMotion.matches) return;
+    if (!window.IntersectionObserver) { refreshHeadingTargets(true); return; }
+    const currentObserver = new IntersectionObserver((entries) => {
+      if (!running || observer !== currentObserver) return;
       entries.forEach(entry => {
+        if (!headingTargets.has(entry.target) || !entry.target.isConnected) return;
         if (entry.isIntersecting) visible.add(entry.target);
         else visible.delete(entry.target);
       });
-      selectVisibleAnchor();
+      geometry.invalidate();
     }, { rootMargin: "-18% 0% -67% 0%", threshold: 0 });
-    document.querySelectorAll(".post-title, .post-body h2, .post-body h3").forEach(el => observer.observe(el));
+    observer = currentObserver;
+    refreshHeadingTargets(true);
+  }
+
+  function refreshHeadingTargets(initial = false) {
+    if (navigating || !running || reducedMotion.matches) return;
+    const next = new Set(document.querySelectorAll(".post-title, .post-body h2, .post-body h3"));
+    let changed = false;
+    for (const target of headingTargets) {
+      if (next.has(target)) continue;
+      observer?.unobserve(target);
+      headingTargets.delete(target);
+      visible.delete(target);
+      changed = true;
+    }
+    for (const target of next) {
+      if (headingTargets.has(target)) continue;
+      headingTargets.add(target);
+      observer?.observe(target);
+      changed = true;
+    }
+    if (!changed && !initial) return;
+    const title = document.querySelector(".post-title, .page-title") || document.querySelector(".site-title");
+    geometry.watch([title, ...headingTargets].filter(Boolean));
+    if (!activeAnchor?.isConnected) updateText(title);
+    geometry.invalidate();
   }
 
   function handleResize() {
+    if (!running) return;
+    geometry.invalidate();
+    cancelAnimationFrame(frame);
+    frame = null;
     cancelAnimationFrame(resizeFrame);
     resizeFrame = requestAnimationFrame(start);
   }
 
-  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("scroll", geometry.invalidate, { passive: true, capture: true });
   window.addEventListener("resize", handleResize);
+  document.fonts?.addEventListener("loadingdone", geometry.invalidate);
+  document.fonts?.ready?.then(geometry.invalidate);
+  ["animationstart", "animationend", "animationcancel", "transitionrun", "transitionend", "transitioncancel"].forEach(type =>
+    document.addEventListener(type, geometry.animationChange, true)
+  );
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) { cancelAnimationFrame(frame); frame = null; }
-    else schedule();
+    else geometry.invalidate();
   });
-  document.addEventListener("pjax:send", stop);
-  document.addEventListener("pjax:success", start);
-  document.addEventListener("pjax:error", start);
+  document.addEventListener("pjax:send", () => { navigating = true; stop(); });
+  document.addEventListener("pjax:success", () => { navigating = false; start(); });
+  document.addEventListener("pjax:error", () => { navigating = false; start(); });
+  window.addEventListener("hexo-blog-decrypt", () => refreshHeadingTargets());
   reducedMotion.addEventListener("change", start);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
   else start();
@@ -579,10 +722,26 @@
   let x = 0;
   let y = 0;
   let last = 0;
+  let navigating = false;
+
+  function findTarget(element) {
+    // Images keep free follow, even inside an otherwise magnetic text/control link.
+    if (element?.closest?.("img, picture")) return null;
+    const candidate = element?.closest?.(selector);
+    // Fancybox wrappers also exclude their padding and caption hit areas.
+    if (candidate?.matches?.(".fancybox, [data-fancybox]")) return null;
+    return candidate || null;
+  }
+
+  function setTarget(next) {
+    target = next;
+    node.classList.toggle("cursor-hover", !!target);
+    schedule();
+  }
 
   function draw(time) {
     frame = null;
-    if (!enabled || !pointer) return;
+    if (!enabled || !media.matches || !pointer || document.hidden) return;
     let tx = pointer.x;
     let ty = pointer.y;
     if (target?.isConnected) {
@@ -599,10 +758,13 @@
     last = time;
     if (Math.abs(tx - x) > 0.1 || Math.abs(ty - y) > 0.1) schedule();
     else outer.style.transform = `translate3d(calc(${tx}px - 50%), calc(${ty}px - 50%), 0)`;
+    // Only a live hovered target keeps sampling after convergence. This discovers
+    // silent transforms and later WAAPI starts without a global observer or RAF.
+    if (target?.isConnected) schedule();
   }
 
   function schedule() {
-    if (frame === null && pointer) frame = requestAnimationFrame(draw);
+    if (enabled && !document.hidden && frame === null && pointer) frame = requestAnimationFrame(draw);
   }
 
   function reset() {
@@ -613,13 +775,13 @@
     queuedPointer = null;
     rippleAnimation = null;
     pointer = target = null;
-    node.classList.remove("cursor-visible", "cursor-hover", "cursor-ripple");
+    node.classList.remove("cursor-visible", "cursor-hover");
     document.documentElement.classList.remove("custom-cursor-active");
   }
 
   function updatePointer(event) {
     pointerFrame = null;
-    if (!enabled || !event) return;
+    if (!enabled || !media.matches || document.hidden || !event) return;
     if (!pointer) {
       x = event.clientX;
       y = event.clientY;
@@ -633,7 +795,7 @@
   }
 
   document.addEventListener("pointermove", event => {
-    if (!enabled || !event.isPrimary || event.pointerType === "touch") return;
+    if (!enabled || document.hidden || !event.isPrimary || event.pointerType === "touch") return;
     queuedPointer = event;
     if (pointerFrame === null) {
       pointerFrame = requestAnimationFrame(() => {
@@ -644,18 +806,16 @@
     }
   }, { passive: true });
   document.addEventListener("mouseover", event => {
-    if (!enabled) return;
-    target = event.target.closest(selector);
-    node.classList.toggle("cursor-hover", !!target);
-    schedule();
+    if (!enabled || navigating || document.hidden) return;
+    setTarget(findTarget(event.target));
   }, { passive: true });
   document.addEventListener("mouseout", event => {
-    if (!enabled) return;
-    target = event.relatedTarget?.closest?.(selector) || null;
-    node.classList.toggle("cursor-hover", !!target);
-    schedule();
+    if (!enabled || navigating || document.hidden) return;
+    setTarget(findTarget(event.relatedTarget));
   }, { passive: true });
-  document.addEventListener("click", event => {
+  // Visual feedback precedes document-level asset/navigation gates, regardless
+  // of script order. Do not weaken their stopImmediatePropagation or replay clicks.
+  window.addEventListener("click", event => {
     if (!enabled || !pointer || event.detail === 0) return;
     rippleAnimation?.cancel();
     effect.style.left = `${event.clientX}px`;
@@ -668,13 +828,27 @@
       { duration: 500, easing: "ease-out" }
     );
     rippleAnimation.addEventListener("finish", () => { rippleAnimation = null; }, { once: true });
-  }, { passive: true });
+  }, { capture: true, passive: true });
   document.documentElement.addEventListener("mouseleave", reset);
   window.addEventListener("blur", reset);
-  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("scroll", schedule, { passive: true, capture: true });
   window.addEventListener("resize", schedule);
-  document.addEventListener("pjax:send", reset);
+  // Navigation suspends magnetism, not free follow or the click ripple.
+  document.addEventListener("pjax:send", () => { navigating = true; setTarget(null); });
+  function finishNavigation() {
+    navigating = false;
+    // A queued move is newer than the last painted pointer. Hit-test the current
+    // DOM once, so a stationary pointer needs no leave/re-entry after replacement.
+    const position = queuedPointer ? { x: queuedPointer.clientX, y: queuedPointer.clientY } : pointer;
+    const hovered = enabled && media.matches && !document.hidden && position
+      ? findTarget(document.elementFromPoint(position.x, position.y))
+      : null;
+    setTarget(hovered || null);
+  }
+  document.addEventListener("pjax:success", finishNavigation);
+  document.addEventListener("pjax:error", finishNavigation);
   document.addEventListener("visibilitychange", () => { if (document.hidden) reset(); });
   media.addEventListener("change", () => { enabled = media.matches; reset(); });
   enabled = media.matches;
+})();
 })();
