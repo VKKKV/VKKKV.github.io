@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="rainbet - Web &#x2F; WASM  A gambling game where the house doesn&#39;t actually have an edge — if you can see through the deck. Predictable RNG + leaked server secrets &#x3D; 25 consecutive wins and a flag.  Challe">
+    <meta name="description" content="Challenge analysis and method notes for UMDCTF 2026 - rainbet, covering web, wasm, reverse-engineering.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="UMDCTF 2026 - rainbet">
 <meta property="og:url" content="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-rainbet/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="rainbet - Web &#x2F; WASM  A gambling game where the house doesn&#39;t actually have an edge — if you can see through the deck. Predictable RNG + leaked server secrets &#x3D; 25 consecutive wins and a flag.  Challe">
+<meta property="og:description" content="Challenge analysis and method notes for UMDCTF 2026 - rainbet, covering web, wasm, reverse-engineering.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-26T02:30:00.000Z">
 <meta property="article:modified_time" content="2026-04-26T02:30:00.000Z">
@@ -295,7 +295,7 @@ p.spoiler {
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="UMDCTF 2026 - rainbet | Hello Navi">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="Challenge analysis and method notes for UMDCTF 2026 - rainbet, covering web, wasm, reverse-engineering.">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -336,7 +336,7 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>790</span>
+      <span>868</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -347,13 +347,16 @@ p.spoiler {
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for UMDCTF 2026 - rainbet, covering web, wasm, reverse-engineering.</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><h2 id="rainbet---web-wasm">rainbet - Web / WASM</h2>
+    <div class="post-body" itemprop="articleBody"><p>当前材料边界：未找回本题原附件、模型/checker 或完整
+solver。下文是原记录的机制分析与示意片段，不能直接运行；数值与服务接受描述属于未能回放核验的历史记录，不代表本轮验证。</p>
+<h2 id="rainbet---web-wasm">rainbet - Web / WASM</h2>
 <blockquote>
 <p>A gambling game where the house doesn't actually have an edge — if
 you can see through the deck. Predictable RNG + leaked server secrets =
@@ -369,14 +372,14 @@ session, and you can play Mines or Chicken. The goal is etched on the
 front page: win <strong>25 rounds in a row</strong> at maximum
 payout.</p>
 <p>The server exposes two critical API endpoints:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /api/sessioninfo</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /api/sessioninfo</span><br></pre></td></tr></table></figure>
 <p>{: file='endpoint'}</p>
 <p>Returns <code>session_id</code> (a hex string) and
 <code>hmac_secret</code> (also hex). Both are per-session and stable for
 the lifetime of the session.</p>
 <p>The websocket endpoint sends a welcome message upon connection that
 includes the current <code>round_idx</code>.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /api/socket</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /api/socket</span><br></pre></td></tr></table></figure>
 <p>{: file='endpoint'}</p>
 <p>WebSocket handshake. The server's first message contains
 <code>round_idx</code> in the JSON payload.</p>
@@ -454,18 +457,18 @@ game.</p>
 <p><strong>Mines</strong> — the board is a grid with hidden mines.
 <code>generate</code> returns a list of mine positions. We reveal every
 tile that <em>isn't</em> a mine. The HMAC payload format is:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mines:&lt;streak&gt;:&lt;size&gt;:&lt;num_mines&gt;:&lt;tiles&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mines:&lt;streak&gt;:&lt;size&gt;:&lt;num_mines&gt;:&lt;tiles&gt;</span><br></pre></td></tr></table></figure>
 <p>where <code>&lt;tiles&gt;</code> is a comma-separated list of tile
 indices.</p>
 <p><strong>Chicken</strong> — the player crosses a bridge step by step;
 some steps are safe, others collapse. <code>generate</code> returns the
 safe step count. We cash out at that exact safe step (maximum safe
 position). Payload format:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chicken:&lt;streak&gt;:&lt;steps&gt;:&lt;crossed&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chicken:&lt;streak&gt;:&lt;steps&gt;:&lt;crossed&gt;</span><br></pre></td></tr></table></figure>
 <h3 id="hmac-forgery">3.3 HMAC forgery</h3>
 <p>The <code>hmac_secret</code> is a hex string. The server uses
 HMAC-SHA256 to sign action payloads:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">signature = HMAC-SHA256(hmac_secret, payload_string)</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">signature = HMAC-SHA256(hmac_secret, payload_string)</span><br></pre></td></tr></table></figure>
 <p>We construct the payload string, compute the signature, and include
 it in our WebSocket action message:</p>
 <figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">sign</span>(<span class="params">payload</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> crypto.<span class="title function_">createHmac</span>(<span class="string">&quot;sha256&quot;</span>, hmacSecret).<span class="title function_">update</span>(payload).<span class="title function_">digest</span>(<span class="string">&quot;hex&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -493,7 +496,7 @@ to send the flag.</li>
 <figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">solve</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> wasm = <span class="keyword">await</span> <span class="title function_">initWasm</span>();</span><br><span class="line">  <span class="keyword">const</span> session = <span class="keyword">await</span> <span class="title function_">fetchSessionInfo</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> ws = <span class="keyword">new</span> <span class="title class_">WebSocket</span>(<span class="string">&quot;wss://rainbet.challs.umdctf.io/api/socket&quot;</span>);</span><br><span class="line">  ws.<span class="property">onmessage</span> = <span class="title function_">async</span> (msg) =&gt; &#123;</span><br><span class="line">    <span class="keyword">const</span> data = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(msg.<span class="property">data</span>);</span><br><span class="line">    <span class="keyword">const</span> roundIdx = data.<span class="property">round_idx</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate the game locally</span></span><br><span class="line">    <span class="keyword">const</span> game = <span class="title function_">predictGame</span>(wasm, session.<span class="property">id</span>, roundIdx);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Build the winning action</span></span><br><span class="line">    <span class="keyword">const</span> action = <span class="title function_">buildWinningAction</span>(game);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Sign and send</span></span><br><span class="line">    <span class="keyword">const</span> signature = <span class="title function_">sign</span>(action.<span class="property">payload</span>);</span><br><span class="line">    ws.<span class="title function_">send</span>(</span><br><span class="line">      <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(&#123;</span><br><span class="line">        <span class="attr">type</span>: <span class="string">&quot;action&quot;</span>,</span><br><span class="line">        <span class="attr">payload</span>: action.<span class="property">payload</span>,</span><br><span class="line">        <span class="attr">signature</span>: signature,</span><br><span class="line">      &#125;),</span><br><span class="line">    );</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="flag">4. Flag</h2>
 <p>After 25 consecutive correct predictions:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UMDCTF&#123;one_might_argue_that_gambling_is_the_best_vice_but_they_would_be_wrong&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UMDCTF&#123;one_might_argue_that_gambling_is_the_best_vice_but_they_would_be_wrong&#125;</span><br></pre></td></tr></table></figure>
 
     </div>
 
@@ -591,13 +594,13 @@ to send the flag.</li>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

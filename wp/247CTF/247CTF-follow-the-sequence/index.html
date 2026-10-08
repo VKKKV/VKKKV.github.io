@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="Multi-path TCP (MPTCP) challenge: data is spread across multiple subflows. Task is to combine the requests and recover the flag. Approach  Merge PCAP files - Combine three MPTCP flow captures Extract">
+    <meta name="description" content="Challenge analysis and method notes for 247CTF - Follow The Sequence, covering 247ctf.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="247CTF - Follow The Sequence">
 <meta property="og:url" content="https://vkkkv.github.io/wp/247CTF/247CTF-follow-the-sequence/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Multi-path TCP (MPTCP) challenge: data is spread across multiple subflows. Task is to combine the requests and recover the flag. Approach  Merge PCAP files - Combine three MPTCP flow captures Extract">
+<meta property="og:description" content="Challenge analysis and method notes for 247CTF - Follow The Sequence, covering 247ctf.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-02-27T07:53:23.000Z">
 <meta property="article:modified_time" content="2026-02-27T07:53:23.000Z">
@@ -218,7 +218,7 @@ p.spoiler {
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#approach"><span class="nav-number">1.</span> <span class="nav-text">Approach</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#solution-steps"><span class="nav-number">2.</span> <span class="nav-text">Solution Steps</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#key-findings"><span class="nav-number">3.</span> <span class="nav-text">Key Findings</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#solution-steps"><span class="nav-number">1.</span> <span class="nav-text">Solution Steps</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#key-findings"><span class="nav-number">2.</span> <span class="nav-text">Key Findings</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -293,7 +293,7 @@ p.spoiler {
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="247CTF - Follow The Sequence | Hello Navi">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="Challenge analysis and method notes for 247CTF - Follow The Sequence, covering 247ctf.">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -334,7 +334,7 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>142</span>
+      <span>166</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -345,6 +345,7 @@ p.spoiler {
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for 247CTF - Follow The Sequence, covering 247ctf.</div>
         </div>
       </header>
 
@@ -353,19 +354,15 @@ p.spoiler {
     
     <div class="post-body" itemprop="articleBody"><p>Multi-path TCP (MPTCP) challenge: data is spread across multiple
 subflows. Task is to combine the requests and recover the flag.</p>
-<h2 id="approach">Approach</h2>
-<ol type="1">
-<li><strong>Merge PCAP files</strong> - Combine three MPTCP flow
-captures</li>
-<li><strong>Extract TCP streams</strong> - Reconstruct the data from
-merged flows</li>
-<li><strong>Analyze extracted data</strong> - Look for embedded archives
-and artifacts</li>
-<li><strong>Extract and inspect</strong> - Check for flag in extracted
-files</li>
-</ol>
 <h2 id="solution-steps">Solution Steps</h2>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. Merge the three PCAP files</span></span><br><span class="line">mergecap -w merged_chall.pcap chall-i1.pcap chall-i2.pcap chall-i3.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. Extract TCP flows</span></span><br><span class="line">tcpflow -r merged_chall.pcap -o ./output_dir</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. Concatenate flow streams</span></span><br><span class="line"><span class="built_in">cat</span> a b c &gt; a</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. Extract embedded archive with binwalk</span></span><br><span class="line">binwalk -eM a</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. Merge the three PCAP files</span></span><br><span class="line">mergecap -w merged_chall.pcap chall-i1.pcap chall-i2.pcap chall-i3.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. Extract TCP flows</span></span><br><span class="line">tcpflow -r merged_chall.pcap -o ./output_dir</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. Concatenate already ordered payload fragments without truncating any input</span></span><br><span class="line"><span class="built_in">cat</span> a b c &gt; combined.bin</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. Extract embedded archive with binwalk</span></span><br><span class="line">binwalk -eM combined.bin</span><br></pre></td></tr></table></figure>
+<p><code>a</code>, <code>b</code> and <code>c</code> denote extracted
+payload fragments, not filenames produced automatically by
+<code>tcpflow</code>. Their mapping, direction and data-sequence
+ordering must be established from MPTCP DSS options;
+<code>tcpflow</code> reconstructs individual TCP streams, not the MPTCP
+connection as a whole. The captures and this mapping are unavailable, so
+this command sequence does not yet reproduce the final archive.</p>
 <h2 id="key-findings">Key Findings</h2>
 <ul>
 <li>Identified ZIP archive at offset <code>0x78145B</code> containing 11
@@ -375,7 +372,7 @@ files</li>
 <code>NOT_A_FLAG.jpg</code></li>
 <li>Flag is embedded in one of the extracted images</li>
 </ul>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{[flag redacted]}</span></span>
 
     </div>
 
@@ -471,13 +468,13 @@ files</li>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

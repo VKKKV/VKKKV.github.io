@@ -331,14 +331,14 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>174</span>
+      <span>458</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
+      <span>2 mins.</span>
     </span>
 </div>
 
@@ -349,17 +349,38 @@ p.spoiler {
     
     
     
-    <div class="post-body" itemprop="articleBody"><p>add this script</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line">PARAM=<span class="string">&quot;--enable-wayland-ime&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">modify_desktop</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> file=<span class="string">&quot;<span class="variable">$1</span>&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> grep -q <span class="string">&quot;Exec=.*<span class="variable">$PARAM</span>&quot;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span>; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">return</span> 0</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">local</span> exec_line=$(grep -m1 <span class="string">&#x27;^Exec=&#x27;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [[ <span class="string">&quot;<span class="variable">$exec_line</span>&quot;</span> =~ [[:space:]] ]]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">sudo</span> sed -i <span class="string">&quot;0,/^Exec=/s|\(Exec=[^[:space:]]*[[:space:]]\)|\1<span class="variable">$PARAM</span> |&quot;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">sudo</span> sed -i <span class="string">&quot;0,/^Exec=/s|^Exec=.*|&amp; <span class="variable">$PARAM</span>|&quot;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># change to your package list path</span></span><br><span class="line"><span class="keyword">for</span> app <span class="keyword">in</span> $(<span class="built_in">cat</span> /home/Kita/.local/bin/ap.lst); <span class="keyword">do</span></span><br><span class="line">    desktop_file=<span class="string">&quot;/usr/share/applications/<span class="variable">$app</span>.desktop&quot;</span></span><br><span class="line">    <span class="keyword">if</span> [[ -f <span class="string">&quot;<span class="variable">$desktop_file</span>&quot;</span> ]]; <span class="keyword">then</span></span><br><span class="line">        modify_desktop <span class="string">&quot;<span class="variable">$desktop_file</span>&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>add package list such as</p>
+    <div class="post-body" itemprop="articleBody"><p>This hook runs as root after a pacman transaction. Never point
+<code>Exec</code> at a script or package list writable by an ordinary
+user. Install both under root-owned paths; every ancestor directory must
+also be protected from user writes.</p>
+<p>Save this as <code>ap</code> in your working directory for review,
+then install it as shown below. It handles simple, unquoted executable
+names in the first <code>Exec=</code> line only; quoted executable paths
+and Desktop Actions need a Desktop Entry-aware implementation rather
+than this small patcher.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line">[[ <span class="string">&quot;<span class="variable">$EUID</span>&quot;</span> -eq 0 ]] || &#123; <span class="built_in">printf</span> <span class="string">&#x27;Run through the root-owned pacman hook.\n&#x27;</span> &gt;&amp;2; <span class="built_in">exit</span> 1; &#125;</span><br><span class="line">PARAM=<span class="string">&quot;--enable-wayland-ime&quot;</span></span><br><span class="line">LIST=<span class="string">&quot;/etc/desktop-wayland-ime/apps.list&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">modify_desktop</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> file=<span class="string">&quot;<span class="variable">$1</span>&quot;</span> exec_line <span class="built_in">command</span> rest</span><br><span class="line">    [[ -f <span class="string">&quot;<span class="variable">$file</span>&quot;</span> &amp;&amp; ! -L <span class="string">&quot;<span class="variable">$file</span>&quot;</span> ]] || <span class="built_in">return</span> 0</span><br><span class="line">    exec_line=$(grep -m1 <span class="string">&#x27;^Exec=&#x27;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span>) || <span class="built_in">return</span> 0</span><br><span class="line">    <span class="comment"># Only simple, unquoted executable tokens; skip other grammar safely.</span></span><br><span class="line">    <span class="keyword">if</span> [[ <span class="string">&quot;<span class="variable">$exec_line</span>&quot;</span> =~ ^Exec=([[:alnum:]_./-]+)([[:blank:]].*)?$ ]]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">command</span>=<span class="string">&quot;<span class="variable">$&#123;BASH_REMATCH[1]&#125;</span>&quot;</span></span><br><span class="line">        rest=<span class="string">&quot;<span class="variable">$&#123;BASH_REMATCH[2]:-&#125;</span>&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">return</span> 0</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">    [[ <span class="string">&quot; <span class="variable">$rest</span> &quot;</span> == *<span class="string">&quot; <span class="variable">$PARAM</span> &quot;</span>* ]] &amp;&amp; <span class="built_in">return</span> 0</span><br><span class="line">    <span class="comment"># Replace only the executable token; leave arguments (including &amp; and |) untouched.</span></span><br><span class="line">    sed -i <span class="string">&quot;0,/^Exec=/s|^Exec=[^[:blank:]]*|&amp; <span class="variable">$PARAM</span>|&quot;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> IFS= <span class="built_in">read</span> -r app || [[ -n <span class="string">&quot;<span class="variable">$app</span>&quot;</span> ]]; <span class="keyword">do</span></span><br><span class="line">    [[ -z <span class="string">&quot;<span class="variable">$app</span>&quot;</span> || <span class="string">&quot;<span class="variable">$app</span>&quot;</span> == \#* ]] &amp;&amp; <span class="built_in">continue</span></span><br><span class="line">    <span class="comment"># Accept desktop basenames only, never paths or traversal.</span></span><br><span class="line">    [[ <span class="string">&quot;<span class="variable">$app</span>&quot;</span> =~ ^[[:alnum:]_-][[:alnum:]_.-]*$ ]] || &#123; <span class="built_in">printf</span> <span class="string">&#x27;Invalid desktop basename.\n&#x27;</span> &gt;&amp;2; <span class="built_in">exit</span> 1; &#125;</span><br><span class="line">    modify_desktop <span class="string">&quot;/usr/share/applications/<span class="variable">$app</span>.desktop&quot;</span></span><br><span class="line"><span class="keyword">done</span> &lt; <span class="string">&quot;<span class="variable">$LIST</span>&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Save the package list as <code>apps.list</code>, for example:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cursor-cursor</span><br><span class="line">qq</span><br><span class="line">cherry-studio</span><br></pre></td></tr></table></figure>
-<p>add pacman hook to /etc/pacman.d/hooks/whateveryoucall.hook</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[Trigger]</span><br><span class="line">Operation = Install</span><br><span class="line">Operation = Upgrade</span><br><span class="line">Type = Package</span><br><span class="line">Target = *</span><br><span class="line"></span><br><span class="line">[Action]</span><br><span class="line">Description = Adding --enable-wyaland-ime to .desktop files</span><br><span class="line">When = PostTransaction</span><br><span class="line">Exec = /home/Kita/.local/bin/ap #change to your script path</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>after all package upgrade, this script will run and add
-<code>--enable-wayland-ime</code> to the Exec line of the specified
-.desktop files.</p>
-<p>try <code>sudo pacman -Syu</code> to test it.</p>
-<p>i use <code>paru -Syu</code> to test it, it works.</p>
+<p>Install the reviewed script and list (the working copies are not
+executed by the hook):</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -d -o root -g root -m 0755 /etc/desktop-wayland-ime</span><br><span class="line"><span class="built_in">sudo</span> install -o root -g root -m 0755 ap /usr/local/sbin/desktop-wayland-ime</span><br><span class="line"><span class="built_in">sudo</span> install -o root -g root -m 0644 apps.list /etc/desktop-wayland-ime/apps.list</span><br></pre></td></tr></table></figure>
+<p>Create <code>/etc/pacman.d/hooks/desktop-wayland-ime.hook</code> with
+root:root ownership and mode 0644. Ensure the hook directory and
+<code>/usr/local/sbin</code> are root-owned and not writable by ordinary
+users; if those directories are already user-writable, repair that
+prerequisite before installing anything.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[Trigger]</span><br><span class="line">Operation = Install</span><br><span class="line">Operation = Upgrade</span><br><span class="line">Type = Package</span><br><span class="line">Target = *</span><br><span class="line"></span><br><span class="line">[Action]</span><br><span class="line">Description = Adding --enable-wayland-ime to selected .desktop files</span><br><span class="line">When = PostTransaction</span><br><span class="line">Exec = /usr/local/sbin/desktop-wayland-ime</span><br></pre></td></tr></table></figure>
+<p>The hook modifies selected package-owned files in
+<code>/usr/share/applications</code>; package upgrades can overwrite
+them again. A user-level desktop override is an alternative when the
+setting is only for one account.</p>
+<p>Test the parser/idempotence against disposable desktop fixtures
+before installing, rather than performing a system upgrade only to test
+a hook. After installation, inspect ownership, mode and the modified
+<code>Exec=</code> lines during an independently planned package
+transaction. The earlier personal <code>paru -Syu</code> observation was
+not rerun for this revised hook; no package upgrade or root execution
+was performed in this review.</p>
 
     </div>
 
@@ -410,8 +431,8 @@ p.spoiler {
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/wp/Miscellaneous/XSS-Challenge/" rel="prev" title="XSS">
-                  <i class="fa fa-angle-left"></i> XSS
+                <a href="/wp/OverTheWire/OverTheWire-Bandit/" rel="prev" title="OverTheWire - Bandit">
+                  <i class="fa fa-angle-left"></i> OverTheWire - Bandit
                 </a>
             </div>
             <div class="post-nav-item">
@@ -453,13 +474,13 @@ p.spoiler {
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

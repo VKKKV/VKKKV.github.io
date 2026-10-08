@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="SSL Certificate Renewal Notes This note records a simple SSL certificate workflow with certbot: acquire, verify, renew, and deploy. The example domain is api.example.com. Replace it with your own doma">
+    <meta name="description" content="Notes on SSL Certificate Renewal Notes, covering linux, vps, ssl, certbot, systemd.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SSL Certificate Renewal Notes">
 <meta property="og:url" content="https://vkkkv.github.io/linux/ssl-certificate-automation/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="SSL Certificate Renewal Notes This note records a simple SSL certificate workflow with certbot: acquire, verify, renew, and deploy. The example domain is api.example.com. Replace it with your own doma">
+<meta property="og:description" content="Notes on SSL Certificate Renewal Notes, covering linux, vps, ssl, certbot, systemd.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-05-10T06:12:00.000Z">
 <meta property="article:modified_time" content="2026-05-10T06:12:00.000Z">
@@ -296,7 +296,7 @@ Notes</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class=
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="SSL Certificate Renewal Notes | Hello Navi">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="Notes on SSL Certificate Renewal Notes, covering linux, vps, ssl, certbot, systemd.">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -337,17 +337,18 @@ Notes</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class=
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>216</span>
+      <span>723</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
+      <span>3 mins.</span>
     </span>
 </div>
 
+            <div class="post-description">Notes on SSL Certificate Renewal Notes, covering linux, vps, ssl, certbot, systemd.</div>
         </div>
       </header>
 
@@ -364,23 +365,62 @@ your own domain.</p>
 <p>For a standalone HTTP-01 challenge, port <code>80</code> must be
 reachable and not occupied by another process:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br></pre></td></tr></table></figure>
-<p>If Caddy or Nginx is already using port <code>80</code>, stop it
-temporarily:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl stop caddy</span><br><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com</span><br><span class="line"><span class="built_in">sudo</span> systemctl start caddy</span><br></pre></td></tr></table></figure>
+<p>If Caddy already owns port <code>80</code>, first consider letting
+Caddy manage its own certificates, or using DNS-01 / a properly served
+webroot. The standalone alternative below causes downtime and is only
+for this port-conflict branch, not every service on the host.</p>
+<p>Create <code>certbot-caddy-stop.sh</code> in your working
+directory:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line"><span class="keyword">if</span> systemctl is-active --quiet caddy; <span class="keyword">then</span></span><br><span class="line">    install -d -o root -g root -m 0700 /run/certbot-caddy-renewal</span><br><span class="line">    <span class="built_in">touch</span> /run/certbot-caddy-renewal/was-active</span><br><span class="line">    systemctl stop caddy</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>Create <code>certbot-caddy-start.sh</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line"><span class="keyword">if</span> [[ -f /run/certbot-caddy-renewal/was-active ]]; <span class="keyword">then</span></span><br><span class="line">    systemctl start caddy</span><br><span class="line">    <span class="built_in">rm</span> -f /run/certbot-caddy-renewal/was-active</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>Install the inspected scripts as root-owned hooks, then request the
+certificate with those hooks:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -o root -g root -m 0755 certbot-caddy-stop.sh /usr/local/sbin/certbot-caddy-stop</span><br><span class="line"><span class="built_in">sudo</span> install -o root -g root -m 0755 certbot-caddy-start.sh /usr/local/sbin/certbot-caddy-start</span><br><span class="line"><span class="built_in">sudo</span> certbot certonly --standalone -d api.example.com \</span><br><span class="line">  --pre-hook /usr/local/sbin/certbot-caddy-stop \</span><br><span class="line">  --post-hook /usr/local/sbin/certbot-caddy-start</span><br><span class="line"><span class="built_in">sudo</span> systemctl status caddy</span><br></pre></td></tr></table></figure>
+<p>The marker restores Caddy only if it was active before the attempt.
+Certbot normally runs the post-hook after renewal attempts even when
+validation fails; a killed process or host failure can still prevent it.
+After an interrupted run, inspect Caddy and the marker and restore
+service manually if needed. Serialize renewal jobs using this pair; the
+shared marker is not designed for concurrent Certbot instances. Hook
+files and all ancestor directories must not be writable by unprivileged
+users.</p>
 <h2 id="check-the-certificate">Check The Certificate</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot certificates</span><br><span class="line"><span class="built_in">sudo</span> openssl x509 \</span><br><span class="line">  -<span class="keyword">in</span> /etc/letsencrypt/live/api.example.com/fullchain.pem \</span><br><span class="line">  -noout -dates</span><br></pre></td></tr></table></figure>
 <h2 id="enable-renewal">Enable Renewal</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now certbot.timer</span><br><span class="line">systemctl list-timers | grep certbot</span><br></pre></td></tr></table></figure>
-<p>Run a dry test:</p>
+<p>For the Caddy-conflict branch, check that the certificate’s
+<code>/etc/letsencrypt/renewal/api.example.com.conf</code> retains the
+standalone authenticator and the intended pre/post hook paths before
+relying on the timer. An existing certificate obtained without these
+hooks needs its renewal configuration updated using the installed
+Certbot version’s supported reconfiguration workflow. Keep the hooks off
+lineages that do not require this downtime.</p>
+<p>Run a dry test (the pre/post hooks may stop and restart Caddy):</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> certbot renew --dry-run</span><br></pre></td></tr></table></figure>
 <h2 id="deploy-hook">Deploy Hook</h2>
 <p>Some services cannot read directly from
 <code>/etc/letsencrypt/live/...</code>, or they need certificate files
 copied into a service-owned directory.</p>
-<p>Example hook for a service called <code>myapp</code>:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line"></span><br><span class="line">DOMAIN=<span class="string">&quot;api.example.com&quot;</span></span><br><span class="line">TARGET_DIR=<span class="string">&quot;/etc/myapp/cert&quot;</span></span><br><span class="line"></span><br><span class="line">install -d -m 0750 <span class="string">&quot;<span class="variable">$TARGET_DIR</span>&quot;</span></span><br><span class="line">install -m 0644 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/fullchain.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/fullchain.pem&quot;</span></span><br><span class="line">install -m 0600 <span class="string">&quot;/etc/letsencrypt/live/<span class="variable">$DOMAIN</span>/privkey.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/privkey.pem&quot;</span></span><br><span class="line"></span><br><span class="line">systemctl reload myapp</span><br></pre></td></tr></table></figure>
+<p>Example hook for a service called <code>myapp</code>. Confirm that
+the actual service identity is a member of group <code>myapp</code> and
+that all parent directories allow traversal by that group. Here the
+directory remains root-owned, with read/traverse access for the service
+group; the private key is never world-readable. Replace the
+domain/group/service names for your deployment. Save the following as
+<code>deploy-myapp-cert.sh</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"><span class="built_in">set</span> -euo pipefail</span><br><span class="line"></span><br><span class="line">DOMAIN=<span class="string">&quot;api.example.com&quot;</span></span><br><span class="line">TARGET_DIR=<span class="string">&quot;/etc/myapp/cert&quot;</span></span><br><span class="line">SERVICE_GROUP=<span class="string">&quot;myapp&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Deploy only the lineage that this service uses.</span></span><br><span class="line"><span class="keyword">case</span> <span class="string">&quot; <span class="variable">$&#123;RENEWED_DOMAINS:-&#125;</span> &quot;</span> <span class="keyword">in</span></span><br><span class="line">    *<span class="string">&quot; <span class="variable">$DOMAIN</span> &quot;</span>*) ;;</span><br><span class="line">    *) <span class="built_in">exit</span> 0 ;;</span><br><span class="line"><span class="keyword">esac</span></span><br><span class="line">LINEAGE=<span class="string">&quot;<span class="variable">$&#123;RENEWED_LINEAGE:?Certbot must provide RENEWED_LINEAGE&#125;</span>&quot;</span></span><br><span class="line">getent group <span class="string">&quot;<span class="variable">$SERVICE_GROUP</span>&quot;</span> &gt;/dev/null</span><br><span class="line"></span><br><span class="line">install -d -o root -g <span class="string">&quot;<span class="variable">$SERVICE_GROUP</span>&quot;</span> -m 0750 <span class="string">&quot;<span class="variable">$TARGET_DIR</span>&quot;</span></span><br><span class="line">install -o root -g <span class="string">&quot;<span class="variable">$SERVICE_GROUP</span>&quot;</span> -m 0644 <span class="string">&quot;<span class="variable">$LINEAGE</span>/fullchain.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/fullchain.pem&quot;</span></span><br><span class="line">install -o root -g <span class="string">&quot;<span class="variable">$SERVICE_GROUP</span>&quot;</span> -m 0640 <span class="string">&quot;<span class="variable">$LINEAGE</span>/privkey.pem&quot;</span> <span class="string">&quot;<span class="variable">$TARGET_DIR</span>/privkey.pem&quot;</span></span><br><span class="line"></span><br><span class="line">systemctl reload myapp</span><br></pre></td></tr></table></figure>
 <p>Install it as a deploy hook:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -m 0755 deploy-myapp-cert.sh \</span><br><span class="line">  /etc/letsencrypt/renewal-hooks/deploy/myapp.sh</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> install -o root -g root -m 0755 deploy-myapp-cert.sh \</span><br><span class="line">  /etc/letsencrypt/renewal-hooks/deploy/myapp.sh</span><br></pre></td></tr></table></figure>
+<p>Verify the directory/key owner, group and mode, then test certificate
+reads as the actual service identity. A successful copy does not prove
+the service can read the key or supports reload. Plain
+<code>renew --dry-run</code> does not normally run deploy hooks; use the
+installed version’s <code>--run-deploy-hooks</code> support deliberately
+(it can reload the real service). This example does not provide atomic
+replacement of the certificate/key pair; coordinate readers or use the
+service’s documented deployment mechanism when concurrent reads matter.
+No live issuance, renewal or myapp reload was tested here.</p>
 
     </div>
 
@@ -478,13 +518,13 @@ copied into a service-owned directory.</p>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

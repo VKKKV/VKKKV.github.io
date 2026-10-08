@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="Challenge Details      Category ML &#x2F; Adversarial ML   Points ~300   Solves ~15     Purify the stream... or corrupt it.  flow was a fascinating adversarial machine learning challenge. We were given">
+    <meta name="description" content="Challenge analysis and method notes for UMDCTF 2026 - flow, covering ml, adversarial, normalizing-flows.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="UMDCTF 2026 - flow">
 <meta property="og:url" content="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-flow/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Challenge Details      Category ML &#x2F; Adversarial ML   Points ~300   Solves ~15     Purify the stream... or corrupt it.  flow was a fascinating adversarial machine learning challenge. We were given">
+<meta property="og:description" content="Challenge analysis and method notes for UMDCTF 2026 - flow, covering ml, adversarial, normalizing-flows.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-26T02:40:00.000Z">
 <meta property="article:modified_time" content="2026-04-26T02:40:00.000Z">
@@ -296,7 +296,7 @@ Optimize in Latent Space</span></a></li><li class="nav-item nav-level-2"><a clas
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="UMDCTF 2026 - flow | Hello Navi">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="Challenge analysis and method notes for UMDCTF 2026 - flow, covering ml, adversarial, normalizing-flows.">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -337,7 +337,7 @@ Optimize in Latent Space</span></a></li><li class="nav-item nav-level-2"><a clas
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>702</span>
+      <span>803</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -348,13 +348,16 @@ Optimize in Latent Space</span></a></li><li class="nav-item nav-level-2"><a clas
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for UMDCTF 2026 - flow, covering ml, adversarial, normalizing-flows.</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><table>
+    <div class="post-body" itemprop="articleBody"><p>当前材料边界：未找回本题原附件、模型/checker 或完整
+solver。下文是原记录的机制分析与示意片段，不能直接运行；数值与服务接受描述属于未能回放核验的历史记录，不代表本轮验证。</p>
+<table>
 <thead>
 <tr class="header">
 <th>Challenge Details</th>
@@ -418,7 +421,8 @@ Defense）</strong>的绕过，属于<strong>对抗性攻击</strong>的高级�
 </tr>
 <tr class="odd">
 <td>铰链损失（Hinge Loss）</td>
-<td>max(0, margin - value)，约束满足时损失为 0</td>
+<td><span class="math inline">\(\max(0,\ \mathrm{margin} -
+\mathrm{value})\)</span>，约束满足时损失为 0</td>
 </tr>
 <tr class="even">
 <td>Softmax / Logits</td>
@@ -431,10 +435,11 @@ arXiv:1911.08654。</p>
 <h2 id="understanding-the-purifier">Understanding the Purifier</h2>
 <p>Let's look at how purification worked:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">purify</span>(<span class="params">x, flow, n_steps=<span class="number">3</span>, alpha=<span class="number">0.55</span></span>):</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n_steps):</span><br><span class="line">        z, _ = flow.forward(x)</span><br><span class="line">        x = flow.inverse(alpha * z)</span><br><span class="line">    <span class="keyword">return</span> x</span><br></pre></td></tr></table></figure>
-<p>After 3 steps,
-<code>x_purified = flow.inverse(0.55^3 * z_submit)</code>. The
-classifier sees this shrunk latent version, while the flow likelihood
-check is performed on the <em>original submitted sample</em>.</p>
+<p>After 3 steps, <span class="math inline">\(x_{\mathrm{purified}} =
+\operatorname{flow.inverse}(0.55^3 \cdot z_{\mathrm{submit}})\)</span>.
+The classifier sees this shrunk latent version, while the flow
+likelihood check is performed on the <em>original submitted
+sample</em>.</p>
 <p>This mismatch is the key vulnerability. The defense checks likelihood
 <em>before</em> purification but classifies <em>after</em>, creating a
 differentiable pipeline that's ripe for gradient-based exploitation.</p>
@@ -460,8 +465,10 @@ logits under the <em>purified</em> version, while penalizing:
 </ol>
 <p>The loss function looked like:</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">attack_loss</span>(<span class="params">z, x_ref, flow, classifier, threshold, linf_max=<span class="number">0.05</span></span>):</span><br><span class="line">    <span class="comment"># Decode z back to data space (submitted sample)</span></span><br><span class="line">    sub = flow.decoder(z)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Purify and classify</span></span><br><span class="line">    z_noise, _ = flow.encoder(sub)</span><br><span class="line">    x_purified = flow.decoder((<span class="number">0.55</span>**<span class="number">3</span>) * z_noise)</span><br><span class="line">    logits = classifier(x_purified)</span><br><span class="line">    probs = softmax(logits)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Loss: minimize class 1 negative log-probability</span></span><br><span class="line">    cls_loss = -probs[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># L-infinity penalty (hinge-style)</span></span><br><span class="line">    linf_dist = torch.<span class="built_in">max</span>(torch.<span class="built_in">abs</span>(sub - x_ref))</span><br><span class="line">    linf_penalty = <span class="built_in">max</span>(<span class="number">0</span>, linf_dist - linf_max) * <span class="number">1000</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Log-prob penalty</span></span><br><span class="line">    logp = flow.log_prob(sub)</span><br><span class="line">    logp_penalty = <span class="built_in">max</span>(<span class="number">0</span>, threshold - logp) * <span class="number">100</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> cls_loss + linf_penalty + logp_penalty</span><br></pre></td></tr></table></figure>
-<p>Run this with Adam for ~3000 steps, and we converge to a solution
-that satisfies all constraints.</p>
+<p>This loss is an illustrative optimization objective. The complete
+Adam loop, seed, projection, model loading and checker/export protocol
+are not preserved; the stated 3000-step result cannot be reproduced from
+this fragment.</p>
 <h2 id="results">Results</h2>
 <p>Our final submission achieved:</p>
 <table>
@@ -474,19 +481,19 @@ that satisfies all constraints.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>L-infinity</td>
+<td><span class="math inline">\(\ell_\infty\)</span></td>
 <td><strong>0.049</strong></td>
-<td>&lt;= 0.05</td>
+<td><span class="math inline">\(\le 0.05\)</span></td>
 </tr>
 <tr class="even">
 <td>Log-probability</td>
 <td><strong>1062</strong></td>
-<td>&gt;= threshold</td>
+<td><span class="math inline">\(\ge \mathrm{threshold}\)</span></td>
 </tr>
 <tr class="odd">
-<td>P(class=1)</td>
+<td><span class="math inline">\(P(\mathrm{class}=1)\)</span></td>
 <td><strong>0.825</strong></td>
-<td>&gt;= 0.80</td>
+<td><span class="math inline">\(\ge 0.80\)</span></td>
 </tr>
 </tbody>
 </table>
@@ -608,13 +615,13 @@ model. 3000 steps of Adam beats one step of FGSM every time.</li>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

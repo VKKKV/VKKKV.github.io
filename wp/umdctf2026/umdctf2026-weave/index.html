@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="The weavers of the Gabidulin code have woven a disguise. But the shuttle leaves a trace, and the frays can only hide so much. Unravel the warp to find the secret.   加比杜林码的织者们编织了一层伪装。但梭子留下了痕迹，毛边只能遮掩有限">
+    <meta name="description" content="Challenge analysis and method notes for UMDCTF 2026 - Weave, covering crypto, gabidulin, rank-metric.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="UMDCTF 2026 - Weave">
 <meta property="og:url" content="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-weave/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="The weavers of the Gabidulin code have woven a disguise. But the shuttle leaves a trace, and the frays can only hide so much. Unravel the warp to find the secret.   加比杜林码的织者们编织了一层伪装。但梭子留下了痕迹，毛边只能遮掩有限">
+<meta property="og:description" content="Challenge analysis and method notes for UMDCTF 2026 - Weave, covering crypto, gabidulin, rank-metric.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-26T02:10:00.000Z">
 <meta property="article:modified_time" content="2026-04-26T02:10:00.000Z">
@@ -297,7 +297,7 @@ Insight: Low-Rank Structure of the Masking</span></a></li><li class="nav-item na
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="UMDCTF 2026 - Weave | Hello Navi">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="Challenge analysis and method notes for UMDCTF 2026 - Weave, covering crypto, gabidulin, rank-metric.">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -338,7 +338,7 @@ Insight: Low-Rank Structure of the Masking</span></a></li><li class="nav-item na
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>1.3k</span>
+      <span>1.4k</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -349,13 +349,17 @@ Insight: Low-Rank Structure of the Masking</span></a></li><li class="nav-item na
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for UMDCTF 2026 - Weave, covering crypto, gabidulin, rank-metric.</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
+    <div class="post-body" itemprop="articleBody"><p>当前材料边界：未找回公开矩阵数据、实际 Gabidulin decoder 与 secret
+字节序列化代码。下文仅为 SageMath 算法草图，未验证所列 decoder
+API；不是独立 solver，不能据此声称已复现解密。</p>
+<blockquote>
 <p>The weavers of the Gabidulin code have woven a disguise. But the
 shuttle leaves a trace, and the frays can only hide so much. Unravel the
 warp to find the secret.</p>
@@ -384,12 +388,14 @@ Theory）在秩度量下的分支。以下概念有助于理解：</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>有限域 GF(2^43)</td>
+<td>有限域 <span
+class="math inline">\(\operatorname{GF}(2^{43})\)</span></td>
 <td>扩体，每个元素可看作 43-bit 向量</td>
 </tr>
 <tr class="even">
 <td>Frobenius 自同构</td>
-<td>σ(x) = x²，Gabidulin 生成矩阵的构建基础</td>
+<td><span class="math inline">\(\sigma(x) = x^2\)</span>，Gabidulin
+生成矩阵的构建基础</td>
 </tr>
 <tr class="odd">
 <td>秩距离 vs Hamming 距离</td>
@@ -405,11 +411,15 @@ Theory）在秩度量下的分支。以下概念有助于理解：</p>
 </tr>
 <tr class="even">
 <td>MRD 特性</td>
-<td>最小秩距离 d = N - K + 1，解码半径 t = ⌊(N-K)/2⌋</td>
+<td>最小秩距离 <span class="math inline">\(d = N - K +
+1\)</span>，解码半径 <span class="math inline">\(t =
+\left\lfloor\frac{N-K}{2}\right\rfloor\)</span></td>
 </tr>
 <tr class="odd">
 <td>积秩攻击</td>
-<td>rank(A·B) ≤ rank_F₂(A) × dim(span(B))</td>
+<td><span class="math inline">\(\operatorname{rank}(A\cdot B) \le
+\operatorname{rank}_{\mathbb{F}_2}(A) \times
+\dim(\operatorname{span}(B))\)</span></td>
 </tr>
 </tbody>
 </table>
@@ -551,7 +561,7 @@ representation with SHA-256 and take the first 16 bytes:</p>
 the nonce/tag provided in the challenge output.</p></li>
 </ol>
 <h2 id="solve-script">Solve Script</h2>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> sha256</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"></span><br><span class="line"><span class="comment"># Load public data (warp, bolt, shuttle, knot, pegs, N, K, enc_flag, nonce, tag)</span></span><br><span class="line"><span class="comment"># ... (data parsing omitted for brevity)</span></span><br><span class="line"></span><br><span class="line">F = GF(<span class="number">2</span>)</span><br><span class="line">Fqm = GF(<span class="number">2</span>^<span class="number">43</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 1: Reconstruct the loom</span></span><br><span class="line">loom = Matrix(Fqm, K, N, <span class="keyword">lambda</span> j, i: qpow(pegs[i], j))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 2: Remove shuttle disguise</span></span><br><span class="line">received = bolt * shuttle</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 3: Build the modified generator matrix for decoding</span></span><br><span class="line"><span class="comment"># We need to decode received = s&#x27; * loom + error where s&#x27; = secret * knot</span></span><br><span class="line"><span class="comment"># Gabidulin decode (using sage&#x27;s built-in decoder or custom implementation)</span></span><br><span class="line">C = codes.GabidulinCode(loom)</span><br><span class="line">decoder = C.decoder(<span class="string">&quot;GabidulinGao&quot;</span>)</span><br><span class="line">s_prime = decoder.decode_to_message(received)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 4: Recover original secret</span></span><br><span class="line">knot_inv = knot^(-<span class="number">1</span>)</span><br><span class="line">secret = s_prime * knot_inv</span><br><span class="line"></span><br><span class="line"><span class="comment"># Step 5: Derive key and decrypt</span></span><br><span class="line">key = sha256(secret.base_extend(F) <span class="keyword">if</span> <span class="built_in">hasattr</span>(secret, <span class="string">&#x27;base_extend&#x27;</span>) <span class="keyword">else</span> secret).digest()[:<span class="number">16</span>]</span><br><span class="line">cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)</span><br><span class="line">flag = cipher.decrypt_and_verify(enc_flag, tag)</span><br><span class="line"><span class="built_in">print</span>(flag.decode())</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">from hashlib import sha256</span><br><span class="line">from Crypto.Cipher import AES</span><br><span class="line"></span><br><span class="line"># Load public data (warp, bolt, shuttle, knot, pegs, N, K, enc_flag, nonce, tag)</span><br><span class="line"># ... (data parsing omitted for brevity)</span><br><span class="line"></span><br><span class="line">F = GF(2)</span><br><span class="line">Fqm = GF(2^43)</span><br><span class="line"></span><br><span class="line"># Step 1: Reconstruct the loom</span><br><span class="line">loom = Matrix(Fqm, K, N, lambda j, i: qpow(pegs[i], j))</span><br><span class="line"></span><br><span class="line"># Step 2: Remove shuttle disguise</span><br><span class="line">received = bolt * shuttle</span><br><span class="line"></span><br><span class="line"># Step 3: Build the modified generator matrix for decoding</span><br><span class="line"># We need to decode received = s&#x27; * loom + error where s&#x27; = secret * knot</span><br><span class="line"># Gabidulin decode (using sage&#x27;s built-in decoder or custom implementation)</span><br><span class="line">C = codes.GabidulinCode(loom)</span><br><span class="line">decoder = C.decoder(&quot;GabidulinGao&quot;)</span><br><span class="line">s_prime = decoder.decode_to_message(received)</span><br><span class="line"></span><br><span class="line"># Step 4: Recover original secret</span><br><span class="line">knot_inv = knot^(-1)</span><br><span class="line">secret = s_prime * knot_inv</span><br><span class="line"></span><br><span class="line"># Step 5: Derive key and decrypt</span><br><span class="line">key = sha256(secret.base_extend(F) if hasattr(secret, &#x27;base_extend&#x27;) else secret).digest()[:16]</span><br><span class="line">cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)</span><br><span class="line">flag = cipher.decrypt_and_verify(enc_flag, tag)</span><br><span class="line">print(flag.decode())</span><br></pre></td></tr></table></figure>
 <p>A complete standalone implementation of the Gabidulin Gao decoder can
 also be written from scratch using the standard algorithm — the core
 operation is solving a linearized polynomial interpolation problem using
@@ -674,13 +684,13 @@ at least one of <span class="math inline">\(\mathsf{knot}\)</span>,
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

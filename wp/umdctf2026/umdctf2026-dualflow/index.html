@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="We trained two normalizing flow models on similar data distributions. Can you find an input that one model thinks is highly likely and the other thinks is not? Submit a perturbation around the refere">
+    <meta name="description" content="Challenge analysis and method notes for UMDCTF 2026 - dualflow, covering ml, adversarial, normalizing-flows.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="UMDCTF 2026 - dualflow">
 <meta property="og:url" content="https://vkkkv.github.io/wp/umdctf2026/umdctf2026-dualflow/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="We trained two normalizing flow models on similar data distributions. Can you find an input that one model thinks is highly likely and the other thinks is not? Submit a perturbation around the refere">
+<meta property="og:description" content="Challenge analysis and method notes for UMDCTF 2026 - dualflow, covering ml, adversarial, normalizing-flows.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-26T02:50:00.000Z">
 <meta property="article:modified_time" content="2026-04-26T02:50:00.000Z">
@@ -296,7 +296,7 @@ Gradient-Based Optimization</span></a></li><li class="nav-item nav-level-2"><a c
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="UMDCTF 2026 - dualflow | Hello Navi">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="Challenge analysis and method notes for UMDCTF 2026 - dualflow, covering ml, adversarial, normalizing-flows.">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -337,7 +337,7 @@ Gradient-Based Optimization</span></a></li><li class="nav-item nav-level-2"><a c
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>1.5k</span>
+      <span>1.6k</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -348,13 +348,16 @@ Gradient-Based Optimization</span></a></li><li class="nav-item nav-level-2"><a c
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for UMDCTF 2026 - dualflow, covering ml, adversarial, normalizing-flows.</div>
         </div>
       </header>
 
     
     
     
-    <div class="post-body" itemprop="articleBody"><blockquote>
+    <div class="post-body" itemprop="articleBody"><p>当前材料边界：未找回本题原附件、模型/checker 或完整
+solver。下文是原记录的机制分析与示意片段，不能直接运行；数值与服务接受描述属于未能回放核验的历史记录，不代表本轮验证。</p>
+<blockquote>
 <p><em>We trained two normalizing flow models on similar data
 distributions. Can you find an input that one model thinks is highly
 likely and the other thinks is not? Submit a perturbation around the
@@ -392,11 +395,13 @@ ML）</strong>的交叉领域。以下概念有助于理解：</p>
 </tr>
 <tr class="odd">
 <td>变量变换公式</td>
-<td>log q(x) = log π(f(x)) + log|det J_f|</td>
+<td><span class="math inline">\(\log q(x) = \log \pi(f(x)) +
+\log\lvert\det J_f\rvert\)</span></td>
 </tr>
 <tr class="even">
 <td>对抗扰动</td>
-<td>L∞ 约束限制每个像素最大变化量</td>
+<td><span class="math inline">\(L_{\infty}\)</span>
+约束限制每个像素最大变化量</td>
 </tr>
 <tr class="odd">
 <td>梯度攻击（FGSM）</td>
@@ -477,7 +482,7 @@ trivial solutions where the log-likelihood of model 1 is high purely
 because of extreme volume distortion.</p>
 <h2 id="checking-the-reference">Checking the Reference</h2>
 <p>We loaded the reference window and evaluated both models:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">x_ref shape: (1, 1, 64, 64)</span><br><span class="line">Reference metrics:</span><br><span class="line">  log q0 = 925.99</span><br><span class="line">  log q1 = 924.09</span><br><span class="line">  margin = -1.90</span><br><span class="line">  log|det J_f1| = 1516.90 (within band: True)</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">x_ref shape: (1, 1, 64, 64)</span><br><span class="line">Reference metrics:</span><br><span class="line">  log q0 = 925.99</span><br><span class="line">  log q1 = 924.09</span><br><span class="line">  margin = -1.90</span><br><span class="line">  log|det J_f1| = 1516.90 (within band: True)</span><br></pre></td></tr></table></figure>
 <p>The reference is <strong>already in-distribution</strong> for both
 models (log-likelihoods around 925) and satisfies the Jacobian
 constraint. The only problem: the margin is <strong>-1.90</strong> — we
@@ -519,7 +524,7 @@ required threshold due to the sheer gradient magnitude.</p>
 <p>We scanned <span class="math inline">\(\alpha\)</span> from <span
 class="math inline">\(3.0 \times 10^{-6}\)</span> to <span
 class="math inline">\(3.6 \times 10^{-6}\)</span>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">alpha=3.00e-06  margin=-1.46  log_q1=924.54  log_det1=1516.90</span><br><span class="line">alpha=3.05e-06  margin= 2.48  log_q1=928.48  log_det1=1516.90</span><br><span class="line">alpha=3.10e-06  margin= 6.42  log_q1=932.42  log_det1=1516.90</span><br><span class="line">alpha=3.15e-06  margin=10.36  log_q1=936.36  log_det1=1516.90</span><br><span class="line">alpha=3.18e-06  margin=13.31  log_q1=939.31  log_det1=1516.90</span><br><span class="line">alpha=3.20e-06  margin=14.30  log_q1=940.30  log_det1=1516.90</span><br><span class="line">alpha=3.25e-06  margin=18.24  log_q1=944.24  log_det1=1516.90</span><br><span class="line">alpha=3.30e-06  margin=22.18  log_q1=948.18  log_det1=1516.90</span><br><span class="line">alpha=3.35e-06  margin=26.12  log_q1=952.12  log_det1=1516.90</span><br><span class="line">alpha=3.40e-06  margin=30.06  log_q1=956.06  log_det1=1516.90</span><br><span class="line">alpha=3.45e-06  margin=34.00  log_q1=960.00  log_det1=1516.90</span><br><span class="line">alpha=3.50e-06  margin=37.94  log_q1=963.94  log_det1=1516.90</span><br><span class="line">alpha=3.55e-06  margin=41.88  log_q1=967.88  log_det1=1516.90</span><br><span class="line">alpha=3.60e-06  margin=45.82  log_q1=971.82  log_det1=1516.90</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">alpha=3.00e-06  margin=-1.46  log_q1=924.54  log_det1=1516.90</span><br><span class="line">alpha=3.05e-06  margin= 2.48  log_q1=928.48  log_det1=1516.90</span><br><span class="line">alpha=3.10e-06  margin= 6.42  log_q1=932.42  log_det1=1516.90</span><br><span class="line">alpha=3.15e-06  margin=10.36  log_q1=936.36  log_det1=1516.90</span><br><span class="line">alpha=3.18e-06  margin=13.31  log_q1=939.31  log_det1=1516.90</span><br><span class="line">alpha=3.20e-06  margin=14.30  log_q1=940.30  log_det1=1516.90</span><br><span class="line">alpha=3.25e-06  margin=18.24  log_q1=944.24  log_det1=1516.90</span><br><span class="line">alpha=3.30e-06  margin=22.18  log_q1=948.18  log_det1=1516.90</span><br><span class="line">alpha=3.35e-06  margin=26.12  log_q1=952.12  log_det1=1516.90</span><br><span class="line">alpha=3.40e-06  margin=30.06  log_q1=956.06  log_det1=1516.90</span><br><span class="line">alpha=3.45e-06  margin=34.00  log_q1=960.00  log_det1=1516.90</span><br><span class="line">alpha=3.50e-06  margin=37.94  log_q1=963.94  log_det1=1516.90</span><br><span class="line">alpha=3.55e-06  margin=41.88  log_q1=967.88  log_det1=1516.90</span><br><span class="line">alpha=3.60e-06  margin=45.82  log_q1=971.82  log_det1=1516.90</span><br></pre></td></tr></table></figure>
 <p>The Jacobian determinant stayed constant at 1516.90 throughout
 (within the required band) — the perturbation is too small to
 meaningfully change the volume distortion. The log-likelihood of model 0
@@ -529,13 +534,17 @@ creating the desired margin.</p>
 <p>The winning hyperparameter: <strong><span
 class="math inline">\(\alpha = 3.40 \times 10^{-6}\)</span></strong>
 giving:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Margin:       30.01 ✅</span><br><span class="line">log_q1:      955.09 ✅ (above threshold)</span><br><span class="line">log_det1:   1516.90 ✅ (within band)</span><br><span class="line">L_inf:         0.08 ✅ (at bound)</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Margin:       30.01 ✅</span><br><span class="line">log_q1:      955.09 ✅ (above threshold)</span><br><span class="line">log_det1:   1516.90 ✅ (within band)</span><br><span class="line">L_inf:         0.08 ✅ (at bound)</span><br></pre></td></tr></table></figure>
 <h2 id="submission">Submission</h2>
 <p>The final perturbation was saved, base64-encoded, and submitted via
 the check script:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Compute the perturbation</span></span><br><span class="line">delta = alpha * grad_sign  <span class="comment"># normalized gradient direction</span></span><br><span class="line">x_sub = x_ref + delta</span><br><span class="line">x_sub = np.clip(x_sub, <span class="number">0.0</span>, <span class="number">1.0</span>)  <span class="comment"># valid pixel range</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Encode and submit</span></span><br><span class="line"><span class="keyword">import</span> base64, numpy <span class="keyword">as</span> np</span><br><span class="line">payload = base64.b64encode(x_sub.astype(np.float32).tobytes()).decode()</span><br></pre></td></tr></table></figure>
-<p>The remote service confirmed the solution, returning the flag:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UMDCTF&#123;****************************************&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Compute the perturbation</span></span><br><span class="line">delta = alpha * grad_sign  <span class="comment"># illustrative only; inspect the actual direction normalization</span></span><br><span class="line">x_sub = x_ref + delta</span><br><span class="line">x_sub = np.clip(x_sub, <span class="number">0.0</span>, <span class="number">1.0</span>)  <span class="comment"># valid pixel range</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Encode and submit</span></span><br><span class="line"><span class="keyword">import</span> base64, numpy <span class="keyword">as</span> np</span><br><span class="line">payload = base64.b64encode(x_sub.astype(np.float32).tobytes()).decode()</span><br></pre></td></tr></table></figure>
+<p>The original note recorded a service acceptance, but the
+checker/model and response are unavailable for replay. A normalized unit
+direction with an alpha of a few micro-units cannot simultaneously have
+an L_inf norm of 0.08; the direction definition, alpha and reported
+bound must be reconciled before reuse.</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UMDCTF&#123;****************************************&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="key-insight">Key Insight</h2>
 <p>The challenge name and flag hint at the core idea:
 <strong>Gram-Schmidt orthogonalization</strong> and the geometry of
@@ -679,13 +688,13 @@ as well when the step size is chosen carefully.</p>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

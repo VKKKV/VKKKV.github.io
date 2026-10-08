@@ -278,8 +278,8 @@ p.spoiler {
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-30/">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-31/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -297,7 +297,7 @@ p.spoiler {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/Suninatas/suninatas-game-30/" class="post-title-link" itemprop="url">Suninatas Game 30</a>
+          <a href="/wp/Suninatas/suninatas-game-31/" class="post-title-link" itemprop="url">Suninatas Game 31</a>
         </h2>
 
         <div class="post-meta-container">
@@ -327,7 +327,7 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>249</span>
+      <span>223</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -338,6 +338,7 @@ p.spoiler {
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for Suninatas Game 31, covering forensics, pdf, javascript.</div>
         </div>
       </header>
 
@@ -346,43 +347,30 @@ p.spoiler {
     
     <div class="post-body" itemprop="articleBody">
           <p><a target="_blank" rel="noopener" href="http://suninatas.com/challenges">challenges</a></p>
-<h2 id="game-30">Game 30</h2>
-<p>Challenge summary:</p>
-<ul>
-<li><code>Q1</code>: IP address of General Kim's PC</li>
-<li><code>Q2</code>: Secret document read by hacker</li>
-<li><code>Q3</code>: Content of that document (contains a key)</li>
-<li>Final: <code>lowercase(md5(Q1 + Q2 + Q3))</code></li>
-</ul>
-<p>Given artifact:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ file <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span></span><br><span class="line">MemoryDump(SuNiNaTaS): data</span><br></pre></td></tr></table></figure>
-<p>I used Volatility 3 throughout.</p>
-<h2 id="initial-triage">Initial triage</h2>
-<p>Identify OS profile and basic context:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.info</span><br><span class="line">...</span><br><span class="line">Is64Bit   False</span><br><span class="line">NTBuildLab 7601.18044.x86fre.win7sp1_gdr.13</span><br><span class="line">SystemTime 2016-05-24 09:47:40+00:00</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<h2 id="q1-ip-address-of-general-kims-pc">Q1: IP address of General
-Kim's PC</h2>
-<p>Check active/known network artifacts:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.netscan</span><br><span class="line">...</span><br><span class="line">0x3f270450 TCPv4 192.168.197.138 139   0.0.0.0         0   LISTENING   4 System</span><br><span class="line">0x3f270768 UDPv4 192.168.197.138 137   *               0               4 System</span><br><span class="line">0x3fdd5620 TCPv4 192.168.197.138 49248 113.29.189.142 80  ESTABLISHED  - -</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>Q1 answer:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.197.138</span><br></pre></td></tr></table></figure>
-<h2 id="q2-which-secret-document-was-read">Q2: Which secret document was
-read?</h2>
-<p>Find interesting user actions from process arguments:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.cmdline</span><br><span class="line">...</span><br><span class="line">3728 notepad.exe notepad C:\Users\training\Desktop\SecreetDocumen7.txt</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>Q2 answer:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SecreetDocumen7.txt</span><br></pre></td></tr></table></figure>
-<h2 id="q3-contentkey-inside-the-secret-document">Q3: Content/key inside
-the secret document</h2>
-<p>Locate and dump the file from memory:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.filescan | grep <span class="string">&#x27;SecreetDocumen7.txt&#x27;</span></span><br><span class="line">0x3df2ddd8 100.0\Users\training\Desktop\SecreetDocumen7.txt</span><br><span class="line"></span><br><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.dumpfiles --phy 0x3df2ddd8</span><br><span class="line">...</span><br><span class="line">file.0x3df2ddd8.0x85d7d150.DataSectionObject.SecreetDocumen7.txt.dat</span><br><span class="line"></span><br><span class="line">$ xxd file.0x3df2ddd8.0x85d7d150.DataSectionObject.SecreetDocumen7.txt.dat</span><br><span class="line">...</span><br><span class="line">00000050: 7920 6973 2022 3472 6d79 5f34 6972 666f  y is <span class="string">&quot;4rmy_4irfo</span></span><br><span class="line"><span class="string">00000060: 7263 655f 4e34 7679 2200 0000 0000 0000  rce_N4vy&quot;</span>.......</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>Q3 key:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">4rmy_4irforce_N4vy</span><br></pre></td></tr></table></figure>
-<h2 id="final-auth-key">Final Auth Key</h2>
-<p>Concatenate in order:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.197.138SecreetDocumen7.txt4rmy_4irforce_N4vy</span><br></pre></td></tr></table></figure>
-<p>Compute lowercase MD5:</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">c152e3fb5a6882563231b00f21a8ed5f</span></span>
+<h2 id="game-31">Game 31</h2>
+<p>Challenge statement:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">* Info : This PDF file don&#x27;t attack your PC. Just using for study.</span><br><span class="line">Analyze this PDF and Find a Flag.</span><br><span class="line">Auth Key = lowercase(MD5(Flag))</span><br></pre></td></tr></table></figure>
+<h2 id="initial-pdf-triage">Initial PDF triage</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ pdfid Hello_SuNiNaTaS.pdf</span><br><span class="line">...</span><br><span class="line">/JS                    1</span><br><span class="line">/JavaScript            2</span><br><span class="line">/EmbeddedFile          0</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>pdfid</code> shows JavaScript indicators, but the interesting
+part is a nested object tree.</p>
+<h2 id="main-solve-path-works">Main solve path (works)</h2>
+<p>Search for JavaScript references and inspect container objects:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -s JavaScript Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 30 0</span><br><span class="line">  &lt;&lt;</span><br><span class="line">    /JavaScript 31 0 R</span><br><span class="line">    /EmbeddedFiles 38 0 R</span><br><span class="line">  &gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>Follow embedded-file references:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -o 38 Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 38 0</span><br><span class="line">Referencing: 40 0 R</span><br><span class="line"></span><br><span class="line">$ pdf-parser -o 39 -f -d nested.pdf Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 39 0</span><br><span class="line">Contains stream</span><br><span class="line">/Subtype /a</span><br><span class="line">/Filter /FlateDecode</span><br></pre></td></tr></table></figure>
+<p>Now analyze extracted <code>nested.pdf</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">$ pdfid nested.pdf</span><br><span class="line">...</span><br><span class="line">/Encrypt               1</span><br><span class="line">/JS                    1</span><br><span class="line">/JavaScript            1</span><br><span class="line">/OpenAction            1</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">$ qpdf --decrypt nested.pdf decrypted.pdf</span><br><span class="line"></span><br><span class="line">$ pdf-parser -s js decrypted.pdf</span><br><span class="line">obj 2 0</span><br><span class="line">  &lt;&lt;</span><br><span class="line">    /JS 4 0 R</span><br><span class="line">    /S /JavaScript</span><br><span class="line">  &gt;&gt;</span><br><span class="line"></span><br><span class="line">$ pdf-parser -o 4 -f -d dump decrypted.pdf</span><br><span class="line">$ <span class="built_in">cat</span> dump</span><br><span class="line"><span class="string">&quot;HERE IS FLAGS *********************&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Flag:</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">SunINatAsGOodWeLL!@#$</span></span>
+<h2 id="decoy-path-time-sink">Decoy path (time sink)</h2>
+<p>You can also extract object <code>37</code> as JavaScript
+payload:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -o 37 -d payload.js Hello_SuNiNaTaS.pdf</span><br><span class="line">$ node payload.js</span><br><span class="line">Decoded content:</span><br><span class="line">Vm0wd2QyVkZOVWRXV0doVVYwZG9W...</span><br></pre></td></tr></table></figure>
+<p>Repeated Base64 decoding eventually gives:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">I am sorry, This is not Key~!!</span><br></pre></td></tr></table></figure>
+<p>So object <code>37</code> is a distraction; the real flag is in the
+decrypted nested PDF JavaScript stream.</p>
 
       
     </div>
@@ -408,7 +396,7 @@ the secret document</h2>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-32/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -468,6 +456,7 @@ the secret document</h2>
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for Suninatas Game 32, covering forensics, fat32, hwp.</div>
         </div>
       </header>
 
@@ -547,7 +536,7 @@ Hancom/ONLYOFFICE).</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/ReversingKR/ReversingKR-Easy-Crack/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -596,7 +585,7 @@ Hancom/ONLYOFFICE).</p>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>280</span>
+      <span>357</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -607,6 +596,7 @@ Hancom/ONLYOFFICE).</p>
     </span>
 </div>
 
+            <div class="post-description">ReversingKR - Easy Crack 的题目分析与方法记录，涉及 reversing.kr。</div>
         </div>
       </header>
 
@@ -616,12 +606,17 @@ Hancom/ONLYOFFICE).</p>
     <div class="post-body" itemprop="articleBody">
           <h2 id="easy-crack">Easy Crack</h2>
 <p><a target="_blank" rel="noopener" href="http://reversing.kr/challenge.php">Easy Crack</a></p>
-<p>ghidra btw</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">entry</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    ....</span><br><span class="line">  UVar4 = FUN_00401000(pHVar3);   Main function</span><br><span class="line">  <span class="title function_">FUN_004012f4</span><span class="params">(UVar4)</span>; Exit function</span><br><span class="line">  <span class="title function_">FUN_004013c9</span><span class="params">(local_18-&gt;ExceptionRecord-&gt;Except ionCode,local_18)</span>;</span><br><span class="line">  <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">undefined4 <span class="title function_">Main</span><span class="params">(HINSTANCE hInstance)</span></span><br><span class="line">&#123;</span><br><span class="line">  DialogBoxParamA(hInstance,(LPCSTR)<span class="number">0x65</span>,(HWND) <span class="number">0x0</span>,(DLGPROC)&amp;LAB_00401020,<span class="number">0</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> __cdecl <span class="title function_">checkPassword</span><span class="params">(HWND param_1)</span></span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  byte bVar1;</span><br><span class="line">  byte *pbVar2;</span><br><span class="line">  <span class="type">int</span> iVar3;</span><br><span class="line">  <span class="type">char</span> *pcVar4;</span><br><span class="line">  <span class="type">bool</span> bVar5;</span><br><span class="line"></span><br><span class="line">  CHAR local_64;</span><br><span class="line">  <span class="type">char</span> local_63;</span><br><span class="line">  <span class="type">char</span> local_62;</span><br><span class="line">  <span class="type">char</span> acStack_61 [<span class="number">97</span>];</span><br><span class="line"></span><br><span class="line">  local_64 = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4 = &amp;local_63;</span><br><span class="line">  <span class="keyword">for</span> (iVar3 = <span class="number">0x18</span>; iVar3 != <span class="number">0</span>; iVar3 = iVar3 + <span class="number">-1</span>) &#123;</span><br><span class="line">    pcVar4[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">2</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">3</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4 = pcVar4 + <span class="number">4</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  pcVar4[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4[<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4[<span class="number">2</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  GetDlgItemTextA(param_1,<span class="number">1000</span>,&amp;local_64,<span class="number">100</span>);</span><br><span class="line">  <span class="keyword">if</span> (local_63 == <span class="string">&#x27;a&#x27;</span>) &#123;                            ;a</span><br><span class="line">    iVar3 = _strncmp(&amp;local_62,&amp;DAT_00406078,<span class="number">2</span>);    ;<span class="number">5</span>y</span><br><span class="line">    <span class="title function_">if</span> <span class="params">(iVar3 == <span class="number">0</span>)</span> &#123;</span><br><span class="line">      pcVar4 = s_AGR3versing_0040606a;</span><br><span class="line">      pbVar2 = (byte *)(acStack_61 + <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">do</span> &#123;</span><br><span class="line">        pcVar4 = (<span class="type">char</span> *)((byte *)pcVar4 + <span class="number">2</span>);      ;R3versing</span><br><span class="line">        bVar1 = *pbVar2;</span><br><span class="line">        bVar5 = bVar1 &lt; (byte)*pcVar4;</span><br><span class="line">        <span class="keyword">if</span> (bVar1 != *pcVar4) &#123;</span><br><span class="line">LAB_00401102:</span><br><span class="line">          iVar3 = (<span class="number">1</span> - (uint)bVar5) - (uint)(bVar5 != <span class="number">0</span>);</span><br><span class="line">          <span class="keyword">goto</span> LAB_00401107;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (bVar1 == <span class="number">0</span>) <span class="keyword">break</span>;</span><br><span class="line">        bVar1 = pbVar2[<span class="number">1</span>];</span><br><span class="line">        bVar5 = bVar1 &lt; ((byte *)pcVar4)[<span class="number">1</span>];</span><br><span class="line">        <span class="keyword">if</span> (bVar1 != ((byte *)pcVar4)[<span class="number">1</span>]) <span class="keyword">goto</span> LAB_004011 <span class="number">02</span>;</span><br><span class="line">        pbVar2 = pbVar2 + <span class="number">2</span>;</span><br><span class="line">      &#125; <span class="keyword">while</span> (bVar1 != <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">      iVar3 = <span class="number">0</span>;</span><br><span class="line">LAB_00401107:</span><br><span class="line">      <span class="keyword">if</span> ((iVar3 == <span class="number">0</span>) &amp;&amp; (local_64 == <span class="string">&#x27;E&#x27;</span>)) &#123;   ;E</span><br><span class="line">        <span class="title function_">MessageBoxA</span><span class="params">(param_1,s_Congratulation_!!_00 <span class="number">406044</span>,s_EasyCrackMe_00406058,<span class="number">0x40</span>)</span>;</span><br><span class="line">        EndDialog(param_1,<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  MessageBoxA(param_1,s_Incorrect_Password_004 <span class="number">06030</span>,s_EasyCrackMe_00406058,<span class="number">0x10</span>);</span><br><span class="line">  <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以下为 Ghidra
+反编译的密码校验函数摘录，类型、全局符号和字符串常量由原二进制提供，不是可独立编译的
+C 程序。入口和窗口初始化代码不影响校验，未列入此段。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> __cdecl <span class="title function_">checkPassword</span><span class="params">(HWND param_1)</span></span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  byte bVar1;</span><br><span class="line">  byte *pbVar2;</span><br><span class="line">  <span class="type">int</span> iVar3;</span><br><span class="line">  <span class="type">char</span> *pcVar4;</span><br><span class="line">  <span class="type">bool</span> bVar5;</span><br><span class="line"></span><br><span class="line">  CHAR local_64;</span><br><span class="line">  <span class="type">char</span> local_63;</span><br><span class="line">  <span class="type">char</span> local_62;</span><br><span class="line">  <span class="type">char</span> acStack_61 [<span class="number">97</span>];</span><br><span class="line"></span><br><span class="line">  local_64 = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4 = &amp;local_63;</span><br><span class="line">  <span class="keyword">for</span> (iVar3 = <span class="number">0x18</span>; iVar3 != <span class="number">0</span>; iVar3 = iVar3 + <span class="number">-1</span>) &#123;</span><br><span class="line">    pcVar4[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">2</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4[<span class="number">3</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    pcVar4 = pcVar4 + <span class="number">4</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  pcVar4[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4[<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  pcVar4[<span class="number">2</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">  GetDlgItemTextA(param_1,<span class="number">1000</span>,&amp;local_64,<span class="number">100</span>);</span><br><span class="line">  <span class="keyword">if</span> (local_63 == <span class="string">&#x27;a&#x27;</span>) &#123;                            <span class="comment">// a</span></span><br><span class="line">    iVar3 = _strncmp(&amp;local_62,&amp;DAT_00406078,<span class="number">2</span>);    <span class="comment">// 5y</span></span><br><span class="line">    <span class="keyword">if</span> (iVar3 == <span class="number">0</span>) &#123;</span><br><span class="line">      pcVar4 = s_AGR3versing_0040606a;</span><br><span class="line">      pbVar2 = (byte *)(acStack_61 + <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">do</span> &#123;</span><br><span class="line">        pcVar4 = (<span class="type">char</span> *)((byte *)pcVar4 + <span class="number">2</span>);      <span class="comment">// R3versing</span></span><br><span class="line">        bVar1 = *pbVar2;</span><br><span class="line">        bVar5 = bVar1 &lt; (byte)*pcVar4;</span><br><span class="line">        <span class="keyword">if</span> (bVar1 != *pcVar4) &#123;</span><br><span class="line">LAB_00401102:</span><br><span class="line">          iVar3 = (<span class="number">1</span> - (uint)bVar5) - (uint)(bVar5 != <span class="number">0</span>);</span><br><span class="line">          <span class="keyword">goto</span> LAB_00401107;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (bVar1 == <span class="number">0</span>) <span class="keyword">break</span>;</span><br><span class="line">        bVar1 = pbVar2[<span class="number">1</span>];</span><br><span class="line">        bVar5 = bVar1 &lt; ((byte *)pcVar4)[<span class="number">1</span>];</span><br><span class="line">        <span class="keyword">if</span> (bVar1 != ((byte *)pcVar4)[<span class="number">1</span>]) <span class="keyword">goto</span> LAB_00401102;</span><br><span class="line">        pbVar2 = pbVar2 + <span class="number">2</span>;</span><br><span class="line">      &#125; <span class="keyword">while</span> (bVar1 != <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">      iVar3 = <span class="number">0</span>;</span><br><span class="line">LAB_00401107:</span><br><span class="line">      <span class="keyword">if</span> ((iVar3 == <span class="number">0</span>) &amp;&amp; (local_64 == <span class="string">&#x27;E&#x27;</span>)) &#123;   <span class="comment">// E</span></span><br><span class="line">        MessageBoxA(param_1,s_Congratulation_!!_00406044,s_EasyCrackMe_00406058,<span class="number">0x40</span>);</span><br><span class="line">        EndDialog(param_1,<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  MessageBoxA(param_1,s_Incorrect_Password_00406030,s_EasyCrackMe_00406058,<span class="number">0x10</span>);</span><br><span class="line">  <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">Ea5yR3versing</span></span>
 <hr />
-<p>i luv ida qaq</p>
-<p>same code so easy in ida</p>
+<p>IDA
+对同一校验逻辑的反编译摘录如下。<code>String[1]</code>、<code>String[2:4]</code>、<code>String[4:]</code>
+和 <code>String[0]</code> 的检查分别约束输入的对应片段；符号
+<code>Str2</code> 和 <code>aR3versing</code>
+的字符串内容须从原二进制读取。</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __cdecl <span class="title function_">sub_401080</span><span class="params">(HWND hDlg)</span></span><br><span class="line">&#123;</span><br><span class="line">  CHAR String[<span class="number">97</span>]; <span class="comment">// [esp+4h] [ebp-64h] BYREF</span></span><br><span class="line">  __int16 v3; <span class="comment">// [esp+65h] [ebp-3h]</span></span><br><span class="line">  <span class="type">char</span> v4; <span class="comment">// [esp+67h] [ebp-1h]</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">memset</span>(String, <span class="number">0</span>, <span class="keyword">sizeof</span>(String));</span><br><span class="line">  v3 = <span class="number">0</span>;</span><br><span class="line">  v4 = <span class="number">0</span>;</span><br><span class="line">  GetDlgItemTextA(hDlg, <span class="number">1000</span>, String, <span class="number">100</span>);</span><br><span class="line">  <span class="keyword">if</span> ( String[<span class="number">1</span>] != <span class="string">&#x27;a&#x27;</span> || <span class="built_in">strncmp</span>(&amp;String[<span class="number">2</span>], Str2, <span class="number">2u</span>) || <span class="built_in">strcmp</span>(&amp;String[<span class="number">4</span>], aR3versing) || String[<span class="number">0</span>] != <span class="number">69</span> )</span><br><span class="line">    <span class="keyword">return</span> MessageBoxA(hDlg, aIncorrectPassw, Caption, <span class="number">0x10u</span>);</span><br><span class="line">  MessageBoxA(hDlg, Text, Caption, <span class="number">0x40u</span>);</span><br><span class="line">  <span class="keyword">return</span> EndDialog(hDlg, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
       
@@ -648,7 +643,7 @@ Hancom/ONLYOFFICE).</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/linux/wtf-you-rm-your-rootshell/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -712,6 +707,7 @@ Hancom/ONLYOFFICE).</p>
     </span>
 </div>
 
+            <div class="post-description">删除rootshell后用bootloader救援：technology, linux, recovery, troubleshooting, retard 相关笔记。</div>
         </div>
       </header>
 
@@ -767,7 +763,7 @@ shell</h3>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/tech/proxy2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -820,7 +816,7 @@ shell</h3>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>194</span>
+      <span>323</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -831,6 +827,7 @@ shell</h3>
     </span>
 </div>
 
+            <div class="post-description">Notes on Proxy Settings For Docker And Nix Daemons, covering technology, daemon, docker, nix, proxy.</div>
         </div>
       </header>
 
@@ -841,7 +838,6 @@ shell</h3>
           <h2 id="docker-daemon-proxy">Docker Daemon Proxy</h2>
 <p>The Docker daemon checks environment variables in its startup
 environment.</p>
-<p>Or you can</p>
 <p>According to the <a
 target="_blank" rel="noopener" href="https://docs.docker.com/engine/daemon/proxy/#systemd-unit-file">official
 Docker documentation</a></p>
@@ -850,7 +846,14 @@ Docker documentation</a></p>
 <p>Create
 <code>/etc/systemd/system/docker.service.d/http-proxy.conf</code> with
 your proxy settings:</p>
-<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">Environment</span>=<span class="string">&quot;HTTP_PROXY=http://proxy.example.com:3128&quot;</span></span><br><span class="line"><span class="attr">Environment</span>=<span class="string">&quot;HTTPS_PROXY=https://proxy.example.com:3129&quot;</span> <span class="comment"># if you have https proxy</span></span><br><span class="line"><span class="attr">Environment</span>=<span class="string">&quot;NO_PROXY=localhost,127.0.0.1,docker-registry.example.com,.corp&quot;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">Environment</span>=<span class="string">&quot;HTTP_PROXY=http://proxy.example.com:3128&quot;</span></span><br><span class="line"><span class="attr">Environment</span>=<span class="string">&quot;HTTPS_PROXY=http://proxy.example.com:3128&quot;</span></span><br><span class="line"><span class="attr">Environment</span>=<span class="string">&quot;NO_PROXY=localhost,127.0.0.1,docker-registry.example.com,.corp&quot;</span></span><br></pre></td></tr></table></figure>
+<p><code>HTTPS_PROXY</code> selects a proxy for HTTPS destinations; its
+URL scheme describes the connection to the proxy. An HTTP CONNECT proxy
+normally uses <code>http://</code> for both variables. Use
+<code>https://proxy.example.com:3129</code> only when that proxy
+endpoint itself supports TLS. Put comments on their own lines, not after
+<code>Environment=</code> assignments. Restarting Docker can interrupt
+running containers; plan the restart for your host.</p>
 <p>Apply the configuration changes:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl daemon-reload</span><br><span class="line"><span class="built_in">sudo</span> systemctl restart docker</span><br></pre></td></tr></table></figure>
 <p>Check that the environment variables are properly set:</p>
@@ -859,6 +862,15 @@ your proxy settings:</p>
 <p>According to the <a
 target="_blank" rel="noopener" href="https://nixos-cn.org/tutorials/installation/Networking.html">Nixos
 CN documentation</a></p>
+<p>The <code>/run</code> drop-in below is temporary and disappears at
+reboot. On a non-NixOS systemd installation, use
+<code>/etc/systemd/system/nix-daemon.service.d/override.conf</code> for
+a persistent drop-in instead (create that directory first). On NixOS,
+prefer <code>systemd.services.nix-daemon.environment.https_proxy</code>
+in the declarative configuration and rebuild through your normal
+workflow; do not treat the runtime drop-in as persistent configuration.
+The SOCKS example requires a SOCKS endpoint at that port and support in
+the installed Nix HTTP transport.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">mkdir</span> -p /run/systemd/system/nix-daemon.service.d/</span><br></pre></td></tr></table></figure>
 <p>Create
 <code>/run/systemd/system/nix-daemon.service.d/override.conf</code> with
@@ -898,7 +910,7 @@ depending on your network setup</li>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/tech/bios-passwords/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -958,6 +970,7 @@ depending on your network setup</li>
     </span>
 </div>
 
+            <div class="post-description">Bios密码也许能找回?：technology, bios, password, redmibook 相关笔记。</div>
         </div>
       </header>
 
@@ -973,7 +986,7 @@ depending on your network setup</li>
 target="_blank" rel="noopener" href="https://blog.nns.ee/2021/01/18/resetting-bios-password/">膜拜orz
 -&gt; https://blog.nns.ee/2021/01/18/resetting-bios-password/</a></p>
 <p>使用如下命令获取密码，回忆起自己设置的是admin...</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➤ hexdump -C /sys/firmware/efi/efivars/SystemSupervisorPw-7f9102df-e999-4740-80a6-b2038512217b</span><br><span class="line">00000000  07 00 00 00 05 64 6d 69  6e 61 f2 00 00 00 00 00  |.....dmina......|</span><br><span class="line">00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line">00000020  00 00 00 00 00 00 00 00  00 00 00 00              |............|</span><br><span class="line">0000002c</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➤ hexdump -C /sys/firmware/efi/efivars/SystemSupervisorPw-7f9102df-e999-4740-80a6-b2038512217b</span><br><span class="line">00000000  07 00 00 00 05 64 6d 69  6e 61 f2 00 00 00 00 00  |.....dmina......|</span><br><span class="line">00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|</span><br><span class="line">00000020  00 00 00 00 00 00 00 00  00 00 00 00              |............|</span><br><span class="line">0000002c</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -999,7 +1012,7 @@ target="_blank" rel="noopener" href="https://blog.nns.ee/2021/01/18/resetting-bi
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/thoughts/one/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1059,6 +1072,7 @@ target="_blank" rel="noopener" href="https://blog.nns.ee/2021/01/18/resetting-bi
     </span>
 </div>
 
+            <div class="post-description">One-blog：thoughts 相关笔记。</div>
         </div>
       </header>
 
@@ -1105,7 +1119,7 @@ repo点星星。</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Connection/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1211,7 +1225,7 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Gift/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1308,7 +1322,7 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Pwned/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1357,7 +1371,7 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>998</span>
+      <span>999</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -1386,7 +1400,7 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
 <p>dir</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">❯ gobuster dir -u http://192.168.0.110 -w ctf/tool/dic/SecLists/Discovery/Web-Content/directory-list-2.3-medium.txt</span><br><span class="line">...</span><br><span class="line">/nothing              (Status: 301) [Size: 316] [--&gt; http://192.168.0.110/nothing/]</span><br><span class="line">/server-status        (Status: 403) [Size: 278]</span><br><span class="line">/hidden_text          (Status: 301) [Size: 320] [--&gt; http://192.168.0.110/hidden_text/]</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">http://192.168.0.110/hidden_text/secret.dic</span><br><span class="line"></span><br><span class="line">/hacked</span><br><span class="line">/vanakam_nanba</span><br><span class="line">/hackerman.gif</span><br><span class="line">/facebook</span><br><span class="line">/whatsapp</span><br><span class="line">/instagram</span><br><span class="line">/pwned</span><br><span class="line">/pwned.com</span><br><span class="line">/pubg</span><br><span class="line">/cod</span><br><span class="line">/fortnite</span><br><span class="line">/youtube</span><br><span class="line">/kali.org</span><br><span class="line">/hacked.vuln</span><br><span class="line">/users.vuln</span><br><span class="line">/passwd.vuln</span><br><span class="line">/pwned.vuln</span><br><span class="line">/backup.vuln</span><br><span class="line">/.ssh</span><br><span class="line">/root</span><br><span class="line">/home</span><br><span class="line"></span><br><span class="line">❯ gobuster dir -u http://192.168.0.110 -w tmp</span><br><span class="line">/pwned.vuln           (Status: 301) [Size: 319] [--&gt; http://192.168.0.110/pwned.vuln/]</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 <p>view-source:http://192.168.0.110/pwned.vuln/</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line">//	if (isset($_POST[&#x27;submit&#x27;])) &#123;</span><br><span class="line">//		$un=$_POST[&#x27;username&#x27;];</span><br><span class="line">//		$pw=$_POST[&#x27;password&#x27;];</span><br><span class="line">//</span><br><span class="line">//	if ($un==&#x27;ftpuser&#x27; &amp;&amp; $pw==&#x27;B0ss_B!TcH&#x27;) &#123;</span><br><span class="line">//		echo &quot;welcome&quot;</span><br><span class="line">//		exit();</span><br><span class="line">// &#125;</span><br><span class="line">// else</span><br><span class="line">//	echo &quot;Invalid creds&quot;</span><br><span class="line">// &#125;</span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">ftpuser</span><br><span class="line">B0ss_B!TcH</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="comment">//	if (isset($_POST[&#x27;submit&#x27;])) &#123;</span></span><br><span class="line"><span class="comment">//		$un=$_POST[&#x27;username&#x27;];</span></span><br><span class="line"><span class="comment">//		$pw=$_POST[&#x27;password&#x27;];</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//	if ($un==&#x27;ftpuser&#x27; &amp;&amp; $pw==&#x27;B0ss_B!TcH&#x27;) &#123;</span></span><br><span class="line"><span class="comment">//		echo &quot;welcome&quot;</span></span><br><span class="line"><span class="comment">//		exit();</span></span><br><span class="line"><span class="comment">// &#125;</span></span><br><span class="line"><span class="comment">// else</span></span><br><span class="line"><span class="comment">//	echo &quot;Invalid creds&quot;</span></span><br><span class="line"><span class="comment">// &#125;</span></span><br><span class="line"><span class="meta">?&gt;</span></span><br><span class="line"></span><br><span class="line">ftpuser</span><br><span class="line">B0ss_B!TcH</span><br></pre></td></tr></table></figure>
 <p>login ftp</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">❯ ftp 192.168.0.110</span><br><span class="line">...</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash"><span class="built_in">dir</span></span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Here comes the directory listing.</span><br><span class="line">drwxr-xr-x    2 0        0            4096 Jul 10  2020 share</span><br><span class="line">226 Directory send OK.</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash"><span class="built_in">cd</span> share</span></span><br><span class="line">250 Directory successfully changed.</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash"><span class="built_in">dir</span></span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Here comes the directory listing.</span><br><span class="line">-rw-r--r--    1 0        0            2602 Jul 09  2020 id_rsa</span><br><span class="line">-rw-r--r--    1 0        0              75 Jul 09  2020 note.txt</span><br><span class="line">226 Directory send OK.</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash">get id_rsa</span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Opening BINARY mode data connection for id_rsa (2602 bytes).</span><br><span class="line">226 Transfer complete.</span><br><span class="line">2602 bytes received in 0.0064 seconds (397.2097 kbytes/s)</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash">get note.txt</span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Opening BINARY mode data connection for note.txt (75 bytes).</span><br><span class="line">226 Transfer complete.</span><br><span class="line">75 bytes received in 0.0064 seconds (11.4952 kbytes/s)</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash">quit</span></span><br><span class="line">221 Goodbye.</span><br><span class="line"> </span><br><span class="line"> ❯ cat note.txt</span><br><span class="line"></span><br><span class="line">Wow you are here</span><br><span class="line"></span><br><span class="line">ariana won&#x27;t happy about this note</span><br><span class="line"></span><br><span class="line">sorry ariana :(</span><br><span class="line"></span><br><span class="line">ariana</span><br></pre></td></tr></table></figure>
 <p>ssh ariana</p>
@@ -1432,13 +1446,13 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

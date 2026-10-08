@@ -22,12 +22,12 @@
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"vkkkv.github.io","root":"/","images":"/images","scheme":"Mist","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"hide","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"base16/tomorrow-night","dark":"base16/tomorrow-night"},"prism":{"light":"prism-tomorrow","dark":"prism-tomorrow"},"copy_button":{"enable":true,"style":"flat"},"fold":{"enable":false,"height":500},"language":true},"bookmark":{"enable":false,"color":"#ff3e3e","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":"disqus","storage":true,"lazyload":true,"nav":null,"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":true,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false,"trigger":"auto"}}</script><script src="/js/config.js" defer></script>
 
-    <meta name="description" content="Cowrie Honeypot Setup Cowrie is an SSH&#x2F;Telnet honeypot. It should be treated as hostile-facing software, not as a normal trusted application. This note records a minimal deployment using a dedicated u">
+    <meta name="description" content="Notes on Cowrie Honeypot Setup, covering linux, security, honeypot, cowrie, vps.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Cowrie Honeypot Setup">
 <meta property="og:url" content="https://vkkkv.github.io/linux/cowrie-honeypot-vps/">
 <meta property="og:site_name" content="Hello Navi">
-<meta property="og:description" content="Cowrie Honeypot Setup Cowrie is an SSH&#x2F;Telnet honeypot. It should be treated as hostile-facing software, not as a normal trusted application. This note records a minimal deployment using a dedicated u">
+<meta property="og:description" content="Notes on Cowrie Honeypot Setup, covering linux, security, honeypot, cowrie, vps.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-05-10T06:13:00.000Z">
 <meta property="article:modified_time" content="2026-05-10T06:13:00.000Z">
@@ -295,7 +295,7 @@ p.spoiler {
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
       <meta itemprop="name" content="Cowrie Honeypot Setup | Hello Navi">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="Notes on Cowrie Honeypot Setup, covering linux, security, honeypot, cowrie, vps.">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -336,17 +336,18 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>322</span>
+      <span>428</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
+      <span>2 mins.</span>
     </span>
 </div>
 
+            <div class="post-description">Notes on Cowrie Honeypot Setup, covering linux, security, honeypot, cowrie, vps.</div>
         </div>
       </header>
 
@@ -378,11 +379,23 @@ depending on firewall/NAT design</li>
 <p>Do not run Cowrie as root just to bind port <code>22</code>. Keep
 Cowrie on a high port and forward traffic if needed.</p>
 <h2 id="systemd-unit">systemd Unit</h2>
+<p>Return to the administrator shell with <code>exit</code> from the
+<code>cowrie</code> login shell. Save the unit below with
+<code>sudoedit /etc/systemd/system/cowrie.service</code>, owned by root
+and not writable by <code>cowrie</code> (normally root:root, mode 0644).
+The dedicated user runs Cowrie; the administrator installs and manages
+the unit.</p>
+<p>The <code>ExecStart</code> below is a version-dependent example, not
+a verified launch path for the current upstream checkout. Before
+enabling, inspect the checked-out release’s foreground/start
+instructions and replace it with the matching executable and arguments.
+Confirm the working directory and venv paths for that installation; do
+not infer correctness merely because the unit parses.</p>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[Unit]</span></span><br><span class="line"><span class="attr">Description</span>=Cowrie SSH Honeypot</span><br><span class="line"><span class="attr">After</span>=network.target</span><br><span class="line"></span><br><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">User</span>=cowrie</span><br><span class="line"><span class="attr">Group</span>=cowrie</span><br><span class="line"><span class="attr">WorkingDirectory</span>=/home/cowrie/cowrie</span><br><span class="line"><span class="attr">ExecStart</span>=/home/cowrie/cowrie/cowrie-env/bin/python /home/cowrie/cowrie/src/cowrie/start.py --nodaemon</span><br><span class="line"><span class="attr">Restart</span>=always</span><br><span class="line"><span class="attr">RestartSec</span>=<span class="number">5</span></span><br><span class="line"></span><br><span class="line"><span class="section">[Install]</span></span><br><span class="line"><span class="attr">WantedBy</span>=multi-user.target</span><br></pre></td></tr></table></figure>
 <p>Enable it:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> systemctl daemon-reload</span><br><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now cowrie</span><br></pre></td></tr></table></figure>
 <h2 id="logs">Logs</h2>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">journalctl -u cowrie -e --no-pager</span><br><span class="line"><span class="built_in">sudo</span> -iu cowrie <span class="built_in">tail</span> -f ~/cowrie/var/log/cowrie/cowrie.json</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">journalctl -u cowrie -e --no-pager</span><br><span class="line"><span class="built_in">sudo</span> -iu cowrie sh -c <span class="string">&#x27;tail -f /home/cowrie/cowrie/var/log/cowrie/cowrie.json&#x27;</span></span><br></pre></td></tr></table></figure>
 <p>The JSON log is usually the most useful file for later analysis.</p>
 <h2 id="firewall-or-port-forwarding">Firewall Or Port Forwarding</h2>
 <p>If Cowrie listens on <code>2222</code>, a simple redirect can expose
@@ -496,13 +509,13 @@ services.</li>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">

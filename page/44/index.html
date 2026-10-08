@@ -278,7 +278,7 @@ p.spoiler {
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-flag-bootloader/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -327,7 +327,7 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>591</span>
+      <span>611</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -338,6 +338,7 @@ p.spoiler {
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for 247CTF - The Flag Bootloader, covering 247ctf, network, pwn, python.</div>
         </div>
       </header>
 
@@ -351,9 +352,12 @@ bootloader to recover the flag?</p>
 </blockquote>
 <h2 id="analysis">Analysis</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file flag.com</span><br><span class="line">flag.com: DOS/MBR boot sector</span><br></pre></td></tr></table></figure>
-<p>This is a 512-byte boot sector image. Using <code>xxd</code> to view
-the hex data:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">00000000: eb21 b800 10cd 16c3 60b4 0e8a 043c 0074  .!......`....&lt;.t</span><br><span class="line">00000010: 0eb7 00b3 07cd 1080 fe24 7403 46eb ec61  .........$t.F..a</span><br><span class="line">...</span><br><span class="line">000001f0: 0000 0000 0000 0000 0000 0000 0000 55aa  ..............U.</span><br></pre></td></tr></table></figure>
+<p>This is a 512-byte boot sector image. The following <code>xxd</code>
+excerpts show offsets <code>0x00..0x1f</code> and
+<code>0x1f0..0x1ff</code> only:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">00000000: eb21 b800 10cd 16c3 60b4 0e8a 043c 0074  .!......`....&lt;.t</span><br><span class="line">00000010: 0eb7 00b3 07cd 1080 fe24 7403 46eb ec61  .........$t.F..a</span><br></pre></td></tr></table></figure>
+<p>Final 16 bytes:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">000001f0: 0000 0000 0000 0000 0000 0000 0000 55aa  ..............U.</span><br></pre></td></tr></table></figure>
 <p>The <code>55 aa</code> signature at the end confirms it is a standard
 boot sector.</p>
 <h2 id="boot-sector-fundamentals">Boot Sector Fundamentals</h2>
@@ -392,10 +396,12 @@ arithmetic/logical operations (XOR, ADD, SUB). 3. Validated characters
 serve as XOR keys to decrypt the subsequent ciphertext region. 4. Each
 key character decrypts 2 bytes of ciphertext.</p>
 <h2 id="solution-script">Solution Script</h2>
-<p>We can simulate the assembly operations to recover the unlock code
-and then use it to XOR the ciphertext bytes.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># 1. Recover the 16-character unlock code</span></span><br><span class="line">    unlock_chars = [</span><br><span class="line">        <span class="number">0x4B</span> ^ <span class="number">0x0C</span>, <span class="number">0x53</span> ^ <span class="number">0x06</span>, <span class="number">0x58</span> - <span class="number">0x01</span>, <span class="number">0x62</span> - <span class="number">0x29</span>,</span><br><span class="line">        <span class="number">0x68</span> ^ <span class="number">0x23</span>, <span class="number">0x4B</span> ^ <span class="number">0x00</span>, <span class="number">0x62</span> - <span class="number">0x1E</span>, <span class="number">0x4D</span> - <span class="number">0x0B</span>,</span><br><span class="line">        <span class="number">0x45</span> ^ <span class="number">0x0D</span>, <span class="number">0x10</span> ^ <span class="number">0x28</span>, <span class="number">0x58</span> ^ <span class="number">0x1D</span>, <span class="number">0x7A</span> ^ <span class="number">0x28</span>,</span><br><span class="line">        <span class="number">0x65</span> - <span class="number">0x13</span>, <span class="number">0x33</span> ^ <span class="number">0x07</span>, <span class="number">0x25</span> ^ <span class="number">0x15</span>, <span class="number">0x4C</span> + <span class="number">0x0C</span></span><br><span class="line">    ]</span><br><span class="line">    </span><br><span class="line">    unlock_code = <span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(c) <span class="keyword">for</span> c <span class="keyword">in</span> unlock_chars)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Unlock Code: <span class="subst">&#123;unlock_code&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Extract encrypted payload (32 bytes from offset 0x1B1)</span></span><br><span class="line">    <span class="comment"># This corresponds to memory 0x7DB1 (0x7DAA + 7)</span></span><br><span class="line">    payload_hex = <span class="string">&quot;77 21 67 30 60 35 0c 0c 78 79 2e 2e 20 72 70 75 29 2b 00 5c 21 70 62 63 65 60 07 0d 06 02 3b 3b&quot;</span></span><br><span class="line">    encrypted_bytes = <span class="built_in">bytes</span>.fromhex(payload_hex)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Perform XOR decryption</span></span><br><span class="line">    decrypted_chars = []</span><br><span class="line">    <span class="keyword">for</span> i, byte <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted_bytes):</span><br><span class="line">        key = unlock_chars[i // <span class="number">2</span>]</span><br><span class="line">        decrypted_chars.append(<span class="built_in">chr</span>(byte ^ key))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] Flag: 247CTF<span class="subst">&#123;&lt;flag-redacted&gt;&#125;</span>&#125;&#125;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
+<p>The script evaluates the retained validation constants and 32
+ciphertext bytes. It reproduces their XOR result offline; without
+<code>flag.com</code>, the complete instruction sequence and original
+byte offsets cannot be rechecked.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve</span>():</span><br><span class="line">    <span class="comment"># 1. Recover the 16-character unlock code</span></span><br><span class="line">    unlock_chars = [</span><br><span class="line">        <span class="number">0x4B</span> ^ <span class="number">0x0C</span>, <span class="number">0x53</span> ^ <span class="number">0x06</span>, <span class="number">0x58</span> - <span class="number">0x01</span>, <span class="number">0x62</span> - <span class="number">0x29</span>,</span><br><span class="line">        <span class="number">0x68</span> ^ <span class="number">0x23</span>, <span class="number">0x4B</span> ^ <span class="number">0x00</span>, <span class="number">0x62</span> - <span class="number">0x1E</span>, <span class="number">0x4D</span> - <span class="number">0x0B</span>,</span><br><span class="line">        <span class="number">0x45</span> ^ <span class="number">0x0D</span>, <span class="number">0x10</span> ^ <span class="number">0x28</span>, <span class="number">0x58</span> ^ <span class="number">0x1D</span>, <span class="number">0x7A</span> ^ <span class="number">0x28</span>,</span><br><span class="line">        <span class="number">0x65</span> - <span class="number">0x13</span>, <span class="number">0x33</span> ^ <span class="number">0x07</span>, <span class="number">0x25</span> ^ <span class="number">0x15</span>, <span class="number">0x4C</span> + <span class="number">0x0C</span></span><br><span class="line">    ]</span><br><span class="line">    </span><br><span class="line">    unlock_code = <span class="string">&quot;&quot;</span>.join(<span class="built_in">chr</span>(c) <span class="keyword">for</span> c <span class="keyword">in</span> unlock_chars)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] Unlock Code: <span class="subst">&#123;unlock_code&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. Extract encrypted payload (32 bytes from offset 0x1B1)</span></span><br><span class="line">    <span class="comment"># This corresponds to memory 0x7DB1 (0x7DAA + 7)</span></span><br><span class="line">    payload_hex = <span class="string">&quot;77 21 67 30 60 35 0c 0c 78 79 2e 2e 20 72 70 75 29 2b 00 5c 21 70 62 63 65 60 07 0d 06 02 3b 3b&quot;</span></span><br><span class="line">    encrypted_bytes = <span class="built_in">bytes</span>.fromhex(payload_hex)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. Perform XOR decryption</span></span><br><span class="line">    decrypted_chars = []</span><br><span class="line">    <span class="keyword">for</span> i, byte <span class="keyword">in</span> <span class="built_in">enumerate</span>(encrypted_bytes):</span><br><span class="line">        key = unlock_chars[i // <span class="number">2</span>]</span><br><span class="line">        decrypted_chars.append(<span class="built_in">chr</span>(byte ^ key))</span><br><span class="line"></span><br><span class="line">    flag_body = <span class="string">&quot;&quot;</span>.join(decrypted_chars)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;[+] Flag: 247CTF&#123;&quot;</span> + flag_body + <span class="string">&quot;&#125;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    solve()</span><br></pre></td></tr></table></figure>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{[flag redacted]}</span></span>
 
       
     </div>
@@ -421,7 +427,7 @@ and then use it to XOR the ciphertext bytes.</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/pcat/pcat-mission-impossible/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -470,7 +476,7 @@ and then use it to XOR the ciphertext bytes.</p>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>721</span>
+      <span>725</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -481,6 +487,7 @@ and then use it to XOR the ciphertext bytes.</p>
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for PCAT - Mission Impossible, covering pcat, crypto, rsa.</div>
         </div>
       </header>
 
@@ -496,7 +503,7 @@ and then use it to XOR the ciphertext bytes.</p>
 <ol type="1">
 <li><code>isPrime(P)</code>, <code>isPrime(Q)</code>,
 <code>isPrime(R)</code>, and <code>isPrime(N)</code> are all true.</li>
-<li><code>N = P * Q * R</code>.</li>
+<li><span class="math inline">\(N = P \times Q \times R\)</span>.</li>
 <li><code>N</code> has at least 1024 bits.</li>
 </ol>
 <p><code>N</code> is obviously composite, so the key is to make
@@ -505,19 +512,22 @@ bases.</p>
 <h2 id="construction-outline">Construction outline</h2>
 <p>Use an Arnault-style construction with:</p>
 <ul>
-<li><code>P = a*k + 1</code></li>
-<li><code>Q = b*k + 1</code></li>
-<li><code>R = c*k + 1</code></li>
+<li><span class="math inline">\(P = ak + 1\)</span></li>
+<li><span class="math inline">\(Q = bk + 1\)</span></li>
+<li><span class="math inline">\(R = ck + 1\)</span></li>
 </ul>
-<p>Choose <code>a, b, c</code> as distinct primes with
-<code>a, b, c ≡ 1 (mod 8)</code> (for base-2 behavior), e.g.
-<code>89, 113, 137</code>.</p>
-<p>To make <code>(P-1), (Q-1), (R-1)</code> divide <code>(N-1)</code>,
-solve the congruence system:</p>
+<p>Choose <code>a, b, c</code> as distinct primes with <span
+class="math inline">\(a,b,c \equiv 1 \pmod{8}\)</span> (for base-2
+behavior), e.g. <code>89, 113, 137</code>.</p>
+<p>To make <span class="math inline">\((P-1), (Q-1), (R-1)\)</span>
+divide <span class="math inline">\((N-1)\)</span>, solve the congruence
+system:</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">k ≡ -(b+c)(bc)^(-1) (mod a)</span><br><span class="line">k ≡ -(a+c)(ac)^(-1) (mod b)</span><br><span class="line">k ≡ -(a+b)(ab)^(-1) (mod c)</span><br></pre></td></tr></table></figure>
-<p>For odd MR bases <code>B in {3,5,...,79}</code>, force
-<code>k ≡ 0 (mod B)</code>. Also force <code>k ≡ 2 (mod 4)</code> so
-<code>P, Q, R ≡ 3 (mod 4)</code>.</p>
+<p>For odd MR bases <span class="math inline">\(B \in
+\{3,5,\ldots,79\}\)</span>, force <span class="math inline">\(k \equiv 0
+\pmod{B}\)</span>. Also force <span class="math inline">\(k \equiv 2
+\pmod{4}\)</span> so <span class="math inline">\(P,Q,R \equiv 3
+\pmod{4}\)</span>.</p>
 <p>Then scan <code>k</code> until <code>P, Q, R</code> are all truly
 prime (with a strong primality test like
 <code>sympy.isprime</code>).</p>
@@ -528,9 +538,11 @@ prime (with a strong primality test like
 <h2 id="rsa-decryption-3-prime">RSA decryption (3-prime)</h2>
 <p>Once <code>P, Q, R</code> are known, decrypt like standard RSA:</p>
 <ul>
-<li><code>phi(N) = (P-1)(Q-1)(R-1)</code></li>
-<li><code>d = e^(-1) mod phi(N)</code> with <code>e = 65537</code></li>
-<li><code>m = c^d mod N</code></li>
+<li><span class="math inline">\(\varphi(N) =
+(P-1)(Q-1)(R-1)\)</span></li>
+<li><span class="math inline">\(d = e^{-1} \bmod \varphi(N)\)</span>
+with <span class="math inline">\(e=65537\)</span></li>
+<li><span class="math inline">\(m=c^{d} \bmod N\)</span></li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decrypt</span>(<span class="params">p, q, r, c</span>):</span><br><span class="line">    e = <span class="number">0x10001</span></span><br><span class="line">    n = p * q * r</span><br><span class="line">    phi = (p - <span class="number">1</span>) * (q - <span class="number">1</span>) * (r - <span class="number">1</span>)</span><br><span class="line">    d = <span class="built_in">pow</span>(e, -<span class="number">1</span>, phi)</span><br><span class="line">    m = <span class="built_in">pow</span>(c, d, n)</span><br><span class="line"></span><br><span class="line">    size = (m.bit_length() + <span class="number">7</span>) // <span class="number">8</span></span><br><span class="line">    msg = m.to_bytes(size, <span class="string">&quot;big&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(msg.decode(<span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;ignore&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    P = <span class="number">45427420268475430659332737993000283397102585042957378767593137448789955507087370207886940708232722175257488588695287994058256318553211</span></span><br><span class="line">    Q = <span class="number">57677511127390153533759543743921708133399911346676222480202522828238932273043514983047464045284242761843777646320983632905426561758571</span></span><br><span class="line">    R = <span class="number">69927601986304876408186349494843132869697237650395066192811908207687909038999659758207987382335763348430066703946679271752596804963931</span></span><br><span class="line">    C = <span class="number">21903103496980081373563573693903562346746553643549818726007975948477827819459765088909748053913796144132553228584337940471254732244734196780412249598279393335004210910953390996721397236654824645841526330517109905833017093822718222876587329963794042086917871402474385749212962074053842003782042533173326441388721313429460738550791493248565473365397568505962364729491646535933145902419195195919991941091</span></span><br><span class="line"></span><br><span class="line">    decrypt(P, Q, R, C)</span><br></pre></td></tr></table></figure>
 
@@ -558,7 +570,7 @@ prime (with a strong primality test like
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/pcat/pcat-easygame/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -618,6 +630,7 @@ prime (with a strong primality test like
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for PCAT - EasyGame, covering 247ctf, network, pwn, python.</div>
         </div>
       </header>
 
@@ -669,7 +682,7 @@ the uploaded non-<code>.php</code> file as PHP.</li>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-flag-keygen/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -718,7 +731,7 @@ the uploaded non-<code>.php</code> file as PHP.</li>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>493</span>
+      <span>521</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -729,6 +742,7 @@ the uploaded non-<code>.php</code> file as PHP.</li>
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for 247CTF - Flag Keygen, covering 247ctf, reverse-engineering, keygen.</div>
         </div>
       </header>
 
@@ -762,7 +776,10 @@ value.</li>
 <h2 id="remote-verification">Remote verification</h2>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nc 892dc593a381aaea.247ctf.com 50478</span><br></pre></td></tr></table></figure>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Enter a valid product key to gain access to the flag:</span><br><span class="line">BUYRSCLZHPATAQZSLJMJMKOOBFRAOVUX</span><br><span class="line">Valid product key!</span><br><span class="line">247CTF&#123;&lt;flag-redacted&gt;&#125;</span><br></pre></td></tr></table></figure>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
+<p>The returned flag belongs to the launched service instance; no
+cross-instance invariance is established. Record the
+generation/retrieval method and use the current instance response
+instead of a fixed-answer spoiler.</p>
 
       
     </div>
@@ -788,7 +805,7 @@ value.</li>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/ctf/z3/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -852,6 +869,7 @@ value.</li>
     </span>
 </div>
 
+            <div class="post-description">Notes on Z3 solver note, covering z3, smt, constraints.</div>
         </div>
       </header>
 
@@ -951,7 +969,7 @@ values</li>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-encrypted-usb-drive/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1011,6 +1029,7 @@ values</li>
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for 247CTF - Encrypted USB Drive, covering 247ctf, forensics, bitlocker, xor, reverse-engineering.</div>
         </div>
       </header>
 
@@ -1072,7 +1091,7 @@ header, we can recover the XOR key.</p>
 <p>Applying the XOR key <code>fcoy</code> to the entire file
 <code>do_not_open.png.xxx.crypt</code> recovers the original image
 containing the flag.</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{[flag redacted]}</span></span>
 <hr />
 <h2 id="deep-dive-reversing-the-cryptor-binary">5. Deep Dive: Reversing
 the <code>cryptor</code> Binary</h2>
@@ -1115,7 +1134,7 @@ cyclically.</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-encrypted-password/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1164,7 +1183,7 @@ cyclically.</p>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>228</span>
+      <span>308</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -1175,6 +1194,7 @@ cyclically.</p>
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for 247CTF - The Encrypted Password, covering 247ctf, pwn, reverse-engineering, python.</div>
         </div>
       </header>
 
@@ -1191,27 +1211,33 @@ password?</p>
 </blockquote>
 <h2 id="quick-dynamic-check-with-ltrace">1. Quick dynamic check with
 <code>ltrace</code></h2>
-<p><code>ltrace</code> shows the binary compares our input against a
-transformed string.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ltrace ./encrypted_password</span><br><span class="line">...</span><br><span class="line">puts(<span class="string">&quot;Enter the secret password:&quot;</span>)</span><br><span class="line">fgets(<span class="string">&quot;arst\\n&quot;</span>, 33, stdin)</span><br><span class="line">strcmp(<span class="string">&quot;arst\\n&quot;</span>, <span class="string">&quot;141c85ccfb2ae19d8d8c224c4e403dce&quot;</span>...)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>The retained <code>ltrace</code> excerpt shows the input and
+comparison calls. Its <code>strcmp</code> string is a tracer-truncated
+display, not Python or a complete executable source listing.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ ltrace ./encrypted_password</span><br><span class="line">puts(<span class="string">&quot;Enter the secret password:&quot;</span>)</span><br><span class="line">fgets(<span class="string">&quot;arst\\n&quot;</span>, 33, stdin)</span><br><span class="line">strcmp(<span class="string">&quot;arst\\n&quot;</span>, <span class="string">&quot;141c85ccfb2ae19d8d8c224c4e403dce&quot;</span>...)</span><br></pre></td></tr></table></figure>
 <p>This already hints that the expected secret is a printable 32-byte
 string.</p>
 <h2 id="or-debug-in-debugger-pwndbg">2. Or debug in debugger
 (<code>pwndbg</code>)</h2>
-<p>Set a breakpoint at the <code>strcmp</code> call
-(<code>0x555555400930</code>) and run the program.</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; b *0x555555400930</span><br><span class="line">pwndbg&gt; r</span><br><span class="line">...</span><br><span class="line">► 0x555555400930    call   strcmp@plt</span><br><span class="line">    s1: 0x7fffffffdf00 ◂— 0x500000000a</span><br><span class="line">    s2: 0x7fffffffded0 ◂— <span class="string">&#x27;141c85ccfb2ae19d8d8c224c4e403dce&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>The retained debugger excerpt uses a breakpoint at
+<code>strcmp</code> (<code>0x555555400930</code>); this address depends
+on the loaded executable and ASLR mapping.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; b *0x555555400930</span><br><span class="line">pwndbg&gt; r</span><br><span class="line">► 0x555555400930    call   strcmp@plt</span><br><span class="line">    s1: 0x7fffffffdf00 ◂— 0x500000000a</span><br><span class="line">    s2: 0x7fffffffded0 ◂— <span class="string">&#x27;141c85ccfb2ae19d8d8c224c4e403dce&#x27;</span></span><br></pre></td></tr></table></figure>
 <p>At compare time, <code>s2</code> contains the final password
 candidate.</p>
 <h2 id="or-reverse-logic-in-ida">3. Or reverse logic in IDA</h2>
 <p>Relevant decompiled logic:</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">strcpy</span>(s, <span class="string">&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span>);</span><br><span class="line">*(_QWORD *)s2 = <span class="number">0x5A53010106040309L</span>L;</span><br><span class="line">v8  = <span class="number">0x5C585354500A5B00L</span>L;</span><br><span class="line">v9  = <span class="number">0x555157570108520DL</span>L;</span><br><span class="line">v10 = <span class="number">0x5707530453040752L</span>L;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>(s); ++i)</span><br><span class="line">  s2[i] ^= s[i];</span><br><span class="line"></span><br><span class="line">fgets(s1, <span class="number">33</span>, <span class="built_in">stdin</span>);</span><br><span class="line"><span class="keyword">if</span> (!<span class="built_in">strcmp</span>(s1, s2))</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;You found the flag!\\n247CTF&#123;&lt;flag-redacted&gt;&#125;\\n&quot;</span>, s2);</span><br></pre></td></tr></table></figure>
-<p>So the binary builds <code>s2</code>, XORs it with <code>s</code>,
-then compares it against input.</p>
+<p>The excerpt records the XOR construction and comparison.
+<code>fgets(s1, 33, stdin)</code> can read exactly 32 bytes before the
+terminating NUL, leaving a typed newline unread; the 32-byte candidate
+should be supplied without an extra newline in the compared buffer. The
+original executable is unavailable, so the comparison path has not been
+rerun.</p>
 <p>Reconstruct the secret with Python</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> p64, xor</span><br><span class="line"></span><br><span class="line">chunks = [</span><br><span class="line">    <span class="number">0x5A53010106040309</span>,</span><br><span class="line">    <span class="number">0x5C585354500A5B00</span>,</span><br><span class="line">    <span class="number">0x555157570108520D</span>,</span><br><span class="line">    <span class="number">0x5707530453040752</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">s2_bytes = <span class="string">b&quot;&quot;</span>.join(p64(chunk) <span class="keyword">for</span> chunk <span class="keyword">in</span> chunks)</span><br><span class="line">key = <span class="string">b&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span></span><br><span class="line">password = xor(s2_bytes, key)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;247CTF<span class="subst">&#123;&lt;flag-redacted&gt;&#125;</span>&#125;&#125;&quot;</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> struct</span><br><span class="line"></span><br><span class="line">chunks = [</span><br><span class="line">    <span class="number">0x5A53010106040309</span>,</span><br><span class="line">    <span class="number">0x5C585354500A5B00</span>,</span><br><span class="line">    <span class="number">0x555157570108520D</span>,</span><br><span class="line">    <span class="number">0x5707530453040752</span>,</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">s2_bytes = <span class="string">b&quot;&quot;</span>.join(struct.pack(<span class="string">&quot;&lt;Q&quot;</span>, chunk) <span class="keyword">for</span> chunk <span class="keyword">in</span> chunks)</span><br><span class="line">key = <span class="string">b&quot;875e9409f9811ba8560beee6fb0c77d2&quot;</span></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(s2_bytes) != <span class="built_in">len</span>(key):</span><br><span class="line">    <span class="keyword">raise</span> ValueError(<span class="string">&quot;XOR operands must both contain 32 bytes&quot;</span>)</span><br><span class="line">password = <span class="built_in">bytes</span>(value ^ mask <span class="keyword">for</span> value, mask <span class="keyword">in</span> <span class="built_in">zip</span>(s2_bytes, key))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(password.decode(<span class="string">&quot;ascii&quot;</span>))</span><br></pre></td></tr></table></figure>
 <h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{[flag redacted]}</span></span>
 
       
     </div>
@@ -1237,7 +1263,7 @@ then compares it against input.</p>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-commutative-payload/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1297,6 +1323,7 @@ then compares it against input.</p>
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for 247CTF - Commutative Payload, covering 247ctf, network, pwn, python.</div>
         </div>
       </header>
 
@@ -1339,7 +1366,7 @@ key <code>14 14</code> (effectively a 1-byte XOR with <code>0x14</code>)
 decrypts the payload to reveal the flag.</li>
 </ol>
 <h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{[flag redacted]}</span></span>
 
       
     </div>
@@ -1365,121 +1392,7 @@ decrypts the payload to reveal the flag.</li>
   
   
 
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-more-the-merrier/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/247CTF/247CTF-the-more-the-merrier/" class="post-title-link" itemprop="url">247CTF - The More The Merrier</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>375</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="the-more-the-merrier">The More The Merrier</h1>
-<p>One byte is great. But what if you need more? Can you find the flag
-hidden in this binary?</p>
-<h2 id="analysis">Analysis</h2>
-<p>The challenge provides a 64-bit ELF executable. Checking its
-details:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file the_more_the_merrier</span><br><span class="line">the_more_the_merrier: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=0f750d638337391328fa7432dd362189de908c1e, stripped</span><br></pre></td></tr></table></figure>
-<p>Upon inspecting the binary's data section or its hex dump, we find
-the 247CTF flag hidden in the binary:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">00000000000006E0  01 00 02 00 00 00 00 00  32 00 00 00 34 00 00 00  ........2...4...</span><br><span class="line">00000000000006F0  37 00 00 00 43 00 00 00  54 00 00 00 46 00 00 00  7...C...T...F...</span><br><span class="line">0000000000000700  7B 00 00 00 36 00 00 00  64 00 00 00 66 00 00 00  &#123;...6...d...f...</span><br><span class="line">0000000000000710  32 00 00 00 31 00 00 00  35 00 00 00 65 00 00 00  2...1...5...e...</span><br><span class="line">0000000000000720  62 00 00 00 33 00 00 00  63 00 00 00 63 00 00 00  b...3...c...c...</span><br><span class="line">0000000000000730  37 00 00 00 33 00 00 00  34 00 00 00 30 00 00 00  7...3...4...0...</span><br><span class="line">0000000000000740  37 00 00 00 32 00 00 00  36 00 00 00 37 00 00 00  7...2...6...7...</span><br><span class="line">0000000000000750  30 00 00 00 33 00 00 00  31 00 00 00 61 00 00 00  0...3...1...a...</span><br><span class="line">0000000000000760  31 00 00 00 35 00 00 00  62 00 00 00 30 00 00 00  1...5...b...0...</span><br><span class="line">0000000000000770  61 00 00 00 62 00 00 00  33 00 00 00 36 00 00 00  a...b...3...6...</span><br><span class="line">0000000000000780  63 00 00 00 7D 00 00 00  00 00 00 00 4E 6F 74 68  c...&#125;.......Noth</span><br></pre></td></tr></table></figure>
-<h2 id="solution">Solution</h2>
-<p>Each character of the flag is stored as a 4-byte little-endian
-integer. For example: - <code>32 00 00 00</code> -&gt; <code>0x32</code>
--&gt; <code>'2'</code> - <code>34 00 00 00</code> -&gt;
-<code>0x34</code> -&gt; <code>'4'</code> - <code>37 00 00 00</code>
--&gt; <code>0x37</code> -&gt; <code>'7'</code> -
-<code>43 00 00 00</code> -&gt; <code>0x43</code> -&gt;
-<code>'C'</code></p>
-<p>We can extract the flag by reading the first byte of each 4-byte
-chunk.</p>
-<h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-secret-lock/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1539,6 +1452,7 @@ chunk.</p>
     </span>
 </div>
 
+            <div class="post-description">Challenge analysis and method notes for 247CTF - The Secret Lock, covering 247ctf, web, javascript, z3.</div>
         </div>
       </header>
 
@@ -1572,7 +1486,122 @@ constraints must be modeled as XOR equations.</li>
 bitwise operation behavior.</li>
 </ul>
 <h2 id="flag">Flag</h2>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{<flag-redacted>}</span></span>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{[flag redacted]}</span></span>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/247CTF/247CTF-the-more-the-merrier/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/247CTF/247CTF-the-more-the-merrier/" class="post-title-link" itemprop="url">247CTF - The More The Merrier</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-03-01 16:03:44" itemprop="dateCreated datePublished" datetime="2026-03-01T16:03:44+08:00">2026-03-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>375</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+            <div class="post-description">Challenge analysis and method notes for 247CTF - The More The Merrier, covering 247ctf, reverse-engineering, binary.</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="the-more-the-merrier">The More The Merrier</h1>
+<p>One byte is great. But what if you need more? Can you find the flag
+hidden in this binary?</p>
+<h2 id="analysis">Analysis</h2>
+<p>The challenge provides a 64-bit ELF executable. Checking its
+details:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">❯ file the_more_the_merrier</span><br><span class="line">the_more_the_merrier: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, <span class="keyword">for</span> GNU/Linux 3.2.0, BuildID[sha1]=0f750d638337391328fa7432dd362189de908c1e, stripped</span><br></pre></td></tr></table></figure>
+<p>Upon inspecting the binary's data section or its hex dump, we find
+the 247CTF flag hidden in the binary:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">00000000000006E0  01 00 02 00 00 00 00 00  32 00 00 00 34 00 00 00  ........2...4...</span><br><span class="line">00000000000006F0  37 00 00 00 43 00 00 00  54 00 00 00 46 00 00 00  7...C...T...F...</span><br><span class="line">0000000000000700  7B 00 00 00 36 00 00 00  64 00 00 00 66 00 00 00  &#123;...6...d...f...</span><br><span class="line">0000000000000710  32 00 00 00 31 00 00 00  35 00 00 00 65 00 00 00  2...1...5...e...</span><br><span class="line">0000000000000720  62 00 00 00 33 00 00 00  63 00 00 00 63 00 00 00  b...3...c...c...</span><br><span class="line">0000000000000730  37 00 00 00 33 00 00 00  34 00 00 00 30 00 00 00  7...3...4...0...</span><br><span class="line">0000000000000740  37 00 00 00 32 00 00 00  36 00 00 00 37 00 00 00  7...2...6...7...</span><br><span class="line">0000000000000750  30 00 00 00 33 00 00 00  31 00 00 00 61 00 00 00  0...3...1...a...</span><br><span class="line">0000000000000760  31 00 00 00 35 00 00 00  62 00 00 00 30 00 00 00  1...5...b...0...</span><br><span class="line">0000000000000770  61 00 00 00 62 00 00 00  33 00 00 00 36 00 00 00  a...b...3...6...</span><br><span class="line">0000000000000780  63 00 00 00 7D 00 00 00  00 00 00 00 4E 6F 74 68  c...&#125;.......Noth</span><br></pre></td></tr></table></figure>
+<h2 id="solution">Solution</h2>
+<p>Each character of the flag is stored as a 4-byte little-endian
+integer. For example: - <code>32 00 00 00</code> -&gt; <code>0x32</code>
+-&gt; <code>'2'</code> - <code>34 00 00 00</code> -&gt;
+<code>0x34</code> -&gt; <code>'4'</code> - <code>37 00 00 00</code>
+-&gt; <code>0x37</code> -&gt; <code>'7'</code> -
+<code>43 00 00 00</code> -&gt; <code>0x43</code> -&gt;
+<code>'C'</code></p>
+<p>We can extract the flag by reading the first byte of each 4-byte
+chunk.</p>
+<h2 id="flag">Flag</h2>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">247CTF{[flag redacted]}</span></span>
 
       
     </div>
@@ -1614,13 +1643,13 @@ bitwise operation behavior.</li>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">379k</span>
+    <span title="Word count total">389k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">22:57</span>
+    <span title="Reading time total">23:34</span>
   </span>
 </div>
 <div class="busuanzi-count">
