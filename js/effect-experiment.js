@@ -10,7 +10,7 @@
   const reducedTransparency = matchMedia('(prefers-reduced-transparency: reduce)');
   let enabled = true;
   let preset = 'refined';
-  let intensity = 80;
+  let intensity = 70;
   let dynamic = true; // Refined preference; Original08 is always static.
   let flow = 'lava';
   let composition = 'random'; // Latent until Refined lava is selected.
@@ -84,7 +84,7 @@
   let pageActive = true;
   const transitions = new Map();
   const main = () => document.querySelector('.main-inner');
-  const eligible = node => node && (node.matches('.index') || document.querySelector('[data-effects-lab]'));
+  const eligible = node => node && (continuousFull() || node.matches('.index') || (isFull() && node.matches('.post')) || document.querySelector('[data-effects-lab]'));
   const el = (tag, cls, text) => {
     const node = document.createElement(tag);
     node.className = cls;
@@ -219,7 +219,7 @@
     intensityLabel.append(range, output);
     const reset = el('button', 'effect-reset', '重置');
     reset.type = 'button';
-    reset.addEventListener('click', () => { enabled = true; preset = 'refined'; intensity = 80; dynamic = true; flow = 'lava'; composition = 'random'; travel = 'full'; rendererChoice = 'pixi'; refresh(); });
+    reset.addEventListener('click', () => { enabled = true; preset = 'refined'; intensity = 70; dynamic = true; flow = 'lava'; composition = 'random'; travel = 'full'; rendererChoice = 'pixi'; refresh(); });
     status = el('span', 'effect-state');
     status.setAttribute('role', 'status');
     const rendererLabel = el('label', '', '渲染器');
@@ -237,13 +237,13 @@
   }
   function blocked() {
     if (!pageActive) return '页面已离开：留白装饰关闭。';
-    if (navigating) return '导航中：留白装饰暂停。';
+    if (navigating && !continuousFull()) return '导航中：留白装饰暂停。';
     if (print.matches) return '打印模式：留白装饰关闭。';
     if (reduced.matches) return '减少动态效果偏好：留白装饰关闭。';
     if (contrast.matches) return '高对比度模式：留白装饰关闭。';
     if (!desktop.matches) return '小视口（小于 1200px）：留白装饰不可用，正文保持原版。';
     if (!enabled) return '已关闭 · Original08 / Refined 仅影响两侧留白。';
-    if (transitions.size) return '布局调整中：留白装饰暂停。';
+    if (transitions.size && !continuousFull()) return '布局调整中：留白装饰暂停。';
     return '';
   }
   function geometry() {
@@ -343,6 +343,7 @@
   }
   // One coherent viewport root. No old side fields in full mode.
   const isFull = () => preset === 'refined' && dynamic && flow === 'lava' && travel === 'full';
+  const continuousFull = () => isFull() && !window.__meshDebugControls;
   const protectedSelector = '.post-block, .header, .sidebar, .footer, .search-pop-overlay, .search-popup, .effect-controls';
   const protectedNodes = () => [...document.querySelectorAll(protectedSelector)];
   const fullPaths = descriptors.flatMap((side, sideIndex) => [...side, side[0]].map((props, i) => {
@@ -391,6 +392,13 @@
     const unit = node.__unit;
     const width = vw / unit, height = vh / unit;
     node.__renderer?.resize(width, height, unit);
+    if (continuousFull() && node.__renderer?.updateGeometry) {
+      node.style.width=`${width}px`; node.style.height=`${height}px`;
+      node.style.maskImage=node.style.webkitMaskImage='none'; node.style.clipPath='none';
+      node.__renderer.start();
+      updateControls('持续全背景 · 正文重叠处背景模糊。');
+      return;
+    }
     const bounds = { left: 0, top: 0 };
     // Protected rectangles are read below before any field-size/mask writes.
     const holes = protectedNodes().flatMap(n => {
@@ -704,18 +712,21 @@
   function mountFull() {
     const glass = window.CSS?.supports('backdrop-filter', 'blur(4px)') || window.CSS?.supports('-webkit-backdrop-filter', 'blur(4px)');
     const node = el('div', 'effect-full');
+    node.__continuous=continuousFull();
     node.dataset.mesh = 'full-background'; node.dataset.preset = preset;
     node.dataset.motion = 'dynamic'; node.dataset.flow = 'lava'; node.dataset.travel = 'full';
     node.style.opacity = String(intensity / 100); node.style.visibility = 'hidden';
     node.setAttribute('aria-hidden', 'true');
     nodes = [node]; document.body.append(node);
     node.__renderer = rendererChoice === 'pixi' && window.createMeshPixiRenderer
-      ? window.createMeshPixiRenderer(node, { blocked, geometry, status: updateControls }) : undefined;
-    if (!node.__renderer) node.__renderer = createCanvasRenderer(node);
+      ? window.createMeshPixiRenderer(node, { blocked, geometry, status: updateControls, continuous: continuousFull() }) : undefined;
+    if (!node.__renderer && !continuousFull()) node.__renderer = createCanvasRenderer(node);
+    if (!node.__renderer && continuousFull()) { updateControls('PixiJS 不可用：背景安全关闭。'); return; }
     if (node.__renderer && glass && !reducedTransparency.matches) document.body.dataset.meshChromeGlass = 'true';
     if (node.__renderer && !node.__renderer.updateGeometry) node.dataset.renderer = 'canvas2d';
     else node.dataset.renderer = 'dom';
     populateFull(node);
+    if (continuousFull()) return; // No moving holes or article geometry subscriptions.
     if (typeof ResizeObserver !== 'undefined') {
       observer = new ResizeObserver(schedule);
     }
@@ -745,6 +756,7 @@
       watched = next; ancestors = parents;
     };
     fullObserver = new MutationObserver(records => {
+      pruneDetachedTransitions();
       if (records.some(affectsLayout)) {
         watchOwners(); geometry();
       }
@@ -752,6 +764,13 @@
     watchOwners();
   }
   function refresh() {
+    if (continuousFull() && nodes[0]?.__continuous && pageActive && !blocked()) {
+      host=main();
+      const glass=window.CSS?.supports('backdrop-filter','blur(4px)') || window.CSS?.supports('-webkit-backdrop-filter','blur(4px)');
+      if (nodes[0].__renderer && glass && !reducedTransparency.matches) document.body.dataset.meshChromeGlass='true';
+      else delete document.body.dataset.meshChromeGlass;
+      geometry(); return;
+    }
     clearField();
     if (!pageActive) return;
     if (!mount()) return;
@@ -777,7 +796,9 @@
     }
   }
   document.addEventListener('pjax:send', () => {
-    navigating = true; transitions.clear(); clearField(); updateControls(blocked());
+    navigating = true; transitions.clear();
+    if (!continuousFull()) clearField();
+    updateControls(blocked());
   });
   for (const name of ['pjax:success', 'pjax:error']) document.addEventListener(name, () => {
     navigating = false; transitions.clear(); refresh();
@@ -787,7 +808,7 @@
   for (const query of [reduced, desktop, contrast, print, reducedTransparency]) query.addEventListener('change', refresh);
   window.addEventListener('beforeprint', clearField);
   window.addEventListener('afterprint', refresh);
-  window.addEventListener('scroll', () => { if (isFull()) geometry(); }, { passive: true, capture: true });
+  window.addEventListener('scroll', () => { if (isFull() && !continuousFull()) geometry(); }, { passive: true, capture: true });
   window.addEventListener('resize', () => { geometry(); if (!isFull()) schedule(); });
   window.visualViewport?.addEventListener('resize', () => { geometry(); schedule(); });
   window.visualViewport?.addEventListener('scroll', () => { geometry(); if (!isFull()) schedule(); });
@@ -816,8 +837,36 @@
     return movesContent(target);
   };
   const changesGeometry = property => /^(?:transform|translate|scale|rotate|perspective|zoom|(?:min-|max-)?(?:width|height|inline-size|block-size)|(?:margin|padding|inset)(?:-.+)?|top|right|bottom|left|border(?:-.+)?-width|flex(?:-.+)?|grid(?:-.+)?|(?:column-|row-)?gap|font-size|font-weight|letter-spacing|word-spacing|line-height)$/.test(property);
+  // A descendant's transform never moves the enclosing protected rectangle.
+  // In particular NexT's title underline reports target=link, pseudo=::before.
+  // Keep in-flow sizing/font changes conservative: they can resize that owner.
+  const transformsRect = property => /^(?:transform|translate|scale|rotate|perspective)$/.test(property);
+  const movesProtectedRect = target => target && !visualOnly(target) && host && layoutOwners().some(n => target === n || target.contains?.(n));
+  function pruneDetachedTransitions() {
+    let changed=false;
+    for (const key of transitions.keys()) {
+      const target=key.effect?.target || key;
+      if (target.isConnected === false) { transitions.delete(key); changed=true; }
+    }
+    return changed;
+  }
+  document.addEventListener('hud:layout-motion', event => {
+    if (continuousFull()) return;
+    const animation=event.animation, target=animation?.effect?.target;
+    if (event.active) {
+      if (!pageActive || navigating || !movesProtectedRect(target)) return;
+      transitions.set(animation,new Set(['hud-transform']));
+      if (isFull()) nodes.forEach(n => { n.style.visibility='hidden'; n.__renderer?.stop(); });
+      else clearField();
+    } else {
+      if (!transitions.delete(animation)) return;
+      if (!transitions.size) { if (isFull() && nodes.length) geometry(); else refresh(); }
+    }
+  });
   document.addEventListener('transitionrun', event => {
+    if (continuousFull()) return;
     if (!movesContent(event.target) || !changesGeometry(event.propertyName)) return;
+    if (transformsRect(event.propertyName) && (event.pseudoElement || !movesProtectedRect(event.target))) return;
     const properties = transitions.get(event.target) || new Set();
     properties.add(event.propertyName);
     transitions.set(event.target, properties);
@@ -826,21 +875,35 @@
     updateControls(blocked());
   });
   for (const name of ['transitionend', 'transitioncancel']) document.addEventListener(name, event => {
+    if (continuousFull()) return;
+    // An ignored pseudo/inner transform must not finish a tracked owner motion.
+    if (transformsRect(event.propertyName) && (event.pseudoElement || !movesProtectedRect(event.target))) return;
     const properties = transitions.get(event.target);
     if (!properties?.delete(event.propertyName)) return;
     if (!properties.size) transitions.delete(event.target);
     if (!transitions.size) { if (isFull() && nodes.length) geometry(); else refresh(); }
   });
   const layoutChanges = new MutationObserver(records => {
-    if (records.some(affectsLayout)) { geometry(); if (!isFull()) schedule(); }
+    if (continuousFull()) return;
+    const released=pruneDetachedTransitions();
+    if (released && !transitions.size && !nodes.length) { refresh(); return; }
+    if (released || records.some(affectsLayout)) { geometry(); if (!isFull()) schedule(); }
+  });
+  const structureChanges = new MutationObserver(() => {
+    if (continuousFull()) return;
+    const released=pruneDetachedTransitions();
+    if (released && !transitions.size) {
+      if (!nodes.length) refresh(); else { geometry(); if (!isFull()) schedule(); }
+    }
   });
   function start() {
     pageActive = true;
+    structureChanges.observe(document.body, { childList: true, subtree: true });
     layoutChanges.observe(document.body, { attributes: true, attributeOldValue: true, attributeFilter: ['class', 'style'] });
     layoutChanges.observe(document.documentElement, { attributes: true, attributeOldValue: true, attributeFilter: ['class', 'style'] });
     refresh();
   }
-  window.addEventListener('pagehide', () => { pageActive = false; clearField(); layoutChanges.disconnect(); transitions.clear(); });
+  window.addEventListener('pagehide', () => { pageActive = false; clearField(); structureChanges.disconnect(); layoutChanges.disconnect(); transitions.clear(); });
   window.addEventListener('pageshow', start);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();

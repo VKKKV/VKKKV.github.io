@@ -1,4 +1,4 @@
-/* PixiJS 8.22.0 WebGL: GPU-only procedural light and Gaussian union mask.
+/* PixiJS 8.22.0 WebGL: GPU-only procedural light and optional Gaussian union mask.
  * No moving CSS/SVG mask, Canvas2D raster upload, quality/FPS/DPR caps. */
 (() => {
   'use strict';
@@ -11,9 +11,9 @@ float roundedDistance(vec2 p,vec4 b,float r){vec2 c=(b.xy+b.zw)*.5;vec2 h=(b.zw-
 float holeDistance(vec2 p,float pad){float d=1.e10;for(int i=0;i<64;i++){if(i>=uHoleCount)break;vec4 b=uHoles[i]+vec4(-pad,-pad,pad,pad);d=min(d,roundedDistance(p,b,uRadii[i]+pad));}return d;}`;
   const MASK = COMMON+`void main(){float a=holeDistance(vUV*uSize,18./uUnit)<=0.?1.:0.;gl_FragColor=vec4(a,a,a,1.);}`;
   const LIGHT = COMMON+`
-uniform int uCount; uniform float uTime; uniform vec4 uPaths[12]; uniform vec4 uSizes[12]; uniform vec4 uColors[12]; uniform sampler2D uMask;
+uniform int uCount; uniform int uContinuous; uniform float uTime; uniform vec4 uPaths[12]; uniform vec4 uSizes[12]; uniform vec4 uColors[12]; uniform sampler2D uMask;
 float falloff(float d){if(d<.10)return mix(1.,.90,d/.10);if(d<.25)return mix(.90,.69,(d-.10)/.15);if(d<.43)return mix(.69,.43,(d-.25)/.18);if(d<.62)return mix(.43,.20,(d-.43)/.19);if(d<.78)return mix(.20,.055,(d-.62)/.16);if(d<.90)return mix(.055,0.,(d-.78)/.12);return 0.;}
-void main(){vec2 p=vUV*uSize;if(holeDistance(p,1.5/uUnit)<=0.){gl_FragColor=vec4(0.);return;}
+void main(){vec2 p=vUV*uSize;if(uContinuous==0&&holeDistance(p,1.5/uUnit)<=0.){gl_FragColor=vec4(0.);return;}
 vec4 result=vec4(0.);
 for(int i=0;i<12;i++){if(i>=uCount)break;
 vec4 path=uPaths[i];vec4 size=uSizes[i];
@@ -32,12 +32,14 @@ if(q.x<.12&&q.y<-.12)contour=min(contour,1.-step(1.,length((q-vec2(.12,-.12))/ve
 float alpha=falloff(length(q))*uColors[i].a*contour;
 vec4 color=vec4(uColors[i].rgb*alpha,alpha);result=color+result*(1.-alpha);
 }
-float mask=1.-texture2D(uMask,vec2(vUV.x,1.-vUV.y)).r;
+float mask=1.;if(uContinuous==0)mask=1.-texture2D(uMask,vec2(vUV.x,1.-vUV.y)).r;
 float edge=clamp((min(p.x,uSize.x-p.x)*uUnit-8.)/40.,0.,1.)*clamp((min(p.y,uSize.y-p.y)*uUnit-8.)/40.,0.,1.);
 gl_FragColor=result*mask*edge;}`;
   window.createMeshPixiRenderer = (node, gates) => {
     const P=window.PIXI;
     if(!P) return;
+    const continuous=gates.continuous===true;
+    const motionRate=continuous ? 0.8 : 1; // Slower production motion; keep comparison timing.
     const canvas=document.createElement('canvas');canvas.className='mesh-full-canvas';
     let renderer, geometry, stage, maskMesh, blurX, blurY, lightMesh, targetA, targetB, targetC;
     let width=0,height=0,ratio=1,unit=1,holes=[],paths=[],raf=0,last,elapsed=0,requested=false,disposed=false,state='pending',token=0,maskDirty=true,signature='';
@@ -46,7 +48,7 @@ gl_FragColor=result*mask*edge;}`;
       get state(){return state;},get ready(){return state==='ready';},get active(){return !!raf;},get time(){return elapsed;},get paths(){return paths;},get sprites(){return [];},get cacheSize(){return 0;},
       resize(w,h,u){if(disposed||state==='failed')return;const d=(window.devicePixelRatio||1)*u;if(width===w&&height===h&&ratio===d)return;width=w;height=h;unit=u;ratio=d;maskDirty=true;if(renderer)allocate();},
       setPaths(items){if(disposed||state==='failed')return;paths=items;syncPaths();},
-      updateGeometry(rects){if(disposed||state==='failed')return;const next=JSON.stringify(rects);if(next===signature)return;signature=next;holes=rects;maskDirty=true;},
+      updateGeometry(rects){if(disposed||state==='failed'||continuous)return;const next=JSON.stringify(rects);if(next===signature)return;signature=next;holes=rects;maskDirty=true;},
       start(){if(disposed||state==='failed')return;requested=true;resume();},stop(){requested=false;cancel();},
       paint(t){api.stop();elapsed=t;if(api.ready)draw();},
       dispose(){if(disposed)return;disposed=true;token++;state='retired';requested=false;cancel();cleanup();canvas.width=canvas.height=0;}
@@ -63,22 +65,24 @@ gl_FragColor=result*mask*edge;}`;
     function gaussian(axis){const sigma=12*ratio/unit;const radius=Math.ceil(4*sigma);let sum=0;const weights=[];for(let i=-radius;i<=radius;i++){const weight=Math.exp(-.5*(i/sigma)**2);weights.push(weight);sum+=weight;}const samples=weights.map((v,index)=>`a+=texture2D(uInput,vec2(vUV.x,1.-vUV.y)+uStep*${(index-radius).toFixed(1)}).r*${(v/sum).toPrecision(10)};`).join('\n');
       const g=new P.UniformGroup({uStep:{value:new Float32Array(axis==='x'?[1/Math.ceil(width*ratio),0]:[0,1/Math.ceil(height*ratio)]),type:'vec2<f32>'}});
       return mesh(`precision highp float;varying vec2 vUV;uniform sampler2D uInput;uniform vec2 uStep;void main(){float a=0.;${samples}gl_FragColor=vec4(a,a,a,1.);}`,g,{uInput:targetA.source});}
-    function allocate(){try{if(!width||!height)return;node.style.visibility='hidden';renderer.resize(width,height,ratio);canvas.style.width=`${width}px`;canvas.style.height=`${height}px`;for(const t of [targetA,targetB,targetC])t?.destroy(true);targetA=P.RenderTexture.create({width,height,resolution:ratio});targetB=P.RenderTexture.create({width,height,resolution:ratio});targetC=P.RenderTexture.create({width,height,resolution:ratio});
-      for(const m of [blurX,blurY])if(m){const shader=m.shader;const index=ownedShaders.indexOf(shader);if(index>=0)ownedShaders.splice(index,1);shader.destroy(true);m.destroy();}blurX=gaussian('x');blurY=gaussian('y');lightMesh.shader.resources.uMask=targetC.source;syncPaths();maskDirty=true;resume();}catch(e){fail(e);}}
+    function allocate(){try{if(!width||!height)return;if(!continuous||api.frames===0)node.style.visibility='hidden';renderer.resize(width,height,ratio);canvas.style.width=`${width}px`;canvas.style.height=`${height}px`;
+      if(!continuous){for(const t of [targetA,targetB,targetC])t?.destroy(true);targetA=P.RenderTexture.create({width,height,resolution:ratio});targetB=P.RenderTexture.create({width,height,resolution:ratio});targetC=P.RenderTexture.create({width,height,resolution:ratio});
+      for(const m of [blurX,blurY])if(m){const shader=m.shader;const index=ownedShaders.indexOf(shader);if(index>=0)ownedShaders.splice(index,1);shader.destroy(true);m.destroy();}blurX=gaussian('x');blurY=gaussian('y');lightMesh.shader.resources.uMask=targetC.source;}
+      syncPaths();maskDirty=true;if(continuous&&api.frames>0)draw();resume();}catch(e){fail(e);}}
     function syncPaths(){if(!lightGroup)return;const v=lightGroup.uniforms;v.uSize.set([width,height]);v.uUnit=unit;v.uCount=paths.length;
       if(paths.length>12){fail(new Error('Unexpected blob capacity'));return;}
       paths.forEach((p,i)=>{v.uPaths.set([p.phase,p.direction,p.warp,p.palette],i*4);v.uSizes.set([p.width,p.height,parseFloat(p.props['--lava-delay'])*1000,parseFloat(p.props['--lava-duration'])*1000],i*4);const color=[[126/255,38/255,46/255,.38],[83/255,76/255,74/255,.25],[80/255,91/255,103/255,.19],[109/255,32/255,41/255,.27]][p.palette];v.uColors.set(color,i*4);});}
-    function draw(){try{if(!renderer||!targetC||!width)return;if(holes.length>MAX_HOLES){fail(new Error('Too many protected regions'));return;}
+    function draw(){try{if(!renderer||(!continuous&&!targetC)||!width)return;if(!continuous&&holes.length>MAX_HOLES){fail(new Error('Too many protected regions'));return;}
       const validate=maskDirty||api.frames===0;
-      if(maskDirty){const g=maskGroup.uniforms;g.uSize.set([width,height]);g.uUnit=unit;g.uHoleCount=holes.length;g.uHoles.fill(0);g.uRadii.fill(0);holes.forEach((r,i)=>{g.uHoles.set([r.left/unit,r.top/unit,r.right/unit,r.bottom/unit],i*4);g.uRadii[i]=r.radius/unit;});renderer.render({container:maskMesh,target:targetA,clear:true});blurX.shader.resources.uInput=targetA.source;renderer.render({container:blurX,target:targetB,clear:true});blurY.shader.resources.uInput=targetB.source;renderer.render({container:blurY,target:targetC,clear:true});lightGroup.uniforms.uHoleCount=g.uHoleCount;lightGroup.uniforms.uHoles.set(g.uHoles);lightGroup.uniforms.uRadii.set(g.uRadii);maskDirty=false;api.maskLoads++;}
-      lightGroup.uniforms.uTime=elapsed;renderer.render({container:stage,clear:true});if(validate&&renderer.gl.getError()!==renderer.gl.NO_ERROR)throw new Error('WebGL draw failed');api.frames++;node.style.visibility='visible';
+      if(!continuous&&maskDirty){const g=maskGroup.uniforms;g.uSize.set([width,height]);g.uUnit=unit;g.uHoleCount=holes.length;g.uHoles.fill(0);g.uRadii.fill(0);holes.forEach((r,i)=>{g.uHoles.set([r.left/unit,r.top/unit,r.right/unit,r.bottom/unit],i*4);g.uRadii[i]=r.radius/unit;});renderer.render({container:maskMesh,target:targetA,clear:true});blurX.shader.resources.uInput=targetA.source;renderer.render({container:blurX,target:targetB,clear:true});blurY.shader.resources.uInput=targetB.source;renderer.render({container:blurY,target:targetC,clear:true});lightGroup.uniforms.uHoleCount=g.uHoleCount;lightGroup.uniforms.uHoles.set(g.uHoles);lightGroup.uniforms.uRadii.set(g.uRadii);maskDirty=false;api.maskLoads++;}
+      lightGroup.uniforms.uTime=elapsed;renderer.render({container:stage,clear:true});if(validate&&renderer.gl.getError()!==renderer.gl.NO_ERROR)throw new Error('WebGL draw failed');maskDirty=false;api.frames++;node.style.visibility='visible';
     }catch(e){fail(e);}}
-    function tick(t){raf=0;if(!usable()){last=undefined;return;}if((window.devicePixelRatio||1)*unit!==ratio){gates.geometry();return;}if(last!==undefined)elapsed+=t-last;last=t;draw();if(usable())raf=requestAnimationFrame(tick);}
+    function tick(t){raf=0;if(!usable()){last=undefined;return;}if((window.devicePixelRatio||1)*unit!==ratio){gates.geometry();return;}if(last!==undefined)elapsed+=(t-last)*motionRate;last=t;draw();if(usable())raf=requestAnimationFrame(tick);}
     const initToken=++token;
     (async()=>{let initializingRenderer;try{initializingRenderer=new P.WebGLRenderer();await initializingRenderer.init({canvas,width:1,height:1,resolution:1,backgroundAlpha:0,antialias:false,powerPreference:'high-performance',clearBeforeRender:true});if(disposed||state==='failed'||initToken!==token){initializingRenderer.destroy();return;}renderer=initializingRenderer;
       geometry=new P.MeshGeometry({positions:new Float32Array([-1,-1,1,-1,1,1,-1,1]),uvs:new Float32Array([0,1,1,1,1,0,0,0]),indices:new Uint32Array([0,1,2,0,2,3])});
-      maskGroup=group();maskMesh=mesh(MASK,maskGroup);
-      lightGroup=group();Object.assign(lightGroup.uniformStructures,{uCount:{name:'uCount',value:0,type:'i32',size:1},uTime:{name:'uTime',value:0,type:'f32',size:1},uPaths:{name:'uPaths',value:new Float32Array(48),type:'vec4<f32>',size:12},uSizes:{name:'uSizes',value:new Float32Array(48),type:'vec4<f32>',size:12},uColors:{name:'uColors',value:new Float32Array(48),type:'vec4<f32>',size:12}});
+      if(!continuous){maskGroup=group();maskMesh=mesh(MASK,maskGroup);}
+      lightGroup=group();Object.assign(lightGroup.uniformStructures,{uCount:{name:'uCount',value:0,type:'i32',size:1},uContinuous:{name:'uContinuous',value:continuous?1:0,type:'i32',size:1},uTime:{name:'uTime',value:0,type:'f32',size:1},uPaths:{name:'uPaths',value:new Float32Array(48),type:'vec4<f32>',size:12},uSizes:{name:'uSizes',value:new Float32Array(48),type:'vec4<f32>',size:12},uColors:{name:'uColors',value:new Float32Array(48),type:'vec4<f32>',size:12}});
       lightGroup=new P.UniformGroup(lightGroup.uniformStructures);lightMesh=mesh(LIGHT,lightGroup,{uMask:P.Texture.WHITE.source});stage=new P.Container();stage.addChild(lightMesh);
       const gl=renderer.gl;const debug=gl.getExtension('WEBGL_debug_renderer_info');api.backend={type:'webgl',pixi:P.VERSION,driver:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):'unavailable',hardwareVerified:false};node.dataset.renderer='pixi-webgl';state='ready';allocate();gates.geometry();resume();
     }catch(e){if(initializingRenderer&&!renderer){try{initializingRenderer.destroy();}catch{}}fail(e);}})();

@@ -56,10 +56,11 @@
   let statusNode = document.getElementById("pjax-status");
   let loadBarAnimation = null;
   let navigating = false;
+  let pageActive = true;
   let themeScrollTo = null;
 
   function motionAllowed() {
-    return desktopMotion.matches && !reducedMotion.matches;
+    return pageActive && desktopMotion.matches && !reducedMotion.matches;
   }
 
   function adaptThemeScrolling() {
@@ -111,7 +112,9 @@
 
   function trackAnimation(animation) {
     pageAnimations.add(animation);
-    const release = () => pageAnimations.delete(animation);
+    const notify = active => document.dispatchEvent(Object.assign(new Event('hud:layout-motion'), { animation, active }));
+    notify(true);
+    const release = () => { pageAnimations.delete(animation); notify(false); };
     animation.addEventListener("finish", release, { once: true });
     animation.addEventListener("cancel", release, { once: true });
     return animation;
@@ -310,6 +313,16 @@
   adaptThemeScrolling();
   document.addEventListener("page:loaded", adaptThemeScrolling);
   window.addEventListener("hexo-blog-decrypt", refreshReveals);
+  window.addEventListener("pagehide", () => {
+    pageActive = false;
+    cleanupPage();
+    resetLoadBar();
+  });
+  window.addEventListener("pageshow", () => {
+    const restoring = !pageActive;
+    pageActive = true;
+    if (restoring && !navigating) boot();
+  });
   reducedMotion.addEventListener("change", syncMotionPreference);
   desktopMotion.addEventListener("change", syncMotionPreference);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
