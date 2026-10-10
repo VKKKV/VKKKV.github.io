@@ -1581,7 +1581,7 @@ pre code {
   vertical-align: middle;
 }
 .links-of-author a::before {
-  background: #38ffac;
+  background: #9edeff;
   display: inline-block;
   margin-right: 3px;
   transform: translateY(-2px);
@@ -3459,6 +3459,13 @@ header.header {
   color: #d4d4d4;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
+/* NexT's 40px absolute language watermark must fit a short code block.
+ * Constrain only this decoration; keep code/table overflow and copy controls. */
+.post-body figure.highlight .code-lang {
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+}
 .post-body .copy-btn {
   background: rgba(20,20,20,0.94);
   color: #bbb;
@@ -3797,6 +3804,428 @@ code {
     opacity: 0;
     mix-blend-mode: difference;
   }
+}
+/* Opt-in effect experiment controls: default article styles remain untouched. */
+.effect-controls {
+  display: flex;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  font-size: 13px;
+}
+.effect-toggle {
+  color: #ddd;
+  background: #111;
+  border: 1px solid #555;
+  padding: 7px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+.effect-toggle[aria-pressed="true"] {
+  border-color: #b96b6b;
+}
+.effect-toggle:focus-visible {
+  outline: 2px solid #eee;
+  outline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .effect-controls {
+    margin: 12px 0;
+  }
+}
+@media print {
+  .effect-controls {
+    display: none !important;
+  }
+}
+/* Refined styles include independent lava bodies as well as the drift fallback. */
+/* Original08 snapshot: original selected 08 gradient, dimensions and opacity.
+ * Runtime may only shrink the margin width to protect the real reading rect. */
+.effect-mesh {
+  position: fixed;
+  top: 20vh;
+  bottom: 14vh;
+  width: calc((100vw - 1160px) / 2);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+  background: radial-gradient(ellipse at 15% 25%, rgba(122,65,75,0.22), transparent 60%), radial-gradient(ellipse at 70% 70%, rgba(55,87,103,0.2), transparent 65%), radial-gradient(ellipse at 40% 50%, rgba(92,78,114,0.12), transparent 75%);
+}
+.effect-mesh-left {
+  left: 0;
+}
+.effect-mesh-right {
+  right: 0;
+}
+/* Refined: fixed clipping/masks protect text; only the oversized light moves. */
+.effect-mesh[data-preset="refined"] {
+  top: 12vh;
+  bottom: 10vh;
+  overflow: hidden;
+  contain: paint;
+  background: radial-gradient(ellipse at 0% 32%, rgba(126,38,46,0.38), transparent 68%), radial-gradient(ellipse at 18% 82%, rgba(83,76,74,0.25), transparent 62%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 40%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 20%, #000 76%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, #000 0%, #000 40%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 20%, #000 76%, transparent 100%);
+  mask-composite: intersect;
+}
+.effect-mesh-right[data-preset="refined"] {
+  background: radial-gradient(ellipse at 100% 67%, rgba(80,91,103,0.19), transparent 70%), radial-gradient(ellipse at 88% 19%, rgba(109,32,41,0.27), transparent 58%);
+  -webkit-mask-image: linear-gradient(to left, #000 0%, #000 40%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 20%, #000 76%, transparent 100%);
+  mask-image: linear-gradient(to left, #000 0%, #000 40%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 20%, #000 76%, transparent 100%);
+}
+/* Static mode keeps the exact unmoving gradient above. Only dynamic paint is
+ * replaced; masks and the fallback remain on the unmoving clipping parent. */
+.effect-mesh[data-preset="refined"][data-motion="dynamic"] {
+  background: none;
+}
+.effect-mesh[data-preset="refined"][data-motion="dynamic"][data-flow="drift"]::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(ellipse at 0% 32%, rgba(126,38,46,0.38), transparent 68%), radial-gradient(ellipse at 18% 82%, rgba(83,76,74,0.25), transparent 62%);
+  transform-origin: 20% 55%;
+  will-change: transform, opacity;
+  animation: mesh-flow-left 22s ease-in-out -4s infinite alternate;
+}
+.effect-mesh-right[data-preset="refined"][data-motion="dynamic"][data-flow="drift"]::before {
+  background: radial-gradient(ellipse at 100% 67%, rgba(80,91,103,0.19), transparent 70%), radial-gradient(ellipse at 88% 19%, rgba(109,32,41,0.27), transparent 58%);
+  transform-origin: 80% 45%;
+  animation: mesh-flow-right 29s ease-in-out -11s infinite alternate;
+}
+.effect-mesh[data-preset="refined"][data-paused="true"]::before {
+  animation-play-state: paused !important;
+}
+/* Lava reuses exactly two palette slots per side, with 2–4 cached bodies.
+ * No opacity breathing, bright core, blur or full-screen goo filter. The
+ * stationary parent owns all clipping/masks; only bounded children deform. */
+.mesh-lava {
+  display: none;
+}
+.effect-mesh[data-preset="refined"][data-motion="dynamic"][data-flow="lava"] .mesh-lava {
+  display: block;
+  position: absolute;
+  width: var(--lava-width, 125%);
+  height: var(--lava-height, 28%);
+  top: var(--lava-top, 32%);
+  left: var(--lava-edge, -28%);
+  border-radius: var(--lava-radius-0, 56% 44% 62% 38% / 44% 60% 40% 56%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(126,38,46,0.38) 18%, transparent 100%);
+  transform: var(--lava-transform-0, none);
+  transform-origin: 50% 50%;
+  will-change: transform, border-radius;
+  animation: mesh-lava-rise var(--lava-duration, 24s) ease-in-out var(--lava-delay, -3s) infinite;
+}
+.effect-mesh[data-preset="refined"][data-motion="dynamic"][data-flow="lava"] .mesh-lava-b {
+  left: var(--lava-edge, -10%);
+  height: var(--lava-height, 28%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(83,76,74,0.25) 18%, transparent 100%);
+  animation: mesh-lava-return var(--lava-duration, 31s) ease-in-out var(--lava-delay, -16s) infinite;
+}
+.effect-mesh-right[data-preset="refined"][data-motion="dynamic"][data-flow="lava"] .mesh-lava-a {
+  left: auto;
+  right: var(--lava-edge, -28%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(80,91,103,0.19) 18%, transparent 100%);
+  animation: mesh-lava-return var(--lava-duration, 28s) ease-in-out var(--lava-delay, -9s) infinite;
+}
+.effect-mesh-right[data-preset="refined"][data-motion="dynamic"][data-flow="lava"] .mesh-lava-b {
+  left: auto;
+  right: var(--lava-edge, -10%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(109,32,41,0.27) 18%, transparent 100%);
+  animation: mesh-lava-rise var(--lava-duration, 35s) ease-in-out var(--lava-delay, -25s) infinite;
+}
+.effect-mesh[data-paused="true"] .mesh-lava {
+  animation-play-state: paused !important;
+}
+/* Black fades also work without masks; the page background is exactly black. */
+.effect-mesh[data-preset="refined"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 35%, #000 100%), linear-gradient(to bottom, #000 0%, transparent 22%, transparent 74%, #000 100%);
+}
+.effect-mesh-right[data-preset="refined"]::after {
+  background: linear-gradient(to left, transparent 35%, #000 100%), linear-gradient(to bottom, #000 0%, transparent 22%, transparent 74%, #000 100%);
+}
+@supports (mask-composite: intersect) {
+  .effect-mesh[data-preset="refined"]::after {
+    display: none;
+  }
+}
+/* Wide lava only: parent-space trajectories, gentle fixed edge fade. */
+.effect-mesh[data-preset="refined"][data-motion="dynamic"][data-flow="lava"][data-travel="wide"] {
+  top: 2vh;
+  bottom: 2vh;
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 65%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 0%, #000 65%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+}
+.effect-mesh-right[data-preset="refined"][data-motion="dynamic"][data-flow="lava"][data-travel="wide"] {
+  -webkit-mask-image: linear-gradient(to left, #000 0%, #000 65%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  mask-image: linear-gradient(to left, #000 0%, #000 65%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%);
+}
+.effect-mesh[data-preset="refined"][data-motion="dynamic"][data-flow="lava"][data-travel="wide"] .mesh-lava {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  width: var(--lava-wide-width);
+  height: var(--lava-wide-height);
+  animation-name: mesh-lava-wide;
+}
+.effect-mesh[data-preset="refined"][data-motion="dynamic"][data-flow="lava"][data-travel="wide"]::after {
+  background: linear-gradient(to right, transparent 65%, #000 100%), linear-gradient(to bottom, #000 0%, transparent 6%, transparent 94%, #000 100%);
+}
+.effect-mesh-right[data-preset="refined"][data-motion="dynamic"][data-flow="lava"][data-travel="wide"]::after {
+  background: linear-gradient(to left, transparent 65%, #000 100%), linear-gradient(to bottom, #000 0%, transparent 6%, transparent 94%, #000 100%);
+}
+/* End wide lava. */
+@media (max-width: 1199px), (prefers-reduced-motion: reduce), (prefers-contrast: more), (forced-colors: active) {
+  .effect-mesh {
+    display: none;
+  }
+}
+@media print {
+  .effect-mesh {
+    display: none !important;
+  }
+}
+/* Full viewport only: exact original palette, smooth zero-before-edge fade.
+ * closest-side fits inside border-radius. No bright plateau or blur leakage. */
+.effect-full {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  contain: paint;
+  opacity: 0.55;
+  visibility: hidden;
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+}
+.mesh-full-blob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  opacity: 1;
+  will-change: transform;
+}
+.mesh-full-paint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 56% 44% 62% 38%/44% 60% 40% 56%;
+  will-change: transform;
+  background: radial-gradient(ellipse closest-side at 50% 50%, rgba(126,38,46,0.38) 0%, rgba(126,38,46,0.38) 0%);
+  mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 0%, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.69) 25%, rgba(0,0,0,0.43) 43%, rgba(0,0,0,0.2) 62%, rgba(0,0,0,0.055) 78%, transparent 90%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 0%, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.69) 25%, rgba(0,0,0,0.43) 43%, rgba(0,0,0,0.2) 62%, rgba(0,0,0,0.055) 78%, transparent 90%, transparent 100%);
+}
+.mesh-full-palette-0 {
+  background: rgba(126,38,46,0.38);
+}
+.mesh-full-palette-1 {
+  background: rgba(83,76,74,0.25);
+}
+.mesh-full-palette-2 {
+  background: rgba(80,91,103,0.19);
+}
+.mesh-full-palette-3 {
+  background: rgba(109,32,41,0.27);
+}
+@media (max-width: 1199px), (prefers-reduced-motion: reduce), (prefers-contrast: more), (forced-colors: active) {
+  .effect-full {
+    display: none;
+  }
+}
+@media print {
+  .effect-full {
+    display: none !important;
+  }
+}
+/* Canvas pixels already contain their Gaussian union and exact core subtraction.
+ * No browser mask/clip layer is applied to this renderer. */
+.effect-full[data-renderer="canvas2d"],
+.effect-full[data-renderer="pixi-webgl"] {
+  mask-image: none;
+  -webkit-mask-image: none;
+  mask-composite: add;
+  -webkit-mask-composite: source-over;
+}
+.mesh-full-canvas {
+  display: block;
+}
+@keyframes mesh-flow-left {
+  0% {
+    transform: translate(-7%, -6%) scale(1.02);
+    opacity: 0.92;
+  }
+  48% {
+    transform: translate(6%, 4%) scale(1.09);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-2%, 8%) scale(1.04);
+    opacity: 0.94;
+  }
+}
+@keyframes mesh-flow-right {
+  0% {
+    transform: translate(6%, 7%) scale(1.07);
+    opacity: 0.96;
+  }
+  54% {
+    transform: translate(-7%, -5%) scale(1.02);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(3%, -8%) scale(1.1);
+    opacity: 1;
+  }
+}
+@keyframes mesh-lava-rise {
+  0%, 100% {
+    transform: var(--lava-transform-0, translate(-8%, 90%) rotate(-14deg) skewX(-12deg) scale(0.88, 1.18));
+    border-radius: var(--lava-radius-0, 56% 44% 62% 38% / 44% 60% 40% 56%);
+  }
+  25% {
+    transform: var(--lava-transform-1, translate(12%, -8%) rotate(12deg) skewX(15deg) scale(0.7, 1.55));
+    border-radius: var(--lava-radius-1, 36% 64% 28% 72% / 68% 32% 62% 38%);
+  }
+  50% {
+    transform: var(--lava-transform-2, translate(-4%, -90%) rotate(24deg) skewX(-8deg) scale(1.2, 0.82));
+    border-radius: var(--lava-radius-2, 68% 32% 56% 44% / 32% 66% 34% 68%);
+  }
+  75% {
+    transform: var(--lava-transform-3, translate(16%, 0%) rotate(-18deg) skewX(16deg) scale(0.76, 1.42));
+    border-radius: var(--lava-radius-3, 28% 72% 66% 34% / 58% 42% 72% 28%);
+  }
+}
+@keyframes mesh-lava-return {
+  0%, 100% {
+    transform: var(--lava-transform-0, translate(10%, -90%) rotate(18deg) skewX(10deg) scale(1.18, 0.84));
+    border-radius: var(--lava-radius-0, 62% 38% 32% 68% / 36% 68% 32% 64%);
+  }
+  25% {
+    transform: var(--lava-transform-1, translate(-14%, 4%) rotate(-22deg) skewX(-16deg) scale(0.72, 1.48));
+    border-radius: var(--lava-radius-1, 32% 68% 58% 42% / 72% 28% 64% 36%);
+  }
+  50% {
+    transform: var(--lava-transform-2, translate(8%, 94%) rotate(-8deg) skewX(12deg) scale(1.12, 0.92));
+    border-radius: var(--lava-radius-2, 48% 52% 70% 30% / 38% 58% 42% 62%);
+  }
+  75% {
+    transform: var(--lava-transform-3, translate(-6%, -6%) rotate(20deg) skewX(-14deg) scale(0.8, 1.52));
+    border-radius: var(--lava-radius-3, 72% 28% 38% 62% / 64% 36% 28% 72%);
+  }
+}
+@keyframes mesh-lava-wide {
+  0%, 100% {
+    transform: var(--lava-wide-transform-0);
+    border-radius: var(--lava-radius-0, 56% 44% 62% 38% / 44% 60% 40% 56%);
+  }
+  25% {
+    transform: var(--lava-wide-transform-1);
+    border-radius: var(--lava-radius-1, 36% 64% 28% 72% / 68% 32% 62% 38%);
+  }
+  50% {
+    transform: var(--lava-wide-transform-2);
+    border-radius: var(--lava-radius-2, 68% 32% 56% 44% / 32% 66% 34% 68%);
+  }
+  75% {
+    transform: var(--lava-wide-transform-3);
+    border-radius: var(--lava-radius-3, 28% 72% 66% 34% / 58% 42% 72% 28%);
+  }
+}
+/* Background-only frosted chrome. No filter/opacity on text or containers;
+ * fixed sidebar and search retain their original containing blocks. */
+body[data-mesh-chrome-glass="true"] .column {
+  background: transparent !important;
+  border-color: transparent;
+}
+body[data-mesh-chrome-glass="true"] .header,
+body[data-mesh-chrome-glass="true"] .footer {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  border-color: transparent;
+}
+body[data-mesh-chrome-glass="true"] .sidebar {
+  background: transparent !important;
+  border-right-color: transparent;
+  box-shadow: none;
+}
+body[data-mesh-chrome-glass="true"] .header::before,
+body[data-mesh-chrome-glass="true"] .sidebar::before,
+body[data-mesh-chrome-glass="true"] .footer::before {
+  content: '';
+  position: absolute;
+  inset: -16px;
+  pointer-events: none;
+  z-index: -1;
+  background: rgba(10,10,10,0.2);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+/* Feather the surface, not its readable descendants. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent), linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent), linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+@media print {
+  body[data-mesh-chrome-glass="true"] .header::before,
+  body[data-mesh-chrome-glass="true"] .sidebar::before,
+  body[data-mesh-chrome-glass="true"] .footer::before {
+    display: none;
+  }
+}
+.effect-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.effect-controls select,
+.effect-reset,
+.effect-motion {
+  color: #ddd;
+  background: #111;
+  border: 1px solid #555;
+  padding: 7px 10px;
+  font: inherit;
+}
+.effect-controls input[type="range"] {
+  width: 130px;
+  accent-color: #b96b6b;
+}
+.effect-controls output {
+  min-width: 4ch;
+  font-variant-numeric: tabular-nums;
+}
+.effect-controls :is(select,
+input,
+.effect-reset,
+.effect-motion):focus-visible {
+  outline: 2px solid #eee;
+  outline-offset: 3px;
+}
+.effect-reset,
+.effect-motion {
+  cursor: pointer;
+}
+.effect-motion:disabled {
+  color: #888;
+  cursor: default;
+}
+.effect-state {
+  flex-basis: 100%;
+  color: #aaa;
+  font-size: 12px;
 }
 /* Motion lifecycle and accessibility */
 .hud-visually-hidden {

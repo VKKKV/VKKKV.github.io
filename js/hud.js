@@ -428,7 +428,7 @@
   function processPointer(event) {
     pointerFrame = null;
     if (!canvas || !event || document.hidden) return;
-    if (event.target.closest?.(occluders)) { previous = null; return; }
+    if (event.target.closest?.(occluders) && !(document.body?.dataset?.meshChromeGlass === 'true' && event.target.closest?.('.header, .sidebar, .footer') && !event.target.closest?.('.search-pop-overlay'))) { previous = null; return; }
     const now = event.timeStamp || performance.now();
     const x = event.clientX, y = event.clientY;
     if (previous && now - previous.time < 120) {

